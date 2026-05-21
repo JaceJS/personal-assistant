@@ -1,8 +1,12 @@
-# Voice Finance Backend
+# Personal Assistant AI Backend
 
-Backend for a voice-first personal finance tracker. Users speak a transaction
-("beli kopi gocap"), the audio is transcribed and parsed by an LLM, and a draft
-transaction is created for confirmation.
+Backend for a personal assistant. Users speak or write things like:
+
+1. "Bikin pengingat untuk beli kopi gocap besok jam 3 sore"
+2. "Berapa uangku hari ini?"
+3. "Tambah pengeluaran Rp 25.000 buat makan siang"
+
+Semua di-parse pakai LLM, di-link ke database, lalu bisa diakses via Mobile.
 
 The codebase is organised by **domain** (`app/domains/<domain>/`). Only the
 **finance** domain is implemented now; `journal`, `tasks`, and `calendar` are
@@ -10,21 +14,21 @@ placeholders for later.
 
 ## Tech stack
 
-| Concern        | Choice                                            |
-|----------------|---------------------------------------------------|
-| Language       | Python 3.12                                       |
-| Framework      | FastAPI (async)                                   |
-| Package mgr    | uv                                                |
-| Database       | PostgreSQL 16 (Supabase) + SQLAlchemy 2.0 async   |
-| Migrations     | Alembic                                           |
-| Validation     | Pydantic v2                                       |
-| Auth           | Supabase Auth (JWT verified on the backend)       |
-| Job queue      | ARQ (Redis)                                       |
-| Object storage | Cloudflare R2 (S3-compatible)                     |
-| STT            | Groq Whisper (OpenAI-compatible API)              |
-| LLM            | Groq Llama 3.3 70B, with a Claude fallback shape  |
-| Tests          | pytest + pytest-asyncio + httpx                   |
-| Lint / types   | ruff + mypy (strict)                              |
+| Concern        | Choice                                           |
+| -------------- | ------------------------------------------------ |
+| Language       | Python 3.12                                      |
+| Framework      | FastAPI (async)                                  |
+| Package mgr    | uv                                               |
+| Database       | PostgreSQL 16 (Supabase) + SQLAlchemy 2.0 async  |
+| Migrations     | Alembic                                          |
+| Validation     | Pydantic v2                                      |
+| Auth           | Supabase Auth (JWT verified on the backend)      |
+| Job queue      | ARQ (Redis)                                      |
+| Object storage | Cloudflare R2 (S3-compatible)                    |
+| STT            | Groq Whisper (OpenAI-compatible API)             |
+| LLM            | Groq Llama 3.3 70B, with a Claude fallback shape |
+| Tests          | pytest + pytest-asyncio + httpx                  |
+| Lint / types   | ruff + mypy (strict)                             |
 
 ## Prerequisites
 

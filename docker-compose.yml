@@ -7,13 +7,13 @@
 services:
   db:
     image: postgres:16
-    container_name: voice_finance_db
+    container_name: personal_assistant_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: voice_finance
+      POSTGRES_DB: personal_assistant_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/scripts/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
@@ -25,7 +25,7 @@ services:
 
   redis:
     image: redis:7
-    container_name: voice_finance_redis
+    container_name: personal_assistant_redis
     ports:
       - "6379:6379"
     healthcheck:

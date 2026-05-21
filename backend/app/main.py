@@ -28,7 +28,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="Voice Finance API",
+    title="Personal Assistant API",
     version="0.1.0",
     docs_url="/docs" if not _settings.is_production else None,
     redoc_url=None,
