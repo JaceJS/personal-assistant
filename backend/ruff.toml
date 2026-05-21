@@ -1,0 +1,29 @@
+# Ruff configuration. See https://docs.astral.sh/ruff/
+target-version = "py312"
+line-length = 100
+src = ["app", "tests"]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (import ordering)
+    "N",   # pep8-naming
+    "UP",  # pyupgrade (modern Python 3.12 syntax)
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "B008", # function call in argument defaults: required by the FastAPI Depends() pattern
+]
+
+[lint.per-file-ignores]
+# Alembic migrations are partly generated; relax line length and naming.
+"alembic/*" = ["E501", "N999"]
+
+[lint.isort]
+known-first-party = ["app"]

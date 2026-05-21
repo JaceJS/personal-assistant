@@ -1,0 +1,49 @@
+[project]
+name = "voice-finance-backend"
+version = "0.1.0"
+description = "Voice-first personal finance tracker backend (FastAPI)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "pyjwt[crypto]>=2.10",
+    "arq>=0.26",
+    "redis>=5.2",
+    "aioboto3>=13.2",
+    "openai>=1.59",
+    "instructor>=1.7",
+    "httpx>=0.28",
+    "python-multipart>=0.0.20",
+    "structlog>=24.4",
+]
+
+# Dependency groups (PEP 735). The "dev" group is installed by default with `uv sync`.
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "ruff>=0.8",
+    "mypy>=1.14",
+    "asgi-lifespan>=2.1",
+]
+
+# This project is an application, not a distributable library: uv installs the
+# dependencies into .venv but does not build/install the project itself.
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
+markers = [
+    "integration: tests that require a running Postgres/Redis (docker compose up)",
+]

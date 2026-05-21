@@ -1,0 +1,38 @@
+# Dev: starts Postgres 16 and Redis 7 only.
+# The API and worker run locally:
+#   cd backend
+#   uv run uvicorn app.main:app --reload
+#   uv run python -m arq app.workers.voice_processor.WorkerSettings
+
+services:
+  db:
+    image: postgres:16
+    container_name: voice_finance_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: voice_finance
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/scripts/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: voice_finance_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

@@ -1,0 +1,75 @@
+export type AccountType = "cash" | "bank" | "ewallet" | "credit";
+export type CategoryType = "expense" | "income" | "transfer";
+export type TransactionSource = "voice" | "manual" | "import";
+export type TransactionStatus = "draft" | "confirmed";
+
+export interface Account {
+  id: string;
+  user_id: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  balance: number;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  user_id: string | null;
+  name: string;
+  type: CategoryType;
+  icon: string | null;
+  color: string | null;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Transaction {
+  id: string;
+  user_id: string;
+  account_id: string;
+  category_id: string | null;
+  amount: number;
+  currency: string;
+  merchant: string | null;
+  note: string | null;
+  occurred_at: string;
+  source: TransactionSource;
+  status: TransactionStatus;
+  voice_log_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaginatedList<T> {
+  items: T[];
+  total: number;
+}
+
+export interface AccountCreate {
+  name: string;
+  type: AccountType;
+  currency?: string;
+}
+
+export interface TransactionCreate {
+  account_id: string;
+  category_id?: string | null;
+  amount: number;
+  currency?: string;
+  merchant?: string | null;
+  note?: string | null;
+  occurred_at: string;
+}
+
+export interface TransactionUpdate {
+  category_id?: string | null;
+  amount?: number;
+  merchant?: string | null;
+  note?: string | null;
+  occurred_at?: string;
+  status?: TransactionStatus;
+}
