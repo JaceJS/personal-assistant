@@ -2,6 +2,8 @@ import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { AlertTriangle } from "lucide-react-native";
 
+import { logger } from "@/lib/logger";
+
 interface ErrorBoundaryState {
   hasError: boolean;
   message: string;
@@ -20,8 +22,10 @@ export class ErrorBoundary extends React.Component<
     return { hasError: true, message: error.message };
   }
 
-  componentDidCatch(error: Error) {
-    console.error("[ErrorBoundary]", error);
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    logger.error("ErrorBoundary caught", error, {
+      componentStack: info.componentStack,
+    });
   }
 
   handleRetry = () => {

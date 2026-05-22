@@ -15,6 +15,8 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
+import { useToastStore } from "@/stores/toast";
 
 const schema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -26,6 +28,7 @@ type FormValues = z.infer<typeof schema>;
 export default function SignupScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToastStore();
 
   const {
     control,
@@ -39,15 +42,15 @@ export default function SignupScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert("Pendaftaran Gagal", error.message);
+      logger.error("Signup failed", error, { errorCode: error.status });
+      showToast(error.message, "error");
       return;
     }
 
-    Alert.alert(
-      "Berhasil",
-      "Cek email kamu untuk konfirmasi akun.",
-      [{ text: "OK", onPress: () => router.replace("/(auth)/login") }]
-    );
+    // Alert retained for success: needs user tap to trigger navigation
+    Alert.alert("Berhasil", "Cek email kamu untuk konfirmasi akun.", [
+      { text: "OK", onPress: () => router.replace("/(auth)/login") },
+    ]);
   };
 
   return (

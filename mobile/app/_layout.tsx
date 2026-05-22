@@ -1,5 +1,6 @@
 import "../global.css";
 
+import * as Sentry from "@sentry/react-native";
 import {
   Outfit_400Regular,
   Outfit_500Medium,
@@ -14,6 +15,13 @@ import { ActivityIndicator, View } from "react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  enabled: !__DEV__,
+  tracesSampleRate: 0.2,
+  environment: __DEV__ ? "development" : "production",
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,7 +42,7 @@ function RootLayoutInner() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded] = useFonts({
     Outfit_400Regular,
     Outfit_500Medium,
@@ -58,3 +66,5 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);

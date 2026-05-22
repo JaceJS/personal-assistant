@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,6 +14,8 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
+import { useToastStore } from "@/stores/toast";
 
 const schema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -26,6 +27,7 @@ type FormValues = z.infer<typeof schema>;
 export default function LoginScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToastStore();
 
   const {
     control,
@@ -39,7 +41,8 @@ export default function LoginScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert("Login Gagal", error.message);
+      logger.error("Login failed", error, { errorCode: error.status });
+      showToast(error.message, "error");
       return;
     }
 

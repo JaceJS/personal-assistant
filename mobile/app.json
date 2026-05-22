@@ -39,7 +39,8 @@
       "expo-router",
       "expo-audio",
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      "@sentry/react-native"
     ]
   }
 }

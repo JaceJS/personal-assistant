@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { API_URL } from "@/constants/config";
+import { logger } from "@/lib/logger";
 
 class ApiError extends Error {
   constructor(
@@ -36,7 +37,13 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const body = await response.text();
-    throw new ApiError(response.status, body);
+    const error = new ApiError(response.status, body);
+    logger.error("API request failed", error, {
+      path,
+      status: response.status,
+      method: init?.method ?? "GET",
+    });
+    throw error;
   }
 
   return response.json() as Promise<T>;
