@@ -88,6 +88,19 @@ async def list_transactions(
     return list(result.scalars())
 
 
+async def count_transactions(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    account_id: uuid.UUID | None = None,
+) -> int:
+    q = sa.select(sa.func.count()).select_from(Transaction).where(Transaction.user_id == user_id)
+    if account_id is not None:
+        q = q.where(Transaction.account_id == account_id)
+    result = await session.execute(q)
+    return result.scalar_one()
+
+
 async def create_transaction(
     session: AsyncSession, user_id: uuid.UUID, **kwargs: Any
 ) -> Transaction:

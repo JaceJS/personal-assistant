@@ -85,10 +85,12 @@ async def list_transactions(
     account_id: uuid.UUID | None = None,
     limit: int = 50,
     offset: int = 0,
-) -> list[Transaction]:
-    return await repo.list_transactions(
+) -> tuple[list[Transaction], int]:
+    items = await repo.list_transactions(
         session, user_id, account_id=account_id, limit=limit, offset=offset
     )
+    total = await repo.count_transactions(session, user_id, account_id=account_id)
+    return items, total
 
 
 async def create_transaction(

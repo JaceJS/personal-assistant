@@ -19,6 +19,7 @@ from app.domains.finance.schemas import (
     AccountUpdate,
     CategoryCreate,
     CategoryRead,
+    PaginatedList,
     TransactionCreate,
     TransactionRead,
     TransactionUpdate,
@@ -31,9 +32,10 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 # ── Accounts ──────────────────────────────────────────────────────────────────
 
-@router.get("/accounts", response_model=list[AccountRead])
-async def list_accounts(user_id: CurrentUser, session: DbSession) -> list[Account]:
-    return await service.list_accounts(session, user_id)
+@router.get("/accounts", response_model=PaginatedList[AccountRead])
+async def list_accounts(user_id: CurrentUser, session: DbSession) -> PaginatedList[AccountRead]:
+    items = await service.list_accounts(session, user_id)
+    return PaginatedList(items=items, total=len(items))
 
 
 @router.post("/accounts", response_model=AccountRead, status_code=201)
@@ -83,17 +85,18 @@ async def get_category(
 
 # ── Transactions ──────────────────────────────────────────────────────────────
 
-@router.get("/transactions", response_model=list[TransactionRead])
+@router.get("/transactions", response_model=PaginatedList[TransactionRead])
 async def list_transactions(
     user_id: CurrentUser,
     session: DbSession,
     account_id: Annotated[uuid.UUID | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
-) -> list[Transaction]:
-    return await service.list_transactions(
+) -> PaginatedList[TransactionRead]:
+    items, total = await service.list_transactions(
         session, user_id, account_id=account_id, limit=limit, offset=offset
     )
+    return PaginatedList(items=items, total=total)
 
 
 @router.post("/transactions", response_model=TransactionRead, status_code=201)

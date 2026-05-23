@@ -32,12 +32,11 @@ export default function TransactionsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      {/* Header */}
       <View className="flex-row items-center justify-between px-6 py-4">
         <Text className="font-bold text-2xl text-ink">Transaksi</Text>
         <Pressable
           onPress={handleAdd}
-          className="flex-row items-center gap-1.5 rounded-xl bg-accent px-3 py-2"
+          className="flex-row items-center gap-1.5 rounded-xl bg-accent px-3 py-2 active:opacity-80"
         >
           <Plus size={16} color="#fff" />
           <Text className="font-semibold text-sm text-white">Tambah</Text>
@@ -62,7 +61,6 @@ export default function TransactionsScreen() {
               icon={List}
               title="Belum ada transaksi"
               subtitle="Rekam suara atau tambah secara manual"
-              action={{ label: "Tambah Transaksi", onPress: handleAdd }}
             />
           }
         />
