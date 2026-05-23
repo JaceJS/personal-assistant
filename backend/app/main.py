@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,13 +21,27 @@ from app.shared.queue import create_redis_pool
 _settings = get_settings()
 
 
+_lifespan_logger = structlog.get_logger("startup")
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     configure_logging()
     _app.state.redis = await create_redis_pool(_settings)
+    await _check_jwks()
     yield
     await _app.state.redis.aclose()
     await engine.dispose()
+
+
+async def _check_jwks() -> None:
+    from app.core.auth import _jwks_client
+
+    try:
+        await asyncio.to_thread(_jwks_client.fetch_data)
+        _lifespan_logger.info("jwks_ok")
+    except Exception as exc:
+        _lifespan_logger.error("jwks_startup_failed", error_type=type(exc).__name__, detail=str(exc))
 
 
 app = FastAPI(

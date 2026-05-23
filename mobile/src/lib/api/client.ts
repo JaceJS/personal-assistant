@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/stores/auth";
 import { API_URL, API_TIMEOUT_MS } from "@/constants/config";
 import { logger } from "@/lib/logger";
 
@@ -13,11 +14,13 @@ class ApiError extends Error {
 }
 
 async function getAuthHeader(): Promise<Record<string, string>> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.access_token) return {};
-  return { Authorization: `Bearer ${session.access_token}` };
+  // Prefer the store session — set synchronously by onAuthStateChange, never stale.
+  // Fall back to getSession() for cold starts before onAuthStateChange fires.
+  const storeToken = useAuthStore.getState().session?.access_token;
+  const token =
+    storeToken ?? (await supabase.auth.getSession()).data.session?.access_token;
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
 }
 
 export async function apiFetch<T>(

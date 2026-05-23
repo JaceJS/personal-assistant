@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { FlatList, Modal, Pressable, RefreshControl, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, Wallet, X } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
@@ -11,16 +12,10 @@ import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import AccountCard from "@/features/finance/components/AccountCard";
+import { ACCOUNT_TYPES } from "@/features/finance/constants";
 import { useAccounts, useCreateAccount } from "@/features/finance/hooks/useAccounts";
 import { useToastStore } from "@/stores/toast";
-import type { Account, AccountType } from "@/features/finance/types";
-
-const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
-  { value: "cash", label: "Tunai" },
-  { value: "bank", label: "Bank" },
-  { value: "ewallet", label: "E-Wallet" },
-  { value: "credit", label: "Kartu Kredit" },
-];
+import type { Account } from "@/features/finance/types";
 
 const schema = z.object({
   name: z.string().min(1, "Nama akun wajib diisi"),
@@ -30,6 +25,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function AccountsScreen() {
+  const router = useRouter();
   const { data, isLoading, isRefetching, refetch } = useAccounts();
   const createAccount = useCreateAccount();
   const { showToast } = useToastStore();
@@ -67,8 +63,13 @@ export default function AccountsScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: Account }) => <AccountCard account={item} />,
-    []
+    ({ item }: { item: Account }) => (
+      <AccountCard
+        account={item}
+        onPress={() => router.push(`/(app)/accounts/${item.id}`)}
+      />
+    ),
+    [router]
   );
 
   return (

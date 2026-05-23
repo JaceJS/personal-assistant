@@ -1,7 +1,20 @@
-import { Tabs } from "expo-router";
+import { useEffect } from "react";
+import { Tabs, useRouter } from "expo-router";
 import { BarChart2, Home, List, Settings } from "lucide-react-native";
 
+import { useAuthStore } from "@/stores/auth";
+
 export default function AppLayout() {
+  const router = useRouter();
+  const session = useAuthStore((s) => s.session);
+  const initialized = useAuthStore((s) => s.initialized);
+
+  useEffect(() => {
+    if (initialized && !session) {
+      router.replace("/(auth)/login");
+    }
+  }, [initialized, session, router]);
+
   return (
     <Tabs
       screenOptions={{

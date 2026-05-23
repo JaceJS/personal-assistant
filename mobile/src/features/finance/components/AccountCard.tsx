@@ -1,14 +1,8 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { formatRupiah } from "@/lib/utils";
-import type { Account, AccountType } from "@/features/finance/types";
-
-const TYPE_LABELS: Record<AccountType, string> = {
-  cash: "Tunai",
-  bank: "Bank",
-  ewallet: "E-Wallet",
-  credit: "Kartu Kredit",
-};
+import { ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
+import type { Account } from "@/features/finance/types";
 
 interface AccountCardProps {
   account: Account;
@@ -27,7 +21,7 @@ function AccountCard({ account, onPress }: AccountCardProps) {
       <View className="flex-row items-center justify-between">
         <Text className="font-semibold text-base text-ink">{account.name}</Text>
         <Text className="rounded-full bg-surface px-2.5 py-0.5 text-xs text-muted">
-          {TYPE_LABELS[account.type]}
+          {ACCOUNT_TYPE_LABELS[account.type]}
         </Text>
       </View>
       <Text className={`font-bold text-2xl mt-2 ${balanceColor}`}>

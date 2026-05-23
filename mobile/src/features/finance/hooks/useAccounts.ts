@@ -38,6 +38,7 @@ export function useUpdateAccount(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: AccountUpdate) => updateAccount(id, data),
+    retry: false,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       void queryClient.invalidateQueries({ queryKey: [QUERY_KEY, id] });
@@ -49,6 +50,7 @@ export function useArchiveAccount() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => archiveAccount(id),
+    retry: false,
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }

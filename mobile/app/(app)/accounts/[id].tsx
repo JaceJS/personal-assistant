@@ -6,24 +6,12 @@ import { ArrowLeft, Edit2, Trash2 } from "lucide-react-native";
 
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { THEME } from "@/constants/theme";
+import { ACCOUNT_TYPE_EMOJI, ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
 import { useAccount, useArchiveAccount, useUpdateAccount } from "@/features/finance/hooks/useAccounts";
 import { useToastStore } from "@/stores/toast";
 import { formatRupiah } from "@/lib/utils";
-
-const TYPE_LABELS: Record<string, string> = {
-  cash: "Tunai",
-  bank: "Bank",
-  ewallet: "E-Wallet",
-  credit: "Kartu Kredit",
-};
-
-const TYPE_EMOJI: Record<string, string> = {
-  cash: "💵",
-  bank: "🏦",
-  ewallet: "📱",
-  credit: "💳",
-};
 
 export default function AccountDetailScreen() {
   const router = useRouter();
@@ -82,17 +70,18 @@ export default function AccountDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <View
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 24,
-            backgroundColor: THEME.colors.card,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        />
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="px-6 py-4">
+          <View className="flex-row items-center gap-3">
+            <Pressable onPress={() => router.back()} className="active:opacity-60">
+              <ArrowLeft size={22} color={THEME.colors.muted} />
+            </Pressable>
+            <Text className="font-bold text-xl text-ink">Detail Akun</Text>
+          </View>
+        </View>
+        <View className="px-6">
+          <SkeletonList count={1} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -139,7 +128,7 @@ export default function AccountDetailScreen() {
         >
           <View className="flex-row items-center gap-3 mb-5">
             <Text style={{ fontSize: 28 }}>
-              {TYPE_EMOJI[account.type] ?? "💰"}
+              {ACCOUNT_TYPE_EMOJI[account.type] ?? "💰"}
             </Text>
             <View className="flex-1">
               {isEditing ? (
@@ -153,7 +142,7 @@ export default function AccountDetailScreen() {
                 <Text className="font-bold text-xl text-ink">{account.name}</Text>
               )}
               <Text className="text-sm text-muted mt-0.5">
-                {TYPE_LABELS[account.type] ?? account.type}
+                {ACCOUNT_TYPE_LABELS[account.type] ?? account.type}
               </Text>
             </View>
           </View>
