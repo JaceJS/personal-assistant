@@ -10,11 +10,13 @@ import {
 } from "@expo-google-fonts/outfit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
+import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboardingStore } from "@/stores/onboarding";
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -34,6 +36,12 @@ const queryClient = new QueryClient({
 
 function RootLayoutInner() {
   useAuth();
+  const { initialize } = useOnboardingStore();
+
+  useEffect(() => {
+    void initialize();
+  }, [initialize]);
+
   return (
     <>
       <Stack screenOptions={{ headerShown: false }} />

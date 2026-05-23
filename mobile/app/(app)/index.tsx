@@ -119,17 +119,25 @@ export default function HomeScreen() {
           <Text className="font-bold text-2xl text-ink capitalize">{firstName}</Text>
         </View>
 
-        {/* Balance card */}
+        {/* Balance card — tappable, navigates to accounts */}
         {accountsLoading ? (
           <SkeletonBalanceCard />
         ) : (
-          <View className="mx-6 mt-5 rounded-2xl bg-card p-5">
+          <Pressable
+            onPress={() => router.push("/(app)/accounts/index")}
+            className="mx-6 mt-5 rounded-2xl bg-card p-5 active:opacity-75"
+          >
             <Text className="font-medium text-sm text-muted">Total Saldo</Text>
             <Text className="font-bold text-3xl text-ink mt-1">
               {totalBalance !== null ? formatRupiah(totalBalance) : "Rp –"}
             </Text>
-            <Text className="font-sans text-xs text-muted mt-0.5">semua akun</Text>
-          </View>
+            <View className="flex-row items-center justify-between mt-0.5">
+              <Text className="font-sans text-xs text-muted">semua akun</Text>
+              <Text className="font-sans text-xs text-accent">
+                {accountsData?.items.length ?? 0} akun →
+              </Text>
+            </View>
+          </Pressable>
         )}
 
         {/* Voice recording area */}

@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createAccount, getAccount, listAccounts } from "@/features/finance/api/accounts";
-import type { AccountCreate } from "@/features/finance/types";
+import {
+  archiveAccount,
+  createAccount,
+  getAccount,
+  listAccounts,
+  updateAccount,
+} from "@/features/finance/api/accounts";
+import type { AccountCreate, AccountUpdate } from "@/features/finance/types";
 
 const QUERY_KEY = "accounts";
 
@@ -23,8 +29,26 @@ export function useCreateAccount() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: AccountCreate) => createAccount(data),
+    retry: false,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
+  });
+}
+
+export function useUpdateAccount(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: AccountUpdate) => updateAccount(id, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY, id] });
     },
+  });
+}
+
+export function useArchiveAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => archiveAccount(id),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }

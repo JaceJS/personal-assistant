@@ -1,7 +1,9 @@
+import { THEME } from "./theme";
+
 export const COLORS = {
-  primary: "#6366f1",
-  success: "#22c55e",
-  danger: "#ef4444",
-  warning: "#f59e0b",
-  muted: "#6b7280",
+  primary: THEME.colors.accent,
+  success: THEME.colors.success,
+  danger: THEME.colors.danger,
+  warning: THEME.colors.warning,
+  muted: THEME.colors.muted,
 } as const;

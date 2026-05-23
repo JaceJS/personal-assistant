@@ -55,6 +55,18 @@ export interface AccountCreate {
   currency?: string;
 }
 
+export interface AccountUpdate {
+  name?: string;
+  is_archived?: boolean;
+}
+
+export interface CategoryCreate {
+  name: string;
+  type: CategoryType;
+  icon?: string | null;
+  color?: string | null;
+}
+
 export interface TransactionCreate {
   account_id: string;
   category_id?: string | null;

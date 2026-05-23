@@ -49,6 +49,8 @@ export default function AppLayout() {
       <Tabs.Screen name="transactions/new" options={{ href: null }} />
       <Tabs.Screen name="accounts/index" options={{ href: null }} />
       <Tabs.Screen name="accounts/[id]" options={{ href: null }} />
+      <Tabs.Screen name="categories/index" options={{ href: null }} />
+      <Tabs.Screen name="settings/profile" options={{ href: null }} />
     </Tabs>
   );
 }

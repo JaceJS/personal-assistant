@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.core.database import engine
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
+from app.core.middleware import RequestLoggingMiddleware
 from app.domains.finance.router import router as finance_router
 from app.shared.queue import create_redis_pool
 
@@ -42,6 +43,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestLoggingMiddleware)
 
 register_exception_handlers(app)
 
