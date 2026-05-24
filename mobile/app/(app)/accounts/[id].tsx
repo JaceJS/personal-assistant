@@ -1,17 +1,17 @@
 import { useCallback, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Edit2, Trash2 } from "lucide-react-native";
 
+import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { SkeletonList } from "@/components/ui/Skeleton";
-import { THEME } from "@/constants/theme";
 import { ACCOUNT_TYPE_EMOJI, ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
 import { useAccount, useArchiveAccount, useUpdateAccount } from "@/features/finance/hooks/useAccounts";
 import { useToastStore } from "@/stores/toast";
 import { formatRupiah } from "@/lib/utils";
+import { colors, radius, spacing } from "@/theme";
 
 export default function AccountDetailScreen() {
   const router = useRouter();
@@ -33,158 +33,131 @@ export default function AccountDetailScreen() {
   const handleSaveEdit = useCallback(async () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      showToast("Nama akun tidak boleh kosong", "error");
+      showToast("Account name cannot be empty", "error");
       return;
     }
     try {
       await updateAccount.mutateAsync({ name: trimmed });
       setIsEditing(false);
-      showToast("Nama akun diperbarui", "success");
+      showToast("Account name updated", "success");
     } catch {
-      showToast("Gagal memperbarui akun.", "error");
+      showToast("Failed to update account.", "error");
     }
   }, [updateAccount, name, showToast]);
 
   const handleArchive = useCallback(() => {
     Alert.alert(
-      "Arsipkan Akun",
-      `Akun "${account?.name}" akan diarsipkan dan tidak muncul di daftar aktif. Transaksi tetap tersimpan.`,
+      "Archive Account",
+      `"${account?.name}" will be archived and hidden from your active list. Transactions will be preserved.`,
       [
-        { text: "Batal", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
-          text: "Arsipkan",
+          text: "Archive",
           style: "destructive",
           onPress: async () => {
             try {
               await archiveAccount.mutateAsync(id);
-              showToast("Akun diarsipkan", "info");
+              showToast("Account archived", "info");
               router.back();
             } catch {
-              showToast("Gagal mengarsipkan akun.", "error");
+              showToast("Failed to archive account.", "error");
             }
           },
         },
-      ]
+      ],
     );
   }, [account, archiveAccount, id, router, showToast]);
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="px-6 py-4">
-          <View className="flex-row items-center gap-3">
-            <Pressable onPress={() => router.back()} className="active:opacity-60">
-              <ArrowLeft size={22} color={THEME.colors.muted} />
-            </Pressable>
-            <Text className="font-bold text-xl text-ink">Detail Akun</Text>
-          </View>
+      <Screen>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={({ pressed }) => pressed && { opacity: 0.6 }}>
+            <ArrowLeft size={22} color={colors.text.muted} />
+          </Pressable>
+          <Text style={styles.title}>Account Detail</Text>
         </View>
-        <View className="px-6">
+        <View style={styles.listPad}>
           <SkeletonList count={1} />
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   if (!account) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text className="text-muted">Akun tidak ditemukan</Text>
-      </SafeAreaView>
+      <Screen>
+        <View style={styles.centered}>
+          <Text style={styles.notFound}>Account not found</Text>
+        </View>
+      </Screen>
     );
   }
 
   const isCredit = account.type === "credit";
-  const balanceColor = isCredit && account.balance < 0 ? "text-danger" : "text-success";
+  const balanceColor =
+    isCredit && account.balance < 0 ? colors.danger.text : colors.success.text;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-6 py-4">
-        <View className="flex-row items-center gap-3">
-          <Pressable onPress={() => router.back()} className="active:opacity-60">
-            <ArrowLeft size={22} color={THEME.colors.muted} />
-          </Pressable>
-          <Text className="font-bold text-xl text-ink">Detail Akun</Text>
-        </View>
+    <Screen>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={({ pressed }) => pressed && { opacity: 0.6 }}>
+          <ArrowLeft size={22} color={colors.text.muted} />
+        </Pressable>
+        <Text style={styles.title}>Account Detail</Text>
         {!isEditing && (
-          <Pressable onPress={handleStartEdit} className="active:opacity-60">
-            <Edit2 size={20} color={THEME.colors.accent} />
+          <Pressable
+            onPress={handleStartEdit}
+            style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.6 }]}
+          >
+            <Edit2 size={20} color={colors.accent.primary} />
           </Pressable>
         )}
       </View>
 
-      <ScrollView className="flex-1 px-6">
-        {/* Balance hero card */}
-        <View
-          style={{
-            backgroundColor: THEME.colors.card,
-            borderRadius: THEME.radius.xl,
-            padding: 24,
-            borderWidth: 1,
-            borderColor: THEME.colors.border,
-            marginBottom: 20,
-          }}
-        >
-          <View className="flex-row items-center gap-3 mb-5">
-            <Text style={{ fontSize: 28 }}>
-              {ACCOUNT_TYPE_EMOJI[account.type] ?? "💰"}
-            </Text>
-            <View className="flex-1">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        {/* Balance hero */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroTop}>
+            <Text style={styles.emoji}>{ACCOUNT_TYPE_EMOJI[account.type] ?? "💰"}</Text>
+            <View style={styles.heroInfo}>
               {isEditing ? (
                 <Input
                   value={name}
                   onChangeText={setName}
-                  placeholder="Nama akun"
+                  placeholder="Account name"
                   autoFocus
                 />
               ) : (
-                <Text className="font-bold text-xl text-ink">{account.name}</Text>
+                <Text style={styles.accountName}>{account.name}</Text>
               )}
-              <Text className="text-sm text-muted mt-0.5">
+              <Text style={styles.accountType}>
                 {ACCOUNT_TYPE_LABELS[account.type] ?? account.type}
               </Text>
             </View>
           </View>
 
-          <View
-            style={{
-              height: 1,
-              backgroundColor: THEME.colors.border,
-              marginBottom: 20,
-            }}
-          />
+          <View style={styles.divider} />
 
-          <Text
-            style={{
-              fontFamily: THEME.fontFamily.medium,
-              fontSize: THEME.fontSize.sm,
-              color: THEME.colors.muted,
-            }}
-          >
-            Saldo
-          </Text>
-          <Text
-            className={`font-bold mt-1 ${balanceColor}`}
-            style={{ fontSize: 32, fontFamily: THEME.fontFamily.bold }}
-          >
+          <Text style={styles.balanceLabel}>Balance</Text>
+          <Text style={[styles.balance, { color: balanceColor }]}>
             {formatRupiah(account.balance)}
           </Text>
-          <Text className="mt-1 text-xs text-muted">{account.currency}</Text>
+          <Text style={styles.currency}>{account.currency}</Text>
         </View>
 
         {/* Actions */}
-        <View className="gap-3">
+        <View style={styles.actions}>
           {isEditing ? (
             <>
               <Button
-                label="Simpan Perubahan"
+                label="Save Changes"
                 onPress={handleSaveEdit}
                 loading={updateAccount.isPending}
                 fullWidth
               />
               <Button
-                label="Batal"
+                label="Cancel"
                 onPress={() => setIsEditing(false)}
                 variant="ghost"
                 fullWidth
@@ -194,33 +167,67 @@ export default function AccountDetailScreen() {
             <Pressable
               onPress={handleArchive}
               disabled={archiveAccount.isPending}
-              style={({ pressed }) => ({
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                backgroundColor: `${THEME.colors.danger}18`,
-                borderRadius: THEME.radius.lg,
-                paddingVertical: 14,
-                opacity: pressed || archiveAccount.isPending ? 0.7 : 1,
-              })}
+              style={({ pressed }) => [
+                styles.archiveBtn,
+                (pressed || archiveAccount.isPending) && { opacity: 0.7 },
+              ]}
             >
-              <Trash2 size={18} color={THEME.colors.danger} />
-              <Text
-                style={{
-                  fontFamily: THEME.fontFamily.semibold,
-                  fontSize: THEME.fontSize.base,
-                  color: THEME.colors.danger,
-                }}
-              >
-                Arsipkan Akun
-              </Text>
+              <Trash2 size={18} color={colors.danger.text} />
+              <Text style={styles.archiveBtnLabel}>Archive Account</Text>
             </Pressable>
           )}
         </View>
-
-        <View className="h-8" />
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  notFound: { fontSize: 15, color: colors.text.muted },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing.lg,
+  },
+  title: { flex: 1, fontSize: 18, fontWeight: '600', color: colors.text.primary },
+  editBtn: { padding: 4 },
+  listPad: { paddingHorizontal: spacing['2xl'] },
+
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32, gap: spacing.lg },
+
+  heroCard: {
+    backgroundColor: colors.bg.elevated,
+    borderRadius: radius.xl,
+    padding: spacing['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  heroTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.xl },
+  emoji: { fontSize: 28 },
+  heroInfo: { flex: 1 },
+  accountName: { fontSize: 18, fontWeight: '600', color: colors.text.primary },
+  accountType: { fontSize: 13, color: colors.text.muted, marginTop: 2 },
+
+  divider: { height: 1, backgroundColor: colors.border.subtle, marginBottom: spacing.xl },
+
+  balanceLabel: { fontSize: 12, fontWeight: '500', color: colors.text.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  balance: { fontSize: 32, fontWeight: '700', marginTop: 4 },
+  currency: { fontSize: 12, color: colors.text.muted, marginTop: 2 },
+
+  actions: { gap: spacing.md },
+  archiveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.danger.bg,
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+  },
+  archiveBtnLabel: { fontSize: 15, fontWeight: '500', color: colors.danger.text },
+});

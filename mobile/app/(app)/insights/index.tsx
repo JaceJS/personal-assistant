@@ -1,16 +1,19 @@
 import { useMemo } from "react";
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, Text, View } from "react-native";
 import { PieChart } from "victory-native";
 import { useFont } from "@shopify/react-native-skia";
 
+import { Screen } from "@/components/layout/Screen";
+import { Header } from "@/components/layout/Header";
 import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { formatRupiah } from "@/lib/utils";
+import { colors, radius, spacing } from "@/theme";
 
-const COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#f97316",
-  "#eab308", "#10b981", "#14b8a6", "#06b6d4", "#3b82f6",
+const CHART_COLORS = [
+  "#D4A853", "#7DB87A", "#C97060", "#7A9EC4",
+  "#B87AB8", "#A87060", "#60A8A8", "#A8A060",
+  "#9E9E9E", "#D4A853",
 ];
 
 export default function InsightsScreen() {
@@ -26,7 +29,7 @@ export default function InsightsScreen() {
 
     for (const tx of txData.items) {
       if (tx.amount >= 0) continue;
-      const catName = tx.category_id ? (categoryMap.get(tx.category_id) ?? "Lainnya") : "Lainnya";
+      const catName = tx.category_id ? (categoryMap.get(tx.category_id) ?? "Other") : "Other";
       totals.set(catName, (totals.get(catName) ?? 0) + Math.abs(tx.amount));
     }
 
@@ -36,70 +39,79 @@ export default function InsightsScreen() {
       .map(([label, value], i) => ({
         label,
         value,
-        color: COLORS[i % COLORS.length] ?? "#6366f1",
+        color: CHART_COLORS[i % CHART_COLORS.length] ?? colors.accent.primary,
       }));
   }, [txData, catData]);
 
   const totalExpense = useMemo(
     () => chartData.reduce((sum, d) => sum + d.value, 0),
-    [chartData]
+    [chartData],
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1">
-        {/* Header */}
-        <View className="px-6 py-4">
-          <Text className="font-bold text-2xl text-ink">Insights</Text>
-          <Text className="mt-0.5 text-sm text-muted">Pengeluaran bulan ini</Text>
+    <Screen scrollable>
+      <Header title="Insights" subtitle="This month's spending" />
+
+      {chartData.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyTitle}>No spending data yet</Text>
+          <Text style={styles.emptySubtitle}>Record transactions to see insights</Text>
         </View>
-
-        {chartData.length === 0 ? (
-          <View className="mt-16 items-center px-6">
-            <Text className="font-medium text-base text-muted">Belum ada data pengeluaran</Text>
-            <Text className="mt-1 text-sm text-muted">Catat transaksi untuk melihat insights</Text>
+      ) : (
+        <>
+          <View style={styles.chartWrap}>
+            <PieChart
+              data={chartData.map((d) => ({ value: d.value, color: d.color, label: d.label }))}
+              width={280}
+              height={280}
+              innerRadius={70}
+              font={font}
+            />
+            <View style={styles.chartCenter}>
+              <Text style={styles.chartTotal}>{formatRupiah(totalExpense)}</Text>
+              <Text style={styles.chartLabel}>total out</Text>
+            </View>
           </View>
-        ) : (
-          <>
-            {/* Pie chart */}
-            <View className="items-center py-4">
-              <PieChart
-                data={chartData.map((d) => ({ value: d.value, color: d.color, label: d.label }))}
-                width={280}
-                height={280}
-                innerRadius={70}
-                font={font}
-              />
-              <View className="absolute items-center">
-                <Text className="font-bold text-2xl text-ink">{formatRupiah(totalExpense)}</Text>
-                <Text className="text-xs text-muted">total keluar</Text>
-              </View>
-            </View>
 
-            {/* Legend */}
-            <View className="mx-6 gap-3 pb-8">
-              {chartData.map((item) => {
-                const pct = totalExpense > 0 ? ((item.value / totalExpense) * 100).toFixed(1) : "0";
-                return (
-                  <View key={item.label} className="flex-row items-center justify-between">
-                    <View className="flex-row items-center gap-2.5">
-                      <View
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <Text className="text-sm text-ink">{item.label}</Text>
-                    </View>
-                    <View className="flex-row items-center gap-3">
-                      <Text className="text-xs text-muted">{pct}%</Text>
-                      <Text className="font-medium text-sm text-ink">{formatRupiah(item.value)}</Text>
-                    </View>
+          <View style={styles.legend}>
+            {chartData.map((item) => {
+              const pct = totalExpense > 0 ? ((item.value / totalExpense) * 100).toFixed(1) : "0";
+              return (
+                <View key={item.label} style={styles.legendRow}>
+                  <View style={styles.legendLeft}>
+                    <View style={[styles.dot, { backgroundColor: item.color }]} />
+                    <Text style={styles.legendLabel}>{item.label}</Text>
                   </View>
-                );
-              })}
-            </View>
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+                  <View style={styles.legendRight}>
+                    <Text style={styles.legendPct}>{pct}%</Text>
+                    <Text style={styles.legendAmount}>{formatRupiah(item.value)}</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </>
+      )}
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  empty: { marginTop: 64, alignItems: 'center', paddingHorizontal: spacing['2xl'] },
+  emptyTitle: { fontSize: 15, fontWeight: '500', color: colors.text.muted },
+  emptySubtitle: { marginTop: 4, fontSize: 13, color: colors.text.muted },
+
+  chartWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.lg },
+  chartCenter: { position: 'absolute', alignItems: 'center' },
+  chartTotal: { fontSize: 22, fontWeight: '700', color: colors.text.primary },
+  chartLabel: { fontSize: 12, color: colors.text.muted, marginTop: 2 },
+
+  legend: { paddingHorizontal: spacing['2xl'], gap: spacing.md, paddingBottom: 32 },
+  legendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  legendLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dot: { width: 10, height: 10, borderRadius: radius.full },
+  legendLabel: { fontSize: 14, color: colors.text.primary },
+  legendRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  legendPct: { fontSize: 12, color: colors.text.muted },
+  legendAmount: { fontSize: 14, fontWeight: '500', color: colors.text.primary },
+});

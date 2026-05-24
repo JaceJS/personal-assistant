@@ -2,16 +2,15 @@ import "../global.css";
 
 import * as Sentry from "@sentry/react-native";
 import {
-  Outfit_400Regular,
-  Outfit_500Medium,
-  Outfit_600SemiBold,
-  Outfit_700Bold,
-  useFonts,
-} from "@expo-google-fonts/outfit";
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from "@expo-google-fonts/plus-jakarta-sans";
+import { useFonts } from "expo-font";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/queryClient";
@@ -28,8 +27,17 @@ Sentry.init({
 
 
 function RootLayoutInner() {
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+  });
+
   useAuth();
   const { initialize } = useOnboardingStore();
+
+  if (!fontsLoaded) return null;
 
   useEffect(() => {
     void initialize();
@@ -44,21 +52,6 @@ function RootLayoutInner() {
 }
 
 function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    Outfit_400Regular,
-    Outfit_500Medium,
-    Outfit_600SemiBold,
-    Outfit_700Bold,
-  });
-
-  if (!fontsLoaded) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator color="#6366f1" />
-      </View>
-    );
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>

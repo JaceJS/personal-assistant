@@ -1,24 +1,25 @@
 import { useCallback, useEffect } from "react";
-import { ScrollView, Text, View, Pressable } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCreateTransaction } from "@/features/finance/hooks/useTransactions";
 import { useToastStore } from "@/stores/toast";
+import { colors, radius, spacing } from "@/theme";
 
 const schema = z.object({
-  account_id: z.string().min(1, "Pilih akun"),
+  account_id: z.string().min(1, "Select an account"),
   amount: z
     .string()
-    .min(1, "Masukkan jumlah")
-    .refine((v) => !isNaN(Number(v)) && Number(v) !== 0, "Jumlah tidak valid"),
+    .min(1, "Enter an amount")
+    .refine((v) => !isNaN(Number(v)) && Number(v) !== 0, "Invalid amount"),
   merchant: z.string().optional(),
   note: z.string().optional(),
 });
@@ -38,12 +39,7 @@ export default function NewTransactionScreen() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      account_id: "",
-      amount: "",
-      merchant: "",
-      note: "",
-    },
+    defaultValues: { account_id: "", amount: "", merchant: "", note: "" },
   });
 
   useEffect(() => {
@@ -61,49 +57,47 @@ export default function NewTransactionScreen() {
           note: values.note || null,
           occurred_at: new Date().toISOString(),
         });
-        showToast("Transaksi tersimpan", "success");
+        showToast("Transaction saved", "success");
         router.back();
       } catch {
-        showToast("Gagal menyimpan transaksi. Coba lagi.", "error");
+        showToast("Failed to save transaction. Try again.", "error");
       }
     },
-    [createTransaction, router, showToast]
+    [createTransaction, router, showToast],
   );
 
   const noAccounts = !accountsLoading && (accountsData?.items.length ?? 0) === 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-row items-center gap-3 px-6 py-4">
-        <Pressable onPress={() => router.back()} className="active:opacity-60">
-          <ArrowLeft size={22} color="#94a3b8" />
+    <Screen>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={({ pressed }) => pressed && { opacity: 0.6 }}>
+          <ArrowLeft size={22} color={colors.text.muted} />
         </Pressable>
-        <Text className="font-bold text-xl text-ink">Transaksi Baru</Text>
+        <Text style={styles.title}>New Transaction</Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {noAccounts ? (
-          <View className="mt-16 items-center gap-3">
-            <Text className="text-center text-sm text-muted">
-              Buat akun terlebih dahulu sebelum menambah transaksi.
-            </Text>
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyText}>Create an account before adding transactions.</Text>
             <Button
-              label="Buat Akun"
+              label="Create Account"
               onPress={() => router.replace("/(app)/accounts/index")}
               variant="secondary"
             />
           </View>
         ) : (
-          <View className="gap-4 pt-2">
+          <View style={styles.form}>
             <Controller
               control={control}
               name="amount"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Jumlah (+ pemasukan, − pengeluaran)"
+                  label="Amount (+ income, − expense)"
                   value={value}
                   onChangeText={onChange}
-                  placeholder="contoh: -50000"
+                  placeholder="e.g. -50000"
                   keyboardType="numeric"
                   error={errors.amount?.message}
                 />
@@ -115,10 +109,10 @@ export default function NewTransactionScreen() {
               name="merchant"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Merchant (opsional)"
+                  label="Merchant (optional)"
                   value={value}
                   onChangeText={onChange}
-                  placeholder="Nama toko / merchant"
+                  placeholder="Store or merchant name"
                 />
               )}
             />
@@ -128,33 +122,49 @@ export default function NewTransactionScreen() {
               name="note"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Catatan (opsional)"
+                  label="Note (optional)"
                   value={value}
                   onChangeText={onChange}
-                  placeholder="Tambah catatan"
+                  placeholder="Add a note"
                   multiline
                 />
               )}
             />
 
             {errors.account_id ? (
-              <Text className="text-xs text-danger">{errors.account_id.message}</Text>
+              <Text style={styles.fieldError}>{errors.account_id.message}</Text>
             ) : null}
 
-            <View className="mt-4">
+            <View style={styles.submitWrap}>
               <Button
-                label="Simpan Transaksi"
+                label="Save Transaction"
                 onPress={handleSubmit(onSubmit)}
                 loading={createTransaction.isPending}
                 disabled={accountsLoading}
                 fullWidth
               />
             </View>
-
-            <View className="h-8" />
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing.lg,
+  },
+  title: { fontSize: 18, fontWeight: '600', color: colors.text.primary },
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32 },
+  emptyWrap: { marginTop: 64, alignItems: 'center', gap: spacing.md },
+  emptyText: { fontSize: 14, color: colors.text.muted, textAlign: 'center' },
+  form: { gap: spacing.lg, paddingTop: spacing.sm },
+  fieldError: { fontSize: 12, color: colors.danger.text },
+  submitWrap: { marginTop: spacing.lg },
+});

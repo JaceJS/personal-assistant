@@ -1,12 +1,13 @@
 import { useCallback, useState } from "react";
-import { FlatList, Modal, Pressable, RefreshControl, Text, View } from "react-native";
+import { FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, Wallet, X } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import { Screen } from "@/components/layout/Screen";
+import { Header } from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
@@ -16,9 +17,10 @@ import { ACCOUNT_TYPES } from "@/features/finance/constants";
 import { useAccounts, useCreateAccount } from "@/features/finance/hooks/useAccounts";
 import { useToastStore } from "@/stores/toast";
 import type { Account } from "@/features/finance/types";
+import { colors, radius, spacing } from "@/theme";
 
 const schema = z.object({
-  name: z.string().min(1, "Nama akun wajib diisi"),
+  name: z.string().min(1, "Account name is required"),
   type: z.enum(["cash", "bank", "ewallet", "credit"]),
 });
 
@@ -54,12 +56,12 @@ export default function AccountsScreen() {
       try {
         await createAccount.mutateAsync(values);
         handleCloseModal();
-        showToast("Akun berhasil dibuat", "success");
+        showToast("Account created", "success");
       } catch {
-        showToast("Gagal membuat akun. Coba lagi.", "error");
+        showToast("Failed to create account. Try again.", "error");
       }
     },
-    [createAccount, handleCloseModal, showToast]
+    [createAccount, handleCloseModal, showToast],
   );
 
   const renderItem = useCallback(
@@ -69,25 +71,26 @@ export default function AccountsScreen() {
         onPress={() => router.push(`/(app)/accounts/${item.id}`)}
       />
     ),
-    [router]
+    [router],
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-6 py-4">
-        <Text className="font-bold text-2xl text-ink">Akun</Text>
-        <Pressable
-          onPress={handleOpenModal}
-          className="flex-row items-center gap-1.5 rounded-xl bg-accent px-3 py-2"
-        >
-          <Plus size={16} color="#fff" />
-          <Text className="font-semibold text-sm text-white">Tambah</Text>
-        </Pressable>
-      </View>
+    <Screen>
+      <Header
+        title="Accounts"
+        right={
+          <Pressable
+            onPress={handleOpenModal}
+            style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.75 }]}
+          >
+            <Plus size={16} color={colors.bg.canvas} />
+            <Text style={styles.addBtnLabel}>Add</Text>
+          </Pressable>
+        }
+      />
 
       {isLoading ? (
-        <View className="px-6">
+        <View style={styles.listPad}>
           <SkeletonList count={3} />
         </View>
       ) : (
@@ -95,62 +98,76 @@ export default function AccountsScreen() {
           data={accounts}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={{ paddingHorizontal: 24, gap: 12, paddingBottom: 24 }}
+          contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#6366f1" />
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={colors.accent.primary}
+            />
           }
           ListEmptyComponent={
             <EmptyState
               icon={Wallet}
-              title="Belum ada akun"
-              subtitle="Tambah akun untuk mulai mencatat pengeluaran"
-              action={{ label: "Tambah Akun", onPress: handleOpenModal }}
+              title="No accounts yet"
+              subtitle="Add an account to start tracking expenses"
+              action={{ label: "Add Account", onPress: handleOpenModal }}
             />
           }
         />
       )}
 
-      {/* Create account modal */}
       <Modal visible={showModal} animationType="slide" transparent>
-        <View className="flex-1 justify-end bg-black/60">
-          <View className="rounded-t-3xl bg-surface p-6">
-            <View className="mb-5 flex-row items-center justify-between">
-              <Text className="font-bold text-lg text-ink">Buat Akun Baru</Text>
-              <Pressable onPress={handleCloseModal} className="active:opacity-60">
-                <X size={22} color="#94a3b8" />
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>New Account</Text>
+              <Pressable
+                onPress={handleCloseModal}
+                style={({ pressed }) => pressed && { opacity: 0.6 }}
+              >
+                <X size={22} color={colors.text.muted} />
               </Pressable>
             </View>
 
-            <View className="gap-4">
+            <View style={styles.modalForm}>
               <Controller
                 control={control}
                 name="name"
                 render={({ field: { onChange, value } }) => (
                   <Input
-                    label="Nama Akun"
+                    label="Account Name"
                     value={value}
                     onChangeText={onChange}
-                    placeholder="contoh: BCA, GoPay, Dompet"
+                    placeholder="e.g. BCA, GoPay, Wallet"
                     error={errors.name?.message}
                   />
                 )}
               />
 
-              <View className="gap-1.5">
-                <Text className="text-sm font-medium text-muted">Tipe Akun</Text>
+              <View style={styles.typeSection}>
+                <Text style={styles.typeLabel}>Account Type</Text>
                 <Controller
                   control={control}
                   name="type"
                   render={({ field: { onChange, value } }) => (
-                    <View className="flex-row flex-wrap gap-2">
+                    <View style={styles.typeRow}>
                       {ACCOUNT_TYPES.map((t) => (
                         <Pressable
                           key={t.value}
                           onPress={() => onChange(t.value)}
-                          className={`rounded-xl px-4 py-2 ${value === t.value ? "bg-accent" : "bg-card border border-border"}`}
+                          style={[
+                            styles.typePill,
+                            value === t.value ? styles.typePillActive : styles.typePillInactive,
+                          ]}
                         >
                           <Text
-                            className={`text-sm font-medium ${value === t.value ? "text-white" : "text-ink"}`}
+                            style={[
+                              styles.typePillLabel,
+                              value === t.value
+                                ? styles.typePillLabelActive
+                                : styles.typePillLabelInactive,
+                            ]}
                           >
                             {t.label}
                           </Text>
@@ -161,18 +178,62 @@ export default function AccountsScreen() {
                 />
               </View>
 
-              <View className="mt-2">
-                <Button
-                  label="Buat Akun"
-                  onPress={handleSubmit(onSubmit)}
-                  loading={createAccount.isPending}
-                  fullWidth
-                />
-              </View>
+              <Button
+                label="Create Account"
+                onPress={handleSubmit(onSubmit)}
+                loading={createAccount.isPending}
+                fullWidth
+              />
             </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.accent.primary,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  addBtnLabel: { fontSize: 13, fontWeight: '600', color: colors.bg.canvas },
+
+  listPad: { paddingHorizontal: spacing['2xl'] },
+  listContent: { paddingHorizontal: spacing['2xl'], gap: 12, paddingBottom: 32 },
+
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+  modalSheet: {
+    backgroundColor: colors.bg.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing['2xl'],
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xl,
+  },
+  modalTitle: { fontSize: 17, fontWeight: '600', color: colors.text.primary },
+  modalForm: { gap: spacing.lg },
+
+  typeSection: { gap: spacing.sm },
+  typeLabel: { fontSize: 13, fontWeight: '500', color: colors.text.muted },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  typePill: { borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  typePillActive: { backgroundColor: colors.accent.primary },
+  typePillInactive: {
+    backgroundColor: colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  typePillLabel: { fontSize: 13, fontWeight: '500' },
+  typePillLabelActive: { color: colors.bg.canvas },
+  typePillLabelInactive: { color: colors.text.primary },
+});

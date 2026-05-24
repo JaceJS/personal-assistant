@@ -1,26 +1,28 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  StyleSheet,
   Text,
-  TextInput,
   View,
-} from "react-native";
-import { Link, useRouter } from "expo-router";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
+} from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
-import { supabase } from "@/lib/supabase";
-import { logger } from "@/lib/logger";
-import { useToastStore } from "@/stores/toast";
+import Input from '@/components/ui/Input';
+import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
+import { useToastStore } from '@/stores/toast';
+import { colors, radius, spacing } from '@/theme';
 
 const schema = z.object({
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
+  email: z.string().email('Enter a valid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -42,85 +44,82 @@ export default function SignupScreen() {
     setLoading(false);
 
     if (error) {
-      logger.error("Signup failed", error, { errorCode: error.status });
-      showToast(error.message, "error");
+      logger.error('Signup failed', error, { errorCode: error.status });
+      showToast(error.message, 'error');
       return;
     }
 
-    // Alert retained for success: needs user tap to trigger navigation
-    Alert.alert("Berhasil", "Cek email kamu untuk konfirmasi akun.", [
-      { text: "OK", onPress: () => router.replace("/(auth)/login") },
+    Alert.alert('Check your email', 'We sent you a confirmation link.', [
+      { text: 'OK', onPress: () => router.replace('/(auth)/login') },
     ]);
   };
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-white"
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View className="flex-1 justify-center px-6">
-        <Text className="mb-8 text-3xl font-bold text-gray-900">Daftar</Text>
+      <View style={styles.inner}>
+        {/* App name */}
+        <View style={styles.logoWrap}>
+          <Text style={styles.appName}>Assistant</Text>
+          <Text style={styles.tagline}>Create your account</Text>
+        </View>
 
-        <View className="mb-4">
-          <Text className="mb-1 text-sm font-medium text-gray-700">Email</Text>
+        {/* Form */}
+        <View style={styles.form}>
           <Controller
             control={control}
             name="email"
             render={({ field: { onChange, value, onBlur } }) => (
-              <TextInput
-                className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900"
-                placeholder="email@contoh.com"
+              <Input
+                label="Email"
+                placeholder="you@example.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 onChangeText={onChange}
                 onBlur={onBlur}
                 value={value}
+                error={errors.email?.message}
               />
             )}
           />
-          {errors.email && (
-            <Text className="mt-1 text-sm text-red-500">{errors.email.message}</Text>
-          )}
-        </View>
 
-        <View className="mb-6">
-          <Text className="mb-1 text-sm font-medium text-gray-700">Password</Text>
           <Controller
             control={control}
             name="password"
             render={({ field: { onChange, value, onBlur } }) => (
-              <TextInput
-                className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900"
+              <Input
+                label="Password"
                 placeholder="••••••••"
                 secureTextEntry
                 onChangeText={onChange}
                 onBlur={onBlur}
                 value={value}
+                error={errors.password?.message}
               />
             )}
           />
-          {errors.password && (
-            <Text className="mt-1 text-sm text-red-500">{errors.password.message}</Text>
-          )}
+
+          <Pressable
+            style={({ pressed }) => [styles.submitBtn, pressed && { opacity: 0.85 }]}
+            onPress={handleSubmit(onSubmit)}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.bg.canvas} />
+            ) : (
+              <Text style={styles.submitLabel}>Create account</Text>
+            )}
+          </Pressable>
         </View>
 
-        <Pressable
-          className="items-center rounded-lg bg-indigo-600 py-3 active:opacity-80"
-          onPress={handleSubmit(onSubmit)}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="font-semibold text-white">Daftar</Text>
-          )}
-        </Pressable>
-
-        <View className="mt-4 flex-row justify-center gap-1">
-          <Text className="text-gray-600">Sudah punya akun?</Text>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Already have an account?</Text>
           <Link href="/(auth)/login" asChild>
             <Pressable>
-              <Text className="font-semibold text-indigo-600">Masuk</Text>
+              <Text style={styles.footerLink}>Sign in</Text>
             </Pressable>
           </Link>
         </View>
@@ -128,3 +127,40 @@ export default function SignupScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg.canvas },
+  inner: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing['2xl'],
+    gap: spacing['3xl'],
+  },
+  logoWrap: { alignItems: 'center', gap: spacing.sm },
+  appName: {
+    fontSize: 32,
+    fontWeight: '600',
+    letterSpacing: -0.5,
+    color: colors.text.primary,
+  },
+  tagline: { fontSize: 14, color: colors.text.muted },
+
+  form: { gap: spacing.lg },
+  submitBtn: {
+    backgroundColor: colors.accent.primary,
+    borderRadius: radius.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+    minHeight: 44,
+    marginTop: 4,
+  },
+  submitLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.bg.canvas,
+  },
+
+  footer: { flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  footerText: { fontSize: 14, color: colors.text.muted },
+  footerLink: { fontSize: 14, fontWeight: '600', color: colors.accent.primary },
+});

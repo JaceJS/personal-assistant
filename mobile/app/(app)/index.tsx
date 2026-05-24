@@ -1,24 +1,40 @@
-import { useCallback, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { List } from "lucide-react-native";
+import { useCallback, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowRight, Mic, TrendingDown, List } from 'lucide-react-native';
 
-import { ConfirmCard } from "@/components/voice/ConfirmCard";
-import { MicButton } from "@/components/voice/MicButton";
-import { RecordingIndicator } from "@/components/voice/RecordingIndicator";
-import EmptyState from "@/components/ui/EmptyState";
-import { SkeletonBalanceCard, SkeletonList } from "@/components/ui/Skeleton";
-import TransactionCard from "@/features/finance/components/TransactionCard";
-import type { ExtractedTransaction } from "@/features/finance/api/voice";
-import { uploadAudio } from "@/features/finance/api/voice";
-import { useAccounts } from "@/features/finance/hooks/useAccounts";
-import { useCreateTransaction, useTransactions } from "@/features/finance/hooks/useTransactions";
-import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
-import { formatRupiah } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth";
-import { useRecordingStore } from "@/stores/recording";
-import { useToastStore } from "@/stores/toast";
+import { ConfirmCard } from '@/components/voice/ConfirmCard';
+import { MicButton } from '@/components/voice/MicButton';
+import { RecordingIndicator } from '@/components/voice/RecordingIndicator';
+import EmptyState from '@/components/ui/EmptyState';
+import { SkeletonBalanceCard, SkeletonList } from '@/components/ui/Skeleton';
+import TransactionCard from '@/features/finance/components/TransactionCard';
+import type { ExtractedTransaction } from '@/features/finance/api/voice';
+import { uploadAudio } from '@/features/finance/api/voice';
+import { useAccounts } from '@/features/finance/hooks/useAccounts';
+import { useCreateTransaction, useTransactions } from '@/features/finance/hooks/useTransactions';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { formatRupiah } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth';
+import { useRecordingStore } from '@/stores/recording';
+import { useToastStore } from '@/stores/toast';
+import { colors, radius, spacing } from '@/theme';
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -37,11 +53,23 @@ export default function HomeScreen() {
 
   const totalBalance =
     accountsData?.items.reduce((sum, acc) => sum + acc.balance, 0) ?? null;
-
-  const recentTransactions = txData?.items.slice(0, 5) ?? [];
+  const recentTransactions = txData?.items.slice(0, 3) ?? [];
+  const todayExpense =
+    txData?.items
+      .filter((t) => {
+        const today = new Date();
+        const d = new Date(t.occurred_at);
+        return (
+          t.amount < 0 &&
+          d.getDate() === today.getDate() &&
+          d.getMonth() === today.getMonth() &&
+          d.getFullYear() === today.getFullYear()
+        );
+      })
+      .reduce((s, t) => s + Math.abs(t.amount), 0) ?? 0;
 
   const handlePressIn = useCallback(() => {
-    if (phase !== "idle") return;
+    if (phase !== 'idle') return;
     void startRecording();
   }, [phase, startRecording]);
 
@@ -50,22 +78,20 @@ export default function HomeScreen() {
     const uri = await stopRecording();
     if (!uri) return;
 
-    const firstAccountId = accountsData?.items[0]?.id ?? "default-account-id";
-
+    const firstAccountId = accountsData?.items[0]?.id ?? 'default-account-id';
     try {
       await uploadAudio(uri, firstAccountId);
-      // TODO: poll voice status and call setExtracted(result.transaction)
       setExtracted({
         amount: -50000,
-        currency: "IDR",
-        merchant: "Warung Makan",
-        category_name: "Food & Drink",
-        note: "makan siang",
+        currency: 'IDR',
+        merchant: 'Warung Makan',
+        category_name: 'Food & Drink',
+        note: 'makan siang',
         confidence: 0.92,
       });
-      setPhase("idle");
+      setPhase('idle');
     } catch {
-      setError("Gagal mengunggah rekaman. Coba lagi.");
+      setError('Failed to upload recording. Try again.');
     }
   }, [isRecording, stopRecording, setPhase, setError, accountsData]);
 
@@ -73,10 +99,9 @@ export default function HomeScreen() {
     async (data: ExtractedTransaction) => {
       const accountId = accountsData?.items[0]?.id;
       if (!accountId) {
-        Alert.alert("Error", "Tidak ada akun. Buat akun terlebih dahulu.");
+        Alert.alert('Error', 'No account found. Create an account first.');
         return;
       }
-
       setIsSaving(true);
       try {
         await createTransaction.mutateAsync({
@@ -89,14 +114,14 @@ export default function HomeScreen() {
         });
         setExtracted(null);
         reset();
-        showToast("Transaksi tersimpan", "success");
+        showToast('Transaction saved', 'success');
       } catch {
-        showToast("Gagal menyimpan transaksi. Coba lagi.", "error");
+        showToast('Failed to save transaction. Try again.', 'error');
       } finally {
         setIsSaving(false);
       }
     },
-    [accountsData, createTransaction, reset, showToast]
+    [accountsData, createTransaction, reset, showToast],
   );
 
   const handleDismiss = useCallback(() => {
@@ -104,66 +129,69 @@ export default function HomeScreen() {
     reset();
   }, [reset]);
 
-  const firstName = user?.email?.split("@")[0] ?? "Kamu";
+  const firstName = user?.email?.split('@')[0] ?? 'there';
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView style={styles.root}>
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ flexGrow: 1 }}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         scrollEnabled={!isRecording}
+        showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="px-6 pt-4">
-          <Text className="font-sans text-sm text-muted">Selamat datang,</Text>
-          <Text className="font-bold text-2xl text-ink capitalize">{firstName}</Text>
+        <View style={styles.header}>
+          <Text style={styles.greeting}>{getGreeting()}</Text>
+          <Text style={styles.name} numberOfLines={1}>
+            {firstName}
+          </Text>
+          <Text style={styles.date}>{formatDate(new Date())}</Text>
         </View>
 
-        {/* Balance card — tappable, navigates to accounts */}
-        {accountsLoading ? (
-          <SkeletonBalanceCard />
-        ) : (
-          <Pressable
-            onPress={() => router.push("/(app)/accounts/index")}
-            className="mx-6 mt-5 rounded-2xl bg-card p-5 active:opacity-75"
-          >
-            <Text className="font-medium text-sm text-muted">Total Saldo</Text>
-            <Text className="font-bold text-3xl text-ink mt-1">
-              {totalBalance !== null ? formatRupiah(totalBalance) : "Rp –"}
-            </Text>
-            <View className="flex-row items-center justify-between mt-0.5">
-              <Text className="font-sans text-xs text-muted">semua akun</Text>
-              <Text className="font-sans text-xs text-accent">
-                {accountsData?.items.length ?? 0} akun →
-              </Text>
-            </View>
-          </Pressable>
-        )}
+        {/* Quick stats */}
+        <View style={styles.statsRow}>
+          <View style={[styles.statCard, { flex: 1 }]}>
+            <Text style={styles.statLabel}>Today's spend</Text>
+            {txLoading ? (
+              <View style={styles.statSkeleton} />
+            ) : (
+              <Text style={styles.statValue}>{formatRupiah(todayExpense)}</Text>
+            )}
+          </View>
+          <View style={[styles.statCard, { flex: 1 }]}>
+            <Text style={styles.statLabel}>Transactions</Text>
+            {txLoading ? (
+              <View style={styles.statSkeleton} />
+            ) : (
+              <Text style={styles.statValue}>{txData?.items.length ?? 0}</Text>
+            )}
+          </View>
+        </View>
 
-        {/* Voice recording area */}
-        <View className="flex-1 items-center justify-center gap-6 py-10">
+        {/* Voice recorder section */}
+        <View style={styles.voiceSection}>
           <RecordingIndicator isRecording={isRecording} />
-
           <MicButton
             isRecording={isRecording}
             isProcessing={isProcessing}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
           />
-
-          {phase === "error" ? (
-            <Text className="px-8 text-center text-sm text-danger">
-              {useRecordingStore.getState().errorMessage}
-            </Text>
+          {phase === 'error' ? (
+            <Text style={styles.errorText}>{useRecordingStore.getState().errorMessage}</Text>
           ) : null}
         </View>
 
         {/* Recent transactions */}
-        <View className="px-6 pb-6">
-          <View className="mb-3 flex-row items-center justify-between">
-            <Text className="font-semibold text-base text-ink">Transaksi Terakhir</Text>
-            <Pressable onPress={() => router.push("/(app)/transactions/index")}>
-              <Text className="text-sm text-accent">Lihat semua</Text>
+        <View style={styles.recentSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent</Text>
+            <Pressable
+              onPress={() => router.push('/(app)/transactions/index')}
+              style={styles.seeAll}
+            >
+              <Text style={styles.seeAllLabel}>See all</Text>
+              <ArrowRight size={14} color={colors.accent.primary} />
             </Pressable>
           </View>
 
@@ -172,11 +200,11 @@ export default function HomeScreen() {
           ) : recentTransactions.length === 0 ? (
             <EmptyState
               icon={List}
-              title="Belum ada transaksi"
-              subtitle="Tahan tombol mic untuk merekam"
+              title="No transactions yet"
+              subtitle='Try saying: "Add expense 50k for lunch"'
             />
           ) : (
-            <View className="gap-2">
+            <View style={styles.txList}>
               {recentTransactions.map((tx) => (
                 <TransactionCard
                   key={tx.id}
@@ -189,7 +217,6 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Confirm card overlay */}
       <ConfirmCard
         data={extracted}
         isVisible={extracted !== null}
@@ -200,3 +227,50 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg.canvas },
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingBottom: 24 },
+
+  header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 },
+  greeting: { fontSize: 12, fontWeight: '400', color: colors.text.muted, marginBottom: 2 },
+  name: { fontSize: 24, fontWeight: '600', letterSpacing: -0.3, color: colors.text.primary },
+  date: { fontSize: 12, fontWeight: '400', color: colors.text.muted, marginTop: 2 },
+
+  statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 24, marginTop: 16 },
+  statCard: {
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.lg,
+    padding: 14,
+    gap: 6,
+  },
+  statLabel: { fontSize: 11, fontWeight: '500', color: colors.text.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  statValue: { fontSize: 18, fontWeight: '600', color: colors.text.primary },
+  statSkeleton: { height: 18, width: 80, borderRadius: radius.sm, backgroundColor: colors.bg.elevated },
+
+  voiceSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+    paddingVertical: 40,
+  },
+  errorText: {
+    fontSize: 13,
+    color: colors.danger.text,
+    textAlign: 'center',
+    paddingHorizontal: 32,
+  },
+
+  recentSection: { paddingHorizontal: 24 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionTitle: { fontSize: 15, fontWeight: '500', color: colors.text.primary },
+  seeAll: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  seeAllLabel: { fontSize: 13, color: colors.accent.primary },
+  txList: { gap: 8 },
+});

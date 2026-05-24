@@ -1,15 +1,15 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft } from "lucide-react-native";
-import { Pressable } from "react-native";
 
+import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useDeleteTransaction, useTransaction, useUpdateTransaction } from "@/features/finance/hooks/useTransactions";
 import { useToastStore } from "@/stores/toast";
 import { formatDate, formatRupiah } from "@/lib/utils";
+import { colors, radius, spacing } from "@/theme";
 
 export default function TransactionDetailScreen() {
   const router = useRouter();
@@ -34,26 +34,25 @@ export default function TransactionDetailScreen() {
     try {
       await updateTransaction.mutateAsync({ merchant: merchant || null, note: note || null });
       setIsEditing(false);
-      showToast("Perubahan tersimpan", "success");
+      showToast("Changes saved", "success");
     } catch {
-      showToast("Gagal menyimpan perubahan.", "error");
+      showToast("Failed to save changes.", "error");
     }
   }, [updateTransaction, merchant, note, showToast]);
 
-  // Keep Alert for destructive delete confirmation — intentional guard
   const handleDelete = useCallback(() => {
-    Alert.alert("Hapus Transaksi", "Yakin ingin menghapus transaksi ini?", [
-      { text: "Batal", style: "cancel" },
+    Alert.alert("Delete Transaction", "Are you sure you want to delete this transaction?", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: "Hapus",
+        text: "Delete",
         style: "destructive",
         onPress: async () => {
           try {
             await deleteTransaction.mutateAsync(id);
-            showToast("Transaksi dihapus", "info");
+            showToast("Transaction deleted", "info");
             router.back();
           } catch {
-            showToast("Gagal menghapus transaksi.", "error");
+            showToast("Failed to delete transaction.", "error");
           }
         },
       },
@@ -62,83 +61,89 @@ export default function TransactionDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator color="#6366f1" />
-      </SafeAreaView>
+      <Screen>
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.accent.primary} />
+        </View>
+      </Screen>
     );
   }
 
   if (!transaction) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text className="text-muted">Transaksi tidak ditemukan</Text>
-      </SafeAreaView>
+      <Screen>
+        <View style={styles.centered}>
+          <Text style={styles.notFound}>Transaction not found</Text>
+        </View>
+      </Screen>
     );
   }
 
   const isExpense = transaction.amount < 0;
-  const amountColor = isExpense ? "text-danger" : "text-success";
+  const amountColor = isExpense ? colors.danger.text : colors.success.text;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      {/* Header */}
-      <View className="flex-row items-center gap-3 px-6 py-4">
-        <Pressable onPress={() => router.back()} className="active:opacity-60">
-          <ArrowLeft size={22} color="#94a3b8" />
+    <Screen>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={({ pressed }) => pressed && { opacity: 0.6 }}>
+          <ArrowLeft size={22} color={colors.text.muted} />
         </Pressable>
-        <Text className="font-bold text-xl text-ink">Detail Transaksi</Text>
+        <Text style={styles.title}>Transaction Detail</Text>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* Amount hero */}
-        <View className="items-center py-8">
-          <Text className={`font-bold text-4xl ${amountColor}`}>
+        <View style={styles.amountHero}>
+          <Text style={[styles.amount, { color: amountColor }]}>
             {isExpense ? "" : "+"}
             {formatRupiah(Math.abs(transaction.amount))}
           </Text>
-          <Text className="mt-2 text-sm text-muted">{formatDate(transaction.occurred_at)}</Text>
+          <Text style={styles.date}>{formatDate(transaction.occurred_at)}</Text>
         </View>
 
-        {/* Details */}
-        <View className="gap-4 rounded-2xl bg-card p-5">
+        {/* Details card */}
+        <View style={styles.card}>
           {isEditing ? (
             <>
               <Input
                 label="Merchant"
                 value={merchant}
                 onChangeText={setMerchant}
-                placeholder="Nama merchant"
+                placeholder="Merchant name"
               />
               <Input
-                label="Catatan"
+                label="Note"
                 value={note}
                 onChangeText={setNote}
-                placeholder="Tambah catatan"
+                placeholder="Add a note"
                 multiline
               />
             </>
           ) : (
             <>
               <DetailRow label="Merchant" value={transaction.merchant ?? "–"} />
-              <DetailRow label="Catatan" value={transaction.note ?? "–"} />
-              <DetailRow label="Status" value={transaction.status === "confirmed" ? "Dikonfirmasi" : "Draft"} />
-              <DetailRow label="Sumber" value={transaction.source} />
+              <DetailRow label="Note" value={transaction.note ?? "–"} />
+              <DetailRow
+                label="Status"
+                value={transaction.status === "confirmed" ? "Confirmed" : "Draft"}
+              />
+              <DetailRow label="Source" value={transaction.source} />
             </>
           )}
         </View>
 
         {/* Actions */}
-        <View className="mt-6 gap-3">
+        <View style={styles.actions}>
           {isEditing ? (
             <>
               <Button
-                label="Simpan"
+                label="Save"
                 onPress={handleSave}
                 loading={updateTransaction.isPending}
                 fullWidth
               />
               <Button
-                label="Batal"
+                label="Cancel"
                 onPress={() => setIsEditing(false)}
                 variant="ghost"
                 fullWidth
@@ -148,7 +153,7 @@ export default function TransactionDetailScreen() {
             <>
               <Button label="Edit" onPress={handleStartEdit} variant="secondary" fullWidth />
               <Button
-                label="Hapus"
+                label="Delete"
                 onPress={handleDelete}
                 variant="danger"
                 loading={deleteTransaction.isPending}
@@ -157,18 +162,50 @@ export default function TransactionDetailScreen() {
             </>
           )}
         </View>
-
-        <View className="h-8" />
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <View className="flex-row items-start justify-between gap-4">
-      <Text className="text-sm text-muted">{label}</Text>
-      <Text className="flex-1 text-right text-sm text-ink">{value}</Text>
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={styles.rowValue}>{value}</Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  notFound: { fontSize: 15, color: colors.text.muted },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing.lg,
+  },
+  title: { fontSize: 18, fontWeight: '600', color: colors.text.primary },
+
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32, gap: spacing.lg },
+
+  amountHero: { alignItems: 'center', paddingVertical: spacing['3xl'] },
+  amount: { fontSize: 36, fontWeight: '700', letterSpacing: -0.5 },
+  date: { marginTop: spacing.sm, fontSize: 13, color: colors.text.muted },
+
+  card: {
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    gap: spacing.lg,
+  },
+
+  row: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.lg },
+  rowLabel: { fontSize: 13, color: colors.text.muted },
+  rowValue: { flex: 1, textAlign: 'right', fontSize: 13, color: colors.text.primary },
+
+  actions: { gap: spacing.md },
+});

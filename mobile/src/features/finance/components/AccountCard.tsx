@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatRupiah } from "@/lib/utils";
 import { ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
 import type { Account } from "@/features/finance/types";
+import { colors, radius, spacing } from "@/theme";
 
 interface AccountCardProps {
   account: Account;
@@ -11,25 +12,45 @@ interface AccountCardProps {
 
 function AccountCard({ account, onPress }: AccountCardProps) {
   const isCredit = account.type === "credit";
-  const balanceColor = isCredit && account.balance < 0 ? "text-danger" : "text-ink";
+  const balanceColor = isCredit && account.balance < 0 ? colors.danger.text : colors.text.primary;
 
   return (
     <Pressable
       onPress={onPress}
-      className="rounded-2xl bg-card p-4 active:opacity-70"
+      style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}
     >
-      <View className="flex-row items-center justify-between">
-        <Text className="font-semibold text-base text-ink">{account.name}</Text>
-        <Text className="rounded-full bg-surface px-2.5 py-0.5 text-xs text-muted">
-          {ACCOUNT_TYPE_LABELS[account.type]}
-        </Text>
+      <View style={styles.row}>
+        <Text style={styles.name}>{account.name}</Text>
+        <Text style={styles.typeBadge}>{ACCOUNT_TYPE_LABELS[account.type]}</Text>
       </View>
-      <Text className={`font-bold text-2xl mt-2 ${balanceColor}`}>
+      <Text style={[styles.balance, { color: balanceColor }]}>
         {formatRupiah(account.balance)}
       </Text>
-      <Text className="text-xs text-muted mt-1">{account.currency}</Text>
+      <Text style={styles.currency}>{account.currency}</Text>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.bg.elevated,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+  },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  name: { fontSize: 15, fontWeight: '600', color: colors.text.primary },
+  typeBadge: {
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    fontSize: 12,
+    color: colors.text.muted,
+  },
+  balance: { fontSize: 24, fontWeight: '700', marginTop: 8 },
+  currency: { fontSize: 12, color: colors.text.muted, marginTop: 2 },
+});
 
 export default React.memo(AccountCard);

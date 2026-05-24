@@ -1,13 +1,46 @@
 import { useEffect } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { Tabs, useRouter } from "expo-router";
-import { BarChart2, Home, List, Settings } from "lucide-react-native";
-
+import { BookOpen, Home, Settings, Wallet } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/auth";
+import { colors } from "@/theme";
+
+function TabIcon({
+  icon: Icon,
+  label,
+  focused,
+}: {
+  icon: typeof Home;
+  label: string;
+  focused: boolean;
+}) {
+  return (
+    <View style={tabStyles.iconWrap}>
+      <Icon
+        size={22}
+        color={focused ? colors.accent.primary : colors.text.muted}
+        strokeWidth={focused ? 2 : 1.5}
+      />
+      {focused && <Text style={tabStyles.label}>{label}</Text>}
+    </View>
+  );
+}
+
+const tabStyles = StyleSheet.create({
+  iconWrap: { alignItems: "center", justifyContent: "center", gap: 3, minWidth: 44 },
+  label: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: colors.accent.primary,
+  },
+});
 
 export default function AppLayout() {
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
   const initialized = useAuthStore((s) => s.initialized);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (initialized && !session) {
@@ -19,51 +52,54 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: "#111827",
-          borderTopColor: "#334155",
+          backgroundColor: colors.bg.elevated,
+          borderTopColor: colors.border.subtle,
           borderTopWidth: 1,
+          height: 80 + insets.bottom / 2,
+          paddingTop: 10,
+          paddingBottom: insets.bottom / 2,
         },
-        tabBarActiveTintColor: "#6366f1",
-        tabBarInactiveTintColor: "#94a3b8",
-        tabBarLabelStyle: { fontSize: 11, fontFamily: "Outfit_500Medium" },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Beranda",
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon={Home} label="Home" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="transactions/index"
         options={{
-          title: "Transaksi",
-          tabBarIcon: ({ color, size }) => <List size={size} color={color} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon={Wallet} label="Finance" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="insights/index"
+        name="journal/index"
         options={{
-          title: "Insights",
-          tabBarIcon: ({ color, size }) => <BarChart2 size={size} color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon={BookOpen} label="Journal" focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings/index"
         options={{
-          title: "Pengaturan",
-          tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon={Settings} label="Settings" focused={focused} />
+          ),
         }}
       />
-      {/* Detail screens — hidden from tab bar */}
+
+      {/* Hidden from tab bar */}
       <Tabs.Screen name="transactions/[id]" options={{ href: null }} />
       <Tabs.Screen name="transactions/new" options={{ href: null }} />
       <Tabs.Screen name="accounts/index" options={{ href: null }} />
       <Tabs.Screen name="accounts/[id]" options={{ href: null }} />
       <Tabs.Screen name="categories/index" options={{ href: null }} />
       <Tabs.Screen name="settings/profile" options={{ href: null }} />
+      <Tabs.Screen name="insights/index" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -1,11 +1,12 @@
-import React, { useEffect } from "react";
-import { View } from "react-native";
+import React, { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
-} from "react-native-reanimated";
+} from 'react-native-reanimated';
+import { colors, radius } from '@/theme';
 
 interface SkeletonCardProps {
   height?: number;
@@ -17,10 +18,10 @@ interface SkeletonTextProps {
 }
 
 function usePulse() {
-  const opacity = useSharedValue(0.3);
+  const opacity = useSharedValue(0.4);
 
   useEffect(() => {
-    opacity.value = withRepeat(withTiming(0.8, { duration: 600 }), -1, true);
+    opacity.value = withRepeat(withTiming(0.9, { duration: 600 }), -1, true);
   }, [opacity]);
 
   return useAnimatedStyle(() => ({ opacity: opacity.value }));
@@ -30,18 +31,19 @@ export function SkeletonCard({ height = 64 }: SkeletonCardProps) {
   const animStyle = usePulse();
   return (
     <Animated.View
-      style={[{ height, borderRadius: 12 }, animStyle]}
-      className="w-full bg-card"
+      style={[{ height, borderRadius: radius.lg, backgroundColor: colors.bg.elevated }, animStyle]}
     />
   );
 }
 
-export function SkeletonText({ width = "60%", height = 14 }: SkeletonTextProps) {
+export function SkeletonText({ width = '60%', height = 14 }: SkeletonTextProps) {
   const animStyle = usePulse();
   return (
     <Animated.View
-      style={[{ width, height, borderRadius: 6 }, animStyle]}
-      className="bg-card"
+      style={[
+        { width, height, borderRadius: radius.sm, backgroundColor: colors.bg.elevated },
+        animStyle,
+      ]}
     />
   );
 }
@@ -49,16 +51,28 @@ export function SkeletonText({ width = "60%", height = 14 }: SkeletonTextProps) 
 export function SkeletonBalanceCard() {
   const animStyle = usePulse();
   return (
-    <Animated.View style={[{ borderRadius: 16 }, animStyle]} className="mx-6 mt-5 h-24 bg-card" />
+    <Animated.View
+      style={[styles.balanceCard, { backgroundColor: colors.bg.elevated }, animStyle]}
+    />
   );
 }
 
 export function SkeletonList({ count = 5 }: { count?: number }) {
   return (
-    <View className="gap-2">
+    <View style={styles.list}>
       {Array.from({ length: count }).map((_, i) => (
         <SkeletonCard key={i} height={60} />
       ))}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  balanceCard: {
+    marginHorizontal: 24,
+    marginTop: 20,
+    height: 96,
+    borderRadius: radius.lg,
+  },
+  list: { gap: 8 },
+});

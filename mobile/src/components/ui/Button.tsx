@@ -1,7 +1,8 @@
-import React from "react";
-import { ActivityIndicator, Pressable, Text } from "react-native";
+import React from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { colors, radius } from '@/theme';
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 interface ButtonProps {
   label: string;
@@ -12,37 +13,72 @@ interface ButtonProps {
   fullWidth?: boolean;
 }
 
-const variantStyles: Record<Variant, { container: string; text: string }> = {
-  primary: { container: "bg-accent", text: "text-white font-semibold" },
-  secondary: { container: "bg-card border border-border", text: "text-ink font-medium" },
-  ghost: { container: "bg-transparent", text: "text-accent font-medium" },
-  danger: { container: "bg-danger", text: "text-white font-semibold" },
-};
-
 function Button({
   label,
   onPress,
-  variant = "primary",
+  variant = 'primary',
   loading = false,
   disabled = false,
   fullWidth = false,
 }: ButtonProps) {
-  const styles = variantStyles[variant];
   const isDisabled = disabled || loading;
 
   return (
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      className={`flex-row items-center justify-center rounded-xl px-5 py-3.5 ${styles.container} ${fullWidth ? "w-full" : ""} ${isDisabled ? "opacity-50" : ""}`}
+      style={({ pressed }) => [
+        styles.base,
+        styles[variant],
+        fullWidth && styles.fullWidth,
+        isDisabled && styles.disabled,
+        pressed && !isDisabled && styles.pressed,
+      ]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === "ghost" ? "#6366f1" : "#fff"} />
+        <ActivityIndicator
+          size="small"
+          color={variant === 'primary' ? colors.bg.canvas : colors.accent.primary}
+        />
       ) : (
-        <Text className={`text-base ${styles.text}`}>{label}</Text>
+        <Text style={[styles.label, styles[`${variant}Label`]]}>{label}</Text>
       )}
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  base: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    minHeight: 44,
+  },
+  fullWidth: { width: '100%' },
+  disabled: { opacity: 0.4 },
+  pressed: { opacity: 0.8 },
+
+  primary: { backgroundColor: colors.accent.primary },
+  secondary: {
+    backgroundColor: colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  ghost: { backgroundColor: 'transparent' },
+  danger: {
+    backgroundColor: colors.danger.bg,
+    borderWidth: 1,
+    borderColor: `${colors.danger.text}4D`,
+  },
+
+  label: { fontSize: 15, fontWeight: '500' },
+  primaryLabel: { color: colors.bg.canvas, fontWeight: '600' },
+  secondaryLabel: { color: colors.text.primary },
+  ghostLabel: { color: colors.accent.primary },
+  dangerLabel: { color: colors.danger.text },
+});
 
 export default React.memo(Button);

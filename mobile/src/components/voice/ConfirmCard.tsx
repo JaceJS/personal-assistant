@@ -1,20 +1,17 @@
-import React, { useEffect } from "react";
+import React from 'react';
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View,
-} from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
-
-import type { ExtractedTransaction } from "@/features/finance/api/voice";
-import { formatRupiah } from "@/lib/utils";
+} from 'react-native';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import type { ExtractedTransaction } from '@/features/finance/api/voice';
+import { formatRupiah } from '@/lib/utils';
+import { colors, radius, spacing } from '@/theme';
 
 interface Props {
   data: ExtractedTransaction | null;
@@ -31,99 +28,154 @@ export const ConfirmCard = React.memo(function ConfirmCard({
   onSave,
   onDismiss,
 }: Props) {
-  const translateY = useSharedValue(400);
-
-  const containerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  useEffect(() => {
-    translateY.value = withSpring(isVisible ? 0 : 400, {
-      damping: 20,
-      stiffness: 200,
-    });
-  }, [isVisible, translateY]);
-
   if (!data) return null;
 
   const isExpense = data.amount < 0;
+  const confidenceHigh = data.confidence >= 0.8;
 
   return (
-    <Animated.View
-      style={containerStyle}
-      className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-card pb-8"
-    >
-      <View className="mx-auto mb-4 mt-3 h-1 w-10 rounded-full bg-border" />
-
-      <ScrollView className="px-6" keyboardShouldPersistTaps="handled">
-        <Text className="mb-1 font-medium text-sm text-muted">Jumlah</Text>
-        <Text
-          className={[
-            "mb-6 font-bold text-4xl",
-            isExpense ? "text-danger" : "text-success",
-          ].join(" ")}
-        >
-          {formatRupiah(Math.abs(data.amount))}
+    <BottomSheet isVisible={isVisible} onDismiss={onDismiss}>
+      <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
+        <Text style={styles.sectionLabel}>Amount</Text>
+        <Text style={[styles.amount, isExpense ? styles.amountExpense : styles.amountIncome]}>
+          {isExpense ? '−' : '+'} {formatRupiah(Math.abs(data.amount))}
         </Text>
 
         {data.merchant !== null && (
-          <View className="mb-4">
-            <Text className="mb-1 font-medium text-sm text-muted">Merchant</Text>
-            <Text className="font-medium text-base text-ink">{data.merchant}</Text>
+          <View style={styles.field}>
+            <Text style={styles.sectionLabel}>Merchant</Text>
+            <Text style={styles.fieldValue}>{data.merchant}</Text>
           </View>
         )}
 
         {data.category_name !== null && (
-          <View className="mb-4">
-            <Text className="mb-1 font-medium text-sm text-muted">Kategori</Text>
-            <Text className="font-medium text-base text-ink">{data.category_name}</Text>
+          <View style={styles.field}>
+            <Text style={styles.sectionLabel}>Category</Text>
+            <Text style={styles.fieldValue}>{data.category_name}</Text>
           </View>
         )}
 
         {data.note !== null && (
-          <View className="mb-4">
-            <Text className="mb-1 font-medium text-sm text-muted">Catatan</Text>
+          <View style={styles.field}>
+            <Text style={styles.sectionLabel}>Note</Text>
             <TextInput
-              className="rounded-lg border border-border bg-surface px-4 py-3 font-sans text-ink"
+              style={styles.noteInput}
               defaultValue={data.note}
               multiline
+              placeholderTextColor={colors.text.muted}
             />
           </View>
         )}
 
-        <View className="mb-2 flex-row items-center gap-1">
+        <View style={styles.confidenceRow}>
           <View
-            className={[
-              "h-2 w-2 rounded-full",
-              data.confidence >= 0.8 ? "bg-success" : "bg-warning",
-            ].join(" ")}
+            style={[
+              styles.confidenceDot,
+              { backgroundColor: confidenceHigh ? colors.success.text : colors.warning.text },
+            ]}
           />
-          <Text className="text-xs text-muted">
-            Keyakinan AI: {Math.round(data.confidence * 100)}%
+          <Text style={styles.confidenceLabel}>
+            AI confidence: {Math.round(data.confidence * 100)}%
           </Text>
         </View>
 
-        <View className="mt-4 gap-3 pb-4">
+        <View style={styles.actions}>
           <Pressable
             onPress={() => onSave(data)}
             disabled={isSaving}
-            className="items-center rounded-2xl bg-accent py-4 active:opacity-80"
+            style={({ pressed }) => [styles.btnSave, pressed && { opacity: 0.8 }]}
           >
             {isSaving ? (
-              <ActivityIndicator color="white" />
+              <ActivityIndicator color={colors.bg.canvas} />
             ) : (
-              <Text className="font-semibold text-base text-white">Simpan Transaksi</Text>
+              <Text style={styles.btnSaveLabel}>Save Transaction</Text>
             )}
           </Pressable>
 
           <Pressable
             onPress={onDismiss}
-            className="items-center rounded-2xl border border-border py-4 active:opacity-60"
+            style={({ pressed }) => [styles.btnCancel, pressed && { opacity: 0.6 }]}
           >
-            <Text className="font-medium text-base text-muted">Batal</Text>
+            <Text style={styles.btnCancelLabel}>Cancel</Text>
           </Pressable>
         </View>
       </ScrollView>
-    </Animated.View>
+    </BottomSheet>
   );
+});
+
+const styles = StyleSheet.create({
+  scroll: { paddingHorizontal: spacing['2xl'] },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: colors.text.muted,
+    marginBottom: 4,
+  },
+  amount: {
+    fontSize: 32,
+    fontWeight: '600',
+    letterSpacing: -0.5,
+    marginBottom: spacing['2xl'],
+  },
+  amountExpense: { color: colors.danger.text },
+  amountIncome: { color: colors.success.text },
+  field: { marginBottom: spacing.lg },
+  fieldValue: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.text.primary,
+  },
+  noteInput: {
+    backgroundColor: colors.bg.surface,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: radius.md,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: colors.text.primary,
+    minHeight: 44,
+  },
+  confidenceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: spacing.lg,
+  },
+  confidenceDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+  },
+  confidenceLabel: {
+    fontSize: 12,
+    color: colors.text.muted,
+  },
+  actions: { gap: 10, paddingBottom: spacing.lg },
+  btnSave: {
+    backgroundColor: colors.accent.primary,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    paddingVertical: 14,
+    minHeight: 44,
+  },
+  btnSaveLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.bg.canvas,
+  },
+  btnCancel: {
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    paddingVertical: 14,
+    minHeight: 44,
+  },
+  btnCancelLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.text.muted,
+  },
 });

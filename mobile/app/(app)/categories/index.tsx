@@ -1,49 +1,43 @@
 import { useCallback, useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  RefreshControl,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Plus, Tag, X } from "lucide-react-native";
+import { Plus, Tag, X } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import { Screen } from "@/components/layout/Screen";
+import { Header } from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
-import { THEME } from "@/constants/theme";
 import { useCategories, useCreateCategory } from "@/features/finance/hooks/useCategories";
 import { useToastStore } from "@/stores/toast";
 import type { Category, CategoryType } from "@/features/finance/types";
+import { colors, radius, spacing } from "@/theme";
 
 const CATEGORY_TYPES: { value: CategoryType; label: string; emoji: string }[] = [
-  { value: "expense", label: "Pengeluaran", emoji: "📤" },
-  { value: "income", label: "Pemasukan", emoji: "📥" },
+  { value: "expense", label: "Expense", emoji: "📤" },
+  { value: "income", label: "Income", emoji: "📥" },
   { value: "transfer", label: "Transfer", emoji: "🔄" },
 ];
 
 const PRESET_COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e",
-  "#f97316", "#eab308", "#10b981", "#06b6d4",
+  "#D4A853", "#7DB87A", "#C97060", "#7A9EC4",
+  "#B87AB8", "#A87060", "#60A8A8", "#A8A060",
 ];
 
 const PRESET_ICONS = ["🍔", "🚗", "🏠", "👗", "💊", "📚", "🎮", "✈️", "💼", "🎁", "⚡", "💰"];
 
 const TYPE_FILTER_OPTIONS: { value: CategoryType | "all"; label: string }[] = [
-  { value: "all", label: "Semua" },
-  { value: "expense", label: "Keluar" },
-  { value: "income", label: "Masuk" },
+  { value: "all", label: "All" },
+  { value: "expense", label: "Expense" },
+  { value: "income", label: "Income" },
   { value: "transfer", label: "Transfer" },
 ];
 
 const schema = z.object({
-  name: z.string().min(1, "Nama kategori wajib diisi"),
+  name: z.string().min(1, "Category name is required"),
   type: z.enum(["expense", "income", "transfer"]),
   icon: z.string().nullable(),
   color: z.string().nullable(),
@@ -90,105 +84,45 @@ export default function CategoriesScreen() {
       try {
         await createCategory.mutateAsync(values);
         handleCloseModal();
-        showToast("Kategori berhasil dibuat", "success");
+        showToast("Category created", "success");
       } catch {
-        showToast("Gagal membuat kategori. Coba lagi.", "error");
+        showToast("Failed to create category. Try again.", "error");
       }
     },
-    [createCategory, handleCloseModal, showToast]
+    [createCategory, handleCloseModal, showToast],
   );
 
   const renderItem = useCallback(
     ({ item }: { item: Category }) => <CategoryRow category={item} />,
-    []
+    [],
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: THEME.colors.background }}>
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: THEME.spacing.lg,
-          paddingVertical: 16,
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Pressable onPress={() => router.back()} style={{ opacity: 1 }}>
-            {({ pressed }) => (
-              <ArrowLeft size={22} color={THEME.colors.muted} style={{ opacity: pressed ? 0.5 : 1 }} />
-            )}
+    <Screen>
+      <Header
+        title="Categories"
+        right={
+          <Pressable
+            onPress={handleOpenModal}
+            style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.75 }]}
+          >
+            <Plus size={16} color={colors.bg.canvas} />
+            <Text style={styles.addBtnLabel}>Add</Text>
           </Pressable>
-          <Text
-            style={{
-              fontFamily: THEME.fontFamily.bold,
-              fontSize: THEME.fontSize.xl,
-              color: THEME.colors.ink,
-            }}
-          >
-            Kategori
-          </Text>
-        </View>
-        <Pressable
-          onPress={handleOpenModal}
-          style={({ pressed }) => ({
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 6,
-            backgroundColor: THEME.colors.accent,
-            borderRadius: THEME.radius.md,
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-            opacity: pressed ? 0.8 : 1,
-          })}
-        >
-          <Plus size={16} color="#fff" />
-          <Text
-            style={{
-              fontFamily: THEME.fontFamily.semibold,
-              fontSize: THEME.fontSize.sm,
-              color: "#fff",
-            }}
-          >
-            Tambah
-          </Text>
-        </Pressable>
-      </View>
+        }
+      />
 
       {/* Filter tabs */}
-      <View
-        style={{
-          flexDirection: "row",
-          paddingHorizontal: THEME.spacing.lg,
-          gap: 8,
-          marginBottom: 12,
-        }}
-      >
+      <View style={styles.filters}>
         {TYPE_FILTER_OPTIONS.map((opt) => {
           const isActive = activeFilter === opt.value;
           return (
             <Pressable
               key={opt.value}
               onPress={() => setActiveFilter(opt.value)}
-              style={({ pressed }) => ({
-                paddingHorizontal: 14,
-                paddingVertical: 7,
-                borderRadius: THEME.radius.full,
-                backgroundColor: isActive ? THEME.colors.accent : THEME.colors.card,
-                borderWidth: 1,
-                borderColor: isActive ? THEME.colors.accent : THEME.colors.border,
-                opacity: pressed ? 0.8 : 1,
-              })}
+              style={[styles.pill, isActive && styles.pillActive]}
             >
-              <Text
-                style={{
-                  fontFamily: THEME.fontFamily.medium,
-                  fontSize: THEME.fontSize.sm,
-                  color: isActive ? "#fff" : THEME.colors.muted,
-                }}
-              >
+              <Text style={[styles.pillLabel, isActive && styles.pillLabelActive]}>
                 {opt.label}
               </Text>
             </Pressable>
@@ -196,19 +130,10 @@ export default function CategoriesScreen() {
         })}
       </View>
 
-      {/* List */}
       {isLoading ? (
-        <View style={{ paddingHorizontal: THEME.spacing.lg, gap: 10 }}>
+        <View style={styles.listPad}>
           {[1, 2, 3, 4, 5].map((i) => (
-            <View
-              key={i}
-              style={{
-                height: 60,
-                borderRadius: THEME.radius.lg,
-                backgroundColor: THEME.colors.card,
-                opacity: 0.5,
-              }}
-            />
+            <View key={i} style={styles.skeleton} />
           ))}
         </View>
       ) : (
@@ -216,131 +141,75 @@ export default function CategoriesScreen() {
           data={filtered}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={{
-            paddingHorizontal: THEME.spacing.lg,
-            gap: 8,
-            paddingBottom: 24,
-          }}
+          contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              tintColor={THEME.colors.accent}
+              tintColor={colors.accent.primary}
             />
           }
           ListEmptyComponent={
             <EmptyState
               icon={Tag}
-              title="Belum ada kategori"
-              subtitle="Tambah kategori untuk mengorganisir transaksimu"
-              action={{ label: "Tambah Kategori", onPress: handleOpenModal }}
+              title="No categories yet"
+              subtitle="Add categories to organize your transactions"
+              action={{ label: "Add Category", onPress: handleOpenModal }}
             />
           }
         />
       )}
 
-      {/* Create category modal */}
       <Modal visible={showModal} animationType="slide" transparent statusBarTranslucent>
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            backgroundColor: THEME.colors.overlay,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: THEME.colors.surface,
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              padding: THEME.spacing.lg,
-              paddingBottom: 40,
-            }}
-          >
-            {/* Modal header */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 24,
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: THEME.fontFamily.bold,
-                  fontSize: THEME.fontSize.lg,
-                  color: THEME.colors.ink,
-                }}
-              >
-                Kategori Baru
-              </Text>
-              <Pressable onPress={handleCloseModal}>
-                <X size={22} color={THEME.colors.muted} />
+        <View style={styles.overlay}>
+          <View style={styles.sheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>New Category</Text>
+              <Pressable onPress={handleCloseModal} style={({ pressed }) => pressed && { opacity: 0.6 }}>
+                <X size={22} color={colors.text.muted} />
               </Pressable>
             </View>
 
-            <View style={{ gap: 20 }}>
-              {/* Name */}
+            <View style={styles.modalForm}>
               <Controller
                 control={control}
                 name="name"
                 render={({ field: { onChange, value } }) => (
                   <Input
-                    label="Nama Kategori"
+                    label="Category Name"
                     value={value}
                     onChangeText={onChange}
-                    placeholder="contoh: Makan, Transport, Gaji"
+                    placeholder="e.g. Food, Transport, Salary"
                     error={errors.name?.message}
                     autoFocus
                   />
                 )}
               />
 
-              {/* Type */}
-              <View style={{ gap: 8 }}>
-                <Text
-                  style={{
-                    fontFamily: THEME.fontFamily.medium,
-                    fontSize: THEME.fontSize.sm,
-                    color: THEME.colors.muted,
-                  }}
-                >
-                  Tipe
-                </Text>
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Type</Text>
                 <Controller
                   control={control}
                   name="type"
                   render={({ field: { onChange, value } }) => (
-                    <View style={{ flexDirection: "row", gap: 8 }}>
+                    <View style={styles.typeRow}>
                       {CATEGORY_TYPES.map((t) => {
                         const isSelected = value === t.value;
                         return (
                           <Pressable
                             key={t.value}
                             onPress={() => onChange(t.value)}
-                            style={({ pressed }) => ({
-                              flex: 1,
-                              alignItems: "center",
-                              paddingVertical: 10,
-                              borderRadius: THEME.radius.md,
-                              backgroundColor: isSelected
-                                ? THEME.colors.accent
-                                : THEME.colors.card,
-                              borderWidth: 1,
-                              borderColor: isSelected
-                                ? THEME.colors.accent
-                                : THEME.colors.border,
-                              opacity: pressed ? 0.8 : 1,
-                            })}
+                            style={[
+                              styles.typeBtn,
+                              isSelected ? styles.typeBtnActive : styles.typeBtnInactive,
+                            ]}
                           >
-                            <Text style={{ fontSize: 16, marginBottom: 2 }}>{t.emoji}</Text>
+                            <Text style={styles.typeEmoji}>{t.emoji}</Text>
                             <Text
-                              style={{
-                                fontFamily: THEME.fontFamily.medium,
-                                fontSize: THEME.fontSize.xs,
-                                color: isSelected ? "#fff" : THEME.colors.muted,
-                              }}
+                              style={[
+                                styles.typeBtnLabel,
+                                isSelected ? styles.typeBtnLabelActive : styles.typeBtnLabelInactive,
+                              ]}
                             >
                               {t.label}
                             </Text>
@@ -352,88 +221,51 @@ export default function CategoriesScreen() {
                 />
               </View>
 
-              {/* Icon picker */}
-              <View style={{ gap: 8 }}>
-                <Text
-                  style={{
-                    fontFamily: THEME.fontFamily.medium,
-                    fontSize: THEME.fontSize.sm,
-                    color: THEME.colors.muted,
-                  }}
-                >
-                  Ikon
-                </Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Icon</Text>
+                <View style={styles.iconGrid}>
                   {PRESET_ICONS.map((icon) => {
                     const isSelected = selectedIcon === icon;
                     return (
                       <Pressable
                         key={icon}
                         onPress={() => setValue("icon", icon)}
-                        style={({ pressed }) => ({
-                          width: 44,
-                          height: 44,
-                          borderRadius: THEME.radius.md,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor: isSelected
-                            ? `${selectedColor ?? THEME.colors.accent}33`
-                            : THEME.colors.card,
-                          borderWidth: 1,
-                          borderColor: isSelected
-                            ? (selectedColor ?? THEME.colors.accent)
-                            : THEME.colors.border,
-                          opacity: pressed ? 0.7 : 1,
-                        })}
+                        style={[
+                          styles.iconCell,
+                          isSelected
+                            ? { backgroundColor: `${selectedColor ?? colors.accent.primary}33`, borderColor: selectedColor ?? colors.accent.primary }
+                            : styles.iconCellInactive,
+                        ]}
                       >
-                        <Text style={{ fontSize: 20 }}>{icon}</Text>
+                        <Text style={styles.iconEmoji}>{icon}</Text>
                       </Pressable>
                     );
                   })}
                 </View>
               </View>
 
-              {/* Color picker */}
-              <View style={{ gap: 8 }}>
-                <Text
-                  style={{
-                    fontFamily: THEME.fontFamily.medium,
-                    fontSize: THEME.fontSize.sm,
-                    color: THEME.colors.muted,
-                  }}
-                >
-                  Warna
-                </Text>
-                <View style={{ flexDirection: "row", gap: 10 }}>
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Color</Text>
+                <View style={styles.colorRow}>
                   {PRESET_COLORS.map((color) => {
                     const isSelected = selectedColor === color;
                     return (
                       <Pressable
                         key={color}
                         onPress={() => setValue("color", color)}
-                        style={({ pressed }) => ({
-                          width: 32,
-                          height: 32,
-                          borderRadius: 16,
-                          backgroundColor: color,
-                          borderWidth: isSelected ? 3 : 0,
-                          borderColor: "#fff",
-                          opacity: pressed ? 0.7 : 1,
-                          shadowColor: isSelected ? color : "transparent",
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.6,
-                          shadowRadius: 4,
-                          elevation: isSelected ? 4 : 0,
-                        })}
+                        style={[
+                          styles.colorDot,
+                          { backgroundColor: color },
+                          isSelected && styles.colorDotSelected,
+                        ]}
                       />
                     );
                   })}
                 </View>
               </View>
 
-              {/* Submit */}
               <Button
-                label="Buat Kategori"
+                label="Create Category"
                 onPress={handleSubmit(onSubmit)}
                 loading={createCategory.isPending}
                 fullWidth
@@ -442,103 +274,156 @@ export default function CategoriesScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 function CategoryRow({ category }: { category: Category }) {
   const typeLabel: Record<string, string> = {
-    expense: "Pengeluaran",
-    income: "Pemasukan",
+    expense: "Expense",
+    income: "Income",
     transfer: "Transfer",
   };
 
   const isSystemCategory = category.user_id === null;
 
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 14,
-        backgroundColor: THEME.colors.card,
-        borderRadius: THEME.radius.lg,
-        padding: 14,
-        borderWidth: 1,
-        borderColor: THEME.colors.border,
-      }}
-    >
-      {/* Icon circle */}
+    <View style={styles.categoryRow}>
       <View
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 22,
-          backgroundColor: category.color ? `${category.color}22` : `${THEME.colors.accent}22`,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+        style={[
+          styles.categoryIcon,
+          { backgroundColor: category.color ? `${category.color}22` : `${colors.accent.primary}22` },
+        ]}
       >
-        <Text style={{ fontSize: category.icon ? 20 : 16 }}>
-          {category.icon ?? "🏷️"}
-        </Text>
+        <Text style={styles.categoryEmoji}>{category.icon ?? "🏷️"}</Text>
       </View>
 
-      <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Text
-            style={{
-              fontFamily: THEME.fontFamily.semibold,
-              fontSize: THEME.fontSize.base,
-              color: THEME.colors.ink,
-            }}
-          >
-            {category.name}
-          </Text>
+      <View style={styles.categoryInfo}>
+        <View style={styles.categoryNameRow}>
+          <Text style={styles.categoryName}>{category.name}</Text>
           {isSystemCategory && (
-            <View
-              style={{
-                backgroundColor: `${THEME.colors.muted}22`,
-                borderRadius: THEME.radius.full,
-                paddingHorizontal: 6,
-                paddingVertical: 2,
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: THEME.fontFamily.medium,
-                  fontSize: 10,
-                  color: THEME.colors.muted,
-                }}
-              >
-                sistem
-              </Text>
+            <View style={styles.systemBadge}>
+              <Text style={styles.systemBadgeLabel}>system</Text>
             </View>
           )}
         </View>
-        <Text
-          style={{
-            fontFamily: THEME.fontFamily.regular,
-            fontSize: THEME.fontSize.sm,
-            color: THEME.colors.muted,
-            marginTop: 2,
-          }}
-        >
-          {typeLabel[category.type] ?? category.type}
-        </Text>
+        <Text style={styles.categoryType}>{typeLabel[category.type] ?? category.type}</Text>
       </View>
 
-      {/* Color dot */}
       {category.color && (
-        <View
-          style={{
-            width: 10,
-            height: 10,
-            borderRadius: 5,
-            backgroundColor: category.color,
-          }}
-        />
+        <View style={[styles.colorIndicator, { backgroundColor: category.color }]} />
       )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.accent.primary,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  addBtnLabel: { fontSize: 13, fontWeight: '600', color: colors.bg.canvas },
+
+  filters: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing['2xl'],
+    gap: 8,
+    marginBottom: spacing.md,
+  },
+  pill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: radius.full,
+    backgroundColor: colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  pillActive: { backgroundColor: colors.accent.primary, borderColor: colors.accent.primary },
+  pillLabel: { fontSize: 13, fontWeight: '500', color: colors.text.muted },
+  pillLabelActive: { color: colors.bg.canvas, fontWeight: '600' },
+
+  listPad: { paddingHorizontal: spacing['2xl'], gap: 10 },
+  skeleton: {
+    height: 60,
+    borderRadius: radius.lg,
+    backgroundColor: colors.bg.elevated,
+    opacity: 0.5,
+    marginBottom: 10,
+  },
+  listContent: { paddingHorizontal: spacing['2xl'], gap: 8, paddingBottom: 32 },
+
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+  sheet: {
+    backgroundColor: colors.bg.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing['2xl'],
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing['2xl'],
+  },
+  modalTitle: { fontSize: 17, fontWeight: '600', color: colors.text.primary },
+  modalForm: { gap: spacing.xl },
+
+  section: { gap: spacing.sm },
+  sectionLabel: { fontSize: 13, fontWeight: '500', color: colors.text.muted },
+
+  typeRow: { flexDirection: 'row', gap: spacing.sm },
+  typeBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: radius.md, borderWidth: 1 },
+  typeBtnActive: { backgroundColor: colors.accent.primary, borderColor: colors.accent.primary },
+  typeBtnInactive: { backgroundColor: colors.bg.elevated, borderColor: colors.border.default },
+  typeEmoji: { fontSize: 16, marginBottom: 2 },
+  typeBtnLabel: { fontSize: 11, fontWeight: '500' },
+  typeBtnLabelActive: { color: colors.bg.canvas },
+  typeBtnLabelInactive: { color: colors.text.muted },
+
+  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  iconCell: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  iconCellInactive: { backgroundColor: colors.bg.elevated, borderColor: colors.border.default },
+  iconEmoji: { fontSize: 20 },
+
+  colorRow: { flexDirection: 'row', gap: 10 },
+  colorDot: { width: 32, height: 32, borderRadius: 16 },
+  colorDotSelected: { borderWidth: 3, borderColor: colors.text.primary },
+
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: colors.bg.elevated,
+    borderRadius: radius.lg,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+  },
+  categoryIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  categoryEmoji: { fontSize: 20 },
+  categoryInfo: { flex: 1 },
+  categoryNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  categoryName: { fontSize: 15, fontWeight: '500', color: colors.text.primary },
+  systemBadge: {
+    backgroundColor: `${colors.text.muted}22`,
+    borderRadius: radius.full,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  systemBadgeLabel: { fontSize: 10, fontWeight: '500', color: colors.text.muted },
+  categoryType: { fontSize: 13, color: colors.text.muted, marginTop: 2 },
+  colorIndicator: { width: 10, height: 10, borderRadius: 5 },
+});

@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { Text, View } from "react-native";
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,7 +7,8 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-} from "react-native-reanimated";
+} from 'react-native-reanimated';
+import { colors, radius } from '@/theme';
 
 const BAR_COUNT = 5;
 const BAR_HEIGHTS = [14, 22, 32, 22, 14];
@@ -32,11 +33,11 @@ function WaveBar({ index, isActive }: BarProps) {
         withRepeat(
           withSequence(
             withTiming(target * 2, { duration: 350 }),
-            withTiming(target * 0.5, { duration: 350 })
+            withTiming(target * 0.5, { duration: 350 }),
           ),
           -1,
-          true
-        )
+          true,
+        ),
       );
     } else {
       height.value = withTiming(target, { duration: 300 });
@@ -45,8 +46,15 @@ function WaveBar({ index, isActive }: BarProps) {
 
   return (
     <Animated.View
-      style={style}
-      className="mx-0.5 w-1.5 rounded-full bg-accent"
+      style={[
+        style,
+        {
+          width: 4,
+          marginHorizontal: 3,
+          borderRadius: radius.full,
+          backgroundColor: colors.accent.primary,
+        },
+      ]}
     />
   );
 }
@@ -59,17 +67,29 @@ export const RecordingIndicator = React.memo(function RecordingIndicator({
   isRecording,
 }: Props) {
   return (
-    <View className="items-center gap-2">
-      <View className="h-10 flex-row items-center">
+    <View style={styles.container}>
+      <View style={styles.bars}>
         {Array.from({ length: BAR_COUNT }).map((_, i) => (
           <WaveBar key={i} index={i} isActive={isRecording} />
         ))}
       </View>
-      {isRecording ? (
-        <Text className="font-medium text-sm text-danger">Sedang merekam...</Text>
-      ) : (
-        <Text className="font-medium text-sm text-muted">Tahan untuk merekam</Text>
-      )}
+      <Text style={styles.label}>
+        {isRecording ? 'Recording...' : 'Hold to record'}
+      </Text>
     </View>
   );
+});
+
+const styles = StyleSheet.create({
+  container: { alignItems: 'center', gap: 8 },
+  bars: {
+    height: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: colors.text.muted,
+  },
 });

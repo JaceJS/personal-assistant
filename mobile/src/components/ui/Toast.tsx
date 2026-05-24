@@ -11,9 +11,9 @@ import { useToastStore } from "@/stores/toast";
 import type { ToastType } from "@/stores/toast";
 
 const CONFIG: Record<ToastType, { bg: string; icon: React.ReactNode }> = {
-  success: { bg: "#10b981", icon: <CheckCircle size={18} color="#fff" /> },
-  error: { bg: "#f43f5e", icon: <XCircle size={18} color="#fff" /> },
-  info: { bg: "#6366f1", icon: <Info size={18} color="#fff" /> },
+  success: { bg: "#7DB87A", icon: <CheckCircle size={18} color="#fff" /> },
+  error: { bg: "#C97060", icon: <XCircle size={18} color="#fff" /> },
+  info: { bg: "#D4A853", icon: <Info size={18} color="#0F0F0F" /> },
 };
 
 export function Toast() {
@@ -60,7 +60,7 @@ export function Toast() {
       ]}
     >
       {cfg.icon}
-      <Text style={{ flex: 1, color: "#fff", fontSize: 14, fontFamily: "Outfit_500Medium" }}>
+      <Text style={{ flex: 1, color: "#fff", fontSize: 14 }}>
         {message}
       </Text>
       <Pressable onPress={hideToast} hitSlop={8}>
