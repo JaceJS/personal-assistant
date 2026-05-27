@@ -1,25 +1,19 @@
-import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowRight, Mic, TrendingDown, List } from 'lucide-react-native';
+import { Bell, Clock, List, Lock, MapPin } from 'lucide-react-native';
+import { CartesianChart, Line } from 'victory-native';
 
-import { ConfirmCard } from '@/components/voice/ConfirmCard';
-import { MicButton } from '@/components/voice/MicButton';
-import { RecordingIndicator } from '@/components/voice/RecordingIndicator';
 import EmptyState from '@/components/ui/EmptyState';
-import { SkeletonBalanceCard, SkeletonList } from '@/components/ui/Skeleton';
+import { SkeletonList } from '@/components/ui/Skeleton';
 import TransactionCard from '@/features/finance/components/TransactionCard';
-import type { ExtractedTransaction } from '@/features/finance/api/voice';
-import { uploadAudio } from '@/features/finance/api/voice';
-import { useAccounts } from '@/features/finance/hooks/useAccounts';
-import { useCreateTransaction, useTransactions } from '@/features/finance/hooks/useTransactions';
-import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { formatRupiah } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth';
-import { useRecordingStore } from '@/stores/recording';
-import { useToastStore } from '@/stores/toast';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius } from '@/theme';
+
+type Period = 'W' | 'M';
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -28,180 +22,177 @@ function getGreeting() {
   return 'Good evening';
 }
 
-function formatDate(date: Date) {
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { phase, isRecording, isProcessing, startRecording, stopRecording, reset } =
-    useVoiceRecorder();
-  const { setPhase, setError } = useRecordingStore();
-  const { showToast } = useToastStore();
-
-  const { data: accountsData, isLoading: accountsLoading } = useAccounts();
+  const [period, setPeriod] = useState<Period>('M');
   const { data: txData, isLoading: txLoading } = useTransactions();
-  const createTransaction = useCreateTransaction();
-
-  const [extracted, setExtracted] = useState<ExtractedTransaction | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const totalBalance =
-    accountsData?.items.reduce((sum, acc) => sum + acc.balance, 0) ?? null;
-  const recentTransactions = txData?.items.slice(0, 3) ?? [];
-  const todayExpense =
-    txData?.items
-      .filter((t) => {
-        const today = new Date();
-        const d = new Date(t.occurred_at);
-        return (
-          t.amount < 0 &&
-          d.getDate() === today.getDate() &&
-          d.getMonth() === today.getMonth() &&
-          d.getFullYear() === today.getFullYear()
-        );
-      })
-      .reduce((s, t) => s + Math.abs(t.amount), 0) ?? 0;
-
-  const handlePressIn = useCallback(() => {
-    if (phase !== 'idle') return;
-    void startRecording();
-  }, [phase, startRecording]);
-
-  const handlePressOut = useCallback(async () => {
-    if (!isRecording) return;
-    const uri = await stopRecording();
-    if (!uri) return;
-
-    const firstAccountId = accountsData?.items[0]?.id ?? 'default-account-id';
-    try {
-      await uploadAudio(uri, firstAccountId);
-      setExtracted({
-        amount: -50000,
-        currency: 'IDR',
-        merchant: 'Warung Makan',
-        category_name: 'Food & Drink',
-        note: 'makan siang',
-        confidence: 0.92,
-      });
-      setPhase('idle');
-    } catch {
-      setError('Failed to upload recording. Try again.');
-    }
-  }, [isRecording, stopRecording, setPhase, setError, accountsData]);
-
-  const handleSave = useCallback(
-    async (data: ExtractedTransaction) => {
-      const accountId = accountsData?.items[0]?.id;
-      if (!accountId) {
-        Alert.alert('Error', 'No account found. Create an account first.');
-        return;
-      }
-      setIsSaving(true);
-      try {
-        await createTransaction.mutateAsync({
-          account_id: accountId,
-          amount: data.amount,
-          currency: data.currency,
-          merchant: data.merchant ?? null,
-          note: data.note ?? null,
-          occurred_at: new Date().toISOString(),
-        });
-        setExtracted(null);
-        reset();
-        showToast('Transaction saved', 'success');
-      } catch {
-        showToast('Failed to save transaction. Try again.', 'error');
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [accountsData, createTransaction, reset, showToast],
-  );
-
-  const handleDismiss = useCallback(() => {
-    setExtracted(null);
-    reset();
-  }, [reset]);
 
   const firstName = user?.email?.split('@')[0] ?? 'there';
+  const items = txData?.items ?? [];
+  const recentTransactions = items.slice(0, 3);
+
+  const now = new Date();
+
+  const chartData = [0, 1, 2, 3].map((week) => ({
+    x: week + 1,
+    y: items
+      .filter((tx) => {
+        if (tx.amount >= 0) return false;
+        const day = new Date(tx.occurred_at).getDate();
+        return Math.min(Math.floor((day - 1) / 7), 3) === week;
+      })
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0),
+  }));
+
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay());
+
+  const periodSpend = items
+    .filter((tx) => {
+      if (tx.amount >= 0) return false;
+      const d = new Date(tx.occurred_at);
+      if (period === 'W') return d >= weekStart;
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    })
+    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+  const hasChartData = chartData.some((d) => d.y > 0);
 
   return (
     <SafeAreaView style={styles.root}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
-        scrollEnabled={!isRecording}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.name} numberOfLines={1}>
-            {firstName}
-          </Text>
-          <Text style={styles.date}>{formatDate(new Date())}</Text>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{firstName[0]?.toUpperCase() ?? 'U'}</Text>
+          </View>
+          <Bell size={22} color={colors.text.secondary} strokeWidth={1.5} />
         </View>
 
-        {/* Quick stats */}
-        <View style={styles.statsRow}>
-          <View style={[styles.statCard, { flex: 1 }]}>
-            <Text style={styles.statLabel}>Today's spend</Text>
-            {txLoading ? (
-              <View style={styles.statSkeleton} />
+        <Text style={styles.greeting}>
+          {getGreeting()}, {firstName}.
+        </Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.insightList}
+          style={styles.insightScroll}
+        >
+          <View style={[styles.insightCard, styles.insightCardAccent]}>
+            <Text style={styles.insightTitle}>✦ Optimization</Text>
+            <Text style={styles.insightBody}>
+              Subscription optimization active: saving {formatRupiah(124500)} this month.
+            </Text>
+          </View>
+          <View style={[styles.insightCard, styles.insightCardDefault]}>
+            <Text style={styles.insightTitleDefault}>Savings Goal</Text>
+            <Text style={styles.insightBodyDefault}>On track for your monthly savings target.</Text>
+          </View>
+        </ScrollView>
+
+        <View style={styles.card}>
+          <View style={styles.spendHeader}>
+            <Text style={styles.sectionLabel}>MONTHLY SPEND</Text>
+            <View style={styles.periodToggle}>
+              {(['W', 'M'] as Period[]).map((p) => (
+                <Pressable
+                  key={p}
+                  onPress={() => setPeriod(p)}
+                  style={[styles.periodChip, period === p && styles.periodChipActive]}
+                >
+                  <Text style={[styles.periodChipText, period === p && styles.periodChipTextActive]}>
+                    {p}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+          <Text style={styles.spendAmount}>{formatRupiah(periodSpend)}</Text>
+          <View style={styles.chartWrap}>
+            {hasChartData ? (
+              <CartesianChart data={chartData} xKey="x" yKeys={['y']}>
+                {({ points }) => (
+                  <Line
+                    points={points.y}
+                    color={colors.accent.primary}
+                    strokeWidth={2.5}
+                    curveType="natural"
+                  />
+                )}
+              </CartesianChart>
             ) : (
-              <Text style={styles.statValue}>{formatRupiah(todayExpense)}</Text>
+              <View style={styles.chartPlaceholder} />
             )}
           </View>
-          <View style={[styles.statCard, { flex: 1 }]}>
-            <Text style={styles.statLabel}>Transactions</Text>
-            {txLoading ? (
-              <View style={styles.statSkeleton} />
-            ) : (
-              <Text style={styles.statValue}>{txData?.items.length ?? 0}</Text>
-            )}
+          <View style={styles.chartLabels}>
+            {['W1', 'W2', 'W3', 'W4'].map((w) => (
+              <Text key={w} style={styles.chartLabel}>
+                {w}
+              </Text>
+            ))}
           </View>
         </View>
 
-        {/* Voice recorder section */}
-        <View style={styles.voiceSection}>
-          <RecordingIndicator isRecording={isRecording} />
-          <MicButton
-            isRecording={isRecording}
-            isProcessing={isProcessing}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-          />
-          {phase === 'error' ? (
-            <Text style={styles.errorText}>{useRecordingStore.getState().errorMessage}</Text>
-          ) : null}
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>EVENTS</Text>
+          <Text style={styles.cardHeading}>Next Up</Text>
+          <View style={styles.eventItem}>
+            <View style={styles.eventDot} />
+            <View style={styles.eventDetails}>
+              <Text style={styles.eventTitle}>Product Roadmap</Text>
+              <View style={styles.eventMeta}>
+                <Clock size={12} color={colors.text.muted} strokeWidth={1.5} />
+                <Text style={styles.eventMetaText}>14:00 – 15:30</Text>
+              </View>
+              <View style={styles.eventMeta}>
+                <MapPin size={12} color={colors.text.muted} strokeWidth={1.5} />
+                <Text style={styles.eventMetaText}>Conference Room B</Text>
+              </View>
+            </View>
+          </View>
+          <Pressable style={styles.outlineBtn}>
+            <Text style={styles.outlineBtnText}>View Calendar</Text>
+          </Pressable>
         </View>
 
-        {/* Recent transactions */}
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>JOURNALING</Text>
+          <Text style={styles.cardHeading}>Reflections</Text>
+          <View style={styles.journalItem}>
+            <Text style={styles.journalTitle}>Daily Gratitude</Text>
+            <Text style={styles.journalQuote}>"Found focus in the morning quiet..."</Text>
+            <View style={styles.journalMeta}>
+              <Text style={styles.journalDate}>Oct 24, 2023</Text>
+              <View style={styles.journalPrivate}>
+                <Lock size={11} color={colors.text.muted} strokeWidth={1.5} />
+                <Text style={styles.eventMetaText}>Private</Text>
+              </View>
+            </View>
+          </View>
+          <Pressable style={styles.outlineBtn} onPress={() => router.push('/(app)/journal')}>
+            <Text style={styles.outlineBtnText}>Open Journal</Text>
+          </Pressable>
+        </View>
+
         <View style={styles.recentSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent</Text>
-            <Pressable
-              onPress={() => router.push('/(app)/transactions/index')}
-              style={styles.seeAll}
-            >
-              <Text style={styles.seeAllLabel}>See all</Text>
-              <ArrowRight size={14} color={colors.accent.primary} />
+            <Text style={styles.sectionTitle}>Recent Transactions</Text>
+            <Pressable onPress={() => router.push('/(app)/transactions')}>
+              <Text style={styles.seeAll}>See All</Text>
             </Pressable>
           </View>
-
           {txLoading ? (
             <SkeletonList count={3} />
           ) : recentTransactions.length === 0 ? (
             <EmptyState
               icon={List}
               title="No transactions yet"
-              subtitle='Try saying: "Add expense 50k for lunch"'
+              subtitle="Start tracking your spending"
             />
           ) : (
             <View style={styles.txList}>
@@ -216,14 +207,6 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
-
-      <ConfirmCard
-        data={extracted}
-        isVisible={extracted !== null}
-        isSaving={isSaving}
-        onSave={handleSave}
-        onDismiss={handleDismiss}
-      />
     </SafeAreaView>
   );
 }
@@ -231,46 +214,164 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg.canvas },
   scroll: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingBottom: 24 },
+  scrollContent: { paddingBottom: 120 },
 
-  header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 },
-  greeting: { fontSize: 12, fontWeight: '400', color: colors.text.muted, marginBottom: 2 },
-  name: { fontSize: 24, fontWeight: '600', letterSpacing: -0.3, color: colors.text.primary },
-  date: { fontSize: 12, fontWeight: '400', color: colors.text.muted, marginTop: 2 },
-
-  statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 24, marginTop: 16 },
-  statCard: {
-    backgroundColor: colors.bg.surface,
-    borderRadius: radius.lg,
-    padding: 14,
-    gap: 6,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
-  statLabel: { fontSize: 11, fontWeight: '500', color: colors.text.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
-  statValue: { fontSize: 18, fontWeight: '600', color: colors.text.primary },
-  statSkeleton: { height: 18, width: 80, borderRadius: radius.sm, backgroundColor: colors.bg.elevated },
-
-  voiceSection: {
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.accent.subtle,
+    borderWidth: 1,
+    borderColor: colors.accent.border,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 24,
-    paddingVertical: 40,
   },
-  errorText: {
-    fontSize: 13,
-    color: colors.danger.text,
-    textAlign: 'center',
-    paddingHorizontal: 32,
+  avatarText: { fontSize: 14, fontWeight: '600', color: colors.accent.text },
+
+  greeting: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: colors.text.primary,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    letterSpacing: -0.5,
   },
 
-  recentSection: { paddingHorizontal: 24 },
+  insightScroll: { marginBottom: 16 },
+  insightList: { paddingHorizontal: 20, gap: 12 },
+  insightCard: {
+    width: 220,
+    padding: 16,
+    borderRadius: radius.lg,
+    gap: 6,
+  },
+  insightCardAccent: {
+    backgroundColor: colors.accent.subtle,
+    borderWidth: 1,
+    borderColor: colors.accent.border,
+  },
+  insightCardDefault: {
+    backgroundColor: colors.bg.surface,
+  },
+  insightTitle: { fontSize: 13, fontWeight: '600', color: colors.accent.text },
+  insightBody: { fontSize: 12, color: colors.accent.text, lineHeight: 17, opacity: 0.8 },
+  insightTitleDefault: { fontSize: 13, fontWeight: '600', color: colors.text.primary },
+  insightBodyDefault: { fontSize: 12, color: colors.text.muted, lineHeight: 17 },
+
+  card: {
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.lg,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 16,
+  },
+
+  spendHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.text.muted,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  periodToggle: { flexDirection: 'row', gap: 4 },
+  periodChip: {
+    width: 28,
+    height: 22,
+    borderRadius: radius.sm,
+    backgroundColor: colors.bg.elevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  periodChipActive: { backgroundColor: colors.bg.hover },
+  periodChipText: { fontSize: 11, fontWeight: '500', color: colors.text.muted },
+  periodChipTextActive: { color: colors.text.primary },
+
+  spendAmount: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.text.primary,
+    letterSpacing: -0.5,
+    marginBottom: 16,
+  },
+  chartWrap: { height: 120, marginBottom: 8 },
+  chartPlaceholder: { height: 120 },
+  chartLabels: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 },
+  chartLabel: { fontSize: 11, color: colors.text.muted },
+
+  cardHeading: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+
+  eventItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.bg.elevated,
+    borderRadius: radius.md,
+    padding: 12,
+    gap: 10,
+    marginBottom: 12,
+  },
+  eventDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E8A832',
+    marginTop: 4,
+  },
+  eventDetails: { flex: 1, gap: 4 },
+  eventTitle: { fontSize: 14, fontWeight: '600', color: colors.text.primary },
+  eventMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  eventMetaText: { fontSize: 12, color: colors.text.muted },
+
+  journalItem: {
+    backgroundColor: colors.bg.elevated,
+    borderRadius: radius.md,
+    padding: 12,
+    gap: 6,
+    marginBottom: 12,
+  },
+  journalTitle: { fontSize: 14, fontWeight: '600', color: colors.text.primary },
+  journalQuote: { fontSize: 13, color: colors.text.secondary, fontStyle: 'italic' },
+  journalMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  journalDate: { fontSize: 11, color: colors.text.muted },
+  journalPrivate: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+
+  outlineBtn: {
+    height: 40,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  outlineBtnText: { fontSize: 14, fontWeight: '500', color: colors.text.primary },
+
+  recentSection: { paddingHorizontal: 20 },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  sectionTitle: { fontSize: 15, fontWeight: '500', color: colors.text.primary },
-  seeAll: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  seeAllLabel: { fontSize: 13, color: colors.accent.primary },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.text.primary },
+  seeAll: { fontSize: 13, color: colors.accent.primary },
   txList: { gap: 8 },
 });
