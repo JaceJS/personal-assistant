@@ -50,7 +50,10 @@ async def _app_error_handler(_request: Request, exc: Exception) -> JSONResponse:
     # This handler is only registered for AppError; narrow for the type checker.
     if not isinstance(exc, AppError):
         raise exc
-    return JSONResponse(status_code=exc.status_code, content={"error": exc.message})
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.message, "data": None, "meta": None},
+    )
 
 
 def register_exception_handlers(app: FastAPI) -> None:

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -15,12 +14,20 @@ from app.domains.finance.models import (
     TransactionStatus,
 )
 
-T = TypeVar("T")
+
+# ── Budget ────────────────────────────────────────────────────────────────────
+
+class BudgetUpsert(BaseModel):
+    monthly_limit: int
 
 
-class PaginatedList(BaseModel, Generic[T]):  # noqa: UP046
-    items: list[T]
-    total: int
+class BudgetRead(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    monthly_limit: int
+    updated_at: datetime
 
 
 # ── Account ───────────────────────────────────────────────────────────────────

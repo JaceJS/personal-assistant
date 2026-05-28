@@ -7,15 +7,41 @@ from datetime import date
 from typing import Any
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.finance.models import (
     Account,
+    Budget,
     Category,
     Transaction,
     VoiceLog,
     VoiceProcessingStatus,
 )
+
+# ── Budget ────────────────────────────────────────────────────────────────────
+
+async def get_budget(session: AsyncSession, user_id: uuid.UUID) -> Budget | None:
+    result = await session.execute(
+        sa.select(Budget).where(Budget.user_id == user_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def upsert_budget(session: AsyncSession, user_id: uuid.UUID, monthly_limit: int) -> Budget:
+    stmt = (
+        pg_insert(Budget)
+        .values(user_id=user_id, monthly_limit=monthly_limit)
+        .on_conflict_do_update(
+            index_elements=["user_id"],
+            set_={"monthly_limit": monthly_limit, "updated_at": sa.func.now()},
+        )
+        .returning(Budget)
+    )
+    result = await session.execute(stmt)
+    await session.flush()
+    return result.scalar_one()
+
 
 # ── Accounts ──────────────────────────────────────────────────────────────────
 
@@ -80,6 +106,7 @@ async def list_transactions(
     account_id: uuid.UUID | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    search: str | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> list[Transaction]:
@@ -90,6 +117,14 @@ async def list_transactions(
         q = q.where(Transaction.occurred_at >= date_from)
     if date_to is not None:
         q = q.where(Transaction.occurred_at <= date_to)
+    if search is not None:
+        pattern = f"%{search}%"
+        q = q.where(
+            sa.or_(
+                Transaction.merchant.ilike(pattern),
+                Transaction.note.ilike(pattern),
+            )
+        )
     q = q.order_by(Transaction.occurred_at.desc()).limit(limit).offset(offset)
     result = await session.execute(q)
     return list(result.scalars())
@@ -102,6 +137,7 @@ async def count_transactions(
     account_id: uuid.UUID | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    search: str | None = None,
 ) -> int:
     q = sa.select(sa.func.count()).select_from(Transaction).where(Transaction.user_id == user_id)
     if account_id is not None:
@@ -110,6 +146,14 @@ async def count_transactions(
         q = q.where(Transaction.occurred_at >= date_from)
     if date_to is not None:
         q = q.where(Transaction.occurred_at <= date_to)
+    if search is not None:
+        pattern = f"%{search}%"
+        q = q.where(
+            sa.or_(
+                Transaction.merchant.ilike(pattern),
+                Transaction.note.ilike(pattern),
+            )
+        )
     result = await session.execute(q)
     return result.scalar_one()
 

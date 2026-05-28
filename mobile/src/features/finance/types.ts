@@ -44,6 +44,29 @@ export interface Transaction {
   updated_at: string;
 }
 
+export interface Budget {
+  id: string;
+  user_id: string;
+  monthly_limit: number;
+  updated_at: string;
+}
+
+export interface BudgetUpsert {
+  monthly_limit: number;
+}
+
+export interface Meta {
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ApiResponse<T> {
+  message: string;
+  data: T;
+  meta: Meta | null;
+}
+
 export interface PaginatedList<T> {
   items: T[];
   total: number;

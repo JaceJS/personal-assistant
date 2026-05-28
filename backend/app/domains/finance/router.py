@@ -1,4 +1,4 @@
-"""Finance domain HTTP router """
+"""Finance domain HTTP router."""
 
 from __future__ import annotations
 
@@ -12,15 +12,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import CurrentUser
 from app.core.database import get_session
 from app.core.exceptions import ForbiddenError
+from app.core.response import ApiResponse, ok, paginated
 from app.domains.finance import service
-from app.domains.finance.models import Account, Category, Transaction
 from app.domains.finance.schemas import (
     AccountCreate,
     AccountRead,
     AccountUpdate,
+    BudgetRead,
+    BudgetUpsert,
     CategoryCreate,
     CategoryRead,
-    PaginatedList,
     TransactionCreate,
     TransactionRead,
     TransactionUpdate,
@@ -31,101 +32,125 @@ router = APIRouter(prefix="/api/v1", tags=["finance"])
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
+# ── Budget ────────────────────────────────────────────────────────────────────
+
+@router.get("/budget", response_model=ApiResponse[BudgetRead | None])
+async def get_budget(user_id: CurrentUser, session: DbSession) -> ApiResponse[BudgetRead | None]:
+    budget = await service.get_budget(session, user_id)
+    return ok(budget)
+
+
+@router.put("/budget", response_model=ApiResponse[BudgetRead])
+async def upsert_budget(
+    user_id: CurrentUser, session: DbSession, data: BudgetUpsert
+) -> ApiResponse[BudgetRead]:
+    budget = await service.upsert_budget(session, user_id, data)
+    return ok(budget)
+
+
 # ── Accounts ──────────────────────────────────────────────────────────────────
 
-@router.get("/accounts", response_model=PaginatedList[AccountRead])
-async def list_accounts(user_id: CurrentUser, session: DbSession) -> PaginatedList[AccountRead]:
+@router.get("/accounts", response_model=ApiResponse[list[AccountRead]])
+async def list_accounts(user_id: CurrentUser, session: DbSession) -> ApiResponse[list[AccountRead]]:
     items = await service.list_accounts(session, user_id)
-    return PaginatedList(items=items, total=len(items))
+    return paginated(items, total=len(items), limit=len(items), offset=0)
 
 
-@router.post("/accounts", response_model=AccountRead, status_code=201)
+@router.post("/accounts", response_model=ApiResponse[AccountRead], status_code=201)
 async def create_account(
     user_id: CurrentUser, session: DbSession, data: AccountCreate
-) -> Account:
-    return await service.create_account(session, user_id, data)
+) -> ApiResponse[AccountRead]:
+    item = await service.create_account(session, user_id, data)
+    return ok(item, message="created")
 
 
-@router.get("/accounts/{account_id}", response_model=AccountRead)
+@router.get("/accounts/{account_id}", response_model=ApiResponse[AccountRead])
 async def get_account(
     account_id: uuid.UUID, user_id: CurrentUser, session: DbSession
-) -> Account:
+) -> ApiResponse[AccountRead]:
     account = await service.get_account_or_404(session, account_id)
     if account.user_id != user_id:
         raise ForbiddenError("You don't own this account")
-    return account
+    return ok(account)
 
 
-@router.patch("/accounts/{account_id}", response_model=AccountRead)
+@router.patch("/accounts/{account_id}", response_model=ApiResponse[AccountRead])
 async def update_account(
     account_id: uuid.UUID, user_id: CurrentUser, session: DbSession, data: AccountUpdate
-) -> Account:
-    return await service.update_account(session, user_id, account_id, data)
+) -> ApiResponse[AccountRead]:
+    item = await service.update_account(session, user_id, account_id, data)
+    return ok(item)
 
 
 # ── Categories ────────────────────────────────────────────────────────────────
 
-@router.get("/categories", response_model=list[CategoryRead])
-async def list_categories(user_id: CurrentUser, session: DbSession) -> list[Category]:
-    return await service.list_categories(session, user_id)
+@router.get("/categories", response_model=ApiResponse[list[CategoryRead]])
+async def list_categories(user_id: CurrentUser, session: DbSession) -> ApiResponse[list[CategoryRead]]:
+    items = await service.list_categories(session, user_id)
+    return paginated(items, total=len(items), limit=len(items), offset=0)
 
 
-@router.post("/categories", response_model=CategoryRead, status_code=201)
+@router.post("/categories", response_model=ApiResponse[CategoryRead], status_code=201)
 async def create_category(
     user_id: CurrentUser, session: DbSession, data: CategoryCreate
-) -> Category:
-    return await service.create_category(session, user_id, data)
+) -> ApiResponse[CategoryRead]:
+    item = await service.create_category(session, user_id, data)
+    return ok(item, message="created")
 
 
-@router.get("/categories/{category_id}", response_model=CategoryRead)
+@router.get("/categories/{category_id}", response_model=ApiResponse[CategoryRead])
 async def get_category(
     category_id: uuid.UUID, user_id: CurrentUser, session: DbSession
-) -> Category:
-    return await service.get_category_or_404(session, category_id)
+) -> ApiResponse[CategoryRead]:
+    item = await service.get_category_or_404(session, category_id)
+    return ok(item)
 
 
 # ── Transactions ──────────────────────────────────────────────────────────────
 
-@router.get("/transactions", response_model=PaginatedList[TransactionRead])
+@router.get("/transactions", response_model=ApiResponse[list[TransactionRead]])
 async def list_transactions(
     user_id: CurrentUser,
     session: DbSession,
     account_id: Annotated[uuid.UUID | None, Query()] = None,
     date_from: Annotated[date | None, Query()] = None,
     date_to: Annotated[date | None, Query()] = None,
-    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    search: Annotated[str | None, Query(max_length=200)] = None,
+    limit: Annotated[int, Query(ge=1, le=1000)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
-) -> PaginatedList[TransactionRead]:
+) -> ApiResponse[list[TransactionRead]]:
     items, total = await service.list_transactions(
         session, user_id,
         account_id=account_id, date_from=date_from, date_to=date_to,
-        limit=limit, offset=offset,
+        search=search, limit=limit, offset=offset,
     )
-    return PaginatedList(items=items, total=total)
+    return paginated(items, total=total, limit=limit, offset=offset)
 
 
-@router.post("/transactions", response_model=TransactionRead, status_code=201)
+@router.post("/transactions", response_model=ApiResponse[TransactionRead], status_code=201)
 async def create_transaction(
     user_id: CurrentUser, session: DbSession, data: TransactionCreate
-) -> Transaction:
-    return await service.create_transaction(session, user_id, data)
+) -> ApiResponse[TransactionRead]:
+    item = await service.create_transaction(session, user_id, data)
+    return ok(item, message="created")
 
 
-@router.get("/transactions/{transaction_id}", response_model=TransactionRead)
+@router.get("/transactions/{transaction_id}", response_model=ApiResponse[TransactionRead])
 async def get_transaction(
     transaction_id: uuid.UUID, user_id: CurrentUser, session: DbSession
-) -> Transaction:
+) -> ApiResponse[TransactionRead]:
     tx = await service.get_transaction_or_404(session, transaction_id)
     if tx.user_id != user_id:
         raise ForbiddenError("You don't own this transaction")
-    return tx
+    return ok(tx)
 
 
-@router.patch("/transactions/{transaction_id}", response_model=TransactionRead)
+@router.patch("/transactions/{transaction_id}", response_model=ApiResponse[TransactionRead])
 async def update_transaction(
     transaction_id: uuid.UUID, user_id: CurrentUser, session: DbSession, data: TransactionUpdate
-) -> Transaction:
-    return await service.update_transaction(session, user_id, transaction_id, data)
+) -> ApiResponse[TransactionRead]:
+    item = await service.update_transaction(session, user_id, transaction_id, data)
+    return ok(item)
 
 
 @router.delete("/transactions/{transaction_id}", status_code=204)

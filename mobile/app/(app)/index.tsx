@@ -7,12 +7,11 @@ import InsightCard from '@/components/ui/InsightCard';
 import AccountBalanceCard from '@/features/finance/components/AccountBalanceCard';
 import DailySpendCard from '@/features/finance/components/DailySpendCard';
 import RecentTransactions from '@/features/finance/components/RecentTransactions';
+import { useBudget } from '@/features/finance/hooks/useBudget';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { formatRupiah } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth';
 import { colors } from '@/theme';
-
-const DAILY_LIMIT = 500_000;
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -25,16 +24,23 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { data: txData, isLoading: txLoading, isRefetching, refetch } = useTransactions();
+  const { data: budget } = useBudget();
 
   const firstName = user?.email?.split('@')[0] ?? 'there';
   const items = txData?.items ?? [];
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const dailyLimit = budget?.monthly_limit != null
+    ? Math.round(budget.monthly_limit / daysInMonth)
+    : 0;
+
+  const todayStr = now.toISOString().slice(0, 10);
   const todayItems = items.filter((t) => t.occurred_at.startsWith(todayStr));
   const todayExpense = todayItems
     .filter((t) => t.amount < 0)
     .reduce((s, t) => s + Math.abs(t.amount), 0);
-  const budgetPct = Math.min(todayExpense / DAILY_LIMIT, 1);
+  const budgetPct = dailyLimit > 0 ? Math.min(todayExpense / dailyLimit, 1) : 0;
 
   return (
     <SafeAreaView style={styles.root}>

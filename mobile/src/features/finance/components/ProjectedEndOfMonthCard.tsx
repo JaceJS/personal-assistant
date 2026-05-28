@@ -53,6 +53,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.default,
     marginHorizontal: 20,
     marginBottom: 12,
     padding: 20,
@@ -66,7 +68,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.primary,
     top: -50,
     right: -40,
-    opacity: 0.07,
+    opacity: 0.12,
   },
   header: {
     flexDirection: 'row',

@@ -99,6 +99,15 @@ class VoiceLog(TimestampedBase):
     error_message: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
 
 
+class Budget(TimestampedBase):
+    __tablename__ = "budgets"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False, unique=True
+    )
+    monthly_limit: Mapped[int] = mapped_column(sa.BigInteger(), nullable=False)
+
+
 class Transaction(TimestampedBase):
     __tablename__ = "transactions"
 

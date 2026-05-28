@@ -1,7 +1,7 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { Pencil, Plus } from 'lucide-react-native';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
@@ -30,6 +30,8 @@ export default function FinanceDashboard() {
 
   const recentItems = useMemo(() => items.slice(0, RECENT_COUNT), [items]);
 
+  const [budgetEditing, setBudgetEditing] = useState(false);
+
   const handleAdd = useCallback(() => router.push('/(app)/finance/new'), [router]);
   const handleSeeAll = useCallback(() => router.push('/(app)/finance/history'), [router]);
 
@@ -50,8 +52,19 @@ export default function FinanceDashboard() {
       >
         <ProjectedEndOfMonthCard />
 
-        <SectionHeader title="Monthly Budget" />
-        <MonthlyBudgetCard totalExpense={totalExpense} />
+        <SectionHeader
+          title="Monthly Budget"
+          right={
+            <Pressable onPress={() => setBudgetEditing(true)} hitSlop={8}>
+              <Pencil size={16} color={colors.accent.primary} strokeWidth={2} />
+            </Pressable>
+          }
+        />
+        <MonthlyBudgetCard
+          totalExpense={totalExpense}
+          isEditing={budgetEditing}
+          onEditingChange={setBudgetEditing}
+        />
 
         <SectionHeader title="Cash Flow" />
         <CashFlowChart />
@@ -111,7 +124,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text.primary,
+    color: colors.accent.text,
     letterSpacing: -0.2,
   },
   seeAll: {
@@ -123,11 +136,13 @@ const styles = StyleSheet.create({
   transactionsCard: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.default,
     marginHorizontal: spacing.xl,
     marginBottom: 12,
     overflow: 'hidden',
   },
-  divider: { height: 1, backgroundColor: colors.border.subtle, marginHorizontal: 16 },
+  divider: { height: 1, backgroundColor: colors.border.default, marginHorizontal: 16 },
   emptyText: {
     fontSize: 13,
     color: colors.text.muted,

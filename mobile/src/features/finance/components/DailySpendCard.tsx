@@ -1,27 +1,43 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
+import { useBudget } from '@/features/finance/hooks/useBudget';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { formatRupiah } from '@/lib/utils';
 import { colors } from '@/theme';
-
-const DAILY_LIMIT = 500_000;
 const RADIUS = 68;
 const STROKE_W = 10;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export default function DailySpendCard() {
   const today = new Date().toISOString().slice(0, 10);
+  const { data: budget, isLoading: budgetLoading } = useBudget();
   const { data } = useTransactions({ dateFrom: today, dateTo: today, limit: 100 });
+
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const dailyLimit = budget?.monthly_limit != null
+    ? Math.round(budget.monthly_limit / daysInMonth)
+    : null;
 
   const todaySpend = (data?.items ?? [])
     .filter((t) => t.amount < 0)
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-  const pct = Math.min(todaySpend / DAILY_LIMIT, 1);
-  const remaining = Math.max(DAILY_LIMIT - todaySpend, 0);
-  const dashOffset = CIRCUMFERENCE * (1 - pct);
+  if (!budgetLoading && dailyLimit === null) {
+    return (
+      <View style={[styles.card, styles.cardEmpty]}>
+        <Text style={styles.title}>Daily Spending Limit</Text>
+        <Text style={styles.noLimit}>No budget set</Text>
+        <Text style={styles.noLimitSub}>Set a monthly budget to track daily spending</Text>
+      </View>
+    );
+  }
 
+  const limit = dailyLimit ?? 0;
+  const pct = limit > 0 ? Math.min(todaySpend / limit, 1) : 0;
+  const remaining = Math.max(limit - todaySpend, 0);
+  const dashOffset = CIRCUMFERENCE * (1 - pct);
   const ringColor =
     pct >= 1 ? colors.danger.text :
     pct >= 0.7 ? colors.warning.text :
@@ -103,5 +119,21 @@ const styles = StyleSheet.create({
   remaining: {
     fontSize: 13,
     fontWeight: '500',
+  },
+  cardEmpty: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  noLimit: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text.secondary,
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  noLimitSub: {
+    fontSize: 13,
+    color: colors.text.muted,
+    textAlign: 'center',
   },
 });

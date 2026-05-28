@@ -40,54 +40,62 @@ export default function CashFlowChart() {
 
   const { data } = useTransactions({ dateFrom: yearStart, dateTo: today, limit: 1000 });
   const buckets = buildCashFlowBuckets(data?.items ?? []);
+  const hasData = buckets.some(b => b.income > 0 || b.expense > 0);
 
   return (
     <View style={styles.card}>
       <View style={styles.chartWrap}>
-        <CartesianChart
-          data={buckets}
-          xKey="x"
-          yKeys={['income', 'expense']}
-          domainPadding={{ left: 16, right: 16, top: 16 }}
-          xAxis={{
-            font: chartFont,
-            formatXLabel: v => buckets.find(b => b.x === Math.round(Number(v)))?.label ?? '',
-            labelColor: colors.text.muted,
-            lineColor: 'transparent',
-            tickCount: 6,
-          }}
-          yAxis={[{
-            font: chartFont,
-            labelColor: 'transparent',
-            lineColor: 'transparent',
-            tickCount: 0,
-          }]}
-        >
-          {({ points, chartBounds }) => (
-            <>
-              <Bar
-                points={points.income}
-                chartBounds={chartBounds}
-                color={colors.bg.elevated}
-                barWidth={8}
-                roundedCorners={{ topLeft: 4, topRight: 4 }}
-              />
-              <Bar
-                points={points.expense}
-                chartBounds={chartBounds}
-                color={colors.accent.primary}
-                barWidth={8}
-                roundedCorners={{ topLeft: 4, topRight: 4 }}
-                animate={{ type: 'spring' }}
-              />
-            </>
-          )}
-        </CartesianChart>
+        {hasData ? (
+          <CartesianChart
+            data={buckets}
+            xKey="x"
+            yKeys={['income', 'expense']}
+            domainPadding={{ left: 16, right: 16, top: 16 }}
+            xAxis={{
+              font: chartFont,
+              formatXLabel: v => buckets.find(b => b.x === Math.round(Number(v)))?.label ?? '',
+              labelColor: colors.text.muted,
+              lineColor: 'transparent',
+              tickCount: 6,
+            }}
+            yAxis={[{
+              font: chartFont,
+              labelColor: 'transparent',
+              lineColor: 'transparent',
+            }]}
+          >
+            {({ points, chartBounds }) => (
+              <>
+                <Bar
+                  points={points.income}
+                  chartBounds={chartBounds}
+                  color={colors.success.text}
+                  barWidth={8}
+                  barCount={2}
+                  roundedCorners={{ topLeft: 4, topRight: 4 }}
+                />
+                <Bar
+                  points={points.expense}
+                  chartBounds={chartBounds}
+                  color={colors.accent.primary}
+                  barWidth={8}
+                  barCount={2}
+                  roundedCorners={{ topLeft: 4, topRight: 4 }}
+                  animate={{ type: 'spring' }}
+                />
+              </>
+            )}
+          </CartesianChart>
+        ) : (
+          <View style={styles.emptyChart}>
+            <Text style={styles.emptyText}>No data for this year yet</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: colors.bg.elevated }]} />
+          <View style={[styles.legendDot, { backgroundColor: colors.success.text }]} />
           <Text style={styles.legendLabel}>Income</Text>
         </View>
         <View style={styles.legendItem}>
@@ -103,11 +111,15 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.default,
     marginHorizontal: 20,
     marginBottom: 12,
     padding: 16,
   },
   chartWrap: { height: CHART_HEIGHT },
+  emptyChart: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  emptyText: { fontSize: 13, color: colors.text.muted },
   legend: {
     flexDirection: 'row',
     justifyContent: 'center',

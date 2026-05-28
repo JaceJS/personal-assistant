@@ -9,14 +9,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.domains.finance import repository as repo
-from app.domains.finance.models import Account, Category, Transaction, TransactionStatus
+from app.domains.finance.models import Account, Budget, Category, Transaction, TransactionStatus
 from app.domains.finance.schemas import (
     AccountCreate,
     AccountUpdate,
+    BudgetUpsert,
     CategoryCreate,
     TransactionCreate,
     TransactionUpdate,
 )
+
+# ── Budget ────────────────────────────────────────────────────────────────────
+
+async def get_budget(session: AsyncSession, user_id: uuid.UUID) -> Budget | None:
+    return await repo.get_budget(session, user_id)
+
+
+async def upsert_budget(
+    session: AsyncSession, user_id: uuid.UUID, data: BudgetUpsert
+) -> Budget:
+    return await repo.upsert_budget(session, user_id, data.monthly_limit)
+
 
 # ── Accounts ──────────────────────────────────────────────────────────────────
 
@@ -86,16 +99,19 @@ async def list_transactions(
     account_id: uuid.UUID | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    search: str | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> tuple[list[Transaction], int]:
     items = await repo.list_transactions(
         session, user_id,
         account_id=account_id, date_from=date_from, date_to=date_to,
-        limit=limit, offset=offset,
+        search=search, limit=limit, offset=offset,
     )
     total = await repo.count_transactions(
-        session, user_id, account_id=account_id, date_from=date_from, date_to=date_to,
+        session, user_id,
+        account_id=account_id, date_from=date_from, date_to=date_to,
+        search=search,
     )
     return items, total
 
