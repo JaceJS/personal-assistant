@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -83,13 +84,19 @@ async def list_transactions(
     user_id: uuid.UUID,
     *,
     account_id: uuid.UUID | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> tuple[list[Transaction], int]:
     items = await repo.list_transactions(
-        session, user_id, account_id=account_id, limit=limit, offset=offset
+        session, user_id,
+        account_id=account_id, date_from=date_from, date_to=date_to,
+        limit=limit, offset=offset,
     )
-    total = await repo.count_transactions(session, user_id, account_id=account_id)
+    total = await repo.count_transactions(
+        session, user_id, account_id=account_id, date_from=date_from, date_to=date_to,
+    )
     return items, total
 
 

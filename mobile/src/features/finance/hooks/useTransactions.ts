@@ -6,14 +6,15 @@ import {
   listTransactions,
   updateTransaction,
 } from "@/features/finance/api/transactions";
+import type { ListTransactionsParams } from "@/features/finance/api/transactions";
 import type { TransactionCreate, TransactionUpdate } from "@/features/finance/types";
 
 const QUERY_KEY = "transactions";
 
-export function useTransactions() {
+export function useTransactions(params?: ListTransactionsParams) {
   return useQuery({
-    queryKey: [QUERY_KEY],
-    queryFn: listTransactions,
+    queryKey: [QUERY_KEY, params ?? null],
+    queryFn: () => listTransactions(params),
   });
 }
 

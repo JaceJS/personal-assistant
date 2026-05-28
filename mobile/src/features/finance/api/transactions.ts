@@ -6,8 +6,21 @@ import type {
   TransactionUpdate,
 } from "@/features/finance/types";
 
-export function listTransactions(): Promise<PaginatedList<Transaction>> {
-  return apiFetch<PaginatedList<Transaction>>("/api/v1/transactions");
+export interface ListTransactionsParams {
+  dateFrom?: string;
+  dateTo?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export function listTransactions(params?: ListTransactionsParams): Promise<PaginatedList<Transaction>> {
+  const qs = new URLSearchParams();
+  if (params?.dateFrom) qs.set('date_from', params.dateFrom);
+  if (params?.dateTo) qs.set('date_to', params.dateTo);
+  if (params?.limit != null) qs.set('limit', String(params.limit));
+  if (params?.offset != null) qs.set('offset', String(params.offset));
+  const query = qs.toString();
+  return apiFetch<PaginatedList<Transaction>>(`/api/v1/transactions${query ? `?${query}` : ''}`);
 }
 
 export function getTransaction(id: string): Promise<Transaction> {

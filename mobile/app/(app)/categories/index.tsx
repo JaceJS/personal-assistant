@@ -69,7 +69,7 @@ export default function CategoriesScreen() {
   const selectedIcon = watch("icon");
   const selectedColor = watch("color");
 
-  const categories = data?.items ?? [];
+  const categories = data ?? [];
   const filtered =
     activeFilter === "all" ? categories : categories.filter((c) => c.type === activeFilter);
 

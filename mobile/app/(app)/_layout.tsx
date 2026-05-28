@@ -20,14 +20,15 @@ export default function AppLayout() {
       tabBar={(props) => <FloatingTabBar {...props} />}
     >
       <Tabs.Screen name="index" />
-      <Tabs.Screen name="transactions/index" />
+      <Tabs.Screen name="finance/index" />
       <Tabs.Screen name="insights/index" />
       <Tabs.Screen name="settings/index" />
 
       {/* Hidden from tab bar */}
       <Tabs.Screen name="journal/index" options={{ href: null }} />
-      <Tabs.Screen name="transactions/[id]" options={{ href: null }} />
-      <Tabs.Screen name="transactions/new" options={{ href: null }} />
+      <Tabs.Screen name="finance/[id]" options={{ href: null }} />
+      <Tabs.Screen name="finance/new" options={{ href: null }} />
+      <Tabs.Screen name="finance/history" options={{ href: null }} />
       <Tabs.Screen name="accounts/index" options={{ href: null }} />
       <Tabs.Screen name="accounts/[id]" options={{ href: null }} />
       <Tabs.Screen name="categories/index" options={{ href: null }} />

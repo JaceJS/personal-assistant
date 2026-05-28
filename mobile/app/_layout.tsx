@@ -37,11 +37,11 @@ function RootLayoutInner() {
   useAuth();
   const { initialize } = useOnboardingStore();
 
-  if (!fontsLoaded) return null;
-
   useEffect(() => {
     void initialize();
   }, [initialize]);
+
+  if (!fontsLoaded) return null;
 
   return (
     <>

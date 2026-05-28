@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -90,11 +91,15 @@ async def list_transactions(
     user_id: CurrentUser,
     session: DbSession,
     account_id: Annotated[uuid.UUID | None, Query()] = None,
+    date_from: Annotated[date | None, Query()] = None,
+    date_to: Annotated[date | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> PaginatedList[TransactionRead]:
     items, total = await service.list_transactions(
-        session, user_id, account_id=account_id, limit=limit, offset=offset
+        session, user_id,
+        account_id=account_id, date_from=date_from, date_to=date_to,
+        limit=limit, offset=offset,
     )
     return PaginatedList(items=items, total=total)
 

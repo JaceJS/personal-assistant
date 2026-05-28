@@ -1,73 +1,61 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { formatRupiah, formatShortDate } from '@/lib/utils';
+import { StyleSheet, Text, View } from 'react-native';
+import { Banknote, Car, Monitor, ShoppingBag, Utensils, Wallet } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
+
+import ListItem from '@/components/ui/ListItem';
 import type { Transaction } from '@/features/finance/types';
-import { colors, radius } from '@/theme';
+import { formatRupiah, formatShortDate } from '@/lib/utils';
+import { colors } from '@/theme';
 
 interface TransactionCardProps {
   transaction: Transaction;
+  categoryName?: string;
+  showId?: boolean;
   onPress?: () => void;
 }
 
-function TransactionCard({ transaction, onPress }: TransactionCardProps) {
+function categoryIcon(name?: string | null): LucideIcon {
+  const n = name?.toLowerCase() ?? '';
+  if (n.includes('food') || n.includes('dining') || n.includes('restaurant')) return Utensils;
+  if (n.includes('tech') || n.includes('electronic')) return Monitor;
+  if (n.includes('income') || n.includes('salary')) return Banknote;
+  if (n.includes('transport') || n.includes('travel')) return Car;
+  if (n.includes('shopping')) return ShoppingBag;
+  return Wallet;
+}
+
+function TransactionCard({ transaction, categoryName, showId, onPress }: TransactionCardProps) {
   const isExpense = transaction.amount < 0;
+  const Icon = categoryIcon(categoryName);
+  const subtitle = categoryName ?? transaction.note ?? formatShortDate(transaction.occurred_at);
+  const amountText = `${isExpense ? '−' : '+'} ${formatRupiah(Math.abs(transaction.amount))}`;
+  const amountColor = isExpense ? colors.danger.text : colors.accent.primary;
+
+  const rightElement = showId ? (
+    <View style={styles.rightCol}>
+      <Text style={[styles.amount, { color: amountColor }]}>{amountText}</Text>
+      <Text style={styles.txnId}>ID: TXN-{transaction.id.slice(-4).toUpperCase()}</Text>
+    </View>
+  ) : undefined;
 
   return (
-    <Pressable
+    <ListItem
+      title={transaction.merchant ?? 'Transaction'}
+      subtitle={subtitle}
+      icon={Icon}
+      value={showId ? undefined : amountText}
+      valueColor={showId ? undefined : amountColor}
+      rightElement={rightElement}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-    >
-      <View style={styles.dot} />
-      <View style={styles.content}>
-        <Text style={styles.merchant} numberOfLines={1}>
-          {transaction.merchant ?? 'Transaction'}
-        </Text>
-        <Text style={styles.date}>{formatShortDate(transaction.occurred_at)}</Text>
-      </View>
-      <Text style={[styles.amount, isExpense ? styles.expense : styles.income]}>
-        {isExpense ? '−' : '+'} {formatRupiah(Math.abs(transaction.amount))}
-      </Text>
-    </Pressable>
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bg.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border.subtle,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  pressed: { opacity: 0.7 },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: radius.full,
-    backgroundColor: colors.border.strong,
-    flexShrink: 0,
-  },
-  content: { flex: 1, gap: 2 },
-  merchant: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.text.primary,
-  },
-  date: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: colors.text.muted,
-  },
-  amount: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  expense: { color: colors.danger.text },
-  income: { color: colors.success.text },
+  rightCol: { alignItems: 'flex-end', gap: 4 },
+  amount: { fontSize: 15, fontWeight: '600' },
+  txnId: { fontSize: 10, color: colors.text.muted },
 });
 
 export default React.memo(TransactionCard);

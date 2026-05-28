@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 from typing import Any
 
 import sqlalchemy as sa
@@ -77,12 +78,18 @@ async def list_transactions(
     user_id: uuid.UUID,
     *,
     account_id: uuid.UUID | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> list[Transaction]:
     q = sa.select(Transaction).where(Transaction.user_id == user_id)
     if account_id is not None:
         q = q.where(Transaction.account_id == account_id)
+    if date_from is not None:
+        q = q.where(Transaction.occurred_at >= date_from)
+    if date_to is not None:
+        q = q.where(Transaction.occurred_at <= date_to)
     q = q.order_by(Transaction.occurred_at.desc()).limit(limit).offset(offset)
     result = await session.execute(q)
     return list(result.scalars())
@@ -93,10 +100,16 @@ async def count_transactions(
     user_id: uuid.UUID,
     *,
     account_id: uuid.UUID | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
 ) -> int:
     q = sa.select(sa.func.count()).select_from(Transaction).where(Transaction.user_id == user_id)
     if account_id is not None:
         q = q.where(Transaction.account_id == account_id)
+    if date_from is not None:
+        q = q.where(Transaction.occurred_at >= date_from)
+    if date_to is not None:
+        q = q.where(Transaction.occurred_at <= date_to)
     result = await session.execute(q)
     return result.scalar_one()
 

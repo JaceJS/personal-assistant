@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { PieChart } from "victory-native";
-import { useFont } from "@shopify/react-native-skia";
+import { Pie, PolarChart } from "victory-native";
 
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
@@ -19,12 +18,10 @@ const CHART_COLORS = [
 export default function InsightsScreen() {
   const { data: txData } = useTransactions();
   const { data: catData } = useCategories();
-  const font = useFont(null, 12);
-
   const chartData = useMemo(() => {
-    if (!txData?.items || !catData?.items) return [];
+    if (!txData?.items || !catData) return [];
 
-    const categoryMap = new Map(catData.items.map((c) => [c.id, c.name]));
+    const categoryMap = new Map(catData.map((c) => [c.id, c.name]));
     const totals = new Map<string, number>();
 
     for (const tx of txData.items) {
@@ -60,13 +57,15 @@ export default function InsightsScreen() {
       ) : (
         <>
           <View style={styles.chartWrap}>
-            <PieChart
-              data={chartData.map((d) => ({ value: d.value, color: d.color, label: d.label }))}
-              width={280}
-              height={280}
-              innerRadius={70}
-              font={font}
-            />
+            <PolarChart
+              data={chartData}
+              labelKey="label"
+              valueKey="value"
+              colorKey="color"
+              containerStyle={{ width: 280, height: 280 }}
+            >
+              <Pie.Chart innerRadius={70} />
+            </PolarChart>
             <View style={styles.chartCenter}>
               <Text style={styles.chartTotal}>{formatRupiah(totalExpense)}</Text>
               <Text style={styles.chartLabel}>total out</Text>
