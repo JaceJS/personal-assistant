@@ -1,7 +1,19 @@
 import { useCallback } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronRight, Grid3x3, LogOut, PiggyBank, Tag, User, Wallet } from 'lucide-react-native';
+import {
+  Banknote,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  FileText,
+  LogOut,
+  Pencil,
+  PiggyBank,
+  Shield,
+  User,
+  Wallet,
+} from 'lucide-react-native';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
@@ -31,44 +43,72 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile card */}
+        {/* Profile hero */}
         <Pressable
           onPress={() => router.push('/(app)/settings/profile')}
           style={({ pressed }) => pressed && { opacity: 0.75 }}
         >
-          <View style={styles.profileCard}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initial}</Text>
+          <View style={styles.profileHero}>
+            <View style={styles.avatarWrapper}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{initial}</Text>
+              </View>
+              <View style={styles.editBadge}>
+                <Pencil size={12} color="#fff" />
+              </View>
             </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{displayName}</Text>
-              <Text style={styles.profileEmail} numberOfLines={1}>
-                {user?.email ?? ''}
-              </Text>
-            </View>
-            <ChevronRight size={16} color={colors.text.muted} />
+            <Text style={styles.profileName}>{displayName}</Text>
+            <Text style={styles.profileEmail} numberOfLines={1}>
+              {user?.email ?? ''}
+            </Text>
           </View>
         </Pressable>
+
+        {/* Account section */}
+        <SectionLabel label="Account" />
+        <GroupedList>
+          <MenuItem
+            icon={<User size={16} color={colors.accent.primary} />}
+            label="Personal Info"
+            onPress={() => router.push('/(app)/settings/profile')}
+          />
+        </GroupedList>
 
         {/* Finance section */}
         <SectionLabel label="Finance" />
         <GroupedList>
           <MenuItem
-            icon={<Wallet size={18} color={colors.text.muted} />}
-            label="Manage Accounts"
+            icon={<Wallet size={16} color={colors.accent.primary} />}
+            label="Accounts & Wallets"
             onPress={() => router.push('/(app)/accounts')}
           />
           <MenuDivider />
           <MenuItem
-            icon={<Tag size={18} color={colors.text.muted} />}
-            label="Manage Categories"
-            onPress={() => router.push('/(app)/categories')}
-          />
-          <MenuDivider />
-          <MenuItem
-            icon={<PiggyBank size={18} color={colors.text.muted} />}
+            icon={<PiggyBank size={16} color={colors.accent.primary} />}
             label="Monthly Budget"
             onPress={() => router.push('/(app)/settings/budget')}
+          />
+          <MenuDivider />
+          <ValueMenuItem
+            icon={<Banknote size={16} color={colors.accent.primary} />}
+            label="Default Currency"
+            value="IDR"
+          />
+        </GroupedList>
+
+        {/* Legal section */}
+        <SectionLabel label="Legal" />
+        <GroupedList>
+          <ExternalMenuItem
+            icon={<FileText size={16} color={colors.accent.primary} />}
+            label="Terms of Service"
+            url="https://example.com/terms"
+          />
+          <MenuDivider />
+          <ExternalMenuItem
+            icon={<Shield size={16} color={colors.accent.primary} />}
+            label="Privacy Policy"
+            url="https://example.com/privacy"
           />
         </GroupedList>
 
@@ -77,9 +117,9 @@ export default function SettingsScreen() {
           onPress={handleSignOut}
           style={({ pressed }) => pressed && { opacity: 0.7 }}
         >
-          <View style={styles.signOutRow}>
+          <View style={styles.signOutButton}>
             <LogOut size={18} color={colors.danger.text} />
-            <Text style={styles.signOutLabel}>Sign out</Text>
+            <Text style={styles.signOutLabel}>Sign Out</Text>
           </View>
         </Pressable>
       </ScrollView>
@@ -88,9 +128,7 @@ export default function SettingsScreen() {
 }
 
 function SectionLabel({ label }: { label: string }) {
-  return (
-    <Text style={styles.sectionLabel}>{label.toUpperCase()}</Text>
-  );
+  return <Text style={styles.sectionLabel}>{label.toUpperCase()}</Text>;
 }
 
 function GroupedList({ children }: { children: React.ReactNode }) {
@@ -122,7 +160,7 @@ function MenuItem({
       ]}
     >
       <View style={styles.menuItem}>
-        <View style={styles.menuIcon}>{icon}</View>
+        <View style={styles.iconBox}>{icon}</View>
         <Text style={styles.menuLabel}>{label}</Text>
         <ChevronRight size={14} color={colors.text.muted} />
       </View>
@@ -130,38 +168,107 @@ function MenuItem({
   );
 }
 
+function ValueMenuItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.menuItem}>
+      <View style={styles.iconBox}>{icon}</View>
+      <Text style={styles.menuLabel}>{label}</Text>
+      <View style={styles.valueRow}>
+        <Text style={styles.valueText}>{value}</Text>
+        <ChevronDown size={14} color={colors.text.muted} />
+      </View>
+    </View>
+  );
+}
+
+function ExternalMenuItem({
+  icon,
+  label,
+  url,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  url: string;
+}) {
+  return (
+    <Pressable
+      onPress={() => void Linking.openURL(url)}
+      style={({ pressed }) => pressed && { opacity: 0.7 }}
+    >
+      <View style={styles.menuItem}>
+        <View style={styles.iconBox}>{icon}</View>
+        <Text style={styles.menuLabel}>{label}</Text>
+        <ExternalLink size={14} color={colors.text.muted} />
+      </View>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32, gap: 8 },
+  scrollContent: {
+    paddingHorizontal: spacing['2xl'],
+    paddingBottom: 160,
+    gap: 8,
+  },
 
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  profileHero: {
     backgroundColor: colors.bg.surface,
-    borderRadius: radius.lg,
-    padding: 16,
-    gap: 14,
+    borderRadius: radius.xl,
+    paddingVertical: 28,
+    paddingHorizontal: spacing['2xl'],
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  avatarWrapper: {
+    position: 'relative',
     marginBottom: 8,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.full,
+    width: 88,
+    height: 88,
+    borderRadius: radius.xl,
     backgroundColor: colors.accent.subtle,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.accent.border,
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
   },
   avatarText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 32,
+    fontWeight: '700',
     color: colors.accent.primary,
   },
-  profileInfo: { flex: 1 },
-  profileName: { fontSize: 15, fontWeight: '500', color: colors.text.primary },
-  profileEmail: { fontSize: 12, color: colors.text.muted, marginTop: 2 },
+  editBadge: {
+    position: 'absolute',
+    bottom: -6,
+    right: -6,
+    width: 28,
+    height: 28,
+    borderRadius: radius.full,
+    backgroundColor: colors.accent.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginTop: 4,
+  },
+  profileEmail: {
+    fontSize: 13,
+    color: colors.text.secondary,
+  },
 
   sectionLabel: {
     fontSize: 11,
@@ -181,28 +288,53 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
     gap: 12,
-    minHeight: 44,
+    minHeight: 52,
   },
-  menuIcon: { width: 24, alignItems: 'center' },
-  menuLabel: { flex: 1, fontSize: 15, fontWeight: '400', color: colors.text.primary },
+  iconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent.subtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  menuLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '400',
+    color: colors.text.primary,
+  },
+  valueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  valueText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
   divider: {
     height: 1,
     backgroundColor: colors.border.subtle,
-    marginLeft: 52,
+    marginLeft: 60,
   },
 
-  signOutRow: {
+  signOutButton: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     backgroundColor: colors.danger.bg,
-    borderRadius: radius.lg,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: radius.xl,
+    paddingVertical: 16,
     marginTop: 8,
-    minHeight: 44,
   },
-  signOutLabel: { fontSize: 15, fontWeight: '500', color: colors.danger.text },
+  signOutLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.danger.text,
+  },
 });
