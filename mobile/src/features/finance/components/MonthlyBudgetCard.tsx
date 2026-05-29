@@ -1,11 +1,11 @@
-import { StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { useRouter } from 'expo-router';
 
-import { useBudget, useUpsertBudget } from '@/features/finance/hooks/useBudget';
+import { useBudget } from '@/features/finance/hooks/useBudget';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { formatRupiah } from '@/lib/utils';
 import { colors, radius } from '@/theme';
-import { useState } from 'react';
 
 const RING_RADIUS = 36;
 const RING_STROKE_W = 6;
@@ -15,8 +15,6 @@ const RING_CENTER = RING_SIZE / 2;
 
 interface MonthlyBudgetCardProps {
   totalExpense: number;
-  isEditing: boolean;
-  onEditingChange: (v: boolean) => void;
 }
 
 function getBudgetRingColor(pct: number): string {
@@ -25,54 +23,18 @@ function getBudgetRingColor(pct: number): string {
   return colors.accent.primary;
 }
 
-export default function MonthlyBudgetCard({ totalExpense, isEditing, onEditingChange }: MonthlyBudgetCardProps) {
+export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardProps) {
+  const router = useRouter();
   const { data: budget, isLoading } = useBudget();
-  const { mutate: saveBudget, isPending } = useUpsertBudget();
-  const [inputValue, setInputValue] = useState('');
-
-  function handleSave() {
-    const amount = Number(inputValue.replace(/\D/g, ''));
-    if (!amount) return;
-    saveBudget({ monthly_limit: amount }, { onSuccess: () => onEditingChange(false) });
-  }
 
   if (isLoading) {
     return <View style={styles.card}><SkeletonCard height={80} /></View>;
   }
 
-  if (isEditing) {
-    return (
-      <View style={styles.card}>
-        <Text style={styles.editLabel}>Set Monthly Budget</Text>
-        <TextInput
-          style={styles.input}
-          value={inputValue}
-          onChangeText={setInputValue}
-          keyboardType="numeric"
-          placeholder="e.g. 10000000"
-          placeholderTextColor={colors.text.disabled}
-          autoFocus
-        />
-        <View style={styles.editActions}>
-          <Pressable style={styles.cancelBtn} onPress={() => onEditingChange(false)}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.saveBtn, isPending && { opacity: 0.6 }]}
-            onPress={handleSave}
-            disabled={isPending}
-          >
-            <Text style={styles.saveText}>{isPending ? 'Saving…' : 'Save'}</Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
   if (!budget) {
     return (
       <View style={styles.card}>
-        <Pressable style={styles.promptRow} onPress={() => onEditingChange(true)}>
+        <Pressable style={styles.promptRow} onPress={() => router.push('/(app)/settings/budget')}>
           <Text style={styles.promptText}>Set a monthly budget</Text>
           <Text style={styles.promptArrow}>→</Text>
         </Pressable>
@@ -151,22 +113,6 @@ const styles = StyleSheet.create({
   promptRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
   promptText: { fontSize: 14, color: colors.text.secondary },
   promptArrow: { fontSize: 16, color: colors.accent.primary },
-
-  editLabel: { fontSize: 13, color: colors.text.muted, marginBottom: 12 },
-  input: {
-    backgroundColor: colors.bg.elevated,
-    borderRadius: radius.md,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: colors.text.primary,
-    marginBottom: 12,
-  },
-  editActions: { flexDirection: 'row', gap: 8 },
-  cancelBtn: { flex: 1, paddingVertical: 10, borderRadius: radius.md, backgroundColor: colors.bg.elevated, alignItems: 'center' },
-  cancelText: { fontSize: 14, color: colors.text.secondary, fontWeight: '500' },
-  saveBtn: { flex: 1, paddingVertical: 10, borderRadius: radius.md, backgroundColor: colors.accent.primary, alignItems: 'center' },
-  saveText: { fontSize: 14, color: '#FFFFFF', fontWeight: '600' },
 
   topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 },
   topLeft: { flex: 1, gap: 4 },

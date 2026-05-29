@@ -1,23 +1,23 @@
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell } from 'lucide-react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Bell } from "lucide-react-native";
 
-import InsightCard from '@/components/ui/InsightCard';
-import AccountBalanceCard from '@/features/finance/components/AccountBalanceCard';
-import DailySpendCard from '@/features/finance/components/DailySpendCard';
-import RecentTransactions from '@/features/finance/components/RecentTransactions';
-import { useBudget } from '@/features/finance/hooks/useBudget';
-import { useTransactions } from '@/features/finance/hooks/useTransactions';
-import { formatRupiah } from '@/lib/utils';
-import { useAuthStore } from '@/stores/auth';
-import { colors } from '@/theme';
+import InsightCard from "@/components/ui/InsightCard";
+import AccountBalanceCard from "@/features/finance/components/AccountBalanceCard";
+import DailySpendCard from "@/features/finance/components/DailySpendCard";
+import RecentTransactions from "@/features/finance/components/RecentTransactions";
+import { useBudget } from "@/features/finance/hooks/useBudget";
+import { useTransactions } from "@/features/finance/hooks/useTransactions";
+import { formatRupiah } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth";
+import { colors } from "@/theme";
 
 function getGreeting() {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
 }
 
 export default function HomeScreen() {
@@ -26,14 +26,13 @@ export default function HomeScreen() {
   const { data: txData, isLoading: txLoading, isRefetching, refetch } = useTransactions();
   const { data: budget } = useBudget();
 
-  const firstName = user?.email?.split('@')[0] ?? 'there';
+  const firstName = user?.email?.split("@")[0] ?? "there";
   const items = txData?.items ?? [];
 
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const dailyLimit = budget?.monthly_limit != null
-    ? Math.round(budget.monthly_limit / daysInMonth)
-    : 0;
+  const dailyLimit =
+    budget?.monthly_limit != null ? Math.round(budget.monthly_limit / daysInMonth) : 0;
 
   const todayStr = now.toISOString().slice(0, 10);
   const todayItems = items.filter((t) => t.occurred_at.startsWith(todayStr));
@@ -58,7 +57,7 @@ export default function HomeScreen() {
       >
         <View style={styles.header}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{firstName[0]?.toUpperCase() ?? 'U'}</Text>
+            <Text style={styles.avatarText}>{firstName[0]?.toUpperCase() ?? "U"}</Text>
           </View>
           <Bell size={22} color={colors.text.secondary} strokeWidth={1.5} />
         </View>
@@ -80,7 +79,7 @@ export default function HomeScreen() {
           <InsightCard
             label="Today's Spend"
             highlight={formatRupiah(todayExpense)}
-            body={todayExpense === 0 ? 'No expenses recorded today' : 'Daily limit tracking active'}
+            body={todayExpense === 0 ? "No expenses recorded today" : "Daily limit tracking active"}
             variant="accent"
             badge="Today"
           />
@@ -88,20 +87,20 @@ export default function HomeScreen() {
             label="Budget Signal"
             body={
               budgetPct < 0.5
-                ? 'Well within daily budget — great control'
+                ? "Well within daily budget — great control"
                 : budgetPct < 1
-                ? 'Approaching your daily limit'
-                : 'Daily limit exceeded today'
+                  ? "Approaching your daily limit"
+                  : "Daily limit exceeded today"
             }
-            variant={budgetPct >= 1 ? 'warning' : budgetPct >= 0.7 ? 'info' : 'success'}
-            badge={budgetPct >= 0.7 ? 'Watch Out' : 'On Track'}
+            variant={budgetPct >= 1 ? "warning" : budgetPct >= 0.7 ? "info" : "success"}
+            badge={budgetPct >= 0.7 ? "Watch Out" : "On Track"}
           />
         </ScrollView>
 
         <RecentTransactions
           items={items.slice(0, 3)}
           isLoading={txLoading}
-          onSeeAll={() => router.push('/(app)/finance')}
+          onSeeAll={() => router.push("/(app)/finance/history")}
           onPress={(id) => router.push(`/(app)/finance/${id}`)}
         />
       </ScrollView>
@@ -115,9 +114,9 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 120 },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 16,
@@ -129,14 +128,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.subtle,
     borderWidth: 1,
     borderColor: colors.accent.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  avatarText: { fontSize: 14, fontWeight: '600', color: colors.accent.text },
+  avatarText: { fontSize: 14, fontWeight: "600", color: colors.accent.text },
 
   greeting: {
     fontSize: 26,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.text.primary,
     paddingHorizontal: 20,
     marginBottom: 20,

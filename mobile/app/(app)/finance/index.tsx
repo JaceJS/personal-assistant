@@ -1,16 +1,16 @@
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Pencil, Plus } from 'lucide-react-native';
+import { useCallback, useMemo } from "react";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Plus } from "lucide-react-native";
 
-import { Header } from '@/components/layout/Header';
-import { Screen } from '@/components/layout/Screen';
-import CashFlowChart from '@/features/finance/components/CashFlowChart';
-import MonthlyBudgetCard from '@/features/finance/components/MonthlyBudgetCard';
-import ProjectedEndOfMonthCard from '@/features/finance/components/ProjectedEndOfMonthCard';
-import TransactionCard from '@/features/finance/components/TransactionCard';
-import { useTransactions } from '@/features/finance/hooks/useTransactions';
-import { colors, radius, spacing } from '@/theme';
+import { Header } from "@/components/layout/Header";
+import { Screen } from "@/components/layout/Screen";
+import CashFlowChart from "@/features/finance/components/CashFlowChart";
+import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
+import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
+import TransactionCard from "@/features/finance/components/TransactionCard";
+import { useTransactions } from "@/features/finance/hooks/useTransactions";
+import { colors, radius, spacing } from "@/theme";
 
 const RECENT_COUNT = 3;
 
@@ -24,16 +24,14 @@ export default function FinanceDashboard() {
   const items = data?.items ?? [];
 
   const totalExpense = useMemo(
-    () => items.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0),
-    [items],
+    () => items.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0),
+    [items]
   );
 
   const recentItems = useMemo(() => items.slice(0, RECENT_COUNT), [items]);
 
-  const [budgetEditing, setBudgetEditing] = useState(false);
-
-  const handleAdd = useCallback(() => router.push('/(app)/finance/new'), [router]);
-  const handleSeeAll = useCallback(() => router.push('/(app)/finance/history'), [router]);
+  const handleAdd = useCallback(() => router.push("/(app)/finance/new"), [router]);
+  const handleSeeAll = useCallback(() => router.push("/(app)/finance/history"), [router]);
 
   return (
     <Screen>
@@ -52,28 +50,20 @@ export default function FinanceDashboard() {
       >
         <ProjectedEndOfMonthCard />
 
-        <SectionHeader
-          title="Monthly Budget"
-          right={
-            <Pressable onPress={() => setBudgetEditing(true)} hitSlop={8}>
-              <Pencil size={16} color={colors.accent.primary} strokeWidth={2} />
-            </Pressable>
-          }
-        />
-        <MonthlyBudgetCard
-          totalExpense={totalExpense}
-          isEditing={budgetEditing}
-          onEditingChange={setBudgetEditing}
-        />
+        <SectionHeader title="Monthly Budget" />
+        <MonthlyBudgetCard totalExpense={totalExpense} />
 
         <SectionHeader title="Cash Flow" />
         <CashFlowChart />
 
-        <SectionHeader title="Recent Transactions" right={
-          <Pressable onPress={handleSeeAll} hitSlop={8}>
-            <Text style={styles.seeAll}>See All</Text>
-          </Pressable>
-        } />
+        <SectionHeader
+          title="Recent Transactions"
+          right={
+            <Pressable onPress={handleSeeAll} hitSlop={8}>
+              <Text style={styles.seeAll}>See All</Text>
+            </Pressable>
+          }
+        />
         <View style={styles.transactionsCard}>
           {recentItems.length === 0 ? (
             <Text style={styles.emptyText}>No transactions this month</Text>
@@ -114,22 +104,22 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 120 },
 
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.xl,
     marginBottom: 10,
     marginTop: 8,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: colors.accent.text,
+    fontWeight: "700",
+    color: colors.text.primary,
     letterSpacing: -0.2,
   },
   seeAll: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: "500",
     color: colors.accent.primary,
   },
 
@@ -140,25 +130,25 @@ const styles = StyleSheet.create({
     borderColor: colors.border.default,
     marginHorizontal: spacing.xl,
     marginBottom: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   divider: { height: 1, backgroundColor: colors.border.default, marginHorizontal: 16 },
   emptyText: {
     fontSize: 13,
     color: colors.text.muted,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: 20,
   },
 
   fab: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 24,
     right: 24,
     width: 52,
     height: 52,
     borderRadius: radius.full,
     backgroundColor: colors.accent.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

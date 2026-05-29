@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronRight, Grid3x3, LogOut, Tag, User, Wallet } from 'lucide-react-native';
+import { ChevronRight, Grid3x3, LogOut, PiggyBank, Tag, User, Wallet } from 'lucide-react-native';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
@@ -63,6 +63,12 @@ export default function SettingsScreen() {
             icon={<Tag size={18} color={colors.text.muted} />}
             label="Manage Categories"
             onPress={() => router.push('/(app)/categories')}
+          />
+          <MenuDivider />
+          <MenuItem
+            icon={<PiggyBank size={18} color={colors.text.muted} />}
+            label="Monthly Budget"
+            onPress={() => router.push('/(app)/settings/budget')}
           />
         </GroupedList>
 

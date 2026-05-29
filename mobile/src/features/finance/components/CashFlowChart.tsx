@@ -7,7 +7,7 @@ import { useChartFont } from '@/hooks/useChartFont';
 import { colors, radius } from '@/theme';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const CHART_HEIGHT = 180;
+const CHART_HEIGHT = 200;
 
 interface CashFlowPoint {
   x: number;
@@ -15,6 +15,12 @@ interface CashFlowPoint {
   income: number;
   expense: number;
   [key: string]: string | number;
+}
+
+function formatChartY(val: number): string {
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}jt`;
+  if (val >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
+  return String(Math.round(val));
 }
 
 function buildCashFlowBuckets(items: Transaction[]): CashFlowPoint[] {
@@ -50,18 +56,20 @@ export default function CashFlowChart() {
             data={buckets}
             xKey="x"
             yKeys={['income', 'expense']}
-            domainPadding={{ left: 16, right: 16, top: 16 }}
+            domainPadding={{ left: 16, right: 16, top: 20 }}
             xAxis={{
               font: chartFont,
               formatXLabel: v => buckets.find(b => b.x === Math.round(Number(v)))?.label ?? '',
               labelColor: colors.text.muted,
-              lineColor: 'transparent',
+              lineColor: colors.border.subtle,
               tickCount: 6,
             }}
             yAxis={[{
               font: chartFont,
-              labelColor: 'transparent',
-              lineColor: 'transparent',
+              formatYLabel: v => formatChartY(Number(v)),
+              labelColor: colors.text.muted,
+              lineColor: colors.border.subtle,
+              tickCount: 4,
             }]}
           >
             {({ points, chartBounds }) => (
@@ -70,17 +78,15 @@ export default function CashFlowChart() {
                   points={points.income}
                   chartBounds={chartBounds}
                   color={colors.success.text}
-                  barWidth={8}
+                  barWidth={16}
                   barCount={2}
-                  roundedCorners={{ topLeft: 4, topRight: 4 }}
                 />
                 <Bar
                   points={points.expense}
                   chartBounds={chartBounds}
                   color={colors.accent.primary}
-                  barWidth={8}
+                  barWidth={16}
                   barCount={2}
-                  roundedCorners={{ topLeft: 4, topRight: 4 }}
                   animate={{ type: 'spring' }}
                 />
               </>
