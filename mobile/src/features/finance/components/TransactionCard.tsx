@@ -6,7 +6,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import ListItem from '@/components/ui/ListItem';
 import type { Transaction } from '@/features/finance/types';
 import { formatRupiah, formatShortDate } from '@/lib/utils';
-import { colors } from '@/theme';
+import { colors, textStyles } from '@/theme';
 
 interface TransactionCardProps {
   transaction: Transaction;
@@ -54,7 +54,7 @@ function TransactionCard({ transaction, categoryName, showId, onPress }: Transac
 
 const styles = StyleSheet.create({
   rightCol: { alignItems: 'flex-end', gap: 4 },
-  amount: { fontSize: 15, fontWeight: '600' },
+  amount: { ...StyleSheet.flatten(textStyles.h3) },
   txnId: { fontSize: 10, color: colors.text.muted },
 });
 

@@ -1,6 +1,7 @@
-import { useCallback } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import {
   Banknote,
   ChevronDown,
@@ -18,11 +19,12 @@ import {
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
 import { useAuthStore } from '@/stores/auth';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, textStyles } from '@/theme';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, signOut } = useAuthStore();
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
   const handleSignOut = useCallback(() => {
     Alert.alert('Sign out', 'Are you sure you want to sign out?', [
@@ -30,6 +32,18 @@ export default function SettingsScreen() {
       { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
     ]);
   }, [signOut]);
+
+  const pickImage = useCallback(async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setAvatarUri(result.assets[0].uri);
+    }
+  }, []);
 
   const initial = (user?.email?.[0] ?? 'U').toUpperCase();
   const displayName = user?.email?.split('@')[0] ?? 'User';
@@ -51,11 +65,19 @@ export default function SettingsScreen() {
           <View style={styles.profileHero}>
             <View style={styles.avatarWrapper}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{initial}</Text>
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                ) : (
+                  <Text style={styles.avatarText}>{initial}</Text>
+                )}
               </View>
-              <View style={styles.editBadge}>
+              <Pressable
+                onPress={(e) => { e.stopPropagation(); void pickImage(); }}
+                style={styles.editBadge}
+                hitSlop={8}
+              >
                 <Pencil size={12} color="#fff" />
-              </View>
+              </Pressable>
             </View>
             <Text style={styles.profileName}>{displayName}</Text>
             <Text style={styles.profileEmail} numberOfLines={1}>
@@ -236,16 +258,21 @@ const styles = StyleSheet.create({
   avatar: {
     width: 88,
     height: 88,
-    borderRadius: radius.xl,
+    borderRadius: radius.full,
     backgroundColor: colors.accent.subtle,
     borderWidth: 1.5,
     borderColor: colors.accent.border,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 88,
+    height: 88,
+    borderRadius: radius.full,
   },
   avatarText: {
-    fontSize: 32,
-    fontWeight: '700',
+    ...StyleSheet.flatten(textStyles.display),
     color: colors.accent.primary,
   },
   editBadge: {
@@ -260,22 +287,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profileName: {
+    ...StyleSheet.flatten(textStyles.display),
     fontSize: 20,
-    fontWeight: '700',
-    color: colors.text.primary,
     marginTop: 4,
   },
   profileEmail: {
+    ...StyleSheet.flatten(textStyles.caption),
     fontSize: 13,
     color: colors.text.secondary,
   },
 
   sectionLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: colors.text.muted,
-    letterSpacing: 0.88,
-    textTransform: 'uppercase',
+    ...StyleSheet.flatten(textStyles.overline),
     marginBottom: 6,
     marginLeft: 4,
     marginTop: 8,
@@ -302,10 +325,8 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   menuLabel: {
+    ...StyleSheet.flatten(textStyles.body),
     flex: 1,
-    fontSize: 15,
-    fontWeight: '400',
-    color: colors.text.primary,
   },
   valueRow: {
     flexDirection: 'row',
@@ -313,6 +334,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   valueText: {
+    ...StyleSheet.flatten(textStyles.caption),
     fontSize: 14,
     color: colors.text.secondary,
   },
@@ -333,8 +355,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   signOutLabel: {
+    ...StyleSheet.flatten(textStyles.h2),
     fontSize: 16,
-    fontWeight: '600',
     color: colors.danger.text,
   },
 });

@@ -11,7 +11,7 @@ import { useBudget } from "@/features/finance/hooks/useBudget";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { formatRupiah } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
-import { colors } from "@/theme";
+import { colors, textStyles } from "@/theme";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -131,15 +131,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { fontSize: 14, fontWeight: "600", color: colors.accent.text },
+  avatarText: {
+    ...StyleSheet.flatten(textStyles.h3),
+    fontSize: 14,
+    color: colors.accent.text,
+  },
 
   greeting: {
+    ...StyleSheet.flatten(textStyles.display),
     fontSize: 26,
-    fontWeight: "700",
-    color: colors.text.primary,
+    letterSpacing: -0.5,
     paddingHorizontal: 20,
     marginBottom: 20,
-    letterSpacing: -0.5,
   },
 
   insightScroll: { marginBottom: 16 },

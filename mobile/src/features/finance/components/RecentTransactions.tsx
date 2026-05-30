@@ -6,7 +6,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import TransactionCard from '@/features/finance/components/TransactionCard';
 import type { Transaction } from '@/features/finance/types';
-import { colors, radius } from '@/theme';
+import { colors, radius, textStyles } from '@/theme';
 
 interface RecentTransactionsProps {
   items: Transaction[];
@@ -58,8 +58,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  title: { fontSize: 16, fontWeight: '600', color: colors.text.primary },
-  seeAll: { fontSize: 13, color: colors.accent.primary },
+  title: { ...StyleSheet.flatten(textStyles.h3), fontSize: 16, color: colors.text.primary },
+  seeAll: { ...StyleSheet.flatten(textStyles.mono), color: colors.accent.primary },
   list: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,

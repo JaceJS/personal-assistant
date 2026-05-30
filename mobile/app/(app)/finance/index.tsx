@@ -10,7 +10,7 @@ import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
 import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
 import TransactionCard from "@/features/finance/components/TransactionCard";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
-import { colors, radius, spacing } from "@/theme";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 const RECENT_COUNT = 3;
 
@@ -112,10 +112,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 18,
+    ...StyleSheet.flatten(textStyles.h2),
     fontWeight: "700",
-    color: colors.text.primary,
-    letterSpacing: -0.2,
   },
   seeAll: {
     fontSize: 13,

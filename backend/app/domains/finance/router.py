@@ -102,7 +102,7 @@ async def create_category(
 async def get_category(
     category_id: uuid.UUID, user_id: CurrentUser, session: DbSession
 ) -> ApiResponse[CategoryRead]:
-    item = await service.get_category_or_404(session, category_id)
+    item = await service.get_category_or_404(session, category_id, user_id)
     return ok(item)
 
 

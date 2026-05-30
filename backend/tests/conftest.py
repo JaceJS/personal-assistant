@@ -20,13 +20,25 @@ from app.shared.models import Base
 _settings = get_settings()
 
 # Enum DDL needed before create_all because models use create_type=False.
+# Postgres has no "CREATE TYPE IF NOT EXISTS", so each enum is created inside a
+# DO block that swallows the duplicate_object error to stay idempotent.
+def _create_enum(name: str, values: tuple[str, ...]) -> str:
+    labels = ",".join(f"'{v}'" for v in values)
+    return (
+        f"DO $$ BEGIN CREATE TYPE {name} AS ENUM ({labels}); "
+        f"EXCEPTION WHEN duplicate_object THEN null; END $$"
+    )
+
+
 _ENUM_DDL = [
-    "CREATE TYPE IF NOT EXISTS account_type AS ENUM ('cash','bank','ewallet','credit')",
-    "CREATE TYPE IF NOT EXISTS category_type AS ENUM ('expense','income','transfer')",
-    "CREATE TYPE IF NOT EXISTS transaction_source AS ENUM ('voice','manual','import')",
-    "CREATE TYPE IF NOT EXISTS transaction_status AS ENUM ('draft','confirmed')",
-    "CREATE TYPE IF NOT EXISTS voice_processing_status "
-    "AS ENUM ('pending','transcribing','extracting','completed','failed')",
+    _create_enum("account_type", ("cash", "bank", "ewallet", "credit")),
+    _create_enum("category_type", ("expense", "income", "transfer")),
+    _create_enum("transaction_source", ("voice", "manual", "import")),
+    _create_enum("transaction_status", ("draft", "confirmed")),
+    _create_enum(
+        "voice_processing_status",
+        ("pending", "transcribing", "extracting", "completed", "failed"),
+    ),
 ]
 _ENUM_DROP = [
     "DROP TYPE IF EXISTS voice_processing_status",

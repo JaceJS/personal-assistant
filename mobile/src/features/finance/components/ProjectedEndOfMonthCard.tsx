@@ -4,7 +4,7 @@ import { TrendingDown, TrendingUp } from 'lucide-react-native';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import type { Transaction } from '@/features/finance/types';
 import { formatRupiah } from '@/lib/utils';
-import { colors, radius } from '@/theme';
+import { colors, radius, textStyles } from '@/theme';
 
 function getMonthRange(year: number, month: number) {
   const from = new Date(year, month, 1).toISOString().slice(0, 10);
@@ -77,19 +77,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   label: {
+    ...StyleSheet.flatten(textStyles.caption),
     fontSize: 13,
-    color: colors.text.secondary,
     fontWeight: '500',
+    color: colors.text.secondary,
   },
   amount: {
+    ...StyleSheet.flatten(textStyles.display),
     fontSize: 28,
     fontWeight: '800',
-    color: colors.text.primary,
-    letterSpacing: -0.5,
     marginBottom: 6,
   },
   change: {
-    fontSize: 12,
+    ...StyleSheet.flatten(textStyles.caption),
     fontWeight: '500',
   },
 });

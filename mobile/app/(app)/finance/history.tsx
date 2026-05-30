@@ -26,7 +26,7 @@ import TransactionCard from "@/features/finance/components/TransactionCard";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import type { Transaction } from "@/features/finance/types";
 import { formatRupiah } from "@/lib/utils";
-import { colors, radius, spacing } from "@/theme";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 const MONTH_NAMES = [
   "January",
@@ -239,9 +239,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   searchInput: {
+    ...StyleSheet.flatten(textStyles.body),
     flex: 1,
     fontSize: 14,
-    color: colors.text.primary,
   },
   filterBtn: {
     width: 48,
@@ -272,10 +272,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  monthNavText: { fontSize: 13, fontWeight: "500", color: colors.text.primary },
-  periodTotal: { fontSize: 13, fontWeight: "600" },
+  monthNavText: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13, fontWeight: "500", color: colors.text.primary },
+  periodTotal: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13, fontWeight: "600" },
 
   dateHeader: {
+    ...StyleSheet.flatten(textStyles.h2),
     fontSize: 16,
     fontWeight: "700",
     color: colors.accent.text,

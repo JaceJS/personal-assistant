@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, radius } from '@/theme';
+import { colors, radius, textStyles } from '@/theme';
 
 export type InsightVariant = 'accent' | 'success' | 'warning' | 'info' | 'default';
 
@@ -96,10 +96,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
+    ...StyleSheet.flatten(textStyles.overline),
     fontSize: 10,
     fontWeight: '600',
     color: colors.text.secondary,
-    letterSpacing: 1.1,
   },
   badge: {
     borderRadius: radius.full,
@@ -107,19 +107,20 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   badgeText: {
+    ...StyleSheet.flatten(textStyles.caption),
     fontSize: 10,
     fontWeight: '600',
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },
   highlight: {
-    fontSize: 18,
+    ...StyleSheet.flatten(textStyles.h2),
     fontWeight: '700',
     letterSpacing: -0.3,
     marginTop: 2,
   },
   body: {
-    fontSize: 12,
+    ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.secondary,
     lineHeight: 17,
   },

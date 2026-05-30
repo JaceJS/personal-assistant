@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useBudget } from '@/features/finance/hooks/useBudget';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { formatRupiah } from '@/lib/utils';
-import { colors, radius } from '@/theme';
+import { colors, radius, textStyles } from '@/theme';
 
 const RING_RADIUS = 36;
 const RING_STROKE_W = 6;
@@ -116,8 +116,8 @@ const styles = StyleSheet.create({
 
   topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 },
   topLeft: { flex: 1, gap: 4 },
-  budgetLabel: { fontSize: 10, fontWeight: '600', color: colors.text.muted, letterSpacing: 1.1 },
-  budgetAmount: { fontSize: 22, fontWeight: '800', color: colors.text.primary, letterSpacing: -0.5 },
+  budgetLabel: { ...StyleSheet.flatten(textStyles.overline), fontSize: 10 },
+  budgetAmount: { ...StyleSheet.flatten(textStyles.display), fontSize: 22, fontWeight: '800' },
   ringWrap: { width: RING_SIZE, height: RING_SIZE, alignItems: 'center', justifyContent: 'center' },
   ringCenter: { position: 'absolute', alignItems: 'center' },
   ringPct: { fontSize: 13, fontWeight: '700' },
@@ -127,6 +127,6 @@ const styles = StyleSheet.create({
 
   spentRow: { flexDirection: 'row', justifyContent: 'space-between' },
   remainingCol: { alignItems: 'flex-end' },
-  rowLabel: { fontSize: 11, color: colors.text.muted, marginBottom: 2 },
-  rowAmount: { fontSize: 13, fontWeight: '600', color: colors.text.primary },
+  rowLabel: { ...StyleSheet.flatten(textStyles.caption), fontSize: 11, marginBottom: 2 },
+  rowAmount: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13, fontWeight: '600', color: colors.text.primary },
 });

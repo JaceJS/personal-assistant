@@ -4,7 +4,7 @@ import { Bar, CartesianChart } from 'victory-native';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import type { Transaction } from '@/features/finance/types';
 import { useChartFont } from '@/hooks/useChartFont';
-import { colors, radius } from '@/theme';
+import { colors, radius, textStyles } from '@/theme';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const CHART_HEIGHT = 200;
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   },
   chartWrap: { height: CHART_HEIGHT },
   emptyChart: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { fontSize: 13, color: colors.text.muted },
+  emptyText: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13 },
   legend: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -134,5 +134,5 @@ const styles = StyleSheet.create({
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { fontSize: 12, color: colors.text.muted },
+  legendLabel: { ...StyleSheet.flatten(textStyles.caption) },
 });

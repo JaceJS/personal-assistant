@@ -9,7 +9,7 @@ import Input from "@/components/ui/Input";
 import { useDeleteTransaction, useTransaction, useUpdateTransaction } from "@/features/finance/hooks/useTransactions";
 import { useToastStore } from "@/stores/toast";
 import { formatDate, formatRupiah } from "@/lib/utils";
-import { colors, radius, spacing } from "@/theme";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function TransactionDetailScreen() {
   const router = useRouter();
@@ -178,7 +178,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  notFound: { fontSize: 15, color: colors.text.muted },
+  notFound: { ...StyleSheet.flatten(textStyles.body), color: colors.text.muted },
 
   header: {
     flexDirection: 'row',
@@ -187,14 +187,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing['2xl'],
     paddingVertical: spacing.lg,
   },
-  title: { fontSize: 18, fontWeight: '600', color: colors.text.primary },
+  title: { ...StyleSheet.flatten(textStyles.h2) },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32, gap: spacing.lg },
 
   amountHero: { alignItems: 'center', paddingVertical: spacing['3xl'] },
-  amount: { fontSize: 36, fontWeight: '700', letterSpacing: -0.5 },
-  date: { marginTop: spacing.sm, fontSize: 13, color: colors.text.muted },
+  amount: { ...StyleSheet.flatten(textStyles.display), fontSize: 36, fontWeight: '700', letterSpacing: -0.5 },
+  date: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13, marginTop: spacing.sm },
 
   card: {
     backgroundColor: colors.bg.surface,
@@ -204,8 +204,8 @@ const styles = StyleSheet.create({
   },
 
   row: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.lg },
-  rowLabel: { fontSize: 13, color: colors.text.muted },
-  rowValue: { flex: 1, textAlign: 'right', fontSize: 13, color: colors.text.primary },
+  rowLabel: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13 },
+  rowValue: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13, color: colors.text.primary, flex: 1, textAlign: 'right' },
 
   actions: { gap: spacing.md },
 });

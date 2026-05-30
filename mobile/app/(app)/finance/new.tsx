@@ -12,7 +12,7 @@ import Input from "@/components/ui/Input";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCreateTransaction } from "@/features/finance/hooks/useTransactions";
 import { useToastStore } from "@/stores/toast";
-import { colors, radius, spacing } from "@/theme";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 const schema = z.object({
   account_id: z.string().min(1, "Select an account"),
@@ -159,12 +159,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing['2xl'],
     paddingVertical: spacing.lg,
   },
-  title: { fontSize: 18, fontWeight: '600', color: colors.text.primary },
+  title: { ...StyleSheet.flatten(textStyles.h2) },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32 },
   emptyWrap: { marginTop: 64, alignItems: 'center', gap: spacing.md },
-  emptyText: { fontSize: 14, color: colors.text.muted, textAlign: 'center' },
+  emptyText: { ...StyleSheet.flatten(textStyles.caption), fontSize: 14, color: colors.text.muted, textAlign: 'center' },
   form: { gap: spacing.lg, paddingTop: spacing.sm },
-  fieldError: { fontSize: 12, color: colors.danger.text },
+  fieldError: { ...StyleSheet.flatten(textStyles.caption), color: colors.danger.text },
   submitWrap: { marginTop: spacing.lg },
 });

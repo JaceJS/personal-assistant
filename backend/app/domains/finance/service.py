@@ -63,10 +63,19 @@ async def update_account(
 
 # ── Categories ────────────────────────────────────────────────────────────────
 
-async def get_category_or_404(session: AsyncSession, category_id: uuid.UUID) -> Category:
+async def get_category_or_404(
+    session: AsyncSession, category_id: uuid.UUID, user_id: uuid.UUID
+) -> Category:
+    """Return a category the user may access, else raise.
+
+    System-default categories (user_id IS NULL) are shared and readable by everyone;
+    user-owned categories are only accessible to their owner.
+    """
     category = await repo.get_category(session, category_id)
     if category is None:
         raise NotFoundError(f"Category {category_id} not found")
+    if category.user_id is not None and category.user_id != user_id:
+        raise ForbiddenError("You don't own this category")
     return category
 
 
@@ -123,6 +132,9 @@ async def create_transaction(
     if account.user_id != user_id:
         raise ForbiddenError("You don't own this account")
 
+    if data.category_id is not None:
+        await get_category_or_404(session, data.category_id, user_id)
+
     tx = await repo.create_transaction(
         session, user_id,
         account_id=data.account_id,
@@ -152,6 +164,8 @@ async def update_transaction(
     old_balance_effect = tx.amount if tx.status == TransactionStatus.confirmed else 0
 
     updates = data.model_dump(exclude_unset=True)
+    if updates.get("category_id") is not None:
+        await get_category_or_404(session, updates["category_id"], user_id)
     updated = await repo.update_transaction(session, tx, **updates)
 
     new_balance_effect = updated.amount if updated.status == TransactionStatus.confirmed else 0

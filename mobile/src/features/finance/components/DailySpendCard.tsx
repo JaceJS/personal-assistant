@@ -4,7 +4,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { useBudget } from '@/features/finance/hooks/useBudget';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { formatRupiah } from '@/lib/utils';
-import { colors } from '@/theme';
+import { colors, textStyles } from '@/theme';
 const RADIUS = 68;
 const STROKE_W = 10;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -101,23 +101,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pct: {
+    ...StyleSheet.flatten(textStyles.display),
     fontSize: 30,
     fontWeight: '800',
     letterSpacing: -1,
   },
   usedLabel: {
-    fontSize: 12,
+    ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
     marginTop: 2,
   },
   title: {
+    ...StyleSheet.flatten(textStyles.h2),
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0,
     color: colors.text.primary,
     marginBottom: 6,
   },
   remaining: {
-    fontSize: 13,
+    ...StyleSheet.flatten(textStyles.mono),
     fontWeight: '500',
   },
   cardEmpty: {
@@ -125,13 +128,14 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   noLimit: {
-    fontSize: 18,
+    ...StyleSheet.flatten(textStyles.h2),
     fontWeight: '700',
     color: colors.text.secondary,
     marginTop: 12,
     marginBottom: 6,
   },
   noLimitSub: {
+    ...StyleSheet.flatten(textStyles.caption),
     fontSize: 13,
     color: colors.text.muted,
     textAlign: 'center',

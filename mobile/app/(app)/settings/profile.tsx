@@ -20,7 +20,7 @@ export default function ProfileScreen() {
 
   const handleSave = useCallback(() => {
     // TODO: implement profile update via Supabase user metadata
-    showToast("Profil disimpan (segera tersedia)", "info");
+    showToast("Profile saved (coming soon)", "info");
   }, [showToast]);
 
   return (
@@ -47,7 +47,7 @@ export default function ProfileScreen() {
             color: THEME.colors.ink,
           }}
         >
-          Profil
+          Profile
         </Text>
       </View>
 
@@ -95,10 +95,10 @@ export default function ProfileScreen() {
         {/* Form */}
         <View style={{ gap: 16 }}>
           <Input
-            label="Nama Tampilan"
+            label="Display Name"
             value={name}
             onChangeText={setName}
-            placeholder="Nama kamu"
+            placeholder="Your name"
           />
           <Input
             label="Email"
@@ -109,7 +109,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={{ marginTop: 32 }}>
-          <Button label="Simpan Perubahan" onPress={handleSave} fullWidth />
+          <Button label="Save Changes" onPress={handleSave} fullWidth />
         </View>
 
         <View
@@ -128,7 +128,7 @@ export default function ProfileScreen() {
               textAlign: "center",
             }}
           >
-            Pembaruan profil akan tersedia di versi berikutnya.
+            Profile updates will be available in the next version.
           </Text>
         </View>
       </ScrollView>

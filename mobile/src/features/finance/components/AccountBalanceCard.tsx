@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { useAccounts } from '@/features/finance/hooks/useAccounts';
 import { formatRupiah } from '@/lib/utils';
-import { colors } from '@/theme';
+import { colors, textStyles } from '@/theme';
 
 export default function AccountBalanceCard() {
   const { data } = useAccounts();
@@ -29,21 +29,22 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   label: {
+    ...StyleSheet.flatten(textStyles.overline),
     fontSize: 10,
     fontWeight: '600',
-    color: colors.text.muted,
     letterSpacing: 1.2,
+    color: colors.text.muted,
     marginBottom: 8,
   },
   amount: {
-    fontSize: 32,
+    ...StyleSheet.flatten(textStyles.display),
     fontWeight: '800',
-    color: colors.text.primary,
     letterSpacing: -1,
+    color: colors.text.primary,
     marginBottom: 6,
   },
   sub: {
-    fontSize: 12,
+    ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
   },
 });
