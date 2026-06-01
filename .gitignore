@@ -13,5 +13,6 @@ Thumbs.db
 .env.*
 !.env.example
 
-# Claude Code
+# AI Agents
 .claude/
+.agents/

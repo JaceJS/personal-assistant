@@ -35,7 +35,7 @@ async def test_create_transaction_updates_account_balance(
     response = await client.post("/api/v1/transactions", json=payload)
 
     assert response.status_code == 201
-    assert response.json()["amount"] == -50_000
+    assert response.json()["data"]["amount"] == -50_000
 
     await db_session.refresh(account)
     assert account.balance == -50_000

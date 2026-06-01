@@ -21,6 +21,12 @@ class AppError(Exception):
         self.message = message
 
 
+class BadRequestError(AppError):
+    """The request is malformed or cannot be processed (HTTP 400)."""
+
+    status_code = 400
+
+
 class UnauthorizedError(AppError):
     """Authentication is missing or invalid (HTTP 401)."""
 

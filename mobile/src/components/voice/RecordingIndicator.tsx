@@ -8,7 +8,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { colors, radius } from '@/theme';
+import { colors, radius, textStyles } from '@/theme';
 
 const BAR_COUNT = 5;
 const BAR_HEIGHTS = [14, 22, 32, 22, 14];
@@ -88,8 +88,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    fontSize: 12,
-    fontWeight: '400',
+    ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
   },
 });

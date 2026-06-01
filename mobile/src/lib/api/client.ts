@@ -29,6 +29,7 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const method = init?.method ?? "GET";
   const authHeader = await getAuthHeader();
+  const isFormData = init?.body instanceof FormData;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
@@ -40,7 +41,7 @@ export async function apiFetch<T>(
       ...init,
       signal: controller.signal,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...authHeader,
         ...init?.headers,
       },

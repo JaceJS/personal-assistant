@@ -1,7 +1,5 @@
 import React from 'react';
 import {
-  ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,9 +7,10 @@ import {
   View,
 } from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import Button from '@/components/ui/Button';
 import type { ExtractedTransaction } from '@/features/finance/api/voice';
 import { formatRupiah } from '@/lib/utils';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, textStyles } from '@/theme';
 
 interface Props {
   data: ExtractedTransaction | null;
@@ -80,24 +79,13 @@ export const ConfirmCard = React.memo(function ConfirmCard({
         </View>
 
         <View style={styles.actions}>
-          <Pressable
+          <Button
+            label="Save Transaction"
             onPress={() => onSave(data)}
-            disabled={isSaving}
-            style={({ pressed }) => [styles.btnSave, pressed && { opacity: 0.8 }]}
-          >
-            {isSaving ? (
-              <ActivityIndicator color={colors.bg.canvas} />
-            ) : (
-              <Text style={styles.btnSaveLabel}>Save Transaction</Text>
-            )}
-          </Pressable>
-
-          <Pressable
-            onPress={onDismiss}
-            style={({ pressed }) => [styles.btnCancel, pressed && { opacity: 0.6 }]}
-          >
-            <Text style={styles.btnCancelLabel}>Cancel</Text>
-          </Pressable>
+            loading={isSaving}
+            fullWidth
+          />
+          <Button label="Cancel" onPress={onDismiss} variant="secondary" fullWidth />
         </View>
       </ScrollView>
     </BottomSheet>
@@ -107,23 +95,19 @@ export const ConfirmCard = React.memo(function ConfirmCard({
 const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing['2xl'] },
   sectionLabel: {
-    fontSize: 12,
-    fontWeight: '400',
+    ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
     marginBottom: 4,
   },
   amount: {
-    fontSize: 32,
-    fontWeight: '600',
-    letterSpacing: -0.5,
+    ...StyleSheet.flatten(textStyles.display),
     marginBottom: spacing['2xl'],
   },
   amountExpense: { color: colors.danger.text },
   amountIncome: { color: colors.success.text },
   field: { marginBottom: spacing.lg },
   fieldValue: {
-    fontSize: 15,
-    fontWeight: '500',
+    ...StyleSheet.flatten(textStyles.h3),
     color: colors.text.primary,
   },
   noteInput: {
@@ -133,7 +117,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 15,
+    ...StyleSheet.flatten(textStyles.body),
     color: colors.text.primary,
     minHeight: 44,
   },
@@ -149,33 +133,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   confidenceLabel: {
-    fontSize: 12,
+    ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
   },
   actions: { gap: 10, paddingBottom: spacing.lg },
-  btnSave: {
-    backgroundColor: colors.accent.primary,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    paddingVertical: 14,
-    minHeight: 44,
-  },
-  btnSaveLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.bg.canvas,
-  },
-  btnCancel: {
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    paddingVertical: 14,
-    minHeight: 44,
-  },
-  btnCancelLabel: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.text.muted,
-  },
 });

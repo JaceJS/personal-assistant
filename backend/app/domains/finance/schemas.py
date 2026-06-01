@@ -12,6 +12,7 @@ from app.domains.finance.models import (
     CategoryType,
     TransactionSource,
     TransactionStatus,
+    VoiceProcessingStatus,
 )
 
 
@@ -139,3 +140,29 @@ class TransactionRead(BaseModel):
     voice_log_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
+
+
+# Voice
+
+
+class VoiceUploadResponse(BaseModel):
+    voice_log_id: uuid.UUID
+    status: VoiceProcessingStatus
+
+
+class VoiceExtractedData(BaseModel):
+    amount: int
+    currency: str = "IDR"
+    merchant: str | None = None
+    category_name: str | None = None
+    note: str | None = None
+    confidence: float
+
+
+class VoiceStatusRead(BaseModel):
+    id: uuid.UUID
+    status: VoiceProcessingStatus
+    transcript: str | None
+    extracted_data: VoiceExtractedData | None
+    transaction_id: uuid.UUID | None
+    error_message: str | None

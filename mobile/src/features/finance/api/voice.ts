@@ -1,8 +1,5 @@
-// TODO: Backend voice endpoints not yet implemented.
-// POST /api/v1/voice/upload  — returns { voice_log_id: string }
-// GET  /api/v1/voice/{id}    — returns { status: string, transaction?: ExtractedTransaction }
-
 import { apiFetch } from "@/lib/api/client";
+import type { ApiResponse } from "@/features/finance/types";
 
 export interface ExtractedTransaction {
   amount: number;
@@ -13,16 +10,31 @@ export interface ExtractedTransaction {
   confidence: number;
 }
 
+export type VoiceProcessingStatus =
+  | "pending"
+  | "transcribing"
+  | "extracting"
+  | "completed"
+  | "failed";
+
+export interface VoiceUploadResponse {
+  voice_log_id: string;
+  status: VoiceProcessingStatus;
+}
+
 export interface VoiceStatusResponse {
-  status: "pending" | "transcribing" | "extracting" | "completed" | "failed";
-  transaction: ExtractedTransaction | null;
+  id: string;
+  status: VoiceProcessingStatus;
+  transcript: string | null;
+  extracted_data: ExtractedTransaction | null;
+  transaction_id: string | null;
   error_message: string | null;
 }
 
 export async function uploadAudio(
   audioUri: string,
   accountId: string
-): Promise<{ voice_log_id: string }> {
+): Promise<VoiceUploadResponse> {
   const formData = new FormData();
   formData.append("file", {
     uri: audioUri,
@@ -31,13 +43,13 @@ export async function uploadAudio(
   } as unknown as Blob);
   formData.append("account_id", accountId);
 
-  return apiFetch<{ voice_log_id: string }>("/api/v1/voice/upload", {
+  return apiFetch<ApiResponse<VoiceUploadResponse>>("/api/v1/voice/upload", {
     method: "POST",
-    headers: { "Content-Type": "multipart/form-data" },
     body: formData,
-  });
+  }).then((r) => r.data);
 }
 
 export async function getVoiceStatus(voiceLogId: string): Promise<VoiceStatusResponse> {
-  return apiFetch<VoiceStatusResponse>(`/api/v1/voice/${voiceLogId}`);
+  return apiFetch<ApiResponse<VoiceStatusResponse>>(`/api/v1/voice/${voiceLogId}`)
+    .then((r) => r.data);
 }

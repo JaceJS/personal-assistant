@@ -100,6 +100,15 @@ async def get_transaction(session: AsyncSession, tx_id: uuid.UUID) -> Transactio
     return await session.get(Transaction, tx_id)
 
 
+async def get_transaction_by_voice_log(
+    session: AsyncSession, voice_log_id: uuid.UUID
+) -> Transaction | None:
+    result = await session.execute(
+        sa.select(Transaction).where(Transaction.voice_log_id == voice_log_id)
+    )
+    return result.scalar_one_or_none()
+
+
 async def list_transactions(
     session: AsyncSession,
     user_id: uuid.UUID,

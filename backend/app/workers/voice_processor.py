@@ -96,12 +96,21 @@ async def process_voice(
             await session.commit()
 
         except Exception as exc:
-            log.error("voice_processing_failed", voice_log_id=voice_log_id, error=str(exc))
+            error_message = f"{type(exc).__name__}: {exc}"
+            log.error(
+                "voice_processing_failed",
+                voice_log_id=voice_log_id,
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
             async with SessionFactory() as err_session:
                 vl = await repo.get_voice_log(err_session, log_id)
                 if vl is not None:
                     await repo.update_voice_log_status(
-                        err_session, vl, VoiceProcessingStatus.failed, error_message=str(exc)
+                        err_session,
+                        vl,
+                        VoiceProcessingStatus.failed,
+                        error_message=error_message,
                     )
                     await err_session.commit()
             raise
