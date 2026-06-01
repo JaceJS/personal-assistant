@@ -43,3 +43,8 @@ class R2Storage:
                 # aioboto3 is untyped; pin the result to bytes for the type checker.
                 data: bytes = await stream.read()
                 return data
+
+    async def delete(self, key: str) -> None:
+        """Delete the object at `key`. Best-effort; safe to call once."""
+        async with self._session.client(**self._client_kwargs) as client:
+            await client.delete_object(Bucket=self._bucket, Key=key)

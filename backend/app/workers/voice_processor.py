@@ -117,7 +117,15 @@ async def process_voice(
                         error_message=error_message,
                     )
                     await err_session.commit()
-            raise
+        finally:
+            try:
+                await r2.delete(voice_log.audio_url)
+            except Exception as cleanup_exc:
+                log.warning(
+                    "voice_audio_cleanup_failed",
+                    voice_log_id=voice_log_id,
+                    error=str(cleanup_exc),
+                )
 
 
 class WorkerSettings:
