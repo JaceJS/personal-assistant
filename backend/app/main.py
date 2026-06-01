@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 
 from app.core.config import get_settings
 from app.core.database import engine
@@ -20,8 +21,15 @@ from app.shared.queue import create_redis_pool
 
 _settings = get_settings()
 
-
 _lifespan_logger = structlog.get_logger("startup")
+
+_openapi_tags = [
+    {"name": "Budget", "description": "Monthly budget settings per user."},
+    {"name": "Accounts", "description": "Bank/wallet accounts and balances."},
+    {"name": "Categories", "description": "Transaction categories (system + user-defined)."},
+    {"name": "Transactions", "description": "Income and expense transactions."},
+    {"name": "Voice", "description": "Voice-to-transaction upload and status polling."},
+]
 
 
 @asynccontextmanager
@@ -41,7 +49,9 @@ async def _check_jwks() -> None:
         await asyncio.to_thread(_jwks_client.fetch_data)
         _lifespan_logger.info("jwks_ok")
     except Exception as exc:
-        _lifespan_logger.error("jwks_startup_failed", error_type=type(exc).__name__, detail=str(exc))
+        _lifespan_logger.error(
+            "jwks_startup_failed", error_type=type(exc).__name__, detail=str(exc)
+        )
 
 
 app = FastAPI(
@@ -64,6 +74,41 @@ app.add_middleware(RequestLoggingMiddleware)
 register_exception_handlers(app)
 
 app.include_router(finance_router)
+
+
+def _custom_openapi() -> dict[str, object]:
+    if app.openapi_schema:
+        return app.openapi_schema
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=(
+            "## Authentication\n\n"
+            "All endpoints require a Supabase JWT.\n\n"
+            "**Get a token (dev/testing):**\n"
+            "```\n"
+            "POST {SUPABASE_URL}/auth/v1/token?grant_type=password\n"
+            "Content-Type: application/json\n\n"
+            '{"email": "you@example.com", "password": "yourpassword"}\n'
+            "```\n"
+            "Copy `access_token` and paste it into the **Authorize** button above."
+        ),
+        routes=app.routes,
+        tags=_openapi_tags,
+    )
+    schema.setdefault("components", {}).setdefault("securitySchemes", {})
+    schema["components"]["securitySchemes"]["BearerAuth"] = {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Supabase JWT. Obtain via POST /auth/v1/token?grant_type=password",
+    }
+    schema["security"] = [{"BearerAuth": []}]
+    app.openapi_schema = schema
+    return schema
+
+
+app.openapi = _custom_openapi  # type: ignore[method-assign]
 
 
 @app.get("/health")
