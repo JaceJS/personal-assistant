@@ -47,7 +47,6 @@ class Settings(BaseSettings):
     r2_access_key_id: str = ""
     r2_secret_access_key: str = ""
     r2_bucket_name: str = "voice-recordings"
-    r2_public_url: str = ""
 
     # AI providers. STT uses Groq Whisper; the LLM is reached through OpenRouter,
     # so swapping models only means changing `llm_model`.

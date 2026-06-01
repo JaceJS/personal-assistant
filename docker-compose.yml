@@ -1,8 +1,8 @@
 # Dev: starts Postgres 16 and Redis 7 only.
 # The API and worker run locally:
 #   cd backend
-#   uv run uvicorn app.main:app --reload
-#   uv run python -m arq app.workers.voice_processor.WorkerSettings
+#   ./run.sh
+#   ./run-worker.sh
 
 services:
   db:
