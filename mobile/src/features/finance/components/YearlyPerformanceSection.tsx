@@ -1,12 +1,13 @@
-import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Bar, CartesianChart } from 'victory-native';
+import { Check, ChevronDown } from 'lucide-react-native';
 
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import type { Transaction } from '@/features/finance/types';
 import { useChartFont } from '@/hooks/useChartFont';
 import { formatRupiah } from '@/lib/utils';
-import { colors, radius, textStyles } from '@/theme';
+import { colors, radius, spacing, textStyles } from '@/theme';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const CHART_HEIGHT = 200;
@@ -39,6 +40,121 @@ function formatChartY(val: number): string {
   return String(Math.round(val));
 }
 
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+interface YearDropdownProps {
+  value: number;
+  options: number[];
+  onChange: (year: number) => void;
+}
+
+function YearDropdown({ value, options, onChange }: YearDropdownProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={({ pressed }) => pressed && { opacity: 0.7 }}
+      >
+        <View style={dropdownStyles.trigger}>
+          <Text style={dropdownStyles.triggerText}>{value}</Text>
+          <ChevronDown size={14} color={colors.text.muted} />
+        </View>
+      </Pressable>
+
+      <Modal visible={open} transparent animationType="fade">
+        <Pressable style={dropdownStyles.backdrop} onPress={() => setOpen(false)}>
+          <View style={dropdownStyles.menu}>
+            {options.map(opt => (
+              <Pressable
+                key={opt}
+                onPress={() => { onChange(opt); setOpen(false); }}
+                style={({ pressed }) => pressed && { opacity: 0.7 }}
+              >
+                <View style={[dropdownStyles.option, opt === value && dropdownStyles.optionActive]}>
+                  <Text style={[dropdownStyles.optionText, opt === value && dropdownStyles.optionTextActive]}>
+                    {opt}
+                  </Text>
+                  {opt === value && <Check size={14} color={colors.accent.primary} />}
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
+interface ChartContentProps {
+  buckets: MonthlyPoint[];
+  year: number;
+  chartFont: ReturnType<typeof useChartFont>;
+}
+
+function ChartContent({ buckets, year, chartFont }: ChartContentProps) {
+  const hasData = buckets.some(b => b.expense > 0);
+
+  if (!hasData) {
+    return (
+      <View style={styles.emptyWrap}>
+        <Text style={styles.emptyText}>No data for {year}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <CartesianChart
+      data={buckets}
+      xKey="x"
+      yKeys={['expense']}
+      domainPadding={{ left: 16, right: 16, top: 20 }}
+      xAxis={{
+        font: chartFont,
+        formatXLabel: v => buckets.find(b => b.x === Math.round(Number(v)))?.label ?? '',
+        labelColor: colors.text.muted,
+        lineColor: colors.border.subtle,
+        tickCount: 6,
+      }}
+      yAxis={[{
+        font: chartFont,
+        formatYLabel: v => formatChartY(Number(v)),
+        labelColor: colors.text.muted,
+        lineColor: colors.border.subtle,
+        tickCount: 4,
+      }]}
+    >
+      {({ points, chartBounds }) => (
+        <Bar
+          points={points.expense}
+          chartBounds={chartBounds}
+          color={colors.accent.primary}
+          barWidth={20}
+          animate={{ type: 'spring' }}
+        />
+      )}
+    </CartesianChart>
+  );
+}
+
+interface ChartLegendProps {
+  monthlyAvg: number;
+}
+
+function ChartLegend({ monthlyAvg }: ChartLegendProps) {
+  if (monthlyAvg === 0) return null;
+
+  return (
+    <View style={styles.legend}>
+      <View style={[styles.legendDot, { backgroundColor: colors.accent.primary }]} />
+      <Text style={styles.legendText}>Monthly Average: {formatRupiah(monthlyAvg)}</Text>
+    </View>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 interface YearlyPerformanceSectionProps {
   transactions: Transaction[];
   year: number;
@@ -57,7 +173,6 @@ function YearlyPerformanceSection({
   const years = [currentYear - 2, currentYear - 1, currentYear];
 
   const buckets = useMemo(() => buildMonthlyExpenseBuckets(transactions), [transactions]);
-  const hasData = buckets.some(b => b.expense > 0);
 
   const monthlyAvg = useMemo(() => {
     const total = buckets.reduce((sum, b) => sum + b.expense, 0);
@@ -69,17 +184,7 @@ function YearlyPerformanceSection({
     <View style={styles.section}>
       <View style={styles.header}>
         <Text style={styles.title}>Yearly Performance</Text>
-        <View style={styles.yearPills}>
-          {years.map(y => (
-            <Pressable
-              key={y}
-              style={[styles.pill, y === year && styles.pillActive]}
-              onPress={() => onYearChange(y)}
-            >
-              <Text style={[styles.pillText, y === year && styles.pillTextActive]}>{y}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <YearDropdown value={year} options={years} onChange={onYearChange} />
       </View>
 
       <View style={styles.card}>
@@ -87,58 +192,18 @@ function YearlyPerformanceSection({
           <SkeletonCard height={CHART_HEIGHT} />
         ) : (
           <View style={styles.chartWrap}>
-            {hasData ? (
-              <CartesianChart
-                data={buckets}
-                xKey="x"
-                yKeys={['expense']}
-                domainPadding={{ left: 16, right: 16, top: 20 }}
-                xAxis={{
-                  font: chartFont,
-                  formatXLabel: v =>
-                    buckets.find(b => b.x === Math.round(Number(v)))?.label ?? '',
-                  labelColor: colors.text.muted,
-                  lineColor: colors.border.subtle,
-                  tickCount: 6,
-                }}
-                yAxis={[{
-                  font: chartFont,
-                  formatYLabel: v => formatChartY(Number(v)),
-                  labelColor: colors.text.muted,
-                  lineColor: colors.border.subtle,
-                  tickCount: 4,
-                }]}
-              >
-                {({ points, chartBounds }) => (
-                  <Bar
-                    points={points.expense}
-                    chartBounds={chartBounds}
-                    color={colors.accent.primary}
-                    barWidth={20}
-                    animate={{ type: 'spring' }}
-                  />
-                )}
-              </CartesianChart>
-            ) : (
-              <View style={styles.emptyWrap}>
-                <Text style={styles.emptyText}>No data for {year}</Text>
-              </View>
-            )}
+            <ChartContent buckets={buckets} year={year} chartFont={chartFont} />
           </View>
         )}
-
-        {monthlyAvg > 0 && (
-          <View style={styles.legend}>
-            <View style={[styles.legendDot, { backgroundColor: colors.accent.primary }]} />
-            <Text style={styles.legendText}>
-              Monthly Average: {formatRupiah(monthlyAvg)}
-            </Text>
-          </View>
-        )}
+        <ChartLegend monthlyAvg={monthlyAvg} />
       </View>
     </View>
   );
 }
+
+export default React.memo(YearlyPerformanceSection);
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   section: { marginTop: 24 },
@@ -149,25 +214,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: { ...StyleSheet.flatten(textStyles.h2), color: colors.text.primary },
-  yearPills: { flexDirection: 'row', gap: 6 },
-  pill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.full,
-    backgroundColor: colors.bg.elevated,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-  },
-  pillActive: {
-    backgroundColor: colors.accent.subtle,
-    borderColor: colors.accent.border,
-  },
-  pillText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.text.muted,
-  },
-  pillTextActive: { color: colors.accent.text },
   card: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,
@@ -195,4 +241,54 @@ const styles = StyleSheet.create({
   legendText: { ...StyleSheet.flatten(textStyles.caption), color: colors.text.muted },
 });
 
-export default React.memo(YearlyPerformanceSection);
+const dropdownStyles = StyleSheet.create({
+  trigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.bg.elevated,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  triggerText: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.primary,
+    fontWeight: '500',
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  menu: {
+    backgroundColor: colors.bg.elevated,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing['3xl'],
+    paddingHorizontal: spacing['2xl'],
+    gap: spacing.xs,
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
+  },
+  optionActive: {
+    backgroundColor: colors.accent.subtle,
+  },
+  optionText: {
+    ...StyleSheet.flatten(textStyles.body),
+    color: colors.text.secondary,
+  },
+  optionTextActive: {
+    color: colors.accent.text,
+    fontWeight: '600',
+  },
+});

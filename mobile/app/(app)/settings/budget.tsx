@@ -1,40 +1,38 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
-} from "react-native";
-import { ChevronLeft, Wallet, X } from "lucide-react-native";
+} from 'react-native';
+import { ChevronLeft, Wallet } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
-import { Header } from "@/components/layout/Header";
-import { Screen } from "@/components/layout/Screen";
-import EmptyState from "@/components/ui/EmptyState";
-import { SkeletonCard } from "@/components/ui/Skeleton";
-import BudgetBucketItem from "@/features/finance/components/BudgetBucketItem";
-import BudgetHeroCard from "@/features/finance/components/BudgetHeroCard";
-import FixedExpenseItem from "@/features/finance/components/FixedExpenseItem";
-import YearlyPerformanceSection from "@/features/finance/components/YearlyPerformanceSection";
-import { useBudget, useUpsertBudget } from "@/features/finance/hooks/useBudget";
-import { useCategories } from "@/features/finance/hooks/useCategories";
-import { useTransactions } from "@/features/finance/hooks/useTransactions";
-import type { Category } from "@/features/finance/types";
-import { useToastStore } from "@/stores/toast";
-import { colors, radius, spacing, textStyles } from "@/theme";
-import { useRouter } from "expo-router";
-import Button from "@/components/ui/Button";
+import { Header } from '@/components/layout/Header';
+import { Screen } from '@/components/layout/Screen';
+import Card from '@/components/ui/Card';
+import EmptyState from '@/components/ui/EmptyState';
+import { SkeletonCard } from '@/components/ui/Skeleton';
+import BudgetBucketItem from '@/features/finance/components/BudgetBucketItem';
+import BudgetEditSheet from '@/features/finance/components/BudgetEditSheet';
+import BudgetHeroCard from '@/features/finance/components/BudgetHeroCard';
+import FixedExpenseItem from '@/features/finance/components/FixedExpenseItem';
+import YearlyPerformanceSection from '@/features/finance/components/YearlyPerformanceSection';
+import { useBudget, useUpsertBudget } from '@/features/finance/hooks/useBudget';
+import { useCategories } from '@/features/finance/hooks/useCategories';
+import { useTransactions } from '@/features/finance/hooks/useTransactions';
+import type { Category } from '@/features/finance/types';
+import { useToastStore } from '@/stores/toast';
+import { colors, spacing, textStyles } from '@/theme';
 
-function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
+const CARD_STYLE = { padding: 0, overflow: 'hidden' as const, borderWidth: 1, borderColor: colors.border.default };
+
+function SectionHeader({ title }: { title: string }) {
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {action}
     </View>
   );
 }
@@ -51,18 +49,13 @@ export default function BudgetScreen() {
 
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [editVisible, setEditVisible] = useState(false);
-  const [inputValue, setInputValue] = useState("");
 
   const { data: budget, isLoading: budgetLoading, refetch: refetchBudget } = useBudget();
   const { data: categories } = useCategories();
   const { mutate: saveBudget, isPending } = useUpsertBudget();
-  const showToast = useToastStore((s) => s.showToast);
+  const showToast = useToastStore(s => s.showToast);
 
-  const {
-    data: currentYearData,
-    isLoading: txLoading,
-    refetch: refetchTx,
-  } = useTransactions({
+  const { data: currentYearData, isLoading: txLoading, refetch: refetchTx } = useTransactions({
     dateFrom: `${currentYear}-01-01`,
     dateTo: `${currentYear}-12-31`,
     limit: 1000,
@@ -74,26 +67,12 @@ export default function BudgetScreen() {
     limit: 1000,
   });
 
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(app)/settings");
-    }
-  };
-
-  const backButton = (
-    <Pressable onPress={handleBack} style={({ pressed }) => pressed && { opacity: 0.6 }}>
-      <ChevronLeft size={22} color={colors.text.muted} />
-    </Pressable>
-  );
-
   const currentYearTransactions = currentYearData?.items ?? [];
   const selectedYearTransactions = selectedYearData?.items ?? [];
 
   const currentMonthSpent = useMemo(() => {
     return currentYearTransactions
-      .filter((t) => {
+      .filter(t => {
         const d = new Date(t.occurred_at);
         return d.getFullYear() === currentYear && d.getMonth() === currentMonth && t.amount < 0;
       })
@@ -103,11 +82,11 @@ export default function BudgetScreen() {
   const categorySpending = useMemo(() => {
     const map = new Map<string, number>();
     currentYearTransactions
-      .filter((t) => {
+      .filter(t => {
         const d = new Date(t.occurred_at);
         return d.getFullYear() === currentYear && d.getMonth() === currentMonth && t.amount < 0;
       })
-      .forEach((t) => {
+      .forEach(t => {
         if (t.category_id) {
           map.set(t.category_id, (map.get(t.category_id) ?? 0) + Math.abs(t.amount));
         }
@@ -115,40 +94,38 @@ export default function BudgetScreen() {
     return map;
   }, [currentYearTransactions, currentYear, currentMonth]);
 
-  const expenseCategories = useMemo<Category[]>(
-    () =>
-      (categories ?? [])
-        .filter((c) => c.type === "expense" && !c.is_archived)
-        .sort((a, b) => (categorySpending.get(b.id) ?? 0) - (categorySpending.get(a.id) ?? 0)),
-    [categories, categorySpending]
-  );
+  const expenseCategories = useMemo<Category[]>(() =>
+    (categories ?? [])
+      .filter(c => c.type === 'expense' && !c.is_archived)
+      .sort((a, b) => (categorySpending.get(b.id) ?? 0) - (categorySpending.get(a.id) ?? 0)),
+  [categories, categorySpending]);
 
   const topCategories = expenseCategories.slice(0, 3);
 
-  const handleOpenEdit = useCallback(() => {
-    setInputValue(budget?.monthly_limit ? String(budget.monthly_limit) : "");
-    setEditVisible(true);
-  }, [budget?.monthly_limit]);
+  const handleOpenEdit = useCallback(() => setEditVisible(true), []);
 
-  const hasValidInput = Number(inputValue.replace(/\D/g, "")) > 0;
-
-  const handleSave = useCallback(() => {
-    const amount = Number(inputValue.replace(/\D/g, ""));
-    if (!amount) return;
+  const handleSave = useCallback((amount: number) => {
     saveBudget(
       { monthly_limit: amount },
       {
         onSuccess: () => setEditVisible(false),
-        onError: () => showToast("Failed to save budget", "error"),
+        onError: () => showToast('Failed to save budget', 'error'),
       }
     );
-  }, [inputValue, saveBudget, showToast]);
+  }, [saveBudget, showToast]);
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([refetchBudget(), refetchTx()]);
   }, [refetchBudget, refetchTx]);
 
-  const isRefreshing = budgetLoading || txLoading;
+  const backButton = (
+    <Pressable
+      onPress={() => router.canGoBack() ? router.back() : router.replace('/(app)/settings')}
+      style={({ pressed }) => pressed && { opacity: 0.6 }}
+    >
+      <ChevronLeft size={22} color={colors.text.muted} />
+    </Pressable>
+  );
 
   return (
     <Screen>
@@ -160,7 +137,7 @@ export default function BudgetScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isRefreshing}
+            refreshing={budgetLoading || txLoading}
             onRefresh={handleRefresh}
             tintColor={colors.accent.primary}
           />
@@ -186,7 +163,7 @@ export default function BudgetScreen() {
         {topCategories.length > 0 && (
           <View style={styles.section}>
             <SectionHeader title="Fixed Expenses" />
-            <View style={styles.card}>
+            <Card style={CARD_STYLE}>
               {topCategories.map((cat, idx) => (
                 <React.Fragment key={cat.id}>
                   <FixedExpenseItem
@@ -197,7 +174,7 @@ export default function BudgetScreen() {
                   {idx < topCategories.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
-            </View>
+            </Card>
           </View>
         )}
 
@@ -210,7 +187,7 @@ export default function BudgetScreen() {
               subtitle="Add categories to track your spending"
             />
           ) : (
-            <View style={styles.card}>
+            <Card style={CARD_STYLE}>
               {expenseCategories.map((cat, idx) => (
                 <React.Fragment key={cat.id}>
                   <BudgetBucketItem
@@ -221,52 +198,19 @@ export default function BudgetScreen() {
                   {idx < expenseCategories.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
-            </View>
+            </Card>
           )}
         </View>
       </ScrollView>
 
-      <Modal
-        visible={editVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setEditVisible(false)}
-      >
-        <KeyboardAvoidingView
-          style={styles.overlay}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-          <Pressable style={styles.overlayBg} onPress={() => setEditVisible(false)} />
-          <View style={styles.sheet}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>
-                {budget ? "Update Budget" : "Set Monthly Budget"}
-              </Text>
-              <Pressable style={styles.closeBtn} onPress={() => setEditVisible(false)}>
-                <X size={18} color={colors.text.secondary} strokeWidth={1.5} />
-              </Pressable>
-            </View>
-
-            <TextInput
-              style={styles.input}
-              value={inputValue}
-              onChangeText={setInputValue}
-              keyboardType="numeric"
-              placeholder="e.g. 10000000"
-              placeholderTextColor={colors.text.disabled}
-              autoFocus
-            />
-            <Text style={styles.inputHint}>Amount in Rupiah (IDR)</Text>
-
-            <Button
-              disabled={!hasValidInput || isPending}
-              variant="primary"
-              onPress={handleSave}
-              label={isPending ? "Saving…" : "Save Budget"}
-            />
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      <BudgetEditSheet
+        isVisible={editVisible}
+        onDismiss={() => setEditVisible(false)}
+        onSave={handleSave}
+        initialValue={budget?.monthly_limit}
+        isPending={isPending}
+        isUpdate={!!budget}
+      />
     </Screen>
   );
 }
@@ -274,93 +218,16 @@ export default function BudgetScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: spacing["2xl"],
-    paddingTop: 8,
-    paddingBottom: 48,
-    gap: 0,
+    paddingHorizontal: spacing['2xl'],
+    paddingBottom: 160,
+    gap: 8,
   },
-
   section: { marginTop: 24 },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
+  sectionHeader: { marginBottom: 12 },
   sectionTitle: { ...StyleSheet.flatten(textStyles.h2), color: colors.text.primary },
-
-  card: {
-    backgroundColor: colors.bg.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    overflow: "hidden",
-  },
   divider: {
     height: 1,
     backgroundColor: colors.border.subtle,
     marginLeft: 76,
-  },
-
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  overlayBg: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  sheet: {
-    backgroundColor: colors.bg.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing["2xl"],
-    paddingTop: spacing["2xl"],
-    paddingBottom: 40,
-    gap: spacing.md,
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-  },
-  sheetTitle: { ...StyleSheet.flatten(textStyles.h2), color: colors.text.primary },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
-    backgroundColor: colors.bg.elevated,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  input: {
-    backgroundColor: colors.bg.elevated,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    ...StyleSheet.flatten(textStyles.h2),
-    color: colors.text.primary,
-  },
-  inputHint: {
-    ...StyleSheet.flatten(textStyles.caption),
-    color: colors.text.muted,
-    marginLeft: 4,
-  },
-
-  saveBtn: {
-    backgroundColor: colors.accent.primary,
-    borderRadius: radius.lg,
-    paddingVertical: 15,
-    alignItems: "center",
-    marginTop: spacing.sm,
-  },
-  saveBtnDisabled: { opacity: 0.45 },
-  saveBtnText: {
-    ...StyleSheet.flatten(textStyles.h3),
-    color: colors.bg.canvas,
   },
 });

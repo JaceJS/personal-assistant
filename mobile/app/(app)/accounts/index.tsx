@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Plus, Wallet, X } from "lucide-react-native";
+import { Bell, Plus, Wallet, X } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +10,7 @@ import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
+import Fab from "@/components/ui/Fab";
 import Input from "@/components/ui/Input";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import AccountCard from "@/features/finance/components/AccountCard";
@@ -26,17 +27,6 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
-function AddAccountButton({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && { opacity: 0.7 }}>
-      <View style={styles.addAccountBtn}>
-        <Plus size={18} color={colors.text.primary} strokeWidth={2.5} />
-        <Text style={[textStyles.h3, styles.addAccountLabel]}>Add Account</Text>
-      </View>
-    </Pressable>
-  );
-}
 
 export default function AccountsScreen() {
   const router = useRouter();
@@ -94,11 +84,8 @@ export default function AccountsScreen() {
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
         }
+        right={<Bell size={22} color={colors.text.secondary} strokeWidth={1.5} />}
       />
-
-      <View style={styles.addBtnContainer}>
-        <AddAccountButton onPress={handleOpenModal} />
-      </View>
 
       {isLoading ? (
         <View style={styles.listPad}>
@@ -128,6 +115,8 @@ export default function AccountsScreen() {
           }
         />
       )}
+
+      <Fab onPress={handleOpenModal} icon={Plus} accessibilityLabel="Add account" />
 
       <Modal visible={showModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -237,26 +226,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing["2xl"],
     gap: spacing.md,
     paddingBottom: 160,
-  },
-
-  addBtnContainer: {
-    paddingHorizontal: spacing["2xl"],
-    paddingBottom: spacing.md,
-  },
-  addAccountBtn: {
-    backgroundColor: colors.accent.primary,
-    borderRadius: radius.lg,
-    borderWidth: 2,
-    borderColor: colors.accent.border,
-    paddingHorizontal: spacing["2xl"],
-    paddingVertical: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  addAccountLabel: {
-    ...StyleSheet.flatten(textStyles.h3),
   },
 
   modalOverlay: {

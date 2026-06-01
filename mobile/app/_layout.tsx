@@ -11,6 +11,7 @@ import { useFonts } from "expo-font";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
+import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/queryClient";
@@ -44,10 +45,10 @@ function RootLayoutInner() {
   if (!fontsLoaded) return null;
 
   return (
-    <>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <Stack screenOptions={{ headerShown: false }} />
       <Toast />
-    </>
+    </SafeAreaProvider>
   );
 }
 

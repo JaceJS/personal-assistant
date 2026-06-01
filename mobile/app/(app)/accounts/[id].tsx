@@ -163,17 +163,13 @@ export default function AccountDetailScreen() {
         ) : (
           <View style={styles.actionsSection}>
             <Button label="Edit Name" onPress={handleStartEdit} variant="warning" fullWidth />
-            <Pressable
+            <Button
+              label="Delete Account"
               onPress={handleDelete}
-              disabled={archiveAccount.isPending}
-              style={({ pressed }) => (pressed || archiveAccount.isPending) && { opacity: 0.7 }}
-            >
-              {/* <View style={styles.deleteBtn}>
-                <Trash2 size={18} color={colors.danger.text} />
-                <Text style={styles.deleteBtnLabel}>Delete Account</Text>
-              </View> */}
-              <Button label="Delete Account" onPress={handleDelete} variant="danger" />
-            </Pressable>
+              variant="danger"
+              loading={archiveAccount.isPending}
+              fullWidth
+            />
           </View>
         )}
       </ScrollView>

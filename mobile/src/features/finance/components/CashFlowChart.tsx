@@ -1,12 +1,25 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { Bar, CartesianChart } from 'victory-native';
+import { StyleSheet, Text, View } from "react-native";
+import { Bar, CartesianChart } from "victory-native";
 
-import { useTransactions } from '@/features/finance/hooks/useTransactions';
-import type { Transaction } from '@/features/finance/types';
-import { useChartFont } from '@/hooks/useChartFont';
-import { colors, radius, textStyles } from '@/theme';
+import { useTransactions } from "@/features/finance/hooks/useTransactions";
+import type { Transaction } from "@/features/finance/types";
+import { useChartFont } from "@/hooks/useChartFont";
+import { colors, radius, textStyles } from "@/theme";
 
-const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 const CHART_HEIGHT = 200;
 
 interface CashFlowPoint {
@@ -30,7 +43,7 @@ function buildCashFlowBuckets(items: Transaction[]): CashFlowPoint[] {
     income: 0,
     expense: 0,
   }));
-  items.forEach(tx => {
+  items.forEach((tx) => {
     const month = new Date(tx.occurred_at).getMonth();
     if (tx.amount > 0) buckets[month].income += tx.amount;
     else buckets[month].expense += Math.abs(tx.amount);
@@ -46,7 +59,7 @@ export default function CashFlowChart() {
 
   const { data } = useTransactions({ dateFrom: yearStart, dateTo: today, limit: 1000 });
   const buckets = buildCashFlowBuckets(data?.items ?? []);
-  const hasData = buckets.some(b => b.income > 0 || b.expense > 0);
+  const hasData = buckets.some((b) => b.income > 0 || b.expense > 0);
 
   return (
     <View style={styles.card}>
@@ -55,22 +68,24 @@ export default function CashFlowChart() {
           <CartesianChart
             data={buckets}
             xKey="x"
-            yKeys={['income', 'expense']}
+            yKeys={["income", "expense"]}
             domainPadding={{ left: 16, right: 16, top: 20 }}
             xAxis={{
               font: chartFont,
-              formatXLabel: v => buckets.find(b => b.x === Math.round(Number(v)))?.label ?? '',
+              formatXLabel: (v) => buckets.find((b) => b.x === Math.round(Number(v)))?.label ?? "",
               labelColor: colors.text.muted,
               lineColor: colors.border.subtle,
               tickCount: 6,
             }}
-            yAxis={[{
-              font: chartFont,
-              formatYLabel: v => formatChartY(Number(v)),
-              labelColor: colors.text.muted,
-              lineColor: colors.border.subtle,
-              tickCount: 4,
-            }]}
+            yAxis={[
+              {
+                font: chartFont,
+                formatYLabel: (v) => formatChartY(Number(v)),
+                labelColor: colors.text.muted,
+                lineColor: colors.border.subtle,
+                tickCount: 4,
+              },
+            ]}
           >
             {({ points, chartBounds }) => (
               <>
@@ -84,10 +99,10 @@ export default function CashFlowChart() {
                 <Bar
                   points={points.expense}
                   chartBounds={chartBounds}
-                  color={colors.accent.primary}
+                  color={colors.danger.text}
                   barWidth={16}
                   barCount={2}
-                  animate={{ type: 'spring' }}
+                  animate={{ type: "spring" }}
                 />
               </>
             )}
@@ -105,7 +120,7 @@ export default function CashFlowChart() {
           <Text style={styles.legendLabel}>Income</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: colors.accent.primary }]} />
+          <View style={[styles.legendDot, { backgroundColor: colors.danger.text }]} />
           <Text style={styles.legendLabel}>Expense</Text>
         </View>
       </View>
@@ -124,15 +139,15 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   chartWrap: { height: CHART_HEIGHT },
-  emptyChart: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  emptyChart: { flex: 1, alignItems: "center", justifyContent: "center" },
   emptyText: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13 },
   legend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 20,
     marginTop: 12,
   },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendLabel: { ...StyleSheet.flatten(textStyles.caption) },
 });
