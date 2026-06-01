@@ -18,6 +18,7 @@ import {
 import { useToastStore } from "@/stores/toast";
 import { formatRupiah } from "@/lib/utils";
 import { colors, radius, spacing, textStyles } from "@/theme";
+import { THEME } from "@/constants/theme";
 
 function TypeIcon({ type }: { type: AccountType }) {
   const props = { size: 22, color: colors.accent.text };
@@ -88,24 +89,18 @@ export default function AccountDetailScreen() {
     );
   }, [account, archiveAccount, id, router, showToast]);
 
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(app)/accounts");
-    }
-  };
-
-  const backButton = (
-    <Pressable onPress={handleBack} style={({ pressed }) => pressed && { opacity: 0.6 }}>
-      <ChevronLeft size={22} color={colors.text.muted} />
+  const headerLeft = (
+    <Pressable onPress={() => router.back()}>
+      {({ pressed }) => (
+        <ChevronLeft size={22} color={THEME.colors.muted} style={{ opacity: pressed ? 0.5 : 1 }} />
+      )}
     </Pressable>
   );
 
   if (isLoading) {
     return (
       <Screen>
-        <Header title="Account Detail" left={backButton} />
+        <Header title="Account Detail" left={headerLeft} />
         <View style={styles.content}>
           <SkeletonList count={1} />
         </View>
@@ -128,8 +123,7 @@ export default function AccountDetailScreen() {
 
   return (
     <Screen>
-      <Header title="Account Detail" left={backButton} />
-
+      <Header title="Account Detail" left={headerLeft} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero Card */}
         <View style={styles.heroCard}>

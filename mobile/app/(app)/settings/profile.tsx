@@ -2,13 +2,14 @@ import { useCallback, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, User } from "lucide-react-native";
+import { ChevronLeft, User } from "lucide-react-native";
 
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { THEME } from "@/constants/theme";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
+import { Header } from "@/components/layout/Header";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -26,30 +27,20 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: THEME.colors.background }}>
       {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 12,
-          paddingHorizontal: THEME.spacing.lg,
-          paddingVertical: 16,
-        }}
-      >
-        <Pressable onPress={() => router.back()}>
-          {({ pressed }) => (
-            <ArrowLeft size={22} color={THEME.colors.muted} style={{ opacity: pressed ? 0.5 : 1 }} />
-          )}
-        </Pressable>
-        <Text
-          style={{
-            fontFamily: THEME.fontFamily.bold,
-            fontSize: THEME.fontSize.xl,
-            color: THEME.colors.ink,
-          }}
-        >
-          Profile
-        </Text>
-      </View>
+      <Header
+        title="Profile"
+        left={
+          <Pressable onPress={() => router.back()}>
+            {({ pressed }) => (
+              <ChevronLeft
+                size={22}
+                color={THEME.colors.muted}
+                style={{ opacity: pressed ? 0.5 : 1 }}
+              />
+            )}
+          </Pressable>
+        }
+      />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -94,12 +85,7 @@ export default function ProfileScreen() {
 
         {/* Form */}
         <View style={{ gap: 16 }}>
-          <Input
-            label="Display Name"
-            value={name}
-            onChangeText={setName}
-            placeholder="Your name"
-          />
+          <Input label="Display Name" value={name} onChangeText={setName} placeholder="Your name" />
           <Input
             label="Email"
             value={user?.email ?? ""}

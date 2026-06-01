@@ -9,14 +9,14 @@ const TAB_ICONS: Record<string, typeof Home> = {
   index: Home,
   "finance/index": Wallet,
   accounts: Building2,
-  "settings/index": Settings,
+  settings: Settings,
 };
 
 const TAB_LABELS: Record<string, string> = {
   index: "Home",
   "finance/index": "Finance",
   accounts: "Accounts",
-  "settings/index": "Settings",
+  settings: "Settings",
 };
 
 export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {

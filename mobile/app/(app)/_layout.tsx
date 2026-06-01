@@ -19,17 +19,14 @@ export default function AppLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="finance/index" />
       <Tabs.Screen name="accounts" />
-      <Tabs.Screen name="settings/index" />
+      <Tabs.Screen name="settings" />
 
       {/* Hidden from tab bar */}
       <Tabs.Screen name="journal/index" options={{ href: null }} />
-      <Tabs.Screen name="insights/index" options={{ href: null }} />
       <Tabs.Screen name="finance/[id]" options={{ href: null }} />
       <Tabs.Screen name="finance/new" options={{ href: null }} />
       <Tabs.Screen name="finance/history" options={{ href: null }} />
       <Tabs.Screen name="categories/index" options={{ href: null }} />
-      <Tabs.Screen name="settings/profile" options={{ href: null }} />
-      <Tabs.Screen name="settings/budget" options={{ href: null }} />
     </Tabs>
   );
 }
