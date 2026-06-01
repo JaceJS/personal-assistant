@@ -10,6 +10,7 @@ Pipeline per job:
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
 from typing import ClassVar
 
 import structlog
@@ -67,7 +68,10 @@ async def process_voice(
             await session.commit()
 
             audio = await r2.download(voice_log.audio_url)
-            transcript = await stt.transcribe(audio, filename="audio.webm")
+            transcript = await stt.transcribe(
+                audio,
+                filename=Path(voice_log.audio_url).name,
+            )
 
             await repo.update_voice_log_status(
                 session, voice_log, VoiceProcessingStatus.extracting, transcript=transcript
