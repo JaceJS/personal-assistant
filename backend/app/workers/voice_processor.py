@@ -2,7 +2,7 @@
 
 Pipeline per job:
   1. Download audio from R2.
-  2. Transcribe with Groq Whisper (STT).
+  2. Transcribe with OpenRouter STT.
   3. Extract transaction fields with OpenRouter LLM.
   4. Save a draft Transaction and mark the VoiceLog completed.
 """

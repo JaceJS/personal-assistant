@@ -1,20 +1,12 @@
-"""Selects the STT provider named by the `STT_PROVIDER` setting."""
+"""Build the app's speech-to-text provider."""
 
 from __future__ import annotations
 
 from app.ai.stt.base import STTProvider
-from app.ai.stt.groq_whisper import GroqWhisperSTT
+from app.ai.stt.openrouter import OpenRouterSTT
 from app.core.config import Settings
 
 
 def get_stt_provider(settings: Settings) -> STTProvider:
-    """Return the configured speech-to-text provider.
-
-    Raises `ValueError` for an unknown provider so misconfiguration fails fast
-    at startup.
-    """
-    match settings.stt_provider:
-        case "groq":
-            return GroqWhisperSTT(settings)
-        case other:
-            raise ValueError(f"Unsupported STT provider: {other}")
+    """Return the OpenRouter speech-to-text provider."""
+    return OpenRouterSTT(settings)
