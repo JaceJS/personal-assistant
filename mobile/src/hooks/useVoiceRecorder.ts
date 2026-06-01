@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 import { AudioModule, RecordingPresets, useAudioRecorder } from "expo-audio";
 
+import { logger } from "@/lib/logger";
 import { useRecordingStore } from "@/stores/recording";
 
 export function useVoiceRecorder() {
@@ -26,7 +27,8 @@ export function useVoiceRecorder() {
       audioRecorder.record();
       setPhase("recording");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal memulai rekaman.");
+      logger.error("startRecording failed", e);
+      setError("Gagal memulai rekaman.");
     }
   }, [audioRecorder, requestPermission, setPhase, setError]);
 
@@ -39,7 +41,8 @@ export function useVoiceRecorder() {
       setPhase("processing");
       return uri;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal menghentikan rekaman.");
+      logger.error("stopRecording failed", e);
+      setError("Gagal menghentikan rekaman.");
       return null;
     }
   }, [audioRecorder, phase, setAudioUri, setPhase, setError]);
