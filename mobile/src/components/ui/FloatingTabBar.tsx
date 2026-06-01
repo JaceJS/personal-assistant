@@ -169,18 +169,20 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
           onPressOut={handleMicPressOut}
           disabled={isVoiceBusy && !isRecording}
           style={({ pressed }) => [
-            styles.fab,
-            isRecording && styles.fabRecording,
+            styles.fabPressable,
             (isVoiceBusy && !isRecording) || pressed ? styles.fabDimmed : null,
           ]}
+          hitSlop={10}
         >
-          {isVoiceBusy && !isRecording ? (
-            <ActivityIndicator color={colors.accent.primary} />
-          ) : isRecording ? (
-            <Square size={24} color={colors.danger.text} fill={colors.danger.text} />
-          ) : (
-            <Mic size={26} color={colors.accent.primary} strokeWidth={2} />
-          )}
+          <View style={[styles.fab, isRecording && styles.fabRecording]}>
+            {isVoiceBusy && !isRecording ? (
+              <ActivityIndicator color={colors.accent.primary} />
+            ) : isRecording ? (
+              <Square size={24} color={colors.danger.text} fill={colors.danger.text} />
+            ) : (
+              <Mic size={26} color={colors.accent.primary} strokeWidth={2} />
+            )}
+          </View>
         </Pressable>
       </View>
 
@@ -215,6 +217,11 @@ const styles = StyleSheet.create({
     top: -32,
     alignSelf: "center",
     zIndex: 10,
+  },
+  fabPressable: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.full,
   },
   fab: {
     width: 64,

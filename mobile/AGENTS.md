@@ -120,6 +120,10 @@ const styles = StyleSheet.create({
 - **NEVER** write raw `fontFamily` strings (e.g. `'PlusJakartaSans_700Bold'`).
 - **NEVER** write `fontWeight` without also spreading a `textStyles.*` base.
 - For sizes not in the scale, spread the closest base and override `fontSize` only.
+- For tappable UI with important visual styling (background, border, radius, shadow/elevation),
+  keep those visual styles on an inner `<View>` and use `<Pressable>` only as the interaction
+  wrapper. Do not rely on Pressable callback styles for persistent backgrounds; callback state
+  styles should only adjust transient feedback such as opacity or scale.
 
 ---
 
