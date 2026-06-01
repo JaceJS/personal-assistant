@@ -56,7 +56,7 @@ Mobile (Expo RN)
 ```
 Mobile mic → POST /api/v1/voice/upload → R2 (audio stored)
                                         → ARQ job enqueued
-ARQ worker → Groq Whisper (STT) → OpenRouter LLM (extraction) → draft Transaction saved
+ARQ worker → OpenRouter STT → OpenRouter LLM (extraction) → draft Transaction saved
 Mobile polls → GET /api/v1/voice/{id} → completed → shows draft for user confirmation
 ```
 
@@ -80,7 +80,7 @@ Mobile polls → GET /api/v1/voice/{id} → completed → shows draft for user c
 
 Copy `backend/.env.example` → `backend/.env` and `mobile/.env.example` → `mobile/.env`.
 Key vars: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_JWT_SECRET`,
-`REDIS_URL`, `R2_*`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `LLM_MODEL`.
+`REDIS_URL`, `R2_*`, `OPENROUTER_API_KEY`, `STT_MODEL`, `LLM_MODEL`.
 
 ## Domain Status
 

@@ -48,11 +48,10 @@ class Settings(BaseSettings):
     r2_secret_access_key: str = ""
     r2_bucket_name: str = "voice-recordings"
 
-    # AI providers. STT uses Groq Whisper; the LLM is reached through OpenRouter,
-    # so swapping models only means changing `llm_model`.
-    groq_api_key: str = ""
+    # AI providers. STT and LLM both use OpenRouter so the backend needs one
+    # AI provider key and model selection stays environment-driven.
     openrouter_api_key: str = ""
-    stt_provider: str = "groq"
+    stt_model: str = "openai/whisper-1"
     llm_model: str = "meta-llama/llama-3.3-70b-instruct"
 
     # HTTP: comma-separated list of allowed CORS origins.

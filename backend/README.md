@@ -25,8 +25,8 @@ placeholders for later.
 | Auth           | Supabase Auth (JWT verified on the backend)      |
 | Job queue      | ARQ (Redis)                                      |
 | Object storage | Cloudflare R2 (S3-compatible)                    |
-| STT            | Groq Whisper (OpenAI-compatible API)             |
-| LLM            | Groq Llama 3.3 70B, with a Claude fallback shape |
+| STT            | OpenRouter audio transcription                   |
+| LLM            | OpenRouter structured extraction                 |
 | Tests          | pytest + pytest-asyncio + httpx                  |
 | Lint / types   | ruff + mypy (strict)                             |
 
@@ -103,9 +103,8 @@ uv run alembic upgrade head
 ## Environment variables
 
 See [.env.example](.env.example) for the full list. Key groups: app settings,
-`DATABASE_URL`, Supabase keys, `REDIS_URL`, Cloudflare R2 credentials, and AI
-provider keys (`GROQ_API_KEY`, `ANTHROPIC_API_KEY`) plus the `STT_PROVIDER` /
-`LLM_PROVIDER` selectors.
+`DATABASE_URL`, Supabase keys, `REDIS_URL`, Cloudflare R2 credentials, and
+OpenRouter settings (`OPENROUTER_API_KEY`, `STT_MODEL`, `LLM_MODEL`).
 
 ## Project layout
 

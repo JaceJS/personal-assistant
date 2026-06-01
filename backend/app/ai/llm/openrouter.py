@@ -32,14 +32,14 @@ class OpenRouterLLM(LLMProvider):
             base_url=_OPENROUTER_BASE_URL,
             default_headers={"X-Title": _APP_TITLE},
         )
-        # JSON mode keeps structured output working across most OpenRouter models.
+
         self._client = instructor.from_openai(client, mode=instructor.Mode.JSON)
         self._model = settings.llm_model
 
     async def extract(
         self, system_prompt: str, user_content: str, response_model: type[T]
     ) -> T:
-        # instructor returns an instance of response_model; pin it for the type checker.
+
         result: T = await self._client.chat.completions.create(
             model=self._model,
             response_model=response_model,

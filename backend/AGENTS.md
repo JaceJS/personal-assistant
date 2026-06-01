@@ -138,10 +138,9 @@ from app.ai.llm.base import LLMProvider
 from app.ai.stt.base import STTProvider
 
 # BAD — never import AI SDKs directly in domain code
-from groq import Groq       # ❌
 import openai               # ❌
 ```
-- LLM model configured via `LLM_MODEL` env var — never hardcode a model name.
+- STT and LLM models are configured via `STT_MODEL` and `LLM_MODEL` env vars — never hardcode model names.
 - Structured extraction via `instructor` only — never parse raw LLM text.
 
 ---
