@@ -7,14 +7,14 @@ import { colors } from "@/theme";
 
 const TAB_ICONS: Record<string, typeof Home> = {
   index: Home,
-  "finance/index": Wallet,
+  finance: Wallet,
   accounts: Building2,
   settings: Settings,
 };
 
 const TAB_LABELS: Record<string, string> = {
   index: "Home",
-  "finance/index": "Finance",
+  finance: "Finance",
   accounts: "Accounts",
   settings: "Settings",
 };

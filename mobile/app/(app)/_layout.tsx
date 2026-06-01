@@ -17,15 +17,11 @@ export default function AppLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <FloatingTabBar {...props} />}>
       <Tabs.Screen name="index" />
-      <Tabs.Screen name="finance/index" />
+      <Tabs.Screen name="finance" />
       <Tabs.Screen name="accounts" />
       <Tabs.Screen name="settings" />
 
       {/* Hidden from tab bar */}
-      <Tabs.Screen name="journal/index" options={{ href: null }} />
-      <Tabs.Screen name="finance/[id]" options={{ href: null }} />
-      <Tabs.Screen name="finance/new" options={{ href: null }} />
-      <Tabs.Screen name="finance/history" options={{ href: null }} />
       <Tabs.Screen name="categories/index" options={{ href: null }} />
     </Tabs>
   );

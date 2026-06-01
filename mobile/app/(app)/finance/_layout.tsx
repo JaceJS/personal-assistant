@@ -1,11 +1,12 @@
 import { Stack } from "expo-router";
 
-export default function SettingLayout() {
+export default function FinanceLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="profile" />
-      <Stack.Screen name="budget" />
+      <Stack.Screen name="new" />
+      <Stack.Screen name="history" />
+      <Stack.Screen name="[id]" />
     </Stack>
   );
 }
