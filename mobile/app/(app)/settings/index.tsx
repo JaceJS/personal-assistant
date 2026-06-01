@@ -90,7 +90,7 @@ export default function SettingsScreen() {
         </Pressable>
 
         {/* Account section */}
-        <SectionLabel label="Account" />
+        <SectionLabel label="Profile" />
         <GroupedList>
           <MenuItem
             icon={<User size={16} color={colors.accent.primary} />}
@@ -102,12 +102,6 @@ export default function SettingsScreen() {
         {/* Finance section */}
         <SectionLabel label="Finance" />
         <GroupedList>
-          <MenuItem
-            icon={<Wallet size={16} color={colors.accent.primary} />}
-            label="Accounts & Wallets"
-            onPress={() => router.push("/(app)/accounts")}
-          />
-          <MenuDivider />
           <MenuItem
             icon={<PiggyBank size={16} color={colors.accent.primary} />}
             label="Monthly Budget"

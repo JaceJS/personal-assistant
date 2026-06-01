@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.domains.finance.models import (
     AccountType,
@@ -37,10 +37,28 @@ class AccountCreate(BaseModel):
     type: AccountType
     currency: str = "IDR"
 
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Account name cannot be empty")
+        return v
+
 
 class AccountUpdate(BaseModel):
     name: str | None = None
     is_archived: bool | None = None
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if not v:
+            raise ValueError("Account name cannot be empty")
+        return v
 
 
 class AccountRead(BaseModel):

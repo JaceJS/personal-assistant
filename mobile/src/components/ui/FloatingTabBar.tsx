@@ -8,14 +8,14 @@ import { colors } from "@/theme";
 const TAB_ICONS: Record<string, typeof Home> = {
   index: Home,
   "finance/index": Wallet,
-  "accounts/index": Building2,
+  accounts: Building2,
   "settings/index": Settings,
 };
 
 const TAB_LABELS: Record<string, string> = {
   index: "Home",
   "finance/index": "Finance",
-  "accounts/index": "Accounts",
+  accounts: "Accounts",
   "settings/index": "Settings",
 };
 
@@ -43,12 +43,7 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
           color={focused ? colors.accent.primary : colors.text.muted}
           strokeWidth={focused ? 2.2 : 1.5}
         />
-        <Text
-          style={[
-            styles.label,
-            focused ? styles.labelActive : styles.labelInactive,
-          ]}
-        >
+        <Text style={[styles.label, focused ? styles.labelActive : styles.labelInactive]}>
           {label}
         </Text>
       </Pressable>

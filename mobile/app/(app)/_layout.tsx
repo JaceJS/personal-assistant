@@ -15,13 +15,10 @@ export default function AppLayout() {
   }, [initialized, session, router]);
 
   return (
-    <Tabs
-      screenOptions={{ headerShown: false }}
-      tabBar={(props) => <FloatingTabBar {...props} />}
-    >
+    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <FloatingTabBar {...props} />}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="finance/index" />
-      <Tabs.Screen name="accounts/index" />
+      <Tabs.Screen name="accounts" />
       <Tabs.Screen name="settings/index" />
 
       {/* Hidden from tab bar */}
@@ -30,7 +27,6 @@ export default function AppLayout() {
       <Tabs.Screen name="finance/[id]" options={{ href: null }} />
       <Tabs.Screen name="finance/new" options={{ href: null }} />
       <Tabs.Screen name="finance/history" options={{ href: null }} />
-      <Tabs.Screen name="accounts/[id]" options={{ href: null }} />
       <Tabs.Screen name="categories/index" options={{ href: null }} />
       <Tabs.Screen name="settings/profile" options={{ href: null }} />
       <Tabs.Screen name="settings/budget" options={{ href: null }} />

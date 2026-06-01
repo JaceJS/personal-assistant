@@ -68,9 +68,7 @@ async def create_account(
 async def get_account(
     account_id: uuid.UUID, user_id: CurrentUser, session: DbSession
 ) -> ApiResponse[AccountRead]:
-    account = await service.get_account_or_404(session, account_id)
-    if account.user_id != user_id:
-        raise ForbiddenError("You don't own this account")
+    account = await service.get_account_or_404(session, account_id, user_id)
     return ok(account)
 
 

@@ -33,10 +33,14 @@ async def upsert_budget(
 
 # ── Accounts ──────────────────────────────────────────────────────────────────
 
-async def get_account_or_404(session: AsyncSession, account_id: uuid.UUID) -> Account:
+async def get_account_or_404(
+    session: AsyncSession, account_id: uuid.UUID, user_id: uuid.UUID
+) -> Account:
     account = await repo.get_account(session, account_id)
     if account is None:
         raise NotFoundError(f"Account {account_id} not found")
+    if account.user_id != user_id:
+        raise ForbiddenError("You don't own this account")
     return account
 
 
@@ -55,9 +59,7 @@ async def create_account(
 async def update_account(
     session: AsyncSession, user_id: uuid.UUID, account_id: uuid.UUID, data: AccountUpdate
 ) -> Account:
-    account = await get_account_or_404(session, account_id)
-    if account.user_id != user_id:
-        raise ForbiddenError("You don't own this account")
+    account = await get_account_or_404(session, account_id, user_id)
     return await repo.update_account(session, account, **data.model_dump(exclude_unset=True))
 
 

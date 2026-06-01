@@ -51,6 +51,9 @@ export function useArchiveAccount() {
   return useMutation({
     mutationFn: (id: string) => archiveAccount(id),
     retry: false,
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
+    onSuccess: (_data, id) => {
+      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY, id] });
+    },
   });
 }

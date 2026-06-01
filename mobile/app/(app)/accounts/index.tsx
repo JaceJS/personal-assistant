@@ -29,12 +29,9 @@ type FormValues = z.infer<typeof schema>;
 
 function AddAccountButton({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => pressed && { opacity: 0.7 }}
-    >
+    <Pressable onPress={onPress} style={({ pressed }) => pressed && { opacity: 0.7 }}>
       <View style={styles.addAccountBtn}>
-        <Plus size={18} color={colors.accent.primary} strokeWidth={2.5} />
+        <Plus size={18} color={colors.text.primary} strokeWidth={2.5} />
         <Text style={[textStyles.h3, styles.addAccountLabel]}>Add Account</Text>
       </View>
     </Pressable>
@@ -91,7 +88,7 @@ export default function AccountsScreen() {
   return (
     <Screen>
       <Header
-        title="Accounts & Wallets"
+        title="Accounts"
         left={
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initial}</Text>
@@ -247,7 +244,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   addAccountBtn: {
-    backgroundColor: colors.bg.surface,
+    backgroundColor: colors.accent.primary,
     borderRadius: radius.lg,
     borderWidth: 2,
     borderColor: colors.accent.border,
@@ -255,10 +252,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
   },
   addAccountLabel: {
-    color: colors.accent.primary,
+    ...StyleSheet.flatten(textStyles.h3),
   },
 
   modalOverlay: {

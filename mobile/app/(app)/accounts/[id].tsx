@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ChevronLeft, CreditCard, Landmark, Smartphone, Trash2, Wallet } from "lucide-react-native";
+import { ChevronLeft, CreditCard, Landmark, Smartphone, Wallet } from "lucide-react-native";
 
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
@@ -10,7 +10,11 @@ import Input from "@/components/ui/Input";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import { ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
 import type { AccountType } from "@/features/finance/types";
-import { useAccount, useArchiveAccount, useUpdateAccount } from "@/features/finance/hooks/useAccounts";
+import {
+  useAccount,
+  useArchiveAccount,
+  useUpdateAccount,
+} from "@/features/finance/hooks/useAccounts";
 import { useToastStore } from "@/stores/toast";
 import { formatRupiah } from "@/lib/utils";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -18,10 +22,14 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 function TypeIcon({ type }: { type: AccountType }) {
   const props = { size: 22, color: colors.accent.text };
   switch (type) {
-    case "bank":    return <Landmark {...props} />;
-    case "cash":    return <Wallet {...props} />;
-    case "ewallet": return <Smartphone {...props} />;
-    case "credit":  return <CreditCard {...props} />;
+    case "bank":
+      return <Landmark {...props} />;
+    case "cash":
+      return <Wallet {...props} />;
+    case "ewallet":
+      return <Smartphone {...props} />;
+    case "credit":
+      return <CreditCard {...props} />;
   }
 }
 
@@ -76,17 +84,17 @@ export default function AccountDetailScreen() {
             }
           },
         },
-      ],
+      ]
     );
   }, [account, archiveAccount, id, router, showToast]);
 
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace("/(app)/accounts");
     }
-  }, [router]);
+  };
 
   const backButton = (
     <Pressable onPress={handleBack} style={({ pressed }) => pressed && { opacity: 0.6 }}>
@@ -149,42 +157,28 @@ export default function AccountDetailScreen() {
         {/* Actions / Edit */}
         {isEditing ? (
           <View style={styles.editCard}>
-            <Input
-              label="Account Name"
-              value={name}
-              onChangeText={setName}
-              autoFocus
-            />
+            <Input label="Account Name" value={name} onChangeText={setName} autoFocus />
             <Button
               label="Save Changes"
               onPress={handleSaveEdit}
               loading={updateAccount.isPending}
               fullWidth
             />
-            <Button
-              label="Cancel"
-              onPress={() => setIsEditing(false)}
-              variant="ghost"
-              fullWidth
-            />
+            <Button label="Cancel" onPress={() => setIsEditing(false)} variant="ghost" fullWidth />
           </View>
         ) : (
           <View style={styles.actionsSection}>
-            <Button
-              label="Edit Name"
-              onPress={handleStartEdit}
-              variant="secondary"
-              fullWidth
-            />
+            <Button label="Edit Name" onPress={handleStartEdit} variant="warning" fullWidth />
             <Pressable
               onPress={handleDelete}
               disabled={archiveAccount.isPending}
               style={({ pressed }) => (pressed || archiveAccount.isPending) && { opacity: 0.7 }}
             >
-              <View style={styles.deleteBtn}>
+              {/* <View style={styles.deleteBtn}>
                 <Trash2 size={18} color={colors.danger.text} />
                 <Text style={styles.deleteBtnLabel}>Delete Account</Text>
-              </View>
+              </View> */}
+              <Button label="Delete Account" onPress={handleDelete} variant="danger" />
             </Pressable>
           </View>
         )}
@@ -241,19 +235,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.default,
     gap: spacing.md,
-  },
-  deleteBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.danger.bg,
-    borderRadius: radius.lg,
-    paddingVertical: 14,
-  },
-  deleteBtnLabel: {
-    ...StyleSheet.flatten(textStyles.body),
-    fontWeight: "500",
-    color: colors.danger.text,
   },
 });

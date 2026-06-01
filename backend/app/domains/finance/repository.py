@@ -67,6 +67,7 @@ async def update_account(session: AsyncSession, account: Account, **kwargs: Any)
     for key, value in kwargs.items():
         setattr(account, key, value)
     await session.flush()
+    await session.refresh(account)
     return account
 
 
@@ -171,6 +172,7 @@ async def update_transaction(session: AsyncSession, tx: Transaction, **kwargs: A
     for key, value in kwargs.items():
         setattr(tx, key, value)
     await session.flush()
+    await session.refresh(tx)
     return tx
 
 
@@ -226,4 +228,5 @@ async def update_voice_log_status(
     if error_message is not None:
         voice_log.error_message = error_message
     await session.flush()
+    await session.refresh(voice_log)
     return voice_log
