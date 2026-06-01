@@ -1,11 +1,12 @@
 import { useCallback, useEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -70,12 +71,18 @@ export default function NewTransactionScreen() {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={({ pressed }) => pressed && { opacity: 0.6 }}>
-          <ArrowLeft size={22} color={colors.text.muted} />
-        </Pressable>
-        <Text style={styles.title}>New Transaction</Text>
-      </View>
+      <Header
+        title="New Transaction"
+        left={
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={8}
+            style={({ pressed }) => pressed && { opacity: 0.6 }}
+          >
+            <ChevronLeft size={22} color={colors.text.secondary} strokeWidth={2} />
+          </Pressable>
+        }
+      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {noAccounts ? (
@@ -152,14 +159,6 @@ export default function NewTransactionScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: spacing.lg,
-  },
-  title: { ...StyleSheet.flatten(textStyles.h2) },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32 },
   emptyWrap: { marginTop: 64, alignItems: 'center', gap: spacing.md },

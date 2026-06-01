@@ -12,6 +12,7 @@ import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { formatRupiah } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 import { colors, textStyles } from "@/theme";
+import { Header } from "@/components/layout/Header";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -43,6 +44,16 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
+      <Header
+        title=""
+        left={
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{firstName[0]?.toUpperCase() ?? "U"}</Text>
+          </View>
+        }
+        right={<Bell size={22} color={colors.text.secondary} strokeWidth={1.5} />}
+      />
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -55,13 +66,6 @@ export default function HomeScreen() {
           />
         }
       >
-        <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{firstName[0]?.toUpperCase() ?? "U"}</Text>
-          </View>
-          <Bell size={22} color={colors.text.secondary} strokeWidth={1.5} />
-        </View>
-
         <Text style={styles.greeting}>
           {getGreeting()}, {firstName}.
         </Text>

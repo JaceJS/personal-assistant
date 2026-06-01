@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react';
-import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
+import { useCallback, useState } from "react";
+import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import {
   Banknote,
   ChevronDown,
@@ -14,12 +14,12 @@ import {
   Shield,
   User,
   Wallet,
-} from 'lucide-react-native';
+} from "lucide-react-native";
 
-import { Header } from '@/components/layout/Header';
-import { Screen } from '@/components/layout/Screen';
-import { useAuthStore } from '@/stores/auth';
-import { colors, radius, spacing, textStyles } from '@/theme';
+import { Header } from "@/components/layout/Header";
+import { Screen } from "@/components/layout/Screen";
+import { useAuthStore } from "@/stores/auth";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -27,15 +27,15 @@ export default function SettingsScreen() {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
   const handleSignOut = useCallback(() => {
-    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
+    Alert.alert("Sign out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign out", style: "destructive", onPress: () => void signOut() },
     ]);
   }, [signOut]);
 
   const pickImage = useCallback(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
+      mediaTypes: "images",
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -45,8 +45,8 @@ export default function SettingsScreen() {
     }
   }, []);
 
-  const initial = (user?.email?.[0] ?? 'U').toUpperCase();
-  const displayName = user?.email?.split('@')[0] ?? 'User';
+  const initial = (user?.email?.[0] ?? "U").toUpperCase();
+  const displayName = user?.email?.split("@")[0] ?? "User";
 
   return (
     <Screen>
@@ -59,7 +59,7 @@ export default function SettingsScreen() {
       >
         {/* Profile hero */}
         <Pressable
-          onPress={() => router.push('/(app)/settings/profile')}
+          onPress={() => router.push("/(app)/settings/profile")}
           style={({ pressed }) => pressed && { opacity: 0.75 }}
         >
           <View style={styles.profileHero}>
@@ -72,7 +72,10 @@ export default function SettingsScreen() {
                 )}
               </View>
               <Pressable
-                onPress={(e) => { e.stopPropagation(); void pickImage(); }}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  void pickImage();
+                }}
                 style={styles.editBadge}
                 hitSlop={8}
               >
@@ -81,7 +84,7 @@ export default function SettingsScreen() {
             </View>
             <Text style={styles.profileName}>{displayName}</Text>
             <Text style={styles.profileEmail} numberOfLines={1}>
-              {user?.email ?? ''}
+              {user?.email ?? ""}
             </Text>
           </View>
         </Pressable>
@@ -92,7 +95,7 @@ export default function SettingsScreen() {
           <MenuItem
             icon={<User size={16} color={colors.accent.primary} />}
             label="Personal Info"
-            onPress={() => router.push('/(app)/settings/profile')}
+            onPress={() => router.push("/(app)/settings/profile")}
           />
         </GroupedList>
 
@@ -102,13 +105,13 @@ export default function SettingsScreen() {
           <MenuItem
             icon={<Wallet size={16} color={colors.accent.primary} />}
             label="Accounts & Wallets"
-            onPress={() => router.push('/(app)/accounts')}
+            onPress={() => router.push("/(app)/accounts")}
           />
           <MenuDivider />
           <MenuItem
             icon={<PiggyBank size={16} color={colors.accent.primary} />}
             label="Monthly Budget"
-            onPress={() => router.push('/(app)/settings/budget')}
+            onPress={() => router.push("/(app)/settings/budget")}
           />
           <MenuDivider />
           <ValueMenuItem
@@ -135,10 +138,7 @@ export default function SettingsScreen() {
         </GroupedList>
 
         {/* Sign out */}
-        <Pressable
-          onPress={handleSignOut}
-          style={({ pressed }) => pressed && { opacity: 0.7 }}
-        >
+        <Pressable onPress={handleSignOut} style={({ pressed }) => pressed && { opacity: 0.7 }}>
           <View style={styles.signOutButton}>
             <LogOut size={18} color={colors.danger.text} />
             <Text style={styles.signOutLabel}>Sign Out</Text>
@@ -149,19 +149,19 @@ export default function SettingsScreen() {
   );
 }
 
-function SectionLabel({ label }: { label: string }) {
+const SectionLabel = ({ label }: { label: string }) => {
   return <Text style={styles.sectionLabel}>{label.toUpperCase()}</Text>;
-}
+};
 
-function GroupedList({ children }: { children: React.ReactNode }) {
+const GroupedList = ({ children }: { children: React.ReactNode }) => {
   return <View style={styles.groupedList}>{children}</View>;
-}
+};
 
-function MenuDivider() {
+const MenuDivider = () => {
   return <View style={styles.divider} />;
-}
+};
 
-function MenuItem({
+const MenuItem = ({
   icon,
   label,
   onPress,
@@ -171,7 +171,7 @@ function MenuItem({
   label: string;
   onPress: () => void;
   disabled?: boolean;
-}) {
+}) => {
   return (
     <Pressable
       onPress={onPress}
@@ -188,9 +188,9 @@ function MenuItem({
       </View>
     </Pressable>
   );
-}
+};
 
-function ValueMenuItem({
+const ValueMenuItem = ({
   icon,
   label,
   value,
@@ -198,7 +198,7 @@ function ValueMenuItem({
   icon: React.ReactNode;
   label: string;
   value: string;
-}) {
+}) => {
   return (
     <View style={styles.menuItem}>
       <View style={styles.iconBox}>{icon}</View>
@@ -209,9 +209,9 @@ function ValueMenuItem({
       </View>
     </View>
   );
-}
+};
 
-function ExternalMenuItem({
+const ExternalMenuItem = ({
   icon,
   label,
   url,
@@ -219,7 +219,7 @@ function ExternalMenuItem({
   icon: React.ReactNode;
   label: string;
   url: string;
-}) {
+}) => {
   return (
     <Pressable
       onPress={() => void Linking.openURL(url)}
@@ -232,12 +232,12 @@ function ExternalMenuItem({
       </View>
     </Pressable>
   );
-}
+};
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing["2xl"],
     paddingBottom: 160,
     gap: 8,
   },
@@ -246,13 +246,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.surface,
     borderRadius: radius.xl,
     paddingVertical: 28,
-    paddingHorizontal: spacing['2xl'],
-    alignItems: 'center',
+    paddingHorizontal: spacing["2xl"],
+    alignItems: "center",
     gap: 6,
     marginBottom: 8,
   },
   avatarWrapper: {
-    position: 'relative',
+    position: "relative",
     marginBottom: 8,
   },
   avatar: {
@@ -262,9 +262,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.subtle,
     borderWidth: 1.5,
     borderColor: colors.accent.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
   avatarImage: {
     width: 88,
@@ -276,15 +276,15 @@ const styles = StyleSheet.create({
     color: colors.accent.primary,
   },
   editBadge: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -6,
     right: -6,
     width: 28,
     height: 28,
     borderRadius: radius.full,
     backgroundColor: colors.accent.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   profileName: {
     ...StyleSheet.flatten(textStyles.display),
@@ -308,8 +308,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 12,
@@ -320,8 +320,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: radius.md,
     backgroundColor: colors.accent.subtle,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     flexShrink: 0,
   },
   menuLabel: {
@@ -329,8 +329,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   valueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   valueText: {
@@ -345,9 +345,9 @@ const styles = StyleSheet.create({
   },
 
   signOutButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 10,
     backgroundColor: colors.danger.bg,
     borderRadius: radius.xl,

@@ -141,7 +141,18 @@ export default function HistoryScreen() {
 
   return (
     <Screen>
-      <Header title="History" />
+      <Header
+          title="History"
+          left={
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={8}
+              style={({ pressed }) => pressed && { opacity: 0.6 }}
+            >
+              <ChevronLeft size={22} color={colors.text.secondary} strokeWidth={2} />
+            </Pressable>
+          }
+        />
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>

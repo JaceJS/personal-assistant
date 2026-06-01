@@ -1,17 +1,22 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { ChevronRight } from "lucide-react-native";
-import { formatRupiah } from "@/lib/utils";
-import { ACCOUNT_TYPE_EMOJI, ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
+import { CreditCard, Landmark, RefreshCw, Smartphone, Wallet } from "lucide-react-native";
+import { formatRelativeTime, formatRupiah } from "@/lib/utils";
+import { ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
 import type { Account, AccountType } from "@/features/finance/types";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
-const TYPE_BG: Record<AccountType, string> = {
-  bank: colors.info.bg,
-  cash: colors.success.bg,
-  ewallet: colors.accent.subtle,
-  credit: colors.danger.bg,
-};
+const ICON_SIZE = 24;
+const ICON_COLOR = colors.accent.text;
+
+function TypeIcon({ type }: { type: AccountType }) {
+  switch (type) {
+    case "bank":    return <Landmark size={ICON_SIZE} color={ICON_COLOR} />;
+    case "cash":    return <Wallet size={ICON_SIZE} color={ICON_COLOR} />;
+    case "ewallet": return <Smartphone size={ICON_SIZE} color={ICON_COLOR} />;
+    case "credit":  return <CreditCard size={ICON_SIZE} color={ICON_COLOR} />;
+  }
+}
 
 interface AccountCardProps {
   account: Account;
@@ -20,29 +25,36 @@ interface AccountCardProps {
 
 function AccountCard({ account, onPress }: AccountCardProps) {
   const balanceColor =
-    account.type === "credit" && account.balance < 0 ? colors.danger.text : colors.text.primary;
+    account.type === "credit" && account.balance < 0
+      ? colors.danger.text
+      : colors.text.primary;
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.75 }]}
+      style={({ pressed }) => pressed && { opacity: 0.75 }}
     >
-      <View style={styles.top}>
-        <View style={[styles.iconBox, { backgroundColor: TYPE_BG[account.type] }]}>
-          <Text style={styles.emoji}>{ACCOUNT_TYPE_EMOJI[account.type]}</Text>
+      <View style={styles.card}>
+        <View style={styles.topRow}>
+          <View style={styles.nameBlock}>
+            <Text style={styles.name}>{account.name.toUpperCase()}</Text>
+            <Text style={[textStyles.caption, styles.typeLabel]}>
+              {ACCOUNT_TYPE_LABELS[account.type]}
+            </Text>
+          </View>
+          <TypeIcon type={account.type} />
         </View>
-        <View style={styles.info}>
-          <Text style={styles.name} numberOfLines={1}>{account.name}</Text>
-          <Text style={styles.typeLabel}>{ACCOUNT_TYPE_LABELS[account.type]}</Text>
-        </View>
-        <ChevronRight size={16} color={colors.text.muted} />
-      </View>
 
-      <View style={styles.balanceRow}>
-        <Text style={[styles.balance, { color: balanceColor }]}>
+        <Text style={[textStyles.display, styles.balance, { color: balanceColor }]}>
           {formatRupiah(account.balance)}
         </Text>
-        <Text style={styles.currency}>{account.currency}</Text>
+
+        <View style={styles.footer}>
+          <RefreshCw size={12} color={colors.text.muted} />
+          <Text style={[textStyles.caption, styles.syncText]}>
+            Synced {formatRelativeTime(account.updated_at)}
+          </Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -51,55 +63,41 @@ function AccountCard({ account, onPress }: AccountCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bg.surface,
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border.subtle,
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  top: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  iconBox: {
-    width: 44,
-    height: 44,
     borderRadius: radius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    padding: spacing["2xl"],
+    gap: spacing.lg,
   },
-  emoji: {
-    fontSize: 22,
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
-  info: {
+  nameBlock: {
     flex: 1,
-    gap: 3,
+    gap: spacing.xs,
+    paddingRight: spacing.md,
   },
   name: {
     ...StyleSheet.flatten(textStyles.h3),
-  },
-  typeLabel: {
-    ...StyleSheet.flatten(textStyles.caption),
-  },
-  balanceRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 6,
-    paddingLeft: 56,
+    fontSize: 13,
+    letterSpacing: 1.2,
   },
   balance: {
-    ...StyleSheet.flatten(textStyles.display),
-    fontSize: 22,
+    fontSize: 36,
+    letterSpacing: -0.8,
   },
-  currency: {
-    ...StyleSheet.flatten(textStyles.caption),
+  footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  syncText: {
+    fontSize: 11,
+  },
+  typeLabel: {
+    color: colors.accent.text,
   },
 });
 

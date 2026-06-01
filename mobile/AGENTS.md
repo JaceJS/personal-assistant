@@ -3,6 +3,7 @@
 > See root `CLAUDE.md` for monorepo overview and security rules.
 
 ## Commands (run from `mobile/`)
+
 ```bash
 npm run android     # build & run on Android
 npm run ios         # build & run on iOS
@@ -10,6 +11,7 @@ npm start           # Expo dev server (Expo Go compatible features only)
 npm run lint        # ESLint
 npm run gen:api     # regenerate TypeScript types from OpenAPI schema
 ```
+
 > Adding a new native module (e.g. expo-image-picker) requires rebuilding the dev client:
 > `npm run android` or `npm run ios` — Expo Go won't have it.
 
@@ -62,17 +64,18 @@ npm run gen:api     # regenerate TypeScript types from OpenAPI schema
 The app uses **React Native StyleSheet** with design tokens — NOT Tailwind utility classes.
 
 ```typescript
-import { colors, radius, spacing, textStyles } from '@/theme';
+import { colors, radius, spacing, textStyles } from "@/theme";
 ```
 
-| Token | File | Values |
-|-------|------|--------|
-| `colors` | `src/theme/colors.ts` | `bg.canvas` `bg.surface` `bg.elevated` `accent.primary` `text.primary` ... |
-| `spacing` | `src/theme/spacing.ts` | `xs(4)` `sm(8)` `md(12)` `lg(16)` `xl(20)` `2xl(24)` `3xl(32)` |
-| `radius` | `src/theme/radius.ts` | `sm(6)` `md(10)` `lg(14)` `xl(20)` `full(999)` |
-| `textStyles` | `src/theme/typography.ts` | See Typography section below |
+| Token        | File                      | Values                                                                     |
+| ------------ | ------------------------- | -------------------------------------------------------------------------- |
+| `colors`     | `src/theme/colors.ts`     | `bg.canvas` `bg.surface` `bg.elevated` `accent.primary` `text.primary` ... |
+| `spacing`    | `src/theme/spacing.ts`    | `xs(4)` `sm(8)` `md(12)` `lg(16)` `xl(20)` `2xl(24)` `3xl(32)`             |
+| `radius`     | `src/theme/radius.ts`     | `sm(6)` `md(10)` `lg(14)` `xl(20)` `full(999)`                             |
+| `textStyles` | `src/theme/typography.ts` | See Typography section below                                               |
 
 **Key colors:**
+
 - `colors.bg.canvas` — `#0C0C0E` (darkest background)
 - `colors.bg.surface` — `#18181C` (card/sheet background)
 - `colors.accent.primary` — `#7B6FE8` (purple, main accent)
@@ -87,13 +90,13 @@ import { colors, radius, spacing, textStyles } from '@/theme';
 Font family: **Plus Jakarta Sans** (loaded via Expo Font).
 
 ```typescript
-import { textStyles } from '@/theme';
-import { StyleSheet } from 'react-native';
+import { textStyles } from "@/theme";
+import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
   title: {
-    ...StyleSheet.flatten(textStyles.h2),   // spread to merge with overrides
-    color: colors.accent.primary,           // override specific props
+    ...StyleSheet.flatten(textStyles.h2), // spread to merge with overrides
+    color: colors.accent.primary, // override specific props
   },
   label: {
     ...StyleSheet.flatten(textStyles.overline),
@@ -102,17 +105,18 @@ const styles = StyleSheet.create({
 });
 ```
 
-| Style | Size | Weight | Notes |
-|-------|------|--------|-------|
-| `textStyles.display` | 32 | 700 | Large hero numbers |
-| `textStyles.h1` | 24 | 700 | Page titles |
-| `textStyles.h2` | 18 | 600 | Section headings |
-| `textStyles.h3` | 15 | 600 | Card titles, menu labels |
-| `textStyles.body` | 15 | 400 | Body text |
-| `textStyles.caption` | 12 | 400 | Secondary labels, currency |
-| `textStyles.overline` | 11 | 500 | Section labels (uppercase, tracked) |
+| Style                 | Size | Weight | Notes                               |
+| --------------------- | ---- | ------ | ----------------------------------- |
+| `textStyles.display`  | 32   | 700    | Large hero numbers                  |
+| `textStyles.h1`       | 24   | 700    | Page titles                         |
+| `textStyles.h2`       | 18   | 600    | Section headings                    |
+| `textStyles.h3`       | 15   | 600    | Card titles, menu labels            |
+| `textStyles.body`     | 15   | 400    | Body text                           |
+| `textStyles.caption`  | 12   | 400    | Secondary labels, currency          |
+| `textStyles.overline` | 11   | 500    | Section labels (uppercase, tracked) |
 
 **Rules:**
+
 - **NEVER** write raw `fontFamily` strings (e.g. `'PlusJakartaSans_700Bold'`).
 - **NEVER** write `fontWeight` without also spreading a `textStyles.*` base.
 - For sizes not in the scale, spread the closest base and override `fontSize` only.
@@ -139,29 +143,6 @@ src/components/ui/
 
 - Use `<Screen>` + `<Header>` on every full screen. Never roll your own SafeAreaView + header.
 - Use `useToastStore().showToast(message, type)` for user-facing feedback.
-
----
-
-# 8. SETTINGS PAGE STRUCTURE
-
-`app/(app)/settings/index.tsx` — reference for grouped settings patterns:
-- Profile hero card: centered, `radius.full` circular avatar, pencil badge for image picker
-- Sections: ACCOUNT, FINANCE, LEGAL — rendered with `SectionLabel` + `GroupedList` + `MenuItem`
-- Icon boxes: 32×32, `radius.md`, `bg: colors.accent.subtle`, icon color `colors.accent.primary`
-- Section dividers: `marginLeft: 60` to clear icon box
-- Sign Out: full-width, `colors.danger.bg` bg, centered content, `radius.xl`
-- Bottom padding: `160px` to clear the floating tab bar + mic FAB
-
----
-
-# 9. ACCOUNTS PAGE STRUCTURE
-
-`app/(app)/accounts/index.tsx`:
-- `TotalBalanceCard` at top — sums non-credit account balances, accent left border (3px)
-- `AccountCard` (`src/features/finance/components/AccountCard.tsx`):
-  - 44×44 icon box with `ACCOUNT_TYPE_EMOJI` + type-specific bg tint
-  - Balance row indented `paddingLeft: 56` to align with text
-  - Type bg tints: `bank→info.bg`, `cash→success.bg`, `ewallet→accent.subtle`, `credit→danger.bg`
 
 ---
 

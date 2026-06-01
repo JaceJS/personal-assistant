@@ -1,17 +1,29 @@
 import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Edit2, Trash2 } from "lucide-react-native";
+import { ChevronLeft, CreditCard, Landmark, Smartphone, Trash2, Wallet } from "lucide-react-native";
 
 import { Screen } from "@/components/layout/Screen";
+import { Header } from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { SkeletonList } from "@/components/ui/Skeleton";
-import { ACCOUNT_TYPE_EMOJI, ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
+import { ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
+import type { AccountType } from "@/features/finance/types";
 import { useAccount, useArchiveAccount, useUpdateAccount } from "@/features/finance/hooks/useAccounts";
 import { useToastStore } from "@/stores/toast";
 import { formatRupiah } from "@/lib/utils";
-import { colors, radius, spacing } from "@/theme";
+import { colors, radius, spacing, textStyles } from "@/theme";
+
+function TypeIcon({ type }: { type: AccountType }) {
+  const props = { size: 22, color: colors.accent.text };
+  switch (type) {
+    case "bank":    return <Landmark {...props} />;
+    case "cash":    return <Wallet {...props} />;
+    case "ewallet": return <Smartphone {...props} />;
+    case "credit":  return <CreditCard {...props} />;
+  }
+}
 
 export default function AccountDetailScreen() {
   const router = useRouter();
@@ -45,22 +57,22 @@ export default function AccountDetailScreen() {
     }
   }, [updateAccount, name, showToast]);
 
-  const handleArchive = useCallback(() => {
+  const handleDelete = useCallback(() => {
     Alert.alert(
-      "Archive Account",
-      `"${account?.name}" will be archived and hidden from your active list. Transactions will be preserved.`,
+      "Delete Account",
+      `"${account?.name}" will be permanently deleted. This action cannot be undone.`,
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Archive",
+          text: "Delete",
           style: "destructive",
           onPress: async () => {
             try {
               await archiveAccount.mutateAsync(id);
-              showToast("Account archived", "info");
+              showToast("Account deleted", "info");
               router.back();
             } catch {
-              showToast("Failed to archive account.", "error");
+              showToast("Failed to delete account.", "error");
             }
           },
         },
@@ -68,16 +80,25 @@ export default function AccountDetailScreen() {
     );
   }, [account, archiveAccount, id, router, showToast]);
 
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(app)/accounts");
+    }
+  }, [router]);
+
+  const backButton = (
+    <Pressable onPress={handleBack} style={({ pressed }) => pressed && { opacity: 0.6 }}>
+      <ChevronLeft size={22} color={colors.text.muted} />
+    </Pressable>
+  );
+
   if (isLoading) {
     return (
       <Screen>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={({ pressed }) => pressed && { opacity: 0.6 }}>
-            <ArrowLeft size={22} color={colors.text.muted} />
-          </Pressable>
-          <Text style={styles.title}>Account Detail</Text>
-        </View>
-        <View style={styles.listPad}>
+        <Header title="Account Detail" left={backButton} />
+        <View style={styles.content}>
           <SkeletonList count={1} />
         </View>
       </Screen>
@@ -95,42 +116,21 @@ export default function AccountDetailScreen() {
   }
 
   const isCredit = account.type === "credit";
-  const balanceColor =
-    isCredit && account.balance < 0 ? colors.danger.text : colors.success.text;
+  const balanceColor = isCredit && account.balance < 0 ? colors.danger.text : colors.success.text;
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={({ pressed }) => pressed && { opacity: 0.6 }}>
-          <ArrowLeft size={22} color={colors.text.muted} />
-        </Pressable>
-        <Text style={styles.title}>Account Detail</Text>
-        {!isEditing && (
-          <Pressable
-            onPress={handleStartEdit}
-            style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.6 }]}
-          >
-            <Edit2 size={20} color={colors.accent.primary} />
-          </Pressable>
-        )}
-      </View>
+      <Header title="Account Detail" left={backButton} />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        {/* Balance hero */}
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        {/* Hero Card */}
         <View style={styles.heroCard}>
-          <View style={styles.heroTop}>
-            <Text style={styles.emoji}>{ACCOUNT_TYPE_EMOJI[account.type] ?? "💰"}</Text>
-            <View style={styles.heroInfo}>
-              {isEditing ? (
-                <Input
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="Account name"
-                  autoFocus
-                />
-              ) : (
-                <Text style={styles.accountName}>{account.name}</Text>
-              )}
+          <View style={styles.heroTopRow}>
+            <View style={styles.typeIconBox}>
+              <TypeIcon type={account.type} />
+            </View>
+            <View style={styles.accountIdentity}>
+              <Text style={styles.accountName}>{account.name.toUpperCase()}</Text>
               <Text style={styles.accountType}>
                 {ACCOUNT_TYPE_LABELS[account.type] ?? account.type}
               </Text>
@@ -139,95 +139,121 @@ export default function AccountDetailScreen() {
 
           <View style={styles.divider} />
 
-          <Text style={styles.balanceLabel}>Balance</Text>
+          <Text style={styles.balanceLabel}>BALANCE</Text>
           <Text style={[styles.balance, { color: balanceColor }]}>
             {formatRupiah(account.balance)}
           </Text>
           <Text style={styles.currency}>{account.currency}</Text>
         </View>
 
-        {/* Actions */}
-        <View style={styles.actions}>
-          {isEditing ? (
-            <>
-              <Button
-                label="Save Changes"
-                onPress={handleSaveEdit}
-                loading={updateAccount.isPending}
-                fullWidth
-              />
-              <Button
-                label="Cancel"
-                onPress={() => setIsEditing(false)}
-                variant="ghost"
-                fullWidth
-              />
-            </>
-          ) : (
+        {/* Actions / Edit */}
+        {isEditing ? (
+          <View style={styles.editCard}>
+            <Input
+              label="Account Name"
+              value={name}
+              onChangeText={setName}
+              autoFocus
+            />
+            <Button
+              label="Save Changes"
+              onPress={handleSaveEdit}
+              loading={updateAccount.isPending}
+              fullWidth
+            />
+            <Button
+              label="Cancel"
+              onPress={() => setIsEditing(false)}
+              variant="ghost"
+              fullWidth
+            />
+          </View>
+        ) : (
+          <View style={styles.actionsSection}>
+            <Button
+              label="Edit Name"
+              onPress={handleStartEdit}
+              variant="secondary"
+              fullWidth
+            />
             <Pressable
-              onPress={handleArchive}
+              onPress={handleDelete}
               disabled={archiveAccount.isPending}
-              style={({ pressed }) => [
-                styles.archiveBtn,
-                (pressed || archiveAccount.isPending) && { opacity: 0.7 },
-              ]}
+              style={({ pressed }) => (pressed || archiveAccount.isPending) && { opacity: 0.7 }}
             >
-              <Trash2 size={18} color={colors.danger.text} />
-              <Text style={styles.archiveBtnLabel}>Archive Account</Text>
+              <View style={styles.deleteBtn}>
+                <Trash2 size={18} color={colors.danger.text} />
+                <Text style={styles.deleteBtnLabel}>Delete Account</Text>
+              </View>
             </Pressable>
-          )}
-        </View>
+          </View>
+        )}
       </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  notFound: { fontSize: 15, color: colors.text.muted },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: spacing.lg,
-  },
-  title: { flex: 1, fontSize: 18, fontWeight: '600', color: colors.text.primary },
-  editBtn: { padding: 4 },
-  listPad: { paddingHorizontal: spacing['2xl'] },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
+  notFound: { ...StyleSheet.flatten(textStyles.body), color: colors.text.muted },
 
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32, gap: spacing.lg },
+  content: { padding: spacing["2xl"], gap: spacing.lg, paddingBottom: 60 },
 
   heroCard: {
-    backgroundColor: colors.bg.elevated,
+    backgroundColor: colors.bg.surface,
     borderRadius: radius.xl,
-    padding: spacing['2xl'],
+    padding: spacing["2xl"],
     borderWidth: 1,
     borderColor: colors.border.default,
+    gap: spacing.lg,
   },
-  heroTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.xl },
-  emoji: { fontSize: 28 },
-  heroInfo: { flex: 1 },
-  accountName: { fontSize: 18, fontWeight: '600', color: colors.text.primary },
-  accountType: { fontSize: 13, color: colors.text.muted, marginTop: 2 },
+  heroTopRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  typeIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent.subtle,
+    borderWidth: 1,
+    borderColor: colors.accent.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  accountIdentity: { flex: 1 },
+  accountName: { ...StyleSheet.flatten(textStyles.h2), letterSpacing: 0.5 },
+  accountType: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.accent.text,
+    marginTop: 2,
+  },
 
-  divider: { height: 1, backgroundColor: colors.border.subtle, marginBottom: spacing.xl },
+  divider: { height: 1, backgroundColor: colors.border.default },
 
-  balanceLabel: { fontSize: 12, fontWeight: '500', color: colors.text.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
-  balance: { fontSize: 32, fontWeight: '700', marginTop: 4 },
-  currency: { fontSize: 12, color: colors.text.muted, marginTop: 2 },
+  balanceLabel: { ...StyleSheet.flatten(textStyles.overline), color: colors.text.muted },
+  balance: { ...StyleSheet.flatten(textStyles.display), fontSize: 36, letterSpacing: -0.5 },
+  currency: { ...StyleSheet.flatten(textStyles.caption), color: colors.text.muted, marginTop: 2 },
 
-  actions: { gap: spacing.md },
-  archiveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  actionsSection: { gap: spacing.md },
+  editCard: {
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.lg,
+    padding: spacing["2xl"],
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    gap: spacing.md,
+  },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
     backgroundColor: colors.danger.bg,
     borderRadius: radius.lg,
     paddingVertical: 14,
   },
-  archiveBtnLabel: { fontSize: 15, fontWeight: '500', color: colors.danger.text },
+  deleteBtnLabel: {
+    ...StyleSheet.flatten(textStyles.body),
+    fontWeight: "500",
+    color: colors.danger.text,
+  },
 });

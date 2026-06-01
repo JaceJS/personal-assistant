@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 
+import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -59,9 +60,20 @@ export default function TransactionDetailScreen() {
     ]);
   }, [deleteTransaction, id, router, showToast]);
 
+  const backButton = (
+    <Pressable
+      onPress={() => router.back()}
+      hitSlop={8}
+      style={({ pressed }) => pressed && { opacity: 0.6 }}
+    >
+      <ChevronLeft size={22} color={colors.text.secondary} strokeWidth={2} />
+    </Pressable>
+  );
+
   if (isLoading) {
     return (
       <Screen>
+        <Header title="Transaction Detail" left={backButton} />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.accent.primary} />
         </View>
@@ -72,6 +84,7 @@ export default function TransactionDetailScreen() {
   if (!transaction) {
     return (
       <Screen>
+        <Header title="Transaction Detail" left={backButton} />
         <View style={styles.centered}>
           <Text style={styles.notFound}>Transaction not found</Text>
         </View>
@@ -84,12 +97,7 @@ export default function TransactionDetailScreen() {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={({ pressed }) => pressed && { opacity: 0.6 }}>
-          <ArrowLeft size={22} color={colors.text.muted} />
-        </Pressable>
-        <Text style={styles.title}>Transaction Detail</Text>
-      </View>
+      <Header title="Transaction Detail" left={backButton} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* Amount hero */}
@@ -179,15 +187,6 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   notFound: { ...StyleSheet.flatten(textStyles.body), color: colors.text.muted },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: spacing.lg,
-  },
-  title: { ...StyleSheet.flatten(textStyles.h2) },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32, gap: spacing.lg },

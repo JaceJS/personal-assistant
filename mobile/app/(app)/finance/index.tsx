@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Plus } from "lucide-react-native";
+import { Bell, Plus } from "lucide-react-native";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
@@ -10,12 +10,15 @@ import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
 import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
 import TransactionCard from "@/features/finance/components/TransactionCard";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
+import { useAuthStore } from "@/stores/auth";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const RECENT_COUNT = 3;
 
 export default function FinanceDashboard() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const initial = (user?.email?.[0] ?? 'U').toUpperCase();
   const now = new Date();
   const dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
   const dateTo = now.toISOString().slice(0, 10);
@@ -35,7 +38,15 @@ export default function FinanceDashboard() {
 
   return (
     <Screen>
-      <Header title="Finance" />
+      <Header
+          title="Finance"
+          left={
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initial}</Text>
+            </View>
+          }
+          right={<Bell size={22} color={colors.text.secondary} strokeWidth={1.5} />}
+        />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -102,6 +113,22 @@ function SectionHeader({ title, right }: { title: string; right?: React.ReactNod
 
 const styles = StyleSheet.create({
   content: { paddingBottom: 120 },
+
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.accent.subtle,
+    borderWidth: 1,
+    borderColor: colors.accent.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    ...StyleSheet.flatten(textStyles.h3),
+    fontSize: 14,
+    color: colors.accent.text,
+  },
 
   sectionHeader: {
     flexDirection: "row",

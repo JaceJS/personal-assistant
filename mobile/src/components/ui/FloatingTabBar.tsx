@@ -1,5 +1,5 @@
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { Home, Mic, Settings, TrendingUp, Wallet } from "lucide-react-native";
+import { Building2, Home, Mic, Settings, Wallet } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,14 +8,14 @@ import { colors } from "@/theme";
 const TAB_ICONS: Record<string, typeof Home> = {
   index: Home,
   "finance/index": Wallet,
-  "insights/index": TrendingUp,
+  "accounts/index": Building2,
   "settings/index": Settings,
 };
 
 const TAB_LABELS: Record<string, string> = {
   index: "Home",
   "finance/index": "Finance",
-  "insights/index": "Insights",
+  "accounts/index": "Accounts",
   "settings/index": "Settings",
 };
 
