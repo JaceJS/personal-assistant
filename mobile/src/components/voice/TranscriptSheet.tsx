@@ -7,12 +7,11 @@ import { colors, radius, spacing, textStyles } from '@/theme';
 interface Props {
   transcript: string | null;
   isVisible: boolean;
-  isSending: boolean;
   onProcess: (transcript: string) => void;
   onDismiss: () => void;
 }
 
-export function TranscriptSheet({ transcript, isVisible, isSending, onProcess, onDismiss }: Props) {
+export function TranscriptSheet({ transcript, isVisible, onProcess, onDismiss }: Props) {
   const [text, setText] = useState('');
 
   useEffect(() => {
@@ -21,7 +20,8 @@ export function TranscriptSheet({ transcript, isVisible, isSending, onProcess, o
 
   const handleProcess = () => {
     const trimmed = text.trim();
-    if (trimmed) onProcess(trimmed);
+    if (!trimmed) return;
+    onProcess(trimmed);
   };
 
   return (
@@ -39,12 +39,7 @@ export function TranscriptSheet({ transcript, isVisible, isSending, onProcess, o
           placeholderTextColor={colors.text.muted}
         />
         <View style={styles.actions}>
-          <Button
-            label="Process Transaction"
-            onPress={handleProcess}
-            loading={isSending}
-            fullWidth
-          />
+          <Button label="Process Transaction" onPress={handleProcess} fullWidth />
           <Button label="Cancel" onPress={onDismiss} variant="secondary" fullWidth />
         </View>
       </View>

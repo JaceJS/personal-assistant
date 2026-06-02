@@ -139,7 +139,7 @@ async def extract_voice(
                 amount=extracted.amount,
                 currency=extracted.currency,
                 merchant=extracted.merchant,
-                note=extracted.note or extracted.category_name,
+                note=extracted.note or transcript,
                 occurred_at=voice_log.created_at,
                 source=TransactionSource.voice,
                 status=TransactionStatus.draft,
@@ -147,7 +147,7 @@ async def extract_voice(
             )
             await repo.update_voice_log_status(
                 session, voice_log, VoiceProcessingStatus.completed,
-                extracted_data=extracted.model_dump(),
+                extracted_data={**extracted.model_dump(), "note": extracted.note or transcript},
                 confidence_score=extracted.confidence,
             )
             await session.commit()

@@ -1,6 +1,6 @@
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import * as ImagePicker from "expo-image-picker";
-import { Building2, Camera, Home, Mic, Settings, Square, Wallet } from "lucide-react-native";
+import { Building2, Camera, Home, Images, Mic, Settings, Square, Wallet } from "lucide-react-native";
 import { useCallback, useMemo, useEffect, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -102,6 +102,7 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
       setTranscriptVisible(true);
     } else if (voiceStatus.data?.status === "completed") {
       resetRecorder();
+      setTranscriptVisible(false);
       if (voiceStatus.data.extracted_data && voiceStatus.data.transaction_id) {
         setVoiceConfirmVisible(true);
       } else {
@@ -185,6 +186,28 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
     }
   }, [defaultAccount, showToast, uploadReceipt]);
 
+  const handleGalleryPress = useCallback(async () => {
+    if (!defaultAccount) {
+      showToast("Create an account before scanning a receipt.", "error");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const imageUri = result.assets[0].uri;
+    try {
+      const response = await uploadReceipt.mutateAsync({
+        imageUri,
+        accountId: defaultAccount.id,
+      });
+      setReceiptLogId(response.receipt_log_id);
+    } catch {
+      showToast("Could not upload receipt.", "error");
+    }
+  }, [defaultAccount, showToast, uploadReceipt]);
+
   const handleCancel = useCallback(() => {
     void cancelRecording();
   }, [cancelRecording]);
@@ -192,8 +215,8 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const handleTranscriptProcess = useCallback(
     (transcript: string) => {
       if (!voiceLogId) return;
-      void extractVoice.mutateAsync({ voiceLogId, transcript }).then(
-        () => setTranscriptVisible(false),
+      setTranscriptVisible(false);
+      void extractVoice.mutateAsync({ voiceLogId, transcript }).catch(
         () => showToast("Could not start extraction.", "error")
       );
     },
@@ -210,13 +233,11 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
     (payload: ConfirmPayload) => {
       const transactionId = voiceStatus.data?.transaction_id;
       if (!transactionId) return;
-      void confirmVoiceTransaction.mutateAsync({ transactionId, ...payload }).then(
-        () => {
-          setVoiceConfirmVisible(false);
-          setVoiceLogId(null);
-          resetRecorder();
-          showToast("Transaction saved.", "success");
-        },
+      setVoiceConfirmVisible(false);
+      setVoiceLogId(null);
+      resetRecorder();
+      showToast("Transaction saved.", "success");
+      void confirmVoiceTransaction.mutateAsync({ transactionId, ...payload }).catch(
         () => showToast("Could not save transaction.", "error")
       );
     },
@@ -233,12 +254,10 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
     (payload: ConfirmPayload) => {
       const transactionId = receiptStatus.data?.transaction_id;
       if (!transactionId) return;
-      void confirmReceiptTransaction.mutateAsync({ transactionId, ...payload }).then(
-        () => {
-          setReceiptConfirmVisible(false);
-          setReceiptLogId(null);
-          showToast("Transaction saved.", "success");
-        },
+      setReceiptConfirmVisible(false);
+      setReceiptLogId(null);
+      showToast("Transaction saved.", "success");
+      void confirmReceiptTransaction.mutateAsync({ transactionId, ...payload }).catch(
         () => showToast("Could not save transaction.", "error")
       );
     },
@@ -301,7 +320,18 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
                 }}
               >
                 <Camera size={18} color={colors.accent.primary} strokeWidth={1.8} />
-                <Text style={styles.captureLabel}>Scan Receipt</Text>
+                <Text style={styles.captureLabel}>Camera</Text>
+              </Pressable>
+              <View style={styles.captureDivider} />
+              <Pressable
+                style={styles.captureOption}
+                onPress={() => {
+                  setCaptureOptionsVisible(false);
+                  void handleGalleryPress();
+                }}
+              >
+                <Images size={18} color={colors.accent.primary} strokeWidth={1.8} />
+                <Text style={styles.captureLabel}>Library</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -351,7 +381,6 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
       <TranscriptSheet
         transcript={voiceStatus.data?.transcript ?? null}
         isVisible={transcriptVisible}
-        isSending={extractVoice.isPending}
         onProcess={handleTranscriptProcess}
         onDismiss={handleTranscriptDismiss}
       />

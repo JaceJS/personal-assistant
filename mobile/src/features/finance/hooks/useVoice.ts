@@ -24,7 +24,7 @@ export function useVoiceStatus(voiceLogId: string | null) {
     refetchInterval: (query) => {
       const data = query.state.data as VoiceStatusResponse | undefined;
       const status = data?.status;
-      if (status === "completed" || status === "failed" || status === "transcribed") return false;
+      if (status === "completed" || status === "failed") return false;
       return 1500;
     },
   });

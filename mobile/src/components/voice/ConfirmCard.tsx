@@ -1,18 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { BottomSheet } from '@/components/ui/BottomSheet';
-import Button from '@/components/ui/Button';
-import type { ExtractedTransaction } from '@/features/finance/api/voice';
-import { useCategories } from '@/features/finance/hooks/useCategories';
-import type { Account, Category } from '@/features/finance/types';
-import { colors, radius, spacing, textStyles } from '@/theme';
+import React, { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import Button from "@/components/ui/Button";
+import type { ExtractedTransaction } from "@/features/finance/api/voice";
+import { useCategories } from "@/features/finance/hooks/useCategories";
+import type { Account, Category } from "@/features/finance/types";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 export interface ConfirmPayload {
   amount: number;
@@ -49,17 +42,17 @@ export const ConfirmCard = React.memo(function ConfirmCard({
 }: Props) {
   const { data: categories = [] } = useCategories();
 
-  const [amountText, setAmountText] = useState('');
-  const [merchant, setMerchant] = useState('');
-  const [note, setNote] = useState('');
+  const [amountText, setAmountText] = useState("");
+  const [merchant, setMerchant] = useState("");
+  const [note, setNote] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data) return;
     setAmountText(String(data.amount));
-    setMerchant(data.merchant ?? '');
-    setNote(data.note ?? '');
+    setMerchant(data.merchant ?? "");
+    setNote(data.note ?? "");
     setCategoryId(findMatchingCategory(categories, data.category_name));
     setAccountId(defaultAccountId);
   }, [data, categories, defaultAccountId]);
@@ -166,15 +159,15 @@ export const ConfirmCard = React.memo(function ConfirmCard({
 });
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: spacing['2xl'] },
+  scroll: { paddingHorizontal: spacing["2xl"] },
   sectionLabel: {
     ...StyleSheet.flatten(textStyles.caption),
-    color: colors.text.muted,
+    color: colors.text.primary,
     marginBottom: 4,
   },
   amountInput: {
     ...StyleSheet.flatten(textStyles.display),
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing["2xl"],
     paddingVertical: 4,
   },
   amountExpense: { color: colors.danger.text },
@@ -192,7 +185,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   noteInput: { minHeight: 72 },
-  chips: { flexDirection: 'row' },
+  chips: { flexDirection: "row" },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -208,7 +201,7 @@ const styles = StyleSheet.create({
   },
   chipLabel: {
     ...StyleSheet.flatten(textStyles.caption),
-    color: colors.text.muted,
+    color: colors.text.primary,
   },
   chipLabelSelected: { color: colors.accent.primary },
   actions: { gap: 10, paddingBottom: spacing.lg },
