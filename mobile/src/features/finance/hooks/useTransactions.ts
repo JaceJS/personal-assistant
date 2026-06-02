@@ -12,9 +12,10 @@ import type { TransactionCreate, TransactionUpdate } from "@/features/finance/ty
 const QUERY_KEY = "transactions";
 
 export function useTransactions(params?: ListTransactionsParams) {
+  const resolvedParams: ListTransactionsParams = { status: "confirmed", ...params };
   return useQuery({
-    queryKey: [QUERY_KEY, params ?? null],
-    queryFn: () => listTransactions(params),
+    queryKey: [QUERY_KEY, resolvedParams],
+    queryFn: () => listTransactions(resolvedParams),
   });
 }
 

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,15 +10,29 @@ import {
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import Button from '@/components/ui/Button';
 import type { ExtractedTransaction } from '@/features/finance/api/voice';
-import { formatRupiah } from '@/lib/utils';
+import { useCategories } from '@/features/finance/hooks/useCategories';
+import type { Category } from '@/features/finance/types';
 import { colors, radius, spacing, textStyles } from '@/theme';
+
+export interface ConfirmPayload {
+  amount: number;
+  categoryId: string | null;
+  merchant: string | null;
+  note: string | null;
+}
 
 interface Props {
   data: ExtractedTransaction | null;
   isVisible: boolean;
   isSaving: boolean;
-  onSave: (data: ExtractedTransaction) => void;
+  onSave: (payload: ConfirmPayload) => void;
   onDismiss: () => void;
+}
+
+function findMatchingCategory(categories: Category[], name: string | null): string | null {
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  return categories.find((c) => c.name.toLowerCase() === lower)?.id ?? null;
 }
 
 export const ConfirmCard = React.memo(function ConfirmCard({
@@ -27,64 +42,93 @@ export const ConfirmCard = React.memo(function ConfirmCard({
   onSave,
   onDismiss,
 }: Props) {
+  const { data: categories = [] } = useCategories();
+
+  const [amountText, setAmountText] = useState('');
+  const [merchant, setMerchant] = useState('');
+  const [note, setNote] = useState('');
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!data) return;
+    setAmountText(String(data.amount));
+    setMerchant(data.merchant ?? '');
+    setNote(data.note ?? '');
+    setCategoryId(findMatchingCategory(categories, data.category_name));
+  }, [data, categories]);
+
   if (!data) return null;
 
   const isExpense = data.amount < 0;
-  const confidenceHigh = data.confidence >= 0.8;
+
+  const handleSave = () => {
+    const parsed = parseInt(amountText, 10);
+    onSave({
+      amount: isNaN(parsed) ? data.amount : parsed,
+      categoryId,
+      merchant: merchant.trim() || null,
+      note: note.trim() || null,
+    });
+  };
 
   return (
     <BottomSheet isVisible={isVisible} onDismiss={onDismiss}>
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.sectionLabel}>Amount</Text>
-        <Text style={[styles.amount, isExpense ? styles.amountExpense : styles.amountIncome]}>
-          {isExpense ? '−' : '+'} {formatRupiah(Math.abs(data.amount))}
-        </Text>
+        <Text style={styles.sectionLabel}>Amount (Rp)</Text>
+        <TextInput
+          style={[styles.amountInput, isExpense ? styles.amountExpense : styles.amountIncome]}
+          value={amountText}
+          onChangeText={setAmountText}
+          keyboardType="numeric"
+          selectTextOnFocus
+        />
 
-        {data.merchant !== null && (
-          <View style={styles.field}>
-            <Text style={styles.sectionLabel}>Merchant</Text>
-            <Text style={styles.fieldValue}>{data.merchant}</Text>
-          </View>
-        )}
+        <View style={styles.field}>
+          <Text style={styles.sectionLabel}>Merchant</Text>
+          <TextInput
+            style={styles.textInput}
+            value={merchant}
+            onChangeText={setMerchant}
+            placeholder="e.g. Indomaret"
+            placeholderTextColor={colors.text.muted}
+          />
+        </View>
 
-        {data.category_name !== null && (
+        {categories.length > 0 && (
           <View style={styles.field}>
             <Text style={styles.sectionLabel}>Category</Text>
-            <Text style={styles.fieldValue}>{data.category_name}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
+              {categories.map((cat) => (
+                <Pressable
+                  key={cat.id}
+                  onPress={() => setCategoryId(cat.id === categoryId ? null : cat.id)}
+                  style={[styles.chip, cat.id === categoryId && styles.chipSelected]}
+                >
+                  <Text
+                    style={[styles.chipLabel, cat.id === categoryId && styles.chipLabelSelected]}
+                  >
+                    {cat.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
         )}
 
-        {data.note !== null && (
-          <View style={styles.field}>
-            <Text style={styles.sectionLabel}>Note</Text>
-            <TextInput
-              style={styles.noteInput}
-              defaultValue={data.note}
-              multiline
-              placeholderTextColor={colors.text.muted}
-            />
-          </View>
-        )}
-
-        <View style={styles.confidenceRow}>
-          <View
-            style={[
-              styles.confidenceDot,
-              { backgroundColor: confidenceHigh ? colors.success.text : colors.warning.text },
-            ]}
+        <View style={styles.field}>
+          <Text style={styles.sectionLabel}>Note</Text>
+          <TextInput
+            style={[styles.textInput, styles.noteInput]}
+            value={note}
+            onChangeText={setNote}
+            multiline
+            placeholder="Optional note"
+            placeholderTextColor={colors.text.muted}
           />
-          <Text style={styles.confidenceLabel}>
-            AI confidence: {Math.round(data.confidence * 100)}%
-          </Text>
         </View>
 
         <View style={styles.actions}>
-          <Button
-            label="Save Transaction"
-            onPress={() => onSave(data)}
-            loading={isSaving}
-            fullWidth
-          />
+          <Button label="Save Transaction" onPress={handleSave} loading={isSaving} fullWidth />
           <Button label="Cancel" onPress={onDismiss} variant="secondary" fullWidth />
         </View>
       </ScrollView>
@@ -99,18 +143,15 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
     marginBottom: 4,
   },
-  amount: {
+  amountInput: {
     ...StyleSheet.flatten(textStyles.display),
     marginBottom: spacing['2xl'],
+    paddingVertical: 4,
   },
   amountExpense: { color: colors.danger.text },
   amountIncome: { color: colors.success.text },
   field: { marginBottom: spacing.lg },
-  fieldValue: {
-    ...StyleSheet.flatten(textStyles.h3),
-    color: colors.text.primary,
-  },
-  noteInput: {
+  textInput: {
     backgroundColor: colors.bg.surface,
     borderWidth: 1,
     borderColor: colors.border.default,
@@ -121,20 +162,25 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     minHeight: 44,
   },
-  confidenceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: spacing.lg,
-  },
-  confidenceDot: {
-    width: 8,
-    height: 8,
+  noteInput: { minHeight: 72 },
+  chips: { flexDirection: 'row' },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.bg.surface,
+    marginRight: 8,
   },
-  confidenceLabel: {
+  chipSelected: {
+    backgroundColor: colors.accent.subtle,
+    borderColor: colors.accent.primary,
+  },
+  chipLabel: {
     ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
   },
+  chipLabelSelected: { color: colors.accent.primary },
   actions: { gap: 10, paddingBottom: spacing.lg },
 });

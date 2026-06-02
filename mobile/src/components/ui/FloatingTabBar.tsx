@@ -5,8 +5,8 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ConfirmCard } from "@/components/voice/ConfirmCard";
+import type { ConfirmPayload } from "@/components/voice/ConfirmCard";
 import { RecordingIndicator } from "@/components/voice/RecordingIndicator";
-import type { ExtractedTransaction } from "@/features/finance/api/voice";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import {
   useConfirmVoiceTransaction,
@@ -107,13 +107,13 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   }, [defaultAccount, isRecording, reset, showToast, stopRecording, uploadAudio]);
 
   const handleConfirm = useCallback(
-    (_data: ExtractedTransaction) => {
+    (payload: ConfirmPayload) => {
       const transactionId = voiceStatus.data?.transaction_id;
       if (!transactionId) {
         showToast("No draft transaction was created.", "error");
         return;
       }
-      void confirmTransaction.mutateAsync(transactionId).then(
+      void confirmTransaction.mutateAsync({ transactionId, ...payload }).then(
         () => {
           setConfirmVisible(false);
           setVoiceLogId(null);

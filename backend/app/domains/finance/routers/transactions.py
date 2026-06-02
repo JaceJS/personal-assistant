@@ -8,6 +8,7 @@ from app.core.auth import CurrentUser
 from app.core.exceptions import ForbiddenError
 from app.core.response import ApiResponse, ok, paginated
 from app.domains.finance import service
+from app.domains.finance.models import TransactionStatus
 from app.domains.finance.routers.deps import DbSession
 from app.domains.finance.schemas import TransactionCreate, TransactionRead, TransactionUpdate
 
@@ -22,13 +23,14 @@ async def list_transactions(
     date_from: Annotated[date | None, Query()] = None,
     date_to: Annotated[date | None, Query()] = None,
     search: Annotated[str | None, Query(max_length=200)] = None,
+    status: Annotated[TransactionStatus | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=1000)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ApiResponse[list[TransactionRead]]:
     items, total = await service.list_transactions(
         session, user_id,
         account_id=account_id, date_from=date_from, date_to=date_to,
-        search=search, limit=limit, offset=offset,
+        search=search, status=status, limit=limit, offset=offset,
     )
     return paginated(items, total=total, limit=limit, offset=offset)
 

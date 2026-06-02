@@ -29,11 +29,25 @@ export function useVoiceStatus(voiceLogId: string | null) {
   });
 }
 
+interface ConfirmInput {
+  transactionId: string;
+  amount: number;
+  categoryId: string | null;
+  merchant: string | null;
+  note: string | null;
+}
+
 export function useConfirmVoiceTransaction() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (transactionId: string) =>
-      updateTransaction(transactionId, { status: "confirmed" }),
+    mutationFn: ({ transactionId, amount, categoryId, merchant, note }: ConfirmInput) =>
+      updateTransaction(transactionId, {
+        status: "confirmed",
+        amount,
+        category_id: categoryId,
+        merchant,
+        note,
+      }),
     retry: false,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY] });

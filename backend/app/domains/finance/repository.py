@@ -15,6 +15,7 @@ from app.domains.finance.models import (
     Budget,
     Category,
     Transaction,
+    TransactionStatus,
     VoiceLog,
     VoiceProcessingStatus,
 )
@@ -117,6 +118,7 @@ async def list_transactions(
     date_from: date | None = None,
     date_to: date | None = None,
     search: str | None = None,
+    status: TransactionStatus | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> list[Transaction]:
@@ -135,6 +137,8 @@ async def list_transactions(
                 Transaction.note.ilike(pattern),
             )
         )
+    if status is not None:
+        q = q.where(Transaction.status == status)
     q = q.order_by(Transaction.occurred_at.desc()).limit(limit).offset(offset)
     result = await session.execute(q)
     return list(result.scalars())
@@ -148,6 +152,7 @@ async def count_transactions(
     date_from: date | None = None,
     date_to: date | None = None,
     search: str | None = None,
+    status: TransactionStatus | None = None,
 ) -> int:
     q = sa.select(sa.func.count()).select_from(Transaction).where(Transaction.user_id == user_id)
     if account_id is not None:
@@ -164,6 +169,8 @@ async def count_transactions(
                 Transaction.note.ilike(pattern),
             )
         )
+    if status is not None:
+        q = q.where(Transaction.status == status)
     result = await session.execute(q)
     return result.scalar_one()
 

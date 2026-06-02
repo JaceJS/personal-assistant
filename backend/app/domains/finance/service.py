@@ -126,18 +126,19 @@ async def list_transactions(
     date_from: date | None = None,
     date_to: date | None = None,
     search: str | None = None,
+    status: TransactionStatus | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> tuple[list[Transaction], int]:
     items = await repo.list_transactions(
         session, user_id,
         account_id=account_id, date_from=date_from, date_to=date_to,
-        search=search, limit=limit, offset=offset,
+        search=search, status=status, limit=limit, offset=offset,
     )
     total = await repo.count_transactions(
         session, user_id,
         account_id=account_id, date_from=date_from, date_to=date_to,
-        search=search,
+        search=search, status=status,
     )
     return items, total
 
