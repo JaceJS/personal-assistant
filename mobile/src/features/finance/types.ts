@@ -101,6 +101,7 @@ export interface TransactionCreate {
 }
 
 export interface TransactionUpdate {
+  account_id?: string | null;
   category_id?: string | null;
   amount?: number;
   merchant?: string | null;

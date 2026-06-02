@@ -11,8 +11,10 @@ from arq.connections import ArqRedis, RedisSettings
 
 from app.core.config import Settings
 
-# Job name for the voice-processing task (must match the worker function name).
+# Job names must match the worker function names exactly.
 VOICE_PROCESSING_JOB = "process_voice"
+VOICE_EXTRACTION_JOB = "extract_voice"
+RECEIPT_PROCESSING_JOB = "process_receipt"
 
 
 def redis_settings(settings: Settings) -> RedisSettings:

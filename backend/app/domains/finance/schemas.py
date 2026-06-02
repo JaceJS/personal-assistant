@@ -15,7 +15,6 @@ from app.domains.finance.models import (
     VoiceProcessingStatus,
 )
 
-
 # ── Budget ────────────────────────────────────────────────────────────────────
 
 class BudgetUpsert(BaseModel):
@@ -115,6 +114,7 @@ class TransactionCreate(BaseModel):
 
 
 class TransactionUpdate(BaseModel):
+    account_id: uuid.UUID | None = None
     category_id: uuid.UUID | None = None
     amount: int | None = None
     merchant: str | None = None
@@ -163,6 +163,39 @@ class VoiceStatusRead(BaseModel):
     id: uuid.UUID
     status: VoiceProcessingStatus
     transcript: str | None
+    extracted_data: VoiceExtractedData | None
+    transaction_id: uuid.UUID | None
+    error_message: str | None
+
+
+class VoiceExtractRequest(BaseModel):
+    transcript: str
+
+    @field_validator("transcript")
+    @classmethod
+    def transcript_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Transcript cannot be empty")
+        return v
+
+
+class VoiceExtractResponse(BaseModel):
+    voice_log_id: uuid.UUID
+    status: VoiceProcessingStatus
+
+
+# Receipt
+
+
+class ReceiptUploadResponse(BaseModel):
+    receipt_log_id: uuid.UUID
+    status: VoiceProcessingStatus
+
+
+class ReceiptStatusRead(BaseModel):
+    id: uuid.UUID
+    status: VoiceProcessingStatus
     extracted_data: VoiceExtractedData | None
     transaction_id: uuid.UUID | None
     error_message: str | None

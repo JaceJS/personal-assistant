@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, textStyles } from '@/theme';
 
 interface HeaderProps {
   title: string;
@@ -15,8 +15,8 @@ export function Header({ title, subtitle, left, right }: HeaderProps) {
       <View style={styles.appBar}>
         <View style={styles.sideSlot}>{left}</View>
         <View style={styles.centerSlot}>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           <Text style={styles.centeredTitle} numberOfLines={1}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
         <View style={[styles.sideSlot, styles.sideSlotRight]}>
           {right ?? null}
@@ -28,8 +28,8 @@ export function Header({ title, subtitle, left, right }: HeaderProps) {
   return (
     <View style={styles.container}>
       <View style={styles.textWrap}>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         <Text style={styles.title}>{title}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
       {right ? <View style={styles.right}>{right}</View> : null}
     </View>
@@ -81,9 +81,9 @@ const styles = StyleSheet.create({
   },
   right: { marginLeft: spacing.md },
   subtitle: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: colors.text.muted,
-    marginBottom: 2,
+    ...StyleSheet.flatten(textStyles.caption),
+    fontWeight: '500',
+    color: colors.text.secondary,
+    marginTop: 1,
   },
 });

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -61,10 +61,12 @@ function WaveBar({ index, isActive }: BarProps) {
 
 interface Props {
   isRecording: boolean;
+  onCancel?: () => void;
 }
 
 export const RecordingIndicator = React.memo(function RecordingIndicator({
   isRecording,
+  onCancel,
 }: Props) {
   return (
     <View style={styles.container}>
@@ -76,6 +78,11 @@ export const RecordingIndicator = React.memo(function RecordingIndicator({
       <Text style={styles.label}>
         {isRecording ? 'Recording...' : 'Hold to record'}
       </Text>
+      {isRecording && onCancel && (
+        <Pressable onPress={onCancel} hitSlop={8}>
+          <Text style={styles.cancelLabel}>Cancel</Text>
+        </Pressable>
+      )}
     </View>
   );
 });
@@ -90,5 +97,10 @@ const styles = StyleSheet.create({
   label: {
     ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
+  },
+  cancelLabel: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
+    textDecorationLine: 'underline',
   },
 });

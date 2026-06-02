@@ -25,10 +25,35 @@ function categoryIcon(name?: string | null): LucideIcon {
   return Wallet;
 }
 
+function getCardLabels(transaction: Transaction, categoryName?: string) {
+  if (transaction.merchant) {
+    return {
+      title: transaction.merchant,
+      subtitle: categoryName ?? transaction.note ?? formatShortDate(transaction.occurred_at),
+    };
+  }
+  if (categoryName) {
+    return {
+      title: categoryName,
+      subtitle: transaction.note ?? formatShortDate(transaction.occurred_at),
+    };
+  }
+  if (transaction.note) {
+    return {
+      title: transaction.note,
+      subtitle: formatShortDate(transaction.occurred_at),
+    };
+  }
+  return {
+    title: 'Transaction',
+    subtitle: formatShortDate(transaction.occurred_at),
+  };
+}
+
 function TransactionCard({ transaction, categoryName, showId, onPress }: TransactionCardProps) {
   const isExpense = transaction.amount < 0;
   const Icon = categoryIcon(categoryName);
-  const subtitle = categoryName ?? transaction.note ?? formatShortDate(transaction.occurred_at);
+  const { title, subtitle } = getCardLabels(transaction, categoryName);
   const amountText = `${isExpense ? '−' : '+'} ${formatRupiah(Math.abs(transaction.amount))}`;
   const amountColor = isExpense ? colors.danger.text : colors.accent.primary;
 
@@ -41,7 +66,7 @@ function TransactionCard({ transaction, categoryName, showId, onPress }: Transac
 
   return (
     <ListItem
-      title={transaction.merchant ?? 'Transaction'}
+      title={title}
       subtitle={subtitle}
       icon={Icon}
       value={showId ? undefined : amountText}

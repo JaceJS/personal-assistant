@@ -13,6 +13,7 @@ export interface ExtractedTransaction {
 export type VoiceProcessingStatus =
   | "pending"
   | "transcribing"
+  | "transcribed"
   | "extracting"
   | "completed"
   | "failed";
@@ -52,4 +53,11 @@ export async function uploadAudio(
 export async function getVoiceStatus(voiceLogId: string): Promise<VoiceStatusResponse> {
   return apiFetch<ApiResponse<VoiceStatusResponse>>(`/api/v1/voice/${voiceLogId}`)
     .then((r) => r.data);
+}
+
+export async function extractVoice(voiceLogId: string, transcript: string): Promise<void> {
+  await apiFetch<ApiResponse<unknown>>(`/api/v1/voice/${voiceLogId}/extract`, {
+    method: "POST",
+    body: JSON.stringify({ transcript }),
+  });
 }

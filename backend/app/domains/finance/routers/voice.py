@@ -8,7 +8,12 @@ from app.core.config import get_settings
 from app.core.response import ApiResponse, ok
 from app.domains.finance import service
 from app.domains.finance.routers.deps import DbSession
-from app.domains.finance.schemas import VoiceStatusRead, VoiceUploadResponse
+from app.domains.finance.schemas import (
+    VoiceExtractRequest,
+    VoiceExtractResponse,
+    VoiceStatusRead,
+    VoiceUploadResponse,
+)
 from app.shared.queue import create_redis_pool
 from app.shared.storage import R2Storage
 
@@ -47,4 +52,29 @@ async def get_voice_status(
     voice_log_id: uuid.UUID, user_id: CurrentUser, session: DbSession
 ) -> ApiResponse[VoiceStatusRead]:
     item = await service.get_voice_status(session, user_id, voice_log_id)
+    return ok(item)
+
+
+@router.post(
+    "/voice/{voice_log_id}/extract",
+    response_model=ApiResponse[VoiceExtractResponse],
+)
+async def extract_voice(
+    voice_log_id: uuid.UUID,
+    body: VoiceExtractRequest,
+    user_id: CurrentUser,
+    session: DbSession,
+) -> ApiResponse[VoiceExtractResponse]:
+    settings = get_settings()
+    redis = await create_redis_pool(settings)
+    try:
+        item = await service.extract_voice_transcript(
+            session,
+            user_id,
+            voice_log_id,
+            transcript=body.transcript,
+            redis=redis,
+        )
+    finally:
+        await redis.close()
     return ok(item)

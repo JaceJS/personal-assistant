@@ -105,7 +105,7 @@ export default function HomeScreen() {
           items={items.slice(0, 3)}
           isLoading={txLoading}
           onSeeAll={() => router.push("/(app)/finance/history")}
-          onPress={(id) => router.push(`/(app)/finance/${id}`)}
+          onPress={(id) => router.navigate({ pathname: '/(app)/finance/[id]', params: { id, from: 'home' } })}
         />
       </ScrollView>
     </SafeAreaView>

@@ -49,7 +49,11 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
   const ringCol = getBudgetRingColor(pct);
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      onPress={() => router.push('/(app)/settings/budget')}
+      style={({ pressed }) => pressed && { opacity: 0.85 }}
+    >
+      <View style={styles.card}>
       <View style={styles.topRow}>
         <View style={styles.topLeft}>
           <Text style={styles.budgetLabel}>TOTAL MONTHLY BUDGET</Text>
@@ -95,7 +99,8 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
           <Text style={[styles.rowAmount, { color: colors.accent.text }]}>{formatRupiah(remaining)}</Text>
         </View>
       </View>
-    </View>
+      </View>
+    </Pressable>
   );
 }
 

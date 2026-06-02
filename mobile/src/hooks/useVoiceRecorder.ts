@@ -47,12 +47,23 @@ export function useVoiceRecorder() {
     }
   }, [audioRecorder, phase, setAudioUri, setPhase, setError]);
 
+  const cancelRecording = useCallback(async () => {
+    if (phase !== "recording") return;
+    try {
+      await audioRecorder.stop();
+    } catch {
+      // ignore — we're discarding the recording anyway
+    }
+    reset();
+  }, [audioRecorder, phase, reset]);
+
   return {
     phase,
     isRecording: phase === "recording",
     isProcessing: phase === "processing",
     startRecording,
     stopRecording,
+    cancelRecording,
     reset,
   };
 }

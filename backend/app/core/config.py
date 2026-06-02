@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     stt_model: str = "openai/whisper-1"
     llm_model: str = "meta-llama/llama-3.3-70b-instruct"
+    receipt_model: str = "google/gemini-flash-1.5"
 
     # HTTP: comma-separated list of allowed CORS origins.
     cors_origins: str = "http://localhost:3000,http://localhost:19006"

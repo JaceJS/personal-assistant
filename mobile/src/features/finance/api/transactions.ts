@@ -8,6 +8,7 @@ import type {
 } from "@/features/finance/types";
 
 export interface ListTransactionsParams {
+  accountId?: string;
   dateFrom?: string;
   dateTo?: string;
   search?: string;
@@ -18,6 +19,7 @@ export interface ListTransactionsParams {
 
 export function listTransactions(params?: ListTransactionsParams): Promise<PaginatedList<Transaction>> {
   const qs = new URLSearchParams();
+  if (params?.accountId) qs.set('account_id', params.accountId);
   if (params?.dateFrom) qs.set('date_from', params.dateFrom);
   if (params?.dateTo) qs.set('date_to', params.dateTo);
   if (params?.search) qs.set('search', params.search);

@@ -183,7 +183,7 @@ function YearlyPerformanceSection({
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={styles.title}>Yearly Performance</Text>
+        <Text style={styles.title}>Spending Overview</Text>
         <YearDropdown value={year} options={years} onChange={onYearChange} />
       </View>
 

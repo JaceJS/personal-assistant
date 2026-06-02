@@ -11,11 +11,12 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import Button from '@/components/ui/Button';
 import type { ExtractedTransaction } from '@/features/finance/api/voice';
 import { useCategories } from '@/features/finance/hooks/useCategories';
-import type { Category } from '@/features/finance/types';
+import type { Account, Category } from '@/features/finance/types';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
 export interface ConfirmPayload {
   amount: number;
+  accountId: string | null;
   categoryId: string | null;
   merchant: string | null;
   note: string | null;
@@ -23,6 +24,8 @@ export interface ConfirmPayload {
 
 interface Props {
   data: ExtractedTransaction | null;
+  accounts: Account[];
+  defaultAccountId: string | null;
   isVisible: boolean;
   isSaving: boolean;
   onSave: (payload: ConfirmPayload) => void;
@@ -37,6 +40,8 @@ function findMatchingCategory(categories: Category[], name: string | null): stri
 
 export const ConfirmCard = React.memo(function ConfirmCard({
   data,
+  accounts,
+  defaultAccountId,
   isVisible,
   isSaving,
   onSave,
@@ -48,6 +53,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
   const [merchant, setMerchant] = useState('');
   const [note, setNote] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [accountId, setAccountId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -55,7 +61,8 @@ export const ConfirmCard = React.memo(function ConfirmCard({
     setMerchant(data.merchant ?? '');
     setNote(data.note ?? '');
     setCategoryId(findMatchingCategory(categories, data.category_name));
-  }, [data, categories]);
+    setAccountId(defaultAccountId);
+  }, [data, categories, defaultAccountId]);
 
   if (!data) return null;
 
@@ -65,6 +72,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
     const parsed = parseInt(amountText, 10);
     onSave({
       amount: isNaN(parsed) ? data.amount : parsed,
+      accountId,
       categoryId,
       merchant: merchant.trim() || null,
       note: note.trim() || null,
@@ -82,6 +90,27 @@ export const ConfirmCard = React.memo(function ConfirmCard({
           keyboardType="numeric"
           selectTextOnFocus
         />
+
+        {accounts.length > 0 && (
+          <View style={styles.field}>
+            <Text style={styles.sectionLabel}>Account</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
+              {accounts.map((acc) => (
+                <Pressable
+                  key={acc.id}
+                  onPress={() => setAccountId(acc.id)}
+                  style={[styles.chip, acc.id === accountId && styles.chipSelected]}
+                >
+                  <Text
+                    style={[styles.chipLabel, acc.id === accountId && styles.chipLabelSelected]}
+                  >
+                    {acc.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         <View style={styles.field}>
           <Text style={styles.sectionLabel}>Merchant</Text>

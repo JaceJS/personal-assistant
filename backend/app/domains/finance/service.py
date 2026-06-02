@@ -16,6 +16,7 @@ from app.domains.finance.models import (
     Account,
     Budget,
     Category,
+    ReceiptLog,
     Transaction,
     TransactionStatus,
     VoiceLog,
@@ -26,12 +27,15 @@ from app.domains.finance.schemas import (
     AccountUpdate,
     BudgetUpsert,
     CategoryCreate,
+    ReceiptStatusRead,
+    ReceiptUploadResponse,
     TransactionCreate,
     TransactionUpdate,
+    VoiceExtractResponse,
     VoiceStatusRead,
     VoiceUploadResponse,
 )
-from app.shared.queue import VOICE_PROCESSING_JOB
+from app.shared.queue import RECEIPT_PROCESSING_JOB, VOICE_EXTRACTION_JOB, VOICE_PROCESSING_JOB
 from app.shared.storage import R2Storage
 
 # ── Budget ────────────────────────────────────────────────────────────────────
@@ -176,19 +180,32 @@ async def update_transaction(
     if tx.user_id != user_id:
         raise ForbiddenError("You don't own this transaction")
 
-    # Capture the balance contribution before applying updates.
-    old_balance_effect = tx.amount if tx.status == TransactionStatus.confirmed else 0
-
     updates = data.model_dump(exclude_unset=True)
     if updates.get("category_id") is not None:
         await get_category_or_404(session, updates["category_id"], user_id)
-    updated = await repo.update_transaction(session, tx, **updates)
 
-    new_balance_effect = updated.amount if updated.status == TransactionStatus.confirmed else 0
-    if old_balance_effect != new_balance_effect:
-        account = await get_account_or_404(session, updated.account_id, user_id)
-        delta = new_balance_effect - old_balance_effect
-        await repo.update_account(session, account, balance=account.balance + delta)
+    new_account_id = updates.get("account_id")
+    account_changing = new_account_id is not None and new_account_id != tx.account_id
+
+    if account_changing:
+        await get_account_or_404(session, new_account_id, user_id)
+        updated = await repo.update_transaction(session, tx, **updates)
+        # Reverse balance on old account if the transaction was already confirmed.
+        if tx.status == TransactionStatus.confirmed:
+            old_acct = await get_account_or_404(session, tx.account_id, user_id)
+            await repo.update_account(session, old_acct, balance=old_acct.balance - tx.amount)
+        # Apply balance to new account if it is now (or remains) confirmed.
+        if updated.status == TransactionStatus.confirmed:
+            new_acct = await get_account_or_404(session, updated.account_id, user_id)
+            await repo.update_account(session, new_acct, balance=new_acct.balance + updated.amount)
+    else:
+        old_balance_effect = tx.amount if tx.status == TransactionStatus.confirmed else 0
+        updated = await repo.update_transaction(session, tx, **updates)
+        new_balance_effect = updated.amount if updated.status == TransactionStatus.confirmed else 0
+        if old_balance_effect != new_balance_effect:
+            account = await get_account_or_404(session, updated.account_id, user_id)
+            delta = new_balance_effect - old_balance_effect
+            await repo.update_account(session, account, balance=account.balance + delta)
 
     return updated
 
@@ -234,7 +251,9 @@ async def create_voice_upload(
     object_key = f"voice/{user_id}/{uuid.uuid4()}{object_ext}"
 
     await storage.upload(object_key, audio, content_type)
-    voice_log = await repo.create_voice_log(session, user_id, audio_url=object_key)
+    voice_log = await repo.create_voice_log(
+        session, user_id, audio_url=object_key, account_id=account_id
+    )
     await session.flush()
 
     await redis.enqueue_job(
@@ -273,4 +292,100 @@ async def get_voice_status(
         extracted_data=voice_log.extracted_data,
         transaction_id=tx.id if tx is not None else None,
         error_message=voice_log.error_message,
+    )
+
+
+async def extract_voice_transcript(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    voice_log_id: uuid.UUID,
+    *,
+    transcript: str,
+    redis: ArqRedis,
+) -> VoiceExtractResponse:
+    voice_log = await get_voice_log_or_404(session, voice_log_id, user_id)
+    if voice_log.processing_status != VoiceProcessingStatus.transcribed:
+        raise BadRequestError("Voice log is not in transcribed state")
+    if voice_log.account_id is None:
+        raise BadRequestError("Voice log has no associated account")
+
+    await redis.enqueue_job(
+        VOICE_EXTRACTION_JOB,
+        voice_log_id=str(voice_log_id),
+        account_id=str(voice_log.account_id),
+        transcript=transcript,
+    )
+
+    return VoiceExtractResponse(
+        voice_log_id=voice_log_id,
+        status=VoiceProcessingStatus.extracting,
+    )
+
+
+# Receipt logs
+
+
+async def create_receipt_upload(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    account_id: uuid.UUID,
+    file: UploadFile,
+    storage: R2Storage,
+    redis: ArqRedis,
+) -> ReceiptUploadResponse:
+    await get_account_or_404(session, account_id, user_id)
+
+    content_type = file.content_type or ""
+    if not content_type.startswith("image/"):
+        raise BadRequestError("Receipt upload must be an image file")
+
+    image = await file.read()
+    if not image:
+        raise BadRequestError("Receipt upload cannot be empty")
+
+    suffix = Path(file.filename or "").suffix.lower()
+    object_ext = suffix if suffix else ".jpg"
+    object_key = f"receipt/{user_id}/{uuid.uuid4()}{object_ext}"
+
+    await storage.upload(object_key, image, content_type)
+    receipt_log = await repo.create_receipt_log(
+        session, user_id, account_id=account_id, image_url=object_key
+    )
+    await session.flush()
+
+    await redis.enqueue_job(
+        RECEIPT_PROCESSING_JOB,
+        receipt_log_id=str(receipt_log.id),
+        account_id=str(account_id),
+    )
+
+    return ReceiptUploadResponse(
+        receipt_log_id=receipt_log.id,
+        status=VoiceProcessingStatus.pending,
+    )
+
+
+async def get_receipt_log_or_404(
+    session: AsyncSession, receipt_log_id: uuid.UUID, user_id: uuid.UUID
+) -> ReceiptLog:
+    receipt_log = await repo.get_receipt_log(session, receipt_log_id)
+    if receipt_log is None:
+        raise NotFoundError(f"Receipt log {receipt_log_id} not found")
+    if receipt_log.user_id != user_id:
+        raise ForbiddenError("You don't own this receipt log")
+    return receipt_log
+
+
+async def get_receipt_status(
+    session: AsyncSession, user_id: uuid.UUID, receipt_log_id: uuid.UUID
+) -> ReceiptStatusRead:
+    receipt_log = await get_receipt_log_or_404(session, receipt_log_id, user_id)
+
+    return ReceiptStatusRead(
+        id=receipt_log.id,
+        status=receipt_log.processing_status,
+        extracted_data=receipt_log.extracted_data,
+        transaction_id=receipt_log.transaction_id,
+        error_message=receipt_log.error_message,
     )

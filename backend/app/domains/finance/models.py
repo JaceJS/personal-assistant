@@ -31,6 +31,7 @@ class TransactionSource(enum.StrEnum):
     voice = "voice"
     manual = "manual"
     import_ = "import"
+    receipt = "receipt"
 
 
 class TransactionStatus(enum.StrEnum):
@@ -41,6 +42,7 @@ class TransactionStatus(enum.StrEnum):
 class VoiceProcessingStatus(enum.StrEnum):
     pending = "pending"
     transcribing = "transcribing"
+    transcribed = "transcribed"
     extracting = "extracting"
     completed = "completed"
     failed = "failed"
@@ -87,6 +89,11 @@ class VoiceLog(TimestampedBase):
     __tablename__ = "voice_logs"
 
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    account_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        sa.ForeignKey("accounts.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     audio_url: Mapped[str] = mapped_column(sa.Text(), nullable=False)
     transcript: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
     extracted_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB(), nullable=True)
@@ -95,6 +102,31 @@ class VoiceLog(TimestampedBase):
         _pg_enum(VoiceProcessingStatus, "voice_processing_status"),
         nullable=False,
         server_default="pending",
+    )
+    error_message: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
+
+
+class ReceiptLog(TimestampedBase):
+    __tablename__ = "receipt_logs"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    account_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        sa.ForeignKey("accounts.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    image_url: Mapped[str] = mapped_column(sa.Text(), nullable=False)
+    ocr_text: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
+    extracted_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB(), nullable=True)
+    processing_status: Mapped[VoiceProcessingStatus] = mapped_column(
+        _pg_enum(VoiceProcessingStatus, "voice_processing_status"),
+        nullable=False,
+        server_default="pending",
+    )
+    transaction_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        sa.ForeignKey("transactions.id", ondelete="SET NULL"),
+        nullable=True,
     )
     error_message: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
 

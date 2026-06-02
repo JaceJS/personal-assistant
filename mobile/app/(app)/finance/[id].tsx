@@ -14,7 +14,7 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function TransactionDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data: transaction, isLoading } = useTransaction(id);
   const updateTransaction = useUpdateTransaction(id);
   const deleteTransaction = useDeleteTransaction();
@@ -51,18 +51,24 @@ export default function TransactionDetailScreen() {
           try {
             await deleteTransaction.mutateAsync(id);
             showToast("Transaction deleted", "info");
-            router.back();
+            if (from === 'home') router.navigate('/(app)/finance');
+            else router.back();
           } catch {
             showToast("Failed to delete transaction.", "error");
           }
         },
       },
     ]);
-  }, [deleteTransaction, id, router, showToast]);
+  }, [deleteTransaction, from, id, router, showToast]);
+
+  const handleBack = useCallback(() => {
+    if (from === 'home') router.navigate('/(app)/finance');
+    else router.back();
+  }, [from, router]);
 
   const backButton = (
     <Pressable
-      onPress={() => router.back()}
+      onPress={handleBack}
       hitSlop={8}
       style={({ pressed }) => pressed && { opacity: 0.6 }}
     >

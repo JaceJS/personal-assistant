@@ -14,6 +14,7 @@ from app.domains.finance.models import (
     Account,
     Budget,
     Category,
+    ReceiptLog,
     Transaction,
     TransactionStatus,
     VoiceLog,
@@ -126,9 +127,9 @@ async def list_transactions(
     if account_id is not None:
         q = q.where(Transaction.account_id == account_id)
     if date_from is not None:
-        q = q.where(Transaction.occurred_at >= date_from)
+        q = q.where(sa.cast(Transaction.occurred_at, sa.Date) >= date_from)
     if date_to is not None:
-        q = q.where(Transaction.occurred_at <= date_to)
+        q = q.where(sa.cast(Transaction.occurred_at, sa.Date) <= date_to)
     if search is not None:
         pattern = f"%{search}%"
         q = q.where(
@@ -158,9 +159,9 @@ async def count_transactions(
     if account_id is not None:
         q = q.where(Transaction.account_id == account_id)
     if date_from is not None:
-        q = q.where(Transaction.occurred_at >= date_from)
+        q = q.where(sa.cast(Transaction.occurred_at, sa.Date) >= date_from)
     if date_to is not None:
-        q = q.where(Transaction.occurred_at <= date_to)
+        q = q.where(sa.cast(Transaction.occurred_at, sa.Date) <= date_to)
     if search is not None:
         pattern = f"%{search}%"
         q = q.where(
@@ -216,9 +217,13 @@ async def list_voice_logs(
 
 
 async def create_voice_log(
-    session: AsyncSession, user_id: uuid.UUID, audio_url: str
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    audio_url: str,
+    *,
+    account_id: uuid.UUID | None = None,
 ) -> VoiceLog:
-    log = VoiceLog(user_id=user_id, audio_url=audio_url)
+    log = VoiceLog(user_id=user_id, audio_url=audio_url, account_id=account_id)
     session.add(log)
     await session.flush()
     return log
@@ -246,3 +251,46 @@ async def update_voice_log_status(
     await session.flush()
     await session.refresh(voice_log)
     return voice_log
+
+
+# ── Receipt logs ──────────────────────────────────────────────────────────────
+
+async def get_receipt_log(session: AsyncSession, receipt_log_id: uuid.UUID) -> ReceiptLog | None:
+    return await session.get(ReceiptLog, receipt_log_id)
+
+
+async def create_receipt_log(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    account_id: uuid.UUID,
+    image_url: str,
+) -> ReceiptLog:
+    log = ReceiptLog(user_id=user_id, account_id=account_id, image_url=image_url)
+    session.add(log)
+    await session.flush()
+    return log
+
+
+async def update_receipt_log_status(
+    session: AsyncSession,
+    receipt_log: ReceiptLog,
+    status: VoiceProcessingStatus,
+    *,
+    ocr_text: str | None = None,
+    extracted_data: dict[str, Any] | None = None,
+    transaction_id: uuid.UUID | None = None,
+    error_message: str | None = None,
+) -> ReceiptLog:
+    receipt_log.processing_status = status
+    if ocr_text is not None:
+        receipt_log.ocr_text = ocr_text
+    if extracted_data is not None:
+        receipt_log.extracted_data = extracted_data
+    if transaction_id is not None:
+        receipt_log.transaction_id = transaction_id
+    if error_message is not None:
+        receipt_log.error_message = error_message
+    await session.flush()
+    await session.refresh(receipt_log)
+    return receipt_log

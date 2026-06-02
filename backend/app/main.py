@@ -29,6 +29,7 @@ _openapi_tags = [
     {"name": "Categories", "description": "Transaction categories (system + user-defined)."},
     {"name": "Transactions", "description": "Income and expense transactions."},
     {"name": "Voice", "description": "Voice-to-transaction upload and status polling."},
+    {"name": "Receipt", "description": "Receipt image scanning and transaction extraction."},
 ]
 
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getVoiceStatus, uploadAudio } from "@/features/finance/api/voice";
+import { extractVoice, getVoiceStatus, uploadAudio } from "@/features/finance/api/voice";
 import type { VoiceStatusResponse } from "@/features/finance/api/voice";
 import { updateTransaction } from "@/features/finance/api/transactions";
 
@@ -23,8 +23,21 @@ export function useVoiceStatus(voiceLogId: string | null) {
     enabled: voiceLogId !== null,
     refetchInterval: (query) => {
       const data = query.state.data as VoiceStatusResponse | undefined;
-      if (data?.status === "completed" || data?.status === "failed") return false;
+      const status = data?.status;
+      if (status === "completed" || status === "failed" || status === "transcribed") return false;
       return 1500;
+    },
+  });
+}
+
+export function useExtractVoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ voiceLogId, transcript }: { voiceLogId: string; transcript: string }) =>
+      extractVoice(voiceLogId, transcript),
+    retry: false,
+    onSuccess: (_data, { voiceLogId }) => {
+      void queryClient.invalidateQueries({ queryKey: [VOICE_QUERY_KEY, voiceLogId] });
     },
   });
 }
@@ -32,6 +45,7 @@ export function useVoiceStatus(voiceLogId: string | null) {
 interface ConfirmInput {
   transactionId: string;
   amount: number;
+  accountId: string | null;
   categoryId: string | null;
   merchant: string | null;
   note: string | null;
@@ -40,10 +54,11 @@ interface ConfirmInput {
 export function useConfirmVoiceTransaction() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ transactionId, amount, categoryId, merchant, note }: ConfirmInput) =>
+    mutationFn: ({ transactionId, amount, accountId, categoryId, merchant, note }: ConfirmInput) =>
       updateTransaction(transactionId, {
         status: "confirmed",
         amount,
+        account_id: accountId,
         category_id: categoryId,
         merchant,
         note,
