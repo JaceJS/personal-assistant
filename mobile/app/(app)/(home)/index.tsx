@@ -1,3 +1,4 @@
+import { useCallback, useEffect } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +12,7 @@ import { useBudget } from "@/features/finance/hooks/useBudget";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { formatRupiah } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
+import { useToastStore } from "@/stores/toast";
 import { colors, textStyles } from "@/theme";
 import { Header } from "@/components/layout/Header";
 
@@ -24,8 +26,22 @@ function getGreeting() {
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { data: txData, isLoading: txLoading, isRefetching, refetch } = useTransactions();
-  const { data: budget } = useBudget();
+  const { showToast } = useToastStore();
+  const { data: txData, isLoading: txLoading, isRefetching, refetch, error: txError } = useTransactions();
+  const { data: budget, error: budgetError } = useBudget();
+
+  useEffect(() => {
+    if (txError) showToast("Failed to load transactions", "error");
+  }, [txError, showToast]);
+
+  useEffect(() => {
+    if (budgetError) showToast("Failed to load budget", "error");
+  }, [budgetError, showToast]);
+
+  const handleTxPress = useCallback(
+    (id: string) => router.push(`/(app)/(home)/${id}`),
+    [router],
+  );
 
   const firstName = user?.email?.split("@")[0] ?? "there";
   const items = txData?.items ?? [];
@@ -104,8 +120,9 @@ export default function HomeScreen() {
         <RecentTransactions
           items={items.slice(0, 3)}
           isLoading={txLoading}
-          onSeeAll={() => router.push("/(app)/finance/history")}
-          onPress={(id) => router.navigate({ pathname: '/(app)/finance/[id]', params: { id, from: 'home' } })}
+          error={!!txError}
+          onSeeAll={() => router.push("/history")}
+          onPress={handleTxPress}
         />
       </ScrollView>
     </SafeAreaView>
@@ -117,14 +134,6 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 120 },
 
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
   avatar: {
     width: 36,
     height: 36,

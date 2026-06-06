@@ -208,3 +208,63 @@ src/theme/           — design tokens (colors, spacing, radius, typography)
 - **NEVER** add a new native module without noting it requires a dev client rebuild
 - **NEVER** use float for money — amounts are integer rupiah from the API
 - **NEVER** skip loading/error/empty states on any data-fetching screen
+- **NEVER** write implementation before the test for complex logic — TDD is required (see section 15)
+
+---
+
+# 15. TESTING — TDD REQUIRED
+
+**Test-Driven Development is mandatory for complex features.** Write the failing test first, then the implementation.
+
+## When TDD Is Required
+
+- Any **utility / pure function** (calculations, data transformations, formatters)
+- Any **navigation logic** (routing decisions, back stack behavior)
+- Any **bug fix** — write a test that reproduces the bug before fixing it
+- Any **new hook** with non-trivial derived state
+- Any **component** with conditional rendering logic driven by data
+
+Simple one-liner wrappers or trivial UI-only components do not need tests.
+
+## TDD Cycle
+
+```
+RED    → Write a failing test that describes the expected behavior
+GREEN  → Write the minimum code to make the test pass
+REFACTOR → Clean up code while keeping tests green
+```
+
+Never skip the RED phase. Never write implementation before the test for the above cases.
+
+## Test Infrastructure
+
+```bash
+npm test                          # run all tests
+npm test -- <pattern>             # run matching test files
+npm test -- --no-coverage         # faster, no coverage report
+```
+
+| Tool | Package |
+|---|---|
+| Runner | `jest-expo` |
+| Assertions | `@testing-library/jest-native` |
+| Component rendering | `@testing-library/react-native` |
+
+## File Conventions
+
+```
+src/
+  features/<domain>/
+    utils/__tests__/<name>.test.ts      ← pure function tests
+  components/ui/__tests__/<name>.test.tsx  ← component behavior tests
+```
+
+- Test files: `*.test.ts` (logic) or `*.test.tsx` (components)
+- Import alias `@/` works in tests (configured in jest `moduleNameMapper`)
+- Native modules (Skia, Reanimated, expo-*) must be mocked at the top of the test file
+
+## What to Test
+
+- **Always**: Pure utility functions, navigation handlers, data aggregation
+- **When practical**: Component press handlers, conditional rendering
+- **Skip**: StyleSheet rules, layout dimensions, trivial one-liners

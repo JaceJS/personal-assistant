@@ -34,7 +34,7 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
   if (!budget) {
     return (
       <View style={styles.card}>
-        <Pressable style={styles.promptRow} onPress={() => router.push('/(app)/settings/budget')}>
+        <Pressable style={styles.promptRow} onPress={() => router.push('/(app)/finance/budget')}>
           <Text style={styles.promptText}>Set a monthly budget</Text>
           <Text style={styles.promptArrow}>→</Text>
         </Pressable>
@@ -50,7 +50,7 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
 
   return (
     <Pressable
-      onPress={() => router.push('/(app)/settings/budget')}
+      onPress={() => router.push('/(app)/finance/budget')}
       style={({ pressed }) => pressed && { opacity: 0.85 }}
     >
       <View style={styles.card}>

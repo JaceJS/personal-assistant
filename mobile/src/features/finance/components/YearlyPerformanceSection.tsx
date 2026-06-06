@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Bar, CartesianChart } from 'victory-native';
+import { useAnimatedReaction, useAnimatedStyle, runOnJS } from 'react-native-reanimated';
+import { Bar, CartesianChart, useChartPressState } from 'victory-native';
 import { Check, ChevronDown } from 'lucide-react-native';
 
 import { SkeletonCard } from '@/components/ui/Skeleton';
@@ -8,9 +9,12 @@ import type { Transaction } from '@/features/finance/types';
 import { useChartFont } from '@/hooks/useChartFont';
 import { formatRupiah } from '@/lib/utils';
 import { colors, radius, spacing, textStyles } from '@/theme';
+import { ChartTooltip, TOOLTIP_WIDTH } from './ChartTooltip';
+import { clampTooltipX } from '../utils/chartTooltipUtils';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const CHART_HEIGHT = 200;
+const TOOLTIP_OFFSET_Y = 64;
 
 interface MonthlyPoint {
   x: number;
@@ -94,6 +98,25 @@ interface ChartContentProps {
 }
 
 function ChartContent({ buckets, year, chartFont }: ChartContentProps) {
+  const { state, isActive } = useChartPressState({ x: 0, y: { expense: 0 } });
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [tooltipLabel, setTooltipLabel] = useState('');
+  const [tooltipValue, setTooltipValue] = useState(0);
+
+  useAnimatedReaction(
+    () => ({ x: state.x.value.value, y: state.y.expense.value.value }),
+    ({ x, y }) => {
+      const bucket = buckets.find(b => b.x === Math.round(x));
+      runOnJS(setTooltipLabel)(bucket?.label ?? '');
+      runOnJS(setTooltipValue)(y);
+    },
+  );
+
+  const tooltipStyle = useAnimatedStyle(() => ({
+    left: clampTooltipX(state.x.position.value, containerWidth, TOOLTIP_WIDTH),
+    top: Math.max(0, state.y.expense.position.value - TOOLTIP_OFFSET_Y),
+  }));
+
   const hasData = buckets.some(b => b.expense > 0);
 
   if (!hasData) {
@@ -105,36 +128,50 @@ function ChartContent({ buckets, year, chartFont }: ChartContentProps) {
   }
 
   return (
-    <CartesianChart
-      data={buckets}
-      xKey="x"
-      yKeys={['expense']}
-      domainPadding={{ left: 16, right: 16, top: 20 }}
-      xAxis={{
-        font: chartFont,
-        formatXLabel: v => buckets.find(b => b.x === Math.round(Number(v)))?.label ?? '',
-        labelColor: colors.text.muted,
-        lineColor: colors.border.subtle,
-        tickCount: 6,
-      }}
-      yAxis={[{
-        font: chartFont,
-        formatYLabel: v => formatChartY(Number(v)),
-        labelColor: colors.text.muted,
-        lineColor: colors.border.subtle,
-        tickCount: 4,
-      }]}
+    <View
+      onLayout={e => setContainerWidth(e.nativeEvent.layout.width)}
+      style={styles.chartContainer}
     >
-      {({ points, chartBounds }) => (
-        <Bar
-          points={points.expense}
-          chartBounds={chartBounds}
-          color={colors.accent.primary}
-          barWidth={20}
-          animate={{ type: 'spring' }}
+      <CartesianChart
+        data={buckets}
+        xKey="x"
+        yKeys={['expense']}
+        chartPressState={state}
+        domainPadding={{ left: 16, right: 16, top: 20 }}
+        xAxis={{
+          font: chartFont,
+          formatXLabel: v => buckets.find(b => b.x === Math.round(Number(v)))?.label ?? '',
+          labelColor: colors.text.muted,
+          lineColor: colors.border.subtle,
+          tickCount: 6,
+        }}
+        yAxis={[{
+          font: chartFont,
+          formatYLabel: v => formatChartY(Number(v)),
+          labelColor: colors.text.muted,
+          lineColor: colors.border.subtle,
+          tickCount: 4,
+        }]}
+      >
+        {({ points, chartBounds }) => (
+          <Bar
+            points={points.expense}
+            chartBounds={chartBounds}
+            color={colors.accent.primary}
+            barWidth={20}
+            animate={{ type: 'spring' }}
+          />
+        )}
+      </CartesianChart>
+
+      {isActive && (
+        <ChartTooltip
+          animatedStyle={tooltipStyle}
+          label={tooltipLabel}
+          lines={[{ text: formatRupiah(tooltipValue), color: colors.accent.primary }]}
         />
       )}
-    </CartesianChart>
+    </View>
   );
 }
 
@@ -191,9 +228,7 @@ function YearlyPerformanceSection({
         {isLoading ? (
           <SkeletonCard height={CHART_HEIGHT} />
         ) : (
-          <View style={styles.chartWrap}>
-            <ChartContent buckets={buckets} year={year} chartFont={chartFont} />
-          </View>
+          <ChartContent buckets={buckets} year={year} chartFont={chartFont} />
         )}
         <ChartLegend monthlyAvg={monthlyAvg} />
       </View>
@@ -221,7 +256,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border.default,
     padding: 16,
   },
-  chartWrap: { height: CHART_HEIGHT },
+  chartContainer: {
+    height: CHART_HEIGHT,
+    position: 'relative',
+  },
   emptyWrap: {
     height: CHART_HEIGHT,
     alignItems: 'center',

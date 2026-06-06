@@ -83,6 +83,14 @@ class CategoryCreate(BaseModel):
     icon: str | None = None
     color: str | None = None
 
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Category name cannot be empty")
+        return v
+
 
 class CategoryRead(BaseModel):
     model_config = {"from_attributes": True}

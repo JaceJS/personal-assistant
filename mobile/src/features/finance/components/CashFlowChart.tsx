@@ -1,26 +1,22 @@
+import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Bar, CartesianChart } from "victory-native";
+import { useAnimatedReaction, useAnimatedStyle, runOnJS } from "react-native-reanimated";
+import { Bar, CartesianChart, useChartPressState } from "victory-native";
 
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import type { Transaction } from "@/features/finance/types";
 import { useChartFont } from "@/hooks/useChartFont";
+import { formatRupiah } from "@/lib/utils";
 import { colors, radius, textStyles } from "@/theme";
+import { ChartTooltip, TOOLTIP_WIDTH } from "./ChartTooltip";
+import { clampTooltipX } from "../utils/chartTooltipUtils";
 
 const MONTH_SHORT = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 const CHART_HEIGHT = 200;
+const TOOLTIP_OFFSET_Y = 80;
 
 interface CashFlowPoint {
   x: number;
@@ -58,17 +54,45 @@ export default function CashFlowChart() {
   const chartFont = useChartFont();
 
   const { data } = useTransactions({ dateFrom: yearStart, dateTo: today, limit: 1000 });
-  const buckets = buildCashFlowBuckets(data?.items ?? []);
+  const buckets = useMemo(() => buildCashFlowBuckets(data?.items ?? []), [data]);
   const hasData = buckets.some((b) => b.income > 0 || b.expense > 0);
+
+  const { state, isActive } = useChartPressState({ x: 0, y: { income: 0, expense: 0 } });
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [tooltipLabel, setTooltipLabel] = useState('');
+  const [incomeValue, setIncomeValue] = useState(0);
+  const [expenseValue, setExpenseValue] = useState(0);
+
+  useAnimatedReaction(
+    () => ({ x: state.x.value.value, income: state.y.income.value.value, expense: state.y.expense.value.value }),
+    ({ x, income, expense }) => {
+      const bucket = buckets.find(b => b.x === Math.round(x));
+      runOnJS(setTooltipLabel)(bucket?.label ?? '');
+      runOnJS(setIncomeValue)(income);
+      runOnJS(setExpenseValue)(expense);
+    },
+  );
+
+  const tooltipStyle = useAnimatedStyle(() => ({
+    left: clampTooltipX(state.x.position.value, containerWidth, TOOLTIP_WIDTH),
+    top: Math.max(
+      0,
+      Math.min(state.y.income.position.value, state.y.expense.position.value) - TOOLTIP_OFFSET_Y,
+    ),
+  }));
 
   return (
     <View style={styles.card}>
-      <View style={styles.chartWrap}>
+      <View
+        onLayout={e => setContainerWidth(e.nativeEvent.layout.width)}
+        style={styles.chartContainer}
+      >
         {hasData ? (
           <CartesianChart
             data={buckets}
             xKey="x"
             yKeys={["income", "expense"]}
+            chartPressState={state}
             domainPadding={{ left: 16, right: 16, top: 20 }}
             xAxis={{
               font: chartFont,
@@ -112,6 +136,17 @@ export default function CashFlowChart() {
             <Text style={styles.emptyText}>No data for this year yet</Text>
           </View>
         )}
+
+        {isActive && hasData && (
+          <ChartTooltip
+            animatedStyle={tooltipStyle}
+            label={tooltipLabel}
+            lines={[
+              { text: `↑ ${formatRupiah(incomeValue)}`, color: colors.success.text },
+              { text: `↓ ${formatRupiah(expenseValue)}`, color: colors.danger.text },
+            ]}
+          />
+        )}
       </View>
 
       <View style={styles.legend}>
@@ -138,7 +173,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 16,
   },
-  chartWrap: { height: CHART_HEIGHT },
+  chartContainer: {
+    height: CHART_HEIGHT,
+    position: "relative",
+  },
   emptyChart: { flex: 1, alignItems: "center", justifyContent: "center" },
   emptyText: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13 },
   legend: {

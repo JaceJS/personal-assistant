@@ -82,6 +82,24 @@ Copy `backend/.env.example` → `backend/.env` and `mobile/.env.example` → `mo
 Key vars: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_JWT_SECRET`,
 `REDIS_URL`, `R2_*`, `OPENROUTER_API_KEY`, `STT_MODEL`, `LLM_MODEL`.
 
+## Codebase Exploration — Use the Knowledge Graph First
+
+A knowledge graph of this project lives in `graphify-out/`. Query it **before** broad file
+exploration — it's faster and uses fewer tokens than scanning source files directly.
+
+```bash
+# Run from repo root (requires graphifyy: pipx install graphifyy)
+graphify query "how does voice processing work"    # broad architectural context
+graphify path "VoiceLog" "Transaction"             # trace a dependency chain
+graphify explain "R2Storage"                       # understand a specific node
+```
+
+Key artifacts:
+- `graphify-out/GRAPH_REPORT.md` — architecture audit, god nodes, community breakdown
+- `graphify-out/graph.json` — raw graph for programmatic access
+
+After significant code changes, refresh the graph: `/graphify --update` in Claude Code.
+
 ## Domain Status
 
 | Domain                                   | Backend        | Mobile         |
@@ -92,3 +110,7 @@ Key vars: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_JWT_SEC
 | Calendar                                 | 🚧 Stub only   | —              |
 
 When adding a new domain, follow the finance domain as the template exactly.
+
+## Testing
+
+All complex business logic — backend (Python) and mobile (TypeScript) — must follow **Test-Driven Development**: write a failing test first, then implement. See `mobile/AGENTS.md` section 15 for mobile test setup, file conventions, and what must be covered.

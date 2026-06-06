@@ -49,7 +49,7 @@ async def get_current_user(
         payload = jwt.decode(
             credentials.credentials,
             signing_key.key,
-            algorithms=["RS256", "ES256", "HS256"],
+            algorithms=["RS256", "ES256"],
             audience=_JWT_AUDIENCE,
         )
     except PyJWKClientConnectionError as exc:

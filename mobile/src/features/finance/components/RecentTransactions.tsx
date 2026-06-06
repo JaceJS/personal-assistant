@@ -11,11 +11,12 @@ import { colors, radius, textStyles } from '@/theme';
 interface RecentTransactionsProps {
   items: Transaction[];
   isLoading: boolean;
+  error?: boolean;
   onSeeAll: () => void;
   onPress: (id: string) => void;
 }
 
-export default function RecentTransactions({ items, isLoading, onSeeAll, onPress }: RecentTransactionsProps) {
+export default function RecentTransactions({ items, isLoading, error, onSeeAll, onPress }: RecentTransactionsProps) {
   return (
     <View style={styles.section}>
       <View style={styles.header}>
@@ -27,6 +28,12 @@ export default function RecentTransactions({ items, isLoading, onSeeAll, onPress
 
       {isLoading ? (
         <SkeletonList count={3} />
+      ) : error ? (
+        <EmptyState
+          icon={List}
+          title="Couldn't load transactions"
+          subtitle="Pull down to refresh"
+        />
       ) : items.length === 0 ? (
         <EmptyState
           icon={List}

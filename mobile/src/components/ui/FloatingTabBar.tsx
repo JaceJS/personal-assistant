@@ -24,16 +24,17 @@ import {
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, textStyles } from "@/theme";
+import { handleTabPress } from "./tabPressUtils";
 
 const TAB_ICONS: Record<string, typeof Home> = {
-  index: Home,
+  "(home)": Home,
   finance: Wallet,
   accounts: Building2,
   settings: Settings,
 };
 
 const TAB_LABELS: Record<string, string> = {
-  index: "Home",
+  "(home)": "Home",
   finance: "Finance",
   accounts: "Accounts",
   settings: "Settings",
@@ -277,7 +278,15 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
     return (
       <Pressable
         key={route.key}
-        onPress={() => navigation.navigate(route.name)}
+        onPress={() =>
+          handleTabPress({
+            focused,
+            routeName: route.name,
+            routeState: route.state as { key?: string; index?: number } | undefined,
+            navigate: (name) => navigation.navigate(name),
+            dispatch: (action) => navigation.dispatch(action),
+          })
+        }
         style={styles.tab}
         hitSlop={8}
       >

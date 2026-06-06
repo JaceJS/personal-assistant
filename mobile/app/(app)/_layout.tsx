@@ -16,7 +16,7 @@ export default function AppLayout() {
 
   return (
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <FloatingTabBar {...props} />}>
-      <Tabs.Screen name="index" />
+      <Tabs.Screen name="(home)" />
       <Tabs.Screen name="finance" />
       <Tabs.Screen name="accounts" />
       <Tabs.Screen name="settings" />

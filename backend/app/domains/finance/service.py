@@ -115,10 +115,14 @@ async def create_category(
 
 # ── Transactions ──────────────────────────────────────────────────────────────
 
-async def get_transaction_or_404(session: AsyncSession, tx_id: uuid.UUID) -> Transaction:
+async def get_transaction_or_404(
+    session: AsyncSession, tx_id: uuid.UUID, user_id: uuid.UUID
+) -> Transaction:
     tx = await repo.get_transaction(session, tx_id)
     if tx is None:
         raise NotFoundError(f"Transaction {tx_id} not found")
+    if tx.user_id != user_id:
+        raise ForbiddenError("You don't own this transaction")
     return tx
 
 
@@ -176,9 +180,7 @@ async def create_transaction(
 async def update_transaction(
     session: AsyncSession, user_id: uuid.UUID, tx_id: uuid.UUID, data: TransactionUpdate
 ) -> Transaction:
-    tx = await get_transaction_or_404(session, tx_id)
-    if tx.user_id != user_id:
-        raise ForbiddenError("You don't own this transaction")
+    tx = await get_transaction_or_404(session, tx_id, user_id)
 
     updates = data.model_dump(exclude_unset=True)
     if updates.get("category_id") is not None:
@@ -188,6 +190,7 @@ async def update_transaction(
     account_changing = new_account_id is not None and new_account_id != tx.account_id
 
     if account_changing:
+        assert new_account_id is not None
         await get_account_or_404(session, new_account_id, user_id)
         updated = await repo.update_transaction(session, tx, **updates)
         # Reverse balance on old account if the transaction was already confirmed.
@@ -213,9 +216,7 @@ async def update_transaction(
 async def delete_transaction(
     session: AsyncSession, user_id: uuid.UUID, tx_id: uuid.UUID
 ) -> None:
-    tx = await get_transaction_or_404(session, tx_id)
-    if tx.user_id != user_id:
-        raise ForbiddenError("You don't own this transaction")
+    tx = await get_transaction_or_404(session, tx_id, user_id)
 
     if tx.status == TransactionStatus.confirmed:
         account = await get_account_or_404(session, tx.account_id, user_id)
