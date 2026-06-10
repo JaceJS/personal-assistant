@@ -96,6 +96,19 @@ async def create_category(session: AsyncSession, user_id: uuid.UUID, **kwargs: A
     return category
 
 
+async def update_category(session: AsyncSession, category: Category, data: Any) -> Category:
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(category, field, value)
+    await session.flush()
+    return category
+
+
+async def archive_category(session: AsyncSession, category: Category) -> None:
+    category.is_archived = True
+    await session.flush()
+
+
 # ── Transactions ──────────────────────────────────────────────────────────────
 
 async def get_transaction(session: AsyncSession, tx_id: uuid.UUID) -> Transaction | None:

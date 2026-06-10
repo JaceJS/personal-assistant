@@ -92,6 +92,24 @@ class CategoryCreate(BaseModel):
         return v
 
 
+class CategoryUpdate(BaseModel):
+    name: str | None = None
+    icon: str | None = None
+    color: str | None = None
+    budget_limit: int | None = None
+    is_archived: bool | None = None
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if not v:
+            raise ValueError("Category name cannot be empty")
+        return v
+
+
 class CategoryRead(BaseModel):
     model_config = {"from_attributes": True}
 
@@ -101,6 +119,7 @@ class CategoryRead(BaseModel):
     type: CategoryType
     icon: str | None
     color: str | None
+    budget_limit: int | None
     is_archived: bool
     created_at: datetime
     updated_at: datetime

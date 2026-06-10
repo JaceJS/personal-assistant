@@ -6,7 +6,7 @@ from app.core.auth import CurrentUser
 from app.core.response import ApiResponse, ok, paginated
 from app.domains.finance import service
 from app.domains.finance.routers.deps import DbSession
-from app.domains.finance.schemas import CategoryCreate, CategoryRead
+from app.domains.finance.schemas import CategoryCreate, CategoryRead, CategoryUpdate
 
 router = APIRouter(tags=["Categories"])
 
@@ -33,3 +33,18 @@ async def get_category(
 ) -> ApiResponse[CategoryRead]:
     item = await service.get_category_or_404(session, category_id, user_id)
     return ok(item)
+
+
+@router.patch("/categories/{category_id}", response_model=ApiResponse[CategoryRead])
+async def update_category(
+    category_id: uuid.UUID, user_id: CurrentUser, session: DbSession, data: CategoryUpdate
+) -> ApiResponse[CategoryRead]:
+    item = await service.update_category(session, category_id, user_id, data)
+    return ok(item)
+
+
+@router.delete("/categories/{category_id}", status_code=204)
+async def archive_category(
+    category_id: uuid.UUID, user_id: CurrentUser, session: DbSession
+) -> None:
+    await service.archive_category(session, category_id, user_id)

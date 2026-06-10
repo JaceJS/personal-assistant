@@ -27,6 +27,7 @@ from app.domains.finance.schemas import (
     AccountUpdate,
     BudgetUpsert,
     CategoryCreate,
+    CategoryUpdate,
     ReceiptStatusRead,
     ReceiptUploadResponse,
     TransactionCreate,
@@ -111,6 +112,24 @@ async def create_category(
         session, user_id,
         name=data.name, type=data.type, icon=data.icon, color=data.color,
     )
+
+
+async def update_category(
+    session: AsyncSession, category_id: uuid.UUID, user_id: uuid.UUID, data: CategoryUpdate
+) -> Category:
+    category = await get_category_or_404(session, category_id, user_id)
+    if category.user_id is None:
+        raise ForbiddenError("System categories cannot be modified")
+    return await repo.update_category(session, category, data)
+
+
+async def archive_category(
+    session: AsyncSession, category_id: uuid.UUID, user_id: uuid.UUID
+) -> None:
+    category = await get_category_or_404(session, category_id, user_id)
+    if category.user_id is None:
+        raise ForbiddenError("System categories cannot be archived")
+    await repo.archive_category(session, category)
 
 
 # ── Transactions ──────────────────────────────────────────────────────────────
