@@ -21,8 +21,6 @@ export default function AppLayout() {
       <Tabs.Screen name="accounts" />
       <Tabs.Screen name="settings" />
 
-      {/* Hidden from tab bar */}
-      <Tabs.Screen name="categories/index" options={{ href: null }} />
     </Tabs>
   );
 }
