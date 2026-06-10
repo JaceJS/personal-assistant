@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { ChevronLeft, Wallet } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { computeUnallocated } from '@/features/finance/utils/budgetBucketUtils';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
@@ -24,8 +25,9 @@ import { useBudget, useUpsertBudget } from '@/features/finance/hooks/useBudget';
 import { useCategories } from '@/features/finance/hooks/useCategories';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import type { Category } from '@/features/finance/types';
+import { formatRupiah } from '@/lib/utils';
 import { useToastStore } from '@/stores/toast';
-import { colors, spacing, textStyles } from '@/theme';
+import { colors, radius, spacing, textStyles } from '@/theme';
 
 const CARD_STYLE = { padding: 0, overflow: 'hidden' as const, borderWidth: 1, borderColor: colors.border.default };
 
@@ -39,6 +41,17 @@ function SectionHeader({ title }: { title: string }) {
 
 function Divider() {
   return <View style={styles.divider} />;
+}
+
+function UnallocatedChip({ unallocated }: { unallocated: number }) {
+  const isOver = unallocated < 0;
+  return (
+    <View style={[styles.chip, isOver ? styles.chipOver : styles.chipOk]}>
+      <Text style={[styles.chipText, { color: isOver ? colors.danger.text : colors.success.text }]}>
+        {isOver ? `Rp ${formatRupiah(Math.abs(unallocated))} over` : `${formatRupiah(unallocated)} free`}
+      </Text>
+    </View>
+  );
 }
 
 export default function BudgetScreen() {
@@ -179,7 +192,14 @@ export default function BudgetScreen() {
         )}
 
         <View style={styles.section}>
-          <SectionHeader title="Budget Buckets" />
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Budget Buckets</Text>
+            {budget && expenseCategories.length > 0 && (
+              <UnallocatedChip
+                unallocated={computeUnallocated(budget.monthly_limit, expenseCategories)}
+              />
+            )}
+          </View>
           {expenseCategories.length === 0 ? (
             <EmptyState
               icon={Wallet}
@@ -193,7 +213,6 @@ export default function BudgetScreen() {
                   <BudgetBucketItem
                     category={cat}
                     spent={categorySpending.get(cat.id) ?? 0}
-                    totalBudget={budget?.monthly_limit ?? 0}
                   />
                   {idx < expenseCategories.length - 1 && <Divider />}
                 </React.Fragment>
@@ -223,11 +242,24 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   section: { marginTop: 24 },
-  sectionHeader: { marginBottom: 12 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   sectionTitle: { ...StyleSheet.flatten(textStyles.h2), color: colors.text.primary },
   divider: {
     height: 1,
     backgroundColor: colors.border.subtle,
     marginLeft: 76,
   },
+  chip: {
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  chipOk: { backgroundColor: colors.success.bg },
+  chipOver: { backgroundColor: colors.danger.bg },
+  chipText: { fontSize: 11, fontWeight: '600' },
 });

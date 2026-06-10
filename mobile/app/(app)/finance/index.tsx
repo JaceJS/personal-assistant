@@ -6,6 +6,7 @@ import { Bell, Plus } from "lucide-react-native";
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import Fab from "@/components/ui/Fab";
+import FilterPill from "@/components/ui/FilterPill";
 import CashFlowChart from "@/features/finance/components/CashFlowChart";
 import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
 import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
@@ -86,13 +87,13 @@ export default function FinanceDashboard() {
           contentContainerStyle={styles.filterRow}
           style={styles.filterScroll}
         >
-          <AccountPill
+          <FilterPill
             label="All"
             active={selectedAccountId === null}
             onPress={() => setSelectedAccountId(null)}
           />
           {accounts.map((a) => (
-            <AccountPill
+            <FilterPill
               key={a.id}
               label={a.name}
               active={selectedAccountId === a.id}
@@ -151,28 +152,6 @@ export default function FinanceDashboard() {
   );
 }
 
-function AccountPill({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && { opacity: 0.8 }}>
-      <View style={[styles.pill, active ? styles.pillActive : styles.pillInactive]}>
-        <Text
-          style={[styles.pillLabel, active ? styles.pillLabelActive : styles.pillLabelInactive]}
-        >
-          {label}
-        </Text>
-      </View>
-    </Pressable>
-  );
-}
-
 function SectionHeader({ title, right }: { title: string; right?: React.ReactNode }) {
   return (
     <View style={styles.sectionHeader}>
@@ -206,30 +185,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.sm,
     gap: spacing.sm,
-  },
-
-  pill: {
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 7,
-  },
-  pillActive: {
-    backgroundColor: colors.accent.primary,
-  },
-  pillInactive: {
-    backgroundColor: colors.bg.elevated,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-  },
-  pillLabel: {
-    ...StyleSheet.flatten(textStyles.caption),
-    fontWeight: "500",
-  },
-  pillLabelActive: {
-    color: colors.bg.canvas,
-  },
-  pillLabelInactive: {
-    color: colors.text.primary,
   },
 
   sectionHeader: {
