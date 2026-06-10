@@ -6,6 +6,7 @@ export default function SettingLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="budget" />
+      <Stack.Screen name="categories" />
     </Stack>
   );
 }

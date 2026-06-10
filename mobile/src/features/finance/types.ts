@@ -22,6 +22,7 @@ export interface Category {
   type: CategoryType;
   icon: string | null;
   color: string | null;
+  budget_limit: number | null;
   is_archived: boolean;
   created_at: string;
   updated_at: string;
@@ -88,6 +89,14 @@ export interface CategoryCreate {
   type: CategoryType;
   icon?: string | null;
   color?: string | null;
+}
+
+export interface CategoryUpdate {
+  name?: string | null;
+  icon?: string | null;
+  color?: string | null;
+  budget_limit?: number | null;
+  is_archived?: boolean | null;
 }
 
 export interface TransactionCreate {

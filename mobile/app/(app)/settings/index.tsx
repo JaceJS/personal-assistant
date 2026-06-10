@@ -12,6 +12,7 @@ import {
   Pencil,
   PiggyBank,
   Shield,
+  Tag,
   User,
   Wallet,
 } from "lucide-react-native";
@@ -106,6 +107,12 @@ export default function SettingsScreen() {
             icon={<PiggyBank size={16} color={colors.accent.primary} />}
             label="Monthly Budget"
             onPress={() => router.push("/(app)/settings/budget")}
+          />
+          <MenuDivider />
+          <MenuItem
+            icon={<Tag size={16} color={colors.accent.primary} />}
+            label="Categories"
+            onPress={() => router.push("/(app)/settings/categories")}
           />
           <MenuDivider />
           <ValueMenuItem

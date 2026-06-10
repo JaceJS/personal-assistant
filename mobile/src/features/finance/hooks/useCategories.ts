@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createCategory, listCategories } from "@/features/finance/api/categories";
-import type { Category, CategoryCreate } from "@/features/finance/types";
+import { archiveCategory, createCategory, listCategories, updateCategory } from "@/features/finance/api/categories";
+import type { Category, CategoryCreate, CategoryUpdate } from "@/features/finance/types";
 
 const QUERY_KEY = "categories";
 
@@ -16,6 +16,22 @@ export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CategoryCreate) => createCategory(data),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
+  });
+}
+
+export function useUpdateCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CategoryUpdate }) => updateCategory(id, data),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
+  });
+}
+
+export function useArchiveCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => archiveCategory(id),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }
