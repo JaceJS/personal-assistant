@@ -36,3 +36,8 @@ class LLMProvider(ABC):
     ) -> T:
         """Call a vision-capable LLM with an image and return structured output."""
         ...
+
+    @abstractmethod
+    async def chat(self, system_prompt: str, user_message: str) -> str:
+        """Call the LLM for free-form conversation and return the reply text."""
+        ...

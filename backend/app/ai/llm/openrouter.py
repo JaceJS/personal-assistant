@@ -27,12 +27,12 @@ class OpenRouterLLM(LLMProvider):
     """LLM provider backed by OpenRouter (any OpenAI-compatible model)."""
 
     def __init__(self, settings: Settings, *, model: str | None = None) -> None:
-        client = AsyncOpenAI(
+        self._raw_client = AsyncOpenAI(
             api_key=settings.openrouter_api_key,
             base_url=_OPENROUTER_BASE_URL,
             default_headers={"X-Title": _APP_TITLE},
         )
-        self._client = instructor.from_openai(client, mode=instructor.Mode.JSON)
+        self._client = instructor.from_openai(self._raw_client, mode=instructor.Mode.JSON)
         self._model = model if model is not None else settings.llm_model
 
     async def extract(
@@ -76,3 +76,13 @@ class OpenRouterLLM(LLMProvider):
             ],
         )
         return result
+
+    async def chat(self, system_prompt: str, user_message: str) -> str:
+        completion = await self._raw_client.chat.completions.create(
+            model=self._model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+        )
+        return completion.choices[0].message.content or ""
