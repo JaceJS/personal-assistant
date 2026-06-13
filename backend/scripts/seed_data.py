@@ -129,19 +129,6 @@ _DEFAULT_CATEGORIES: list[dict[str, object]] = [
         "icon": "🎁",
         "color": "#EB4D4B",
     },
-    # ── Transfer (2) ──────────────────────────────────────────────────────────
-    {
-        "name": "Transfer",
-        "type": CategoryType.transfer,
-        "icon": "🔄",
-        "color": "#B2BEC3",
-    },
-    {
-        "name": "Savings",
-        "type": CategoryType.transfer,
-        "icon": "🏦",
-        "color": "#74B9FF",
-    },
 ]
 
 

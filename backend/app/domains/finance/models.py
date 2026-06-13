@@ -24,7 +24,6 @@ class AccountType(enum.StrEnum):
 class CategoryType(enum.StrEnum):
     expense = "expense"
     income = "income"
-    transfer = "transfer"
 
 
 class TransactionSource(enum.StrEnum):
