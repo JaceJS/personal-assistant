@@ -20,20 +20,21 @@ from app.shared.models import Base
 _settings = get_settings()
 
 # Enum DDL needed before create_all because models use create_type=False.
-_ENUM_DDL = [
-    "CREATE TYPE IF NOT EXISTS account_type AS ENUM ('cash','bank','ewallet','credit')",
-    "CREATE TYPE IF NOT EXISTS category_type AS ENUM ('expense','income','transfer')",
-    "CREATE TYPE IF NOT EXISTS transaction_source AS ENUM ('voice','manual','import')",
-    "CREATE TYPE IF NOT EXISTS transaction_status AS ENUM ('draft','confirmed')",
-    "CREATE TYPE IF NOT EXISTS voice_processing_status "
-    "AS ENUM ('pending','transcribing','extracting','completed','failed')",
-]
+# PostgreSQL does not support CREATE TYPE IF NOT EXISTS — drop first, then create.
 _ENUM_DROP = [
     "DROP TYPE IF EXISTS voice_processing_status",
     "DROP TYPE IF EXISTS transaction_status",
     "DROP TYPE IF EXISTS transaction_source",
     "DROP TYPE IF EXISTS category_type",
     "DROP TYPE IF EXISTS account_type",
+]
+_ENUM_DDL = [
+    "CREATE TYPE account_type AS ENUM ('cash','bank','ewallet','credit')",
+    "CREATE TYPE category_type AS ENUM ('expense','income')",
+    "CREATE TYPE transaction_source AS ENUM ('voice','manual','import','receipt')",
+    "CREATE TYPE transaction_status AS ENUM ('draft','confirmed')",
+    "CREATE TYPE voice_processing_status "
+    "AS ENUM ('pending','transcribing','transcribed','extracting','completed','failed')",
 ]
 
 
@@ -42,6 +43,10 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
     """Create test DB tables once per session; drop them after."""
     engine = create_async_engine(_settings.test_database_url)
     async with engine.begin() as conn:
+        # Drop tables and enums first to ensure a clean state
+        await conn.run_sync(Base.metadata.drop_all)
+        for ddl in _ENUM_DROP:
+            await conn.execute(sa.text(ddl))
         for ddl in _ENUM_DDL:
             await conn.execute(sa.text(ddl))
         await conn.run_sync(Base.metadata.create_all)

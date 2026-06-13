@@ -101,6 +101,7 @@ async def update_category(session: AsyncSession, category: Category, data: Any) 
     for field, value in update_data.items():
         setattr(category, field, value)
     await session.flush()
+    await session.refresh(category)
     return category
 
 
