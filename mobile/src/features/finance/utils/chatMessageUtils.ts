@@ -1,3 +1,5 @@
+import { generateId } from '@/lib/utils';
+
 import type { ExtractedTransaction, VoiceProcessingStatus, VoiceStatusResponse } from '@/features/finance/api/voice';
 import type { ReceiptStatusResponse } from '@/features/finance/api/receipt';
 
@@ -11,6 +13,23 @@ export type ChatMessage = {
   errorMessage?: string;
   createdAt: Date;
 };
+
+export type UserTextMessage = {
+  id: string;
+  type: 'user';
+  content: string;
+  createdAt: Date;
+};
+
+export type AIMessage = {
+  id: string;
+  type: 'ai';
+  content?: string;
+  isTyping: boolean;
+  createdAt: Date;
+};
+
+export type Message = ChatMessage | UserTextMessage | AIMessage;
 
 export function createVoiceMessage(voiceLogId: string): ChatMessage {
   return {
@@ -49,4 +68,20 @@ export function applyReceiptStatus(msg: ChatMessage, status: ReceiptStatusRespon
     transactionId: status.transaction_id ?? msg.transactionId,
     errorMessage: status.error_message ?? msg.errorMessage,
   };
+}
+
+export function createUserTextMessage(content: string): UserTextMessage {
+  return { id: generateId(), type: 'user', content, createdAt: new Date() };
+}
+
+export function createAITypingMessage(): AIMessage {
+  return { id: generateId(), type: 'ai', isTyping: true, createdAt: new Date() };
+}
+
+export function resolveAIMessage(msg: AIMessage, content: string): AIMessage {
+  return { ...msg, content, isTyping: false };
+}
+
+export function rejectAIMessage(msg: AIMessage, errorText: string): AIMessage {
+  return { ...msg, content: errorText, isTyping: false };
 }

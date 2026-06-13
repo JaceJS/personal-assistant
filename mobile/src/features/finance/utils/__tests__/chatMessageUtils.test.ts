@@ -3,6 +3,10 @@ import {
   createReceiptMessage,
   applyVoiceStatus,
   applyReceiptStatus,
+  createUserTextMessage,
+  createAITypingMessage,
+  resolveAIMessage,
+  rejectAIMessage,
 } from '../chatMessageUtils';
 import type { VoiceStatusResponse } from '@/features/finance/api/voice';
 import type { ReceiptStatusResponse } from '@/features/finance/api/receipt';
@@ -127,6 +131,99 @@ describe('applyVoiceStatus', () => {
     };
     applyVoiceStatus(original, status);
     expect(original.status).toBe('pending');
+  });
+});
+
+describe('createUserTextMessage', () => {
+  it('creates message with correct type and content', () => {
+    const msg = createUserTextMessage('Hello world');
+    expect(msg.type).toBe('user');
+    expect(msg.content).toBe('Hello world');
+  });
+
+  it('assigns a unique id', () => {
+    const a = createUserTextMessage('a');
+    const b = createUserTextMessage('b');
+    expect(a.id).toBeTruthy();
+    expect(a.id).not.toBe(b.id);
+  });
+
+  it('sets createdAt to a Date', () => {
+    const before = new Date();
+    const msg = createUserTextMessage('hi');
+    const after = new Date();
+    expect(msg.createdAt).toBeInstanceOf(Date);
+    expect(msg.createdAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(msg.createdAt.getTime()).toBeLessThanOrEqual(after.getTime());
+  });
+});
+
+describe('createAITypingMessage', () => {
+  it('creates message with type ai and isTyping true', () => {
+    const msg = createAITypingMessage();
+    expect(msg.type).toBe('ai');
+    expect(msg.isTyping).toBe(true);
+  });
+
+  it('starts with no content', () => {
+    const msg = createAITypingMessage();
+    expect(msg.content).toBeUndefined();
+  });
+
+  it('assigns a unique id', () => {
+    const a = createAITypingMessage();
+    const b = createAITypingMessage();
+    expect(a.id).not.toBe(b.id);
+  });
+
+  it('sets createdAt to a Date', () => {
+    const msg = createAITypingMessage();
+    expect(msg.createdAt).toBeInstanceOf(Date);
+  });
+});
+
+describe('resolveAIMessage', () => {
+  it('sets content and stops typing', () => {
+    const typing = createAITypingMessage();
+    const resolved = resolveAIMessage(typing, 'Hello there');
+    expect(resolved.content).toBe('Hello there');
+    expect(resolved.isTyping).toBe(false);
+  });
+
+  it('preserves id and type', () => {
+    const typing = createAITypingMessage();
+    const resolved = resolveAIMessage(typing, 'reply');
+    expect(resolved.id).toBe(typing.id);
+    expect(resolved.type).toBe('ai');
+  });
+
+  it('does not mutate the original message', () => {
+    const typing = createAITypingMessage();
+    resolveAIMessage(typing, 'reply');
+    expect(typing.isTyping).toBe(true);
+    expect(typing.content).toBeUndefined();
+  });
+});
+
+describe('rejectAIMessage', () => {
+  it('sets content to error text and stops typing', () => {
+    const typing = createAITypingMessage();
+    const rejected = rejectAIMessage(typing, 'Something went wrong');
+    expect(rejected.content).toBe('Something went wrong');
+    expect(rejected.isTyping).toBe(false);
+  });
+
+  it('preserves id and type', () => {
+    const typing = createAITypingMessage();
+    const rejected = rejectAIMessage(typing, 'error');
+    expect(rejected.id).toBe(typing.id);
+    expect(rejected.type).toBe('ai');
+  });
+
+  it('does not mutate the original message', () => {
+    const typing = createAITypingMessage();
+    rejectAIMessage(typing, 'error');
+    expect(typing.isTyping).toBe(true);
   });
 });
 

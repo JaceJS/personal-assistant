@@ -1,6 +1,6 @@
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { Camera, Mic, Square, X } from "lucide-react-native";
+import { Camera, Mic, SendHorizontal, Square, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,12 +11,21 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Header } from "@/components/layout/Header";
 import { ConfirmCard } from "@/components/voice/ConfirmCard";
 import type { ConfirmPayload } from "@/components/voice/ConfirmCard";
 import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
+import { useChat } from "@/features/ai/hooks/useChat";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import {
   useConfirmReceiptTransaction,
@@ -35,7 +44,12 @@ import {
   createReceiptMessage,
   createVoiceMessage,
 } from "@/features/finance/utils/chatMessageUtils";
-import type { ChatMessage } from "@/features/finance/utils/chatMessageUtils";
+import type {
+  AIMessage,
+  ChatMessage,
+  Message,
+  UserTextMessage,
+} from "@/features/finance/utils/chatMessageUtils";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -46,6 +60,7 @@ export default function AIAssistantScreen() {
   const router = useRouter();
   const showToast = useToastStore((s) => s.showToast);
   const { data: accounts } = useAccounts();
+  const { messages, setMessages, sendMessage } = useChat();
 
   // Voice hooks
   const uploadAudio = useUploadAudio();
@@ -71,10 +86,8 @@ export default function AIAssistantScreen() {
   const [receiptLogId, setReceiptLogId] = useState<string | null>(null);
   const [receiptConfirmVisible, setReceiptConfirmVisible] = useState(false);
 
-  // Chat messages
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
-  const listRef = useRef<FlatList<ChatMessage>>(null);
+  const listRef = useRef<FlatList<Message>>(null);
 
   const voiceStatus = useVoiceStatus(voiceLogId);
   const receiptStatus = useReceiptStatus(receiptLogId);
@@ -93,7 +106,7 @@ export default function AIAssistantScreen() {
     if (!voiceLogId || !voiceStatus.data) return;
     setMessages((prev) =>
       prev.map((m) =>
-        m.id === voiceLogId ? applyVoiceStatus(m, voiceStatus.data!) : m
+        m.id === voiceLogId ? applyVoiceStatus(m as ChatMessage, voiceStatus.data!) : m
       )
     );
     if (voiceStatus.data.status === "transcribed") {
@@ -113,14 +126,14 @@ export default function AIAssistantScreen() {
       setVoiceLogId(null);
       showToast(voiceStatus.data.error_message ?? "Voice processing failed.", "error");
     }
-  }, [resetRecorder, showToast, voiceLogId, voiceStatus.data]);
+  }, [resetRecorder, setMessages, showToast, voiceLogId, voiceStatus.data]);
 
   // Update receipt message as status changes
   useEffect(() => {
     if (!receiptLogId || !receiptStatus.data) return;
     setMessages((prev) =>
       prev.map((m) =>
-        m.id === receiptLogId ? applyReceiptStatus(m, receiptStatus.data!) : m
+        m.id === receiptLogId ? applyReceiptStatus(m as ChatMessage, receiptStatus.data!) : m
       )
     );
     if (receiptStatus.data.status === "completed") {
@@ -134,7 +147,7 @@ export default function AIAssistantScreen() {
       setReceiptLogId(null);
       showToast(receiptStatus.data.error_message ?? "Receipt processing failed.", "error");
     }
-  }, [showToast, receiptLogId, receiptStatus.data]);
+  }, [setMessages, showToast, receiptLogId, receiptStatus.data]);
 
   // Auto-fail voice if worker never responds
   useEffect(() => {
@@ -144,7 +157,7 @@ export default function AIAssistantScreen() {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === id
-            ? { ...m, status: "failed", errorMessage: "Processing timed out. Please try again." }
+            ? { ...(m as ChatMessage), status: "failed", errorMessage: "Processing timed out. Please try again." }
             : m
         )
       );
@@ -164,7 +177,7 @@ export default function AIAssistantScreen() {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === id
-            ? { ...m, status: "failed", errorMessage: "Processing timed out. Please try again." }
+            ? { ...(m as ChatMessage), status: "failed", errorMessage: "Processing timed out. Please try again." }
             : m
         )
       );
@@ -173,6 +186,13 @@ export default function AIAssistantScreen() {
     }, PROCESSING_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [receiptLogId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSendText = useCallback(() => {
+    const text = inputText.trim();
+    if (!text) return;
+    setInputText("");
+    void sendMessage(text);
+  }, [inputText, sendMessage]);
 
   const handleMicPressIn = useCallback(() => {
     if (isMicBusy || isRecording) return;
@@ -201,7 +221,7 @@ export default function AIAssistantScreen() {
         showToast("Could not upload voice recording.", "error");
       }
     })();
-  }, [defaultAccount, isRecording, resetRecorder, showToast, stopRecording, uploadAudio]);
+  }, [defaultAccount, isRecording, resetRecorder, setMessages, showToast, stopRecording, uploadAudio]);
 
   const handleCameraPress = useCallback(async () => {
     if (!defaultAccount) {
@@ -226,7 +246,7 @@ export default function AIAssistantScreen() {
     } catch {
       showToast("Could not upload receipt.", "error");
     }
-  }, [defaultAccount, showToast, uploadReceipt]);
+  }, [defaultAccount, setMessages, showToast, uploadReceipt]);
 
   const handleTranscriptProcess = useCallback(
     (transcript: string) => {
@@ -244,7 +264,7 @@ export default function AIAssistantScreen() {
     setVoiceLogId(null);
     setMessages((prev) => prev.filter((m) => m.id !== voiceLogId));
     resetRecorder();
-  }, [resetRecorder, voiceLogId]);
+  }, [resetRecorder, setMessages, voiceLogId]);
 
   const handleVoiceConfirm = useCallback(
     (payload: ConfirmPayload) => {
@@ -286,9 +306,13 @@ export default function AIAssistantScreen() {
     setReceiptLogId(null);
   }, []);
 
-  const renderMessage = useCallback(({ item }: { item: ChatMessage }) => (
-    <ChatBubble message={item} />
-  ), []);
+  const renderMessage = useCallback(({ item }: { item: Message }) => {
+    if (item.type === "user") return <UserBubble message={item} />;
+    if (item.type === "ai") return <AIBubble message={item} />;
+    return <ChatBubble message={item as ChatMessage} />;
+  }, []);
+
+  const isSendMode = inputText.length > 0;
 
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
@@ -310,7 +334,7 @@ export default function AIAssistantScreen() {
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>How can I help?</Text>
           <Text style={styles.emptySubtitle}>
-            Record your voice or scan a receipt to log a transaction.
+            Type a message, record your voice, or scan a receipt.
           </Text>
         </View>
       ) : (
@@ -346,23 +370,26 @@ export default function AIAssistantScreen() {
           placeholder="Message..."
           placeholderTextColor={colors.text.muted}
           returnKeyType="send"
-          onSubmitEditing={() => setInputText("")}
+          onSubmitEditing={handleSendText}
           blurOnSubmit={false}
         />
 
         <Pressable
-          onPressIn={handleMicPressIn}
-          onPressOut={handleMicPressOut}
-          onLongPress={() => void cancelRecording()}
+          onPressIn={isSendMode ? undefined : handleMicPressIn}
+          onPressOut={isSendMode ? undefined : handleMicPressOut}
+          onPress={isSendMode ? handleSendText : undefined}
+          onLongPress={isSendMode ? undefined : () => void cancelRecording()}
           delayLongPress={1500}
-          disabled={isMicBusy && !isRecording}
+          disabled={!isSendMode && isMicBusy && !isRecording}
           style={[styles.micBtn, isRecording && styles.micBtnRecording]}
           hitSlop={8}
         >
-          {isMicBusy && !isRecording ? (
+          {isMicBusy && !isRecording && !isSendMode ? (
             <ActivityIndicator color={colors.accent.primary} />
           ) : isRecording ? (
             <Square size={22} color={colors.danger.text} fill={colors.danger.text} />
+          ) : isSendMode ? (
+            <SendHorizontal size={22} color={colors.accent.primary} strokeWidth={2} />
           ) : (
             <Mic size={22} color={colors.accent.primary} strokeWidth={2} />
           )}
@@ -396,6 +423,65 @@ export default function AIAssistantScreen() {
         onDismiss={handleReceiptConfirmDismiss}
       />
     </SafeAreaView>
+  );
+}
+
+// ─── Bubble components ────────────────────────────────────────────────────────
+
+function UserBubble({ message }: { message: UserTextMessage }) {
+  return (
+    <View style={userBubbleStyles.wrap}>
+      <View style={userBubbleStyles.bubble}>
+        <Text style={userBubbleStyles.text}>{message.content}</Text>
+      </View>
+    </View>
+  );
+}
+
+function AIBubble({ message }: { message: AIMessage }) {
+  return (
+    <View style={aiBubbleStyles.wrap}>
+      <View style={aiBubbleStyles.bubble}>
+        {message.isTyping ? (
+          <TypingIndicator />
+        ) : (
+          <Text style={aiBubbleStyles.text}>{message.content}</Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function TypingDot({ delay }: { delay: number }) {
+  const y = useSharedValue(0);
+
+  useEffect(() => {
+    y.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(-5, { duration: 300 }),
+          withTiming(0, { duration: 300 })
+        ),
+        -1
+      )
+    );
+  }, [delay, y]);
+
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateY: y.value }],
+  }));
+
+  return <Animated.View style={[aiBubbleStyles.dot, style]} />;
+}
+
+function TypingIndicator() {
+  return (
+    <View style={aiBubbleStyles.typingRow}>
+      <TypingDot delay={0} />
+      <TypingDot delay={150} />
+      <TypingDot delay={300} />
+    </View>
   );
 }
 
@@ -452,6 +538,8 @@ function ChatBubble({ message }: { message: ChatMessage }) {
     </View>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   screen: {
@@ -528,6 +616,55 @@ const styles = StyleSheet.create({
     backgroundColor: colors.danger.bg,
     borderWidth: 1,
     borderColor: `${colors.danger.text}80`,
+  },
+});
+
+const userBubbleStyles = StyleSheet.create({
+  wrap: {
+    alignItems: "flex-end",
+  },
+  bubble: {
+    backgroundColor: colors.accent.primary,
+    borderRadius: radius.lg,
+    borderBottomRightRadius: radius.sm,
+    padding: spacing.md,
+    maxWidth: "80%",
+  },
+  text: {
+    ...StyleSheet.flatten(textStyles.body),
+    color: "#FFFFFF",
+  },
+});
+
+const aiBubbleStyles = StyleSheet.create({
+  wrap: {
+    alignItems: "flex-start",
+  },
+  bubble: {
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.lg,
+    borderBottomLeftRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    padding: spacing.md,
+    maxWidth: "80%",
+  },
+  text: {
+    ...StyleSheet.flatten(textStyles.body),
+    color: colors.text.primary,
+  },
+  typingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.text.muted,
   },
 });
 
