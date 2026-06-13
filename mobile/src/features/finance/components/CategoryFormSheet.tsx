@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -8,42 +8,42 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { X } from 'lucide-react-native';
+} from "react-native";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { X } from "lucide-react-native";
 
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import type { Category, CategoryType } from '@/features/finance/types';
-import { useCreateCategory, useUpdateCategory } from '@/features/finance/hooks/useCategories';
-import { useToastStore } from '@/stores/toast';
-import { colors, radius, spacing, textStyles } from '@/theme';
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import type { Category, CategoryType } from "@/features/finance/types";
+import { useCreateCategory, useUpdateCategory } from "@/features/finance/hooks/useCategories";
+import { useToastStore } from "@/stores/toast";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 const CATEGORY_TYPES: { value: CategoryType; label: string; emoji: string }[] = [
-  { value: 'expense', label: 'Expense', emoji: '📤' },
-  { value: 'income', label: 'Income', emoji: '📥' },
-  { value: 'transfer', label: 'Transfer', emoji: '🔄' },
+  { value: "expense", label: "Expense", emoji: "📤" },
+  { value: "income", label: "Income", emoji: "📥" },
+  { value: "transfer", label: "Transfer", emoji: "🔄" },
 ];
 
 const PRESET_COLORS = [
-  '#E17055',
-  '#00CEC9',
-  '#6C5CE7',
-  '#00B894',
-  '#FDCB6E',
-  '#A29BFE',
-  '#FD79A8',
-  '#F0932B',
+  "#E17055",
+  "#00CEC9",
+  "#6C5CE7",
+  "#00B894",
+  "#FDCB6E",
+  "#A29BFE",
+  "#FD79A8",
+  "#F0932B",
 ];
 
-const PRESET_ICONS = ['🍔', '🚗', '🏠', '👗', '💊', '📚', '🎮', '✈️', '💼', '🎁', '⚡', '💰'];
+const PRESET_ICONS = ["🍔", "🚗", "🏠", "👗", "💊", "📚", "🎮", "✈️", "💼", "🎁", "⚡", "💰"];
 const ICON_COLS = 4;
 
 const schema = z.object({
-  name: z.string().min(1, 'Category name is required'),
-  type: z.enum(['expense', 'income', 'transfer']),
+  name: z.string().min(1, "Category name is required"),
+  type: z.enum(["expense", "income", "transfer"]),
   icon: z.string().nullable(),
   color: z.string().nullable(),
 });
@@ -70,11 +70,11 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', type: 'expense', icon: '🏷️', color: PRESET_COLORS[0] },
+    defaultValues: { name: "", type: "expense", icon: "🏷️", color: PRESET_COLORS[0] },
   });
 
-  const selectedIcon = watch('icon');
-  const selectedColor = watch('color');
+  const selectedIcon = watch("icon");
+  const selectedColor = watch("color");
 
   const iconRows = useMemo(
     () =>
@@ -93,10 +93,10 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
           ? {
               name: editingCategory.name,
               type: editingCategory.type,
-              icon: editingCategory.icon ?? '🏷️',
+              icon: editingCategory.icon ?? "🏷️",
               color: editingCategory.color ?? PRESET_COLORS[0],
             }
-          : { name: '', type: 'expense', icon: '🏷️', color: PRESET_COLORS[0] },
+          : { name: "", type: "expense", icon: "🏷️", color: PRESET_COLORS[0] }
       );
     }
   }, [visible, editingCategory, reset]);
@@ -106,26 +106,32 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
       try {
         if (editingCategory) {
           await updateCategory.mutateAsync({ id: editingCategory.id, data: values });
-          showToast('Category updated', 'success');
+          showToast("Category updated", "success");
         } else {
           await createCategory.mutateAsync(values);
-          showToast('Category created', 'success');
+          showToast("Category created", "success");
         }
         onDismiss();
       } catch {
-        showToast(`Failed to ${editingCategory ? 'update' : 'create'} category`, 'error');
+        showToast(`Failed to ${editingCategory ? "update" : "create"} category`, "error");
       }
     },
-    [createCategory, updateCategory, editingCategory, onDismiss, showToast],
+    [createCategory, updateCategory, editingCategory, onDismiss, showToast]
   );
 
   const isPending = editingCategory ? updateCategory.isPending : createCategory.isPending;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent onRequestClose={onDismiss}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      statusBarTranslucent
+      onRequestClose={onDismiss}
+    >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <Pressable style={styles.backdrop} onPress={onDismiss} />
         <ScrollView
@@ -136,12 +142,9 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {editingCategory ? 'Edit Category' : 'New Category'}
+              {editingCategory ? "Edit Category" : "New Category"}
             </Text>
-            <Pressable
-              onPress={onDismiss}
-              style={({ pressed }) => pressed && { opacity: 0.6 }}
-            >
+            <Pressable onPress={onDismiss} style={({ pressed }) => pressed && { opacity: 0.6 }}>
               <X size={22} color={colors.text.muted} />
             </Pressable>
           </View>
@@ -207,8 +210,11 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
                       return (
                         <Pressable
                           key={icon}
-                          onPress={() => setValue('icon', icon)}
-                          style={({ pressed }) => [styles.iconCellWrapper, pressed && { opacity: 0.7 }]}
+                          onPress={() => setValue("icon", icon)}
+                          style={({ pressed }) => [
+                            styles.iconCellWrapper,
+                            pressed && { opacity: 0.7 },
+                          ]}
                         >
                           <View
                             style={[
@@ -243,7 +249,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
                   return (
                     <Pressable
                       key={color}
-                      onPress={() => setValue('color', color)}
+                      onPress={() => setValue("color", color)}
                       style={[
                         styles.colorDot,
                         { backgroundColor: color },
@@ -256,7 +262,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
             </View>
 
             <Button
-              label={editingCategory ? 'Save Changes' : 'Create Category'}
+              label={editingCategory ? "Save Changes" : "Create Category"}
               onPress={handleSubmit(onSubmit)}
               loading={isPending}
               fullWidth
@@ -269,26 +275,26 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end' },
+  overlay: { flex: 1, justifyContent: "flex-end" },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
   sheet: {
     backgroundColor: colors.bg.surface,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    maxHeight: '90%',
+    maxHeight: "90%",
   },
   sheetContent: {
-    padding: spacing['2xl'],
+    padding: spacing["2xl"],
     paddingBottom: 40,
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing['2xl'],
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing["2xl"],
   },
   modalTitle: {
     ...StyleSheet.flatten(textStyles.h2),
@@ -297,12 +303,12 @@ const styles = StyleSheet.create({
   modalForm: { gap: spacing.xl },
 
   section: { gap: spacing.sm },
-  sectionLabel: { fontSize: 13, fontWeight: '500', color: colors.text.muted },
+  sectionLabel: { fontSize: 13, fontWeight: "500", color: colors.text.muted },
 
-  typeRow: { flexDirection: 'row', gap: spacing.sm },
+  typeRow: { flexDirection: "row", gap: spacing.sm },
   typeBtn: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 10,
     borderRadius: radius.md,
     borderWidth: 1,
@@ -310,24 +316,24 @@ const styles = StyleSheet.create({
   typeBtnActive: { backgroundColor: colors.accent.primary, borderColor: colors.accent.primary },
   typeBtnInactive: { backgroundColor: colors.bg.elevated, borderColor: colors.border.default },
   typeEmoji: { fontSize: 16, marginBottom: 2 },
-  typeBtnLabel: { fontSize: 11, fontWeight: '500' },
+  typeBtnLabel: { fontSize: 11, fontWeight: "500" },
   typeBtnLabelActive: { color: colors.bg.canvas },
   typeBtnLabelInactive: { color: colors.text.muted },
 
   iconGrid: { gap: spacing.sm },
-  iconRow: { flexDirection: 'row' },
+  iconRow: { flexDirection: "row" },
   iconCellWrapper: { flex: 1, marginHorizontal: 3 },
   iconCell: {
     height: 44,
     borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
   },
   iconCellInactive: { backgroundColor: colors.bg.elevated, borderColor: colors.border.default },
   iconEmoji: { fontSize: 20 },
 
-  colorRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  colorRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
   colorDot: { width: 32, height: 32, borderRadius: 16 },
   colorDotSelected: { borderWidth: 3, borderColor: colors.text.primary },
 });

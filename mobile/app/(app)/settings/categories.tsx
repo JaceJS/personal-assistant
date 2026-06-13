@@ -1,13 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import {
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft, Plus, Tag } from "lucide-react-native";
 import { Screen } from "@/components/layout/Screen";
@@ -16,10 +8,7 @@ import FilterPill from "@/components/ui/FilterPill";
 import EmptyState from "@/components/ui/EmptyState";
 import CategoryCard from "@/features/finance/components/CategoryCard";
 import CategoryFormSheet from "@/features/finance/components/CategoryFormSheet";
-import {
-  useArchiveCategory,
-  useCategories,
-} from "@/features/finance/hooks/useCategories";
+import { useArchiveCategory, useCategories } from "@/features/finance/hooks/useCategories";
 import { useToastStore } from "@/stores/toast";
 import type { Category, CategoryType } from "@/features/finance/types";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -212,7 +201,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.bg.canvas,
   },
-
   filters: {
     flexDirection: "row",
     paddingHorizontal: spacing["2xl"],
