@@ -47,6 +47,15 @@ describe('computeUnallocated', () => {
     const cats = [{ budget_limit: 8_000_000 }, { budget_limit: 5_000_000 }];
     expect(computeUnallocated(10_000_000, cats as any)).toBe(-3_000_000);
   });
+
+  it('includes fixed expense budget_limit in unallocated calculation', () => {
+    const cats = [
+      { budget_limit: 3_000_000 }, // fixed (rent)
+      { budget_limit: 500_000 },   // variable (food)
+      { budget_limit: null },       // variable (no limit)
+    ];
+    expect(computeUnallocated(5_000_000, cats as any)).toBe(1_500_000);
+  });
 });
 
 describe('getBucketBarWidth', () => {

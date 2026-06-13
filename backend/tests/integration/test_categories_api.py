@@ -221,3 +221,59 @@ async def test_archive_nonexistent_category_is_not_found(
     response = await client.delete(f"/api/v1/categories/{uuid.uuid4()}")
 
     assert response.status_code == 404
+
+
+# ── Fixed expense flag ────────────────────────────────────────────────────────
+
+async def test_mark_category_as_fixed(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    cat = await repo.create_category(
+        db_session, test_user_id, name="Rent", type=CategoryType.expense,
+    )
+    await db_session.commit()
+
+    response = await client.patch(
+        f"/api/v1/categories/{cat.id}",
+        json={"is_fixed": True, "budget_limit": 3_000_000},
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["is_fixed"] is True
+    assert data["budget_limit"] == 3_000_000
+
+
+async def test_unmark_category_as_fixed(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    cat = await repo.create_category(
+        db_session, test_user_id, name="Rent", type=CategoryType.expense,
+    )
+    await db_session.commit()
+    await client.patch(f"/api/v1/categories/{cat.id}", json={"is_fixed": True})
+
+    response = await client.patch(f"/api/v1/categories/{cat.id}", json={"is_fixed": False})
+
+    assert response.status_code == 200
+    assert response.json()["data"]["is_fixed"] is False
+
+
+async def test_new_category_is_not_fixed_by_default(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    cat = await repo.create_category(
+        db_session, test_user_id, name="Food", type=CategoryType.expense,
+    )
+    await db_session.commit()
+
+    response = await client.get(f"/api/v1/categories/{cat.id}")
+
+    assert response.status_code == 200
+    assert response.json()["data"]["is_fixed"] is False

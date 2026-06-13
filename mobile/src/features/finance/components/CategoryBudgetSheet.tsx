@@ -5,6 +5,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
@@ -25,12 +26,14 @@ interface CategoryBudgetSheetProps {
 
 function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetSheetProps) {
   const [inputValue, setInputValue] = useState('');
+  const [isFixed, setIsFixed] = useState(false);
   const updateCategory = useUpdateCategory();
   const { showToast } = useToastStore();
 
   useEffect(() => {
     if (isVisible && category) {
       setInputValue(category.budget_limit ? String(category.budget_limit) : '');
+      setIsFixed(category.is_fixed);
     }
   }, [isVisible, category]);
 
@@ -40,7 +43,13 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
     if (!category) return;
     const amount = Number(inputValue.replace(/\D/g, ''));
     updateCategory.mutate(
-      { id: category.id, data: { budget_limit: amount > 0 ? amount : null } },
+      {
+        id: category.id,
+        data: {
+          budget_limit: amount > 0 ? amount : null,
+          is_fixed: isFixed,
+        },
+      },
       {
         onSuccess: () => {
           onDismiss();
@@ -49,12 +58,12 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
         onError: () => showToast('Failed to save budget limit', 'error'),
       },
     );
-  }, [category, inputValue, updateCategory, onDismiss, showToast]);
+  }, [category, inputValue, isFixed, updateCategory, onDismiss, showToast]);
 
   const handleClear = useCallback(() => {
     if (!category) return;
     updateCategory.mutate(
-      { id: category.id, data: { budget_limit: null } },
+      { id: category.id, data: { budget_limit: null, is_fixed: false } },
       {
         onSuccess: () => {
           onDismiss();
@@ -64,6 +73,9 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
       },
     );
   }, [category, updateCategory, onDismiss, showToast]);
+
+  const inputLabel = isFixed ? 'Monthly Amount (IDR)' : 'Monthly Limit (IDR)';
+  const saveDisabled = (isFixed && !hasValidInput) || updateCategory.isPending;
 
   return (
     <Modal
@@ -96,7 +108,7 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
             </View>
 
             <Input
-              label="Monthly Limit (IDR)"
+              label={inputLabel}
               value={inputValue}
               onChangeText={setInputValue}
               keyboardType="numeric"
@@ -104,15 +116,28 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
               autoFocus
             />
 
+            <View style={styles.switchRow}>
+              <View style={styles.switchInfo}>
+                <Text style={styles.switchLabel}>Fixed monthly expense</Text>
+                <Text style={styles.switchDesc}>Committed cost — rent, subscriptions, utilities</Text>
+              </View>
+              <Switch
+                value={isFixed}
+                onValueChange={setIsFixed}
+                trackColor={{ true: colors.accent.primary, false: colors.bg.hover }}
+                thumbColor={colors.text.primary}
+              />
+            </View>
+
             <Button
               label={updateCategory.isPending ? 'Saving…' : 'Save Limit'}
               onPress={handleSave}
               variant="primary"
-              disabled={!hasValidInput || updateCategory.isPending}
+              disabled={saveDisabled}
               fullWidth
             />
 
-            {category?.budget_limit ? (
+            {!isFixed && category?.budget_limit ? (
               <Button
                 label="Remove Limit"
                 onPress={handleClear}
@@ -176,6 +201,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.hover,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.md,
+  },
+  switchInfo: { flex: 1, gap: 3 },
+  switchLabel: {
+    ...StyleSheet.flatten(textStyles.body),
+    color: colors.text.primary,
+  },
+  switchDesc: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
   },
 });
 

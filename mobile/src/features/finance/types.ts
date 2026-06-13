@@ -23,6 +23,7 @@ export interface Category {
   icon: string | null;
   color: string | null;
   budget_limit: number | null;
+  is_fixed: boolean;
   is_archived: boolean;
   created_at: string;
   updated_at: string;
@@ -96,6 +97,7 @@ export interface CategoryUpdate {
   icon?: string | null;
   color?: string | null;
   budget_limit?: number | null;
+  is_fixed?: boolean;
   is_archived?: boolean | null;
 }
 

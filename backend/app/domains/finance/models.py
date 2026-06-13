@@ -80,6 +80,9 @@ class Category(TimestampedBase):
         _pg_enum(CategoryType, "category_type"), nullable=False
     )
     budget_limit: Mapped[int | None] = mapped_column(sa.BigInteger(), nullable=True)
+    is_fixed: Mapped[bool] = mapped_column(
+        sa.Boolean(), nullable=False, server_default=sa.false()
+    )
     is_archived: Mapped[bool] = mapped_column(
         sa.Boolean(), nullable=False, server_default=sa.false()
     )

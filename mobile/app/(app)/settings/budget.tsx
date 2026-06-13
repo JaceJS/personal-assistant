@@ -10,6 +10,7 @@ import {
 import { ChevronLeft, Wallet } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { computeUnallocated } from '@/features/finance/utils/budgetBucketUtils';
+import { splitBudgetCategories } from '@/features/finance/utils/budgetCategoryUtils';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
@@ -24,7 +25,6 @@ import YearlyPerformanceSection from '@/features/finance/components/YearlyPerfor
 import { useBudget, useUpsertBudget } from '@/features/finance/hooks/useBudget';
 import { useCategories } from '@/features/finance/hooks/useCategories';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
-import type { Category } from '@/features/finance/types';
 import { formatRupiah } from '@/lib/utils';
 import { useToastStore } from '@/stores/toast';
 import { colors, radius, spacing, textStyles } from '@/theme';
@@ -107,13 +107,12 @@ export default function BudgetScreen() {
     return map;
   }, [currentYearTransactions, currentYear, currentMonth]);
 
-  const expenseCategories = useMemo<Category[]>(() =>
-    (categories ?? [])
-      .filter(c => c.type === 'expense' && !c.is_archived)
-      .sort((a, b) => (categorySpending.get(b.id) ?? 0) - (categorySpending.get(a.id) ?? 0)),
-  [categories, categorySpending]);
-
-  const topCategories = expenseCategories.slice(0, 3);
+  const { bills, spending } = useMemo(
+    () => splitBudgetCategories(
+      (categories ?? []).sort((a, b) => (categorySpending.get(b.id) ?? 0) - (categorySpending.get(a.id) ?? 0)),
+    ),
+    [categories, categorySpending],
+  );
 
   const handleOpenEdit = useCallback(() => setEditVisible(true), []);
 
@@ -173,48 +172,55 @@ export default function BudgetScreen() {
           isLoading={chartLoading}
         />
 
-        {topCategories.length > 0 && (
-          <View style={styles.section}>
-            <SectionHeader title="Fixed Expenses" />
+        <View style={styles.section}>
+          <SectionHeader title="Monthly Bills" />
+          {bills.length === 0 ? (
             <Card style={CARD_STYLE}>
-              {topCategories.map((cat, idx) => (
+              <View style={styles.emptyFixed}>
+                <Text style={styles.emptyFixedText}>
+                  No monthly bills yet. Open any spending category and toggle "Fixed monthly expense" to commit it.
+                </Text>
+              </View>
+            </Card>
+          ) : (
+            <Card style={CARD_STYLE}>
+              {bills.map((cat, idx) => (
                 <React.Fragment key={cat.id}>
                   <FixedExpenseItem
                     category={cat}
                     spent={categorySpending.get(cat.id) ?? 0}
-                    subtitle="Avg. Monthly"
                   />
-                  {idx < topCategories.length - 1 && <Divider />}
+                  {idx < bills.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
             </Card>
-          </View>
-        )}
+          )}
+        </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Budget Buckets</Text>
-            {budget && expenseCategories.length > 0 && (
+            <Text style={styles.sectionTitle}>Spending Limits</Text>
+            {budget && (bills.length > 0 || spending.length > 0) && (
               <UnallocatedChip
-                unallocated={computeUnallocated(budget.monthly_limit, expenseCategories)}
+                unallocated={computeUnallocated(budget.monthly_limit, [...bills, ...spending])}
               />
             )}
           </View>
-          {expenseCategories.length === 0 ? (
+          {spending.length === 0 ? (
             <EmptyState
               icon={Wallet}
-              title="No expense categories"
-              subtitle="Add categories to track your spending"
+              title="No spending limits"
+              subtitle="Add expense categories to set monthly limits"
             />
           ) : (
             <Card style={CARD_STYLE}>
-              {expenseCategories.map((cat, idx) => (
+              {spending.map((cat, idx) => (
                 <React.Fragment key={cat.id}>
                   <BudgetBucketItem
                     category={cat}
                     spent={categorySpending.get(cat.id) ?? 0}
                   />
-                  {idx < expenseCategories.length - 1 && <Divider />}
+                  {idx < spending.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
             </Card>
@@ -262,4 +268,6 @@ const styles = StyleSheet.create({
   chipOk: { backgroundColor: colors.success.bg },
   chipOver: { backgroundColor: colors.danger.bg },
   chipText: { fontSize: 11, fontWeight: '600' },
+  emptyFixed: { paddingHorizontal: 16, paddingVertical: 20 },
+  emptyFixedText: { fontSize: 13, color: colors.text.muted, lineHeight: 20 },
 });

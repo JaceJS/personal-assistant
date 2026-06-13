@@ -97,6 +97,7 @@ class CategoryUpdate(BaseModel):
     icon: str | None = None
     color: str | None = None
     budget_limit: int | None = None
+    is_fixed: bool | None = None
     is_archived: bool | None = None
 
     @field_validator("name")
@@ -120,6 +121,7 @@ class CategoryRead(BaseModel):
     icon: str | None
     color: str | None
     budget_limit: int | None
+    is_fixed: bool
     is_archived: bool
     created_at: datetime
     updated_at: datetime
