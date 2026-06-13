@@ -46,7 +46,9 @@ function RootLayoutInner() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="ai-assistant" options={{ presentation: "modal" }} />
+      </Stack>
       <Toast />
     </SafeAreaProvider>
   );
