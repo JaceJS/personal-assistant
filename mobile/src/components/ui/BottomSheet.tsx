@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius } from '@/theme';
 
 interface BottomSheetProps {
@@ -15,6 +16,7 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ isVisible, onDismiss, children }: BottomSheetProps) {
+  const insets = useSafeAreaInsets();
   const translateY = useSharedValue(600);
   const backdropOpacity = useSharedValue(0);
 
@@ -37,7 +39,13 @@ export function BottomSheet({ isVisible, onDismiss, children }: BottomSheetProps
   }, [isVisible, translateY, backdropOpacity]);
 
   return (
-    <>
+    <Modal
+      visible={isVisible}
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={onDismiss}
+    >
       <Animated.View
         style={[StyleSheet.absoluteFillObject, styles.backdrop, backdropStyle]}
         pointerEvents={isVisible ? 'auto' : 'none'}
@@ -45,18 +53,17 @@ export function BottomSheet({ isVisible, onDismiss, children }: BottomSheetProps
         <Pressable style={StyleSheet.absoluteFillObject} onPress={onDismiss} />
       </Animated.View>
 
-      <Animated.View style={[styles.sheet, sheetStyle]}>
+      <Animated.View style={[styles.sheet, sheetStyle, { paddingBottom: insets.bottom + 16 }]}>
         <View style={styles.handle} />
         {children}
       </Animated.View>
-    </>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: {
     backgroundColor: 'rgba(0,0,0,0.6)',
-    zIndex: 10,
   },
   sheet: {
     position: 'absolute',
@@ -66,8 +73,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.elevated,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    paddingBottom: 32,
-    zIndex: 11,
   },
   handle: {
     alignSelf: 'center',

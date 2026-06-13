@@ -11,7 +11,7 @@ interface TabPressOptions {
 
 // Exported for testing. Resets nested stack to root when tab is already focused.
 export function handleTabPress({ focused, routeName, routeState, navigate, dispatch }: TabPressOptions): void {
-  if (focused && (routeState?.index ?? 0) > 0) {
+  if ((routeState?.index ?? 0) > 0) {
     dispatch({ ...StackActions.popToTop(), target: routeState?.key });
   } else {
     navigate(routeName);

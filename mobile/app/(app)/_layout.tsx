@@ -20,7 +20,6 @@ export default function AppLayout() {
       <Tabs.Screen name="finance" />
       <Tabs.Screen name="accounts" />
       <Tabs.Screen name="settings" />
-
     </Tabs>
   );
 }
