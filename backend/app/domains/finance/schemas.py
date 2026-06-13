@@ -120,8 +120,8 @@ class CategoryRead(BaseModel):
     type: CategoryType
     icon: str | None
     color: str | None
-    budget_limit: int | None
-    is_fixed: bool
+    budget_limit: int | None = None
+    is_fixed: bool = False
     is_archived: bool
     created_at: datetime
     updated_at: datetime

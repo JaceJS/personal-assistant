@@ -16,14 +16,14 @@ function cat(overrides: Partial<Category> & Pick<Category, 'id' | 'name' | 'type
 const USER_ID = 'user-1';
 
 describe('splitBudgetCategories', () => {
-  it('excludes system categories (user_id=null) from both sections', () => {
+  it('includes system categories — budget managed server-side', () => {
     const categories = [
       cat({ id: '1', name: 'Food', type: 'expense', user_id: null, is_fixed: false, is_archived: false }),
       cat({ id: '2', name: 'Rent', type: 'expense', user_id: null, is_fixed: true, is_archived: false }),
     ];
     const { bills, spending } = splitBudgetCategories(categories);
-    expect(bills).toHaveLength(0);
-    expect(spending).toHaveLength(0);
+    expect(bills.map(c => c.id)).toEqual(['2']);
+    expect(spending.map(c => c.id)).toEqual(['1']);
   });
 
   it('excludes income categories', () => {
@@ -76,6 +76,6 @@ describe('splitBudgetCategories', () => {
     ];
     const { bills, spending } = splitBudgetCategories(categories);
     expect(bills.map(c => c.id)).toEqual(['1', '6']);
-    expect(spending.map(c => c.id)).toEqual(['2']);
+    expect(spending.map(c => c.id)).toEqual(['2', '3']);
   });
 });

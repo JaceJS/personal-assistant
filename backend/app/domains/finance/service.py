@@ -19,6 +19,7 @@ from app.domains.finance.models import (
     ReceiptLog,
     Transaction,
     TransactionStatus,
+    UserCategoryBudget,
     VoiceLog,
     VoiceProcessingStatus,
 )
@@ -27,6 +28,7 @@ from app.domains.finance.schemas import (
     AccountUpdate,
     BudgetUpsert,
     CategoryCreate,
+    CategoryRead,
     CategoryUpdate,
     ReceiptStatusRead,
     ReceiptUploadResponse,
@@ -101,26 +103,73 @@ async def get_category_or_404(
     return category
 
 
-async def list_categories(session: AsyncSession, user_id: uuid.UUID) -> list[Category]:
-    return await repo.list_categories(session, user_id)
+def _build_category_read(category: Category, ucb: UserCategoryBudget | None) -> CategoryRead:
+    return CategoryRead(
+        id=category.id,
+        user_id=category.user_id,
+        name=category.name,
+        type=category.type,
+        icon=category.icon,
+        color=category.color,
+        is_archived=category.is_archived,
+        created_at=category.created_at,
+        updated_at=category.updated_at,
+        budget_limit=ucb.budget_limit if ucb else None,
+        is_fixed=ucb.is_fixed if ucb else False,
+    )
+
+
+async def get_category_read(
+    session: AsyncSession, category_id: uuid.UUID, user_id: uuid.UUID
+) -> CategoryRead:
+    category = await get_category_or_404(session, category_id, user_id)
+    ucb = await repo.get_user_category_budget(session, user_id, category_id)
+    return _build_category_read(category, ucb)
+
+
+async def list_categories(session: AsyncSession, user_id: uuid.UUID) -> list[CategoryRead]:
+    categories = await repo.list_categories(session, user_id)
+    budget_map = await repo.get_user_category_budgets_map(session, user_id)
+    return [_build_category_read(cat, budget_map.get(cat.id)) for cat in categories]
 
 
 async def create_category(
     session: AsyncSession, user_id: uuid.UUID, data: CategoryCreate
-) -> Category:
-    return await repo.create_category(
+) -> CategoryRead:
+    category = await repo.create_category(
         session, user_id,
         name=data.name, type=data.type, icon=data.icon, color=data.color,
     )
+    return _build_category_read(category, None)
 
 
 async def update_category(
     session: AsyncSession, category_id: uuid.UUID, user_id: uuid.UUID, data: CategoryUpdate
-) -> Category:
+) -> CategoryRead:
     category = await get_category_or_404(session, category_id, user_id)
-    if category.user_id is None:
+
+    meta_data = data.model_dump(exclude={"budget_limit", "is_fixed"}, exclude_unset=True)
+    budget_data = data.model_dump(include={"budget_limit", "is_fixed"}, exclude_unset=True)
+
+    if meta_data and category.user_id is None:
         raise ForbiddenError("System categories cannot be modified")
-    return await repo.update_category(session, category, data)
+    if meta_data:
+        category = await repo.update_category(session, category, **meta_data)
+
+    ucb: UserCategoryBudget | None = None
+    if budget_data:
+        existing = await repo.get_user_category_budget(session, user_id, category_id)
+        ucb = await repo.upsert_user_category_budget(
+            session, user_id, category_id,
+            budget_limit=budget_data.get(
+                "budget_limit", existing.budget_limit if existing else None
+            ),
+            is_fixed=budget_data.get("is_fixed", existing.is_fixed if existing else False),
+        )
+    else:
+        ucb = await repo.get_user_category_budget(session, user_id, category_id)
+
+    return _build_category_read(category, ucb)
 
 
 async def archive_category(

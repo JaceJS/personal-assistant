@@ -79,13 +79,21 @@ class Category(TimestampedBase):
     type: Mapped[CategoryType] = mapped_column(
         _pg_enum(CategoryType, "category_type"), nullable=False
     )
+    is_archived: Mapped[bool] = mapped_column(
+        sa.Boolean(), nullable=False, server_default=sa.false()
+    )
+
+
+class UserCategoryBudget(TimestampedBase):
+    __tablename__ = "user_category_budgets"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    category_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     budget_limit: Mapped[int | None] = mapped_column(sa.BigInteger(), nullable=True)
     is_fixed: Mapped[bool] = mapped_column(
         sa.Boolean(), nullable=False, server_default=sa.false()
     )
-    is_archived: Mapped[bool] = mapped_column(
-        sa.Boolean(), nullable=False, server_default=sa.false()
-    )
+    __table_args__ = (sa.UniqueConstraint("user_id", "category_id"),)
 
 
 class VoiceLog(TimestampedBase):

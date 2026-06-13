@@ -15,7 +15,6 @@ interface FixedExpenseItemProps {
 function FixedExpenseItem({ category, spent }: FixedExpenseItemProps) {
   const [sheetVisible, setSheetVisible] = useState(false);
   const Icon = categoryIcon(category.name);
-  const isUserCategory = category.user_id !== null;
   const isPaid = spent > 0;
 
   const committedLabel = category.budget_limit
@@ -23,14 +22,14 @@ function FixedExpenseItem({ category, spent }: FixedExpenseItemProps) {
     : 'No amount set';
 
   const handlePress = useCallback(() => {
-    if (isUserCategory) setSheetVisible(true);
-  }, [isUserCategory]);
+    setSheetVisible(true);
+  }, []);
 
   return (
     <>
       <Pressable
         onPress={handlePress}
-        style={({ pressed }) => [pressed && isUserCategory && { opacity: 0.75 }]}
+        style={({ pressed }) => [pressed && { opacity: 0.75 }]}
       >
         <View style={styles.row}>
           <View style={styles.iconBox}>

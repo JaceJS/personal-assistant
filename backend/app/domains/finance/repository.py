@@ -17,6 +17,7 @@ from app.domains.finance.models import (
     ReceiptLog,
     Transaction,
     TransactionStatus,
+    UserCategoryBudget,
     VoiceLog,
     VoiceProcessingStatus,
 )
@@ -96,10 +97,9 @@ async def create_category(session: AsyncSession, user_id: uuid.UUID, **kwargs: A
     return category
 
 
-async def update_category(session: AsyncSession, category: Category, data: Any) -> Category:
-    update_data = data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(category, field, value)
+async def update_category(session: AsyncSession, category: Category, **kwargs: Any) -> Category:
+    for key, value in kwargs.items():
+        setattr(category, key, value)
     await session.flush()
     await session.refresh(category)
     return category
@@ -108,6 +108,52 @@ async def update_category(session: AsyncSession, category: Category, data: Any) 
 async def archive_category(session: AsyncSession, category: Category) -> None:
     category.is_archived = True
     await session.flush()
+
+
+async def get_user_category_budget(
+    session: AsyncSession, user_id: uuid.UUID, category_id: uuid.UUID
+) -> UserCategoryBudget | None:
+    result = await session.execute(
+        sa.select(UserCategoryBudget).where(
+            UserCategoryBudget.user_id == user_id,
+            UserCategoryBudget.category_id == category_id,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_user_category_budgets_map(
+    session: AsyncSession, user_id: uuid.UUID
+) -> dict[uuid.UUID, UserCategoryBudget]:
+    result = await session.execute(
+        sa.select(UserCategoryBudget).where(UserCategoryBudget.user_id == user_id)
+    )
+    return {ucb.category_id: ucb for ucb in result.scalars()}
+
+
+async def upsert_user_category_budget(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    category_id: uuid.UUID,
+    *,
+    budget_limit: int | None,
+    is_fixed: bool,
+) -> UserCategoryBudget:
+    stmt = (
+        pg_insert(UserCategoryBudget)
+        .values(
+            user_id=user_id, category_id=category_id,
+            budget_limit=budget_limit, is_fixed=is_fixed,
+        )
+        .on_conflict_do_update(
+            constraint="user_category_budgets_user_id_category_id_key",
+            set_={"budget_limit": budget_limit, "is_fixed": is_fixed, "updated_at": sa.func.now()},
+        )
+        .returning(UserCategoryBudget)
+    )
+    result = await session.execute(stmt)
+    await session.flush()
+    return result.scalar_one()
 
 
 # ── Transactions ──────────────────────────────────────────────────────────────

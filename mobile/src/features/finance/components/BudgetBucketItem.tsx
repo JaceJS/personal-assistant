@@ -40,11 +40,9 @@ function BudgetBucketItem({ category, spent }: BudgetBucketItemProps) {
   const Icon = categoryIcon(category.name);
   const status = computeBucketStatus(spent, category.budget_limit);
   const barPct = getBucketBarWidth(spent, category.budget_limit);
-  const isUserCategory = category.user_id !== null;
-
   const handlePress = useCallback(() => {
-    if (isUserCategory) setSheetVisible(true);
-  }, [isUserCategory]);
+    setSheetVisible(true);
+  }, []);
 
   const limitLabel = category.budget_limit
     ? `/ ${formatRupiah(category.budget_limit)}`
@@ -54,7 +52,7 @@ function BudgetBucketItem({ category, spent }: BudgetBucketItemProps) {
     <>
       <Pressable
         onPress={handlePress}
-        style={({ pressed }) => [styles.item, pressed && isUserCategory && { opacity: 0.75 }]}
+        style={({ pressed }) => [styles.item, pressed && { opacity: 0.75 }]}
       >
         <View style={styles.row}>
           <View style={styles.iconBox}>
