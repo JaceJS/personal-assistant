@@ -201,6 +201,7 @@ src/theme/           — design tokens (colors, spacing, radius, typography)
 # 14. WHAT NOT TO DO
 
 - **NEVER** call Supabase REST for data — use FastAPI via `apiFetch()`
+- **NEVER** call `apiFetch()` directly from a screen (`app/` files) — all API calls go in `src/features/<domain>/hooks/` via TanStack Query or a custom async hook
 - **NEVER** use mock data or fake API responses
 - **NEVER** write raw `fontFamily` strings — use `textStyles.*`
 - **NEVER** use `router.push('/(app)/accounts/index')` — use `'/(app)/accounts'`
