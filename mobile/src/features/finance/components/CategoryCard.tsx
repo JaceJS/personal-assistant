@@ -7,20 +7,18 @@ import { colors, radius, spacing } from '@/theme';
 
 interface CategoryCardProps {
   category: Category;
-  onEdit: (c: Category) => void;
-  onArchive: (c: Category) => void;
+  onPress: (c: Category) => void;
 }
 
-function CategoryCard({ category, onEdit, onArchive }: CategoryCardProps) {
+function CategoryCard({ category, onPress }: CategoryCardProps) {
   const isSystem = category.user_id === null;
   const tint = category.color ? `${category.color}28` : `${colors.accent.primary}28`;
 
   return (
     <View style={styles.wrapper}>
       <Pressable
-        onPress={() => !isSystem && onEdit(category)}
-        onLongPress={() => !isSystem && onArchive(category)}
-        style={({ pressed }) => pressed && !isSystem && { opacity: 0.7 }}
+        onPress={() => onPress(category)}
+        style={({ pressed }) => pressed && { opacity: 0.7 }}
       >
         <View style={styles.card}>
           <View style={[styles.iconCircle, { backgroundColor: tint }]}>

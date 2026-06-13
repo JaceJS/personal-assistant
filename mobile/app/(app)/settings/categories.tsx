@@ -1,17 +1,19 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft, Plus, Tag } from "lucide-react-native";
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
+import Fab from "@/components/ui/Fab";
 import FilterPill from "@/components/ui/FilterPill";
 import EmptyState from "@/components/ui/EmptyState";
+import CategoryActionSheet from "@/features/finance/components/CategoryActionSheet";
 import CategoryCard from "@/features/finance/components/CategoryCard";
 import CategoryFormSheet from "@/features/finance/components/CategoryFormSheet";
 import { useArchiveCategory, useCategories } from "@/features/finance/hooks/useCategories";
 import { useToastStore } from "@/stores/toast";
 import type { Category, CategoryType } from "@/features/finance/types";
-import { colors, radius, spacing, textStyles } from "@/theme";
+import { colors, radius, spacing } from "@/theme";
 
 const GRID_COLS = 4;
 
@@ -19,7 +21,6 @@ const TYPE_FILTER_OPTIONS: { value: CategoryType | "all"; label: string }[] = [
   { value: "all", label: "All" },
   { value: "expense", label: "Expense" },
   { value: "income", label: "Income" },
-  { value: "transfer", label: "Transfer" },
 ];
 
 export default function CategoriesScreen() {
@@ -32,6 +33,7 @@ export default function CategoriesScreen() {
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [activeFilter, setActiveFilter] = useState<CategoryType | "all">("all");
+  const [actionCategory, setActionCategory] = useState<Category | null>(null);
 
   const categories = data ?? [];
   const filtered =
@@ -95,19 +97,7 @@ export default function CategoriesScreen() {
 
   return (
     <Screen>
-      <Header
-        title="Categories"
-        left={backButton}
-        right={
-          <Pressable
-            onPress={handleOpenCreate}
-            style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.75 }]}
-          >
-            <Plus size={16} color={colors.bg.canvas} />
-            <Text style={styles.addBtnLabel}>Add</Text>
-          </Pressable>
-        }
-      />
+      <Header title="Categories" left={backButton} />
 
       <View style={styles.filters}>
         {TYPE_FILTER_OPTIONS.map((opt) => (
@@ -163,8 +153,7 @@ export default function CategoriesScreen() {
                 <CategoryCard
                   key={category.id}
                   category={category}
-                  onEdit={handleOpenEdit}
-                  onArchive={handleArchive}
+                  onPress={setActionCategory}
                 />
               ))}
               {row.length < GRID_COLS &&
@@ -176,31 +165,26 @@ export default function CategoriesScreen() {
         </ScrollView>
       )}
 
+      <CategoryActionSheet
+        visible={actionCategory !== null}
+        category={actionCategory}
+        onDismiss={() => setActionCategory(null)}
+        onEdit={(c) => { setActionCategory(null); handleOpenEdit(c); }}
+        onArchive={(c) => { setActionCategory(null); handleArchive(c); }}
+      />
+
       <CategoryFormSheet
         visible={showModal}
         editingCategory={editingCategory}
         onDismiss={handleDismiss}
       />
+
+      <Fab onPress={handleOpenCreate} icon={Plus} accessibilityLabel="Add category" />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: colors.accent.primary,
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  addBtnLabel: {
-    ...StyleSheet.flatten(textStyles.caption),
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.bg.canvas,
-  },
   filters: {
     flexDirection: "row",
     paddingHorizontal: spacing["2xl"],

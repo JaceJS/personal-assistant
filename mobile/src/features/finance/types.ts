@@ -1,5 +1,5 @@
 export type AccountType = "cash" | "bank" | "ewallet" | "credit";
-export type CategoryType = "expense" | "income" | "transfer";
+export type CategoryType = "expense" | "income";
 export type TransactionSource = "voice" | "manual" | "import";
 export type TransactionStatus = "draft" | "confirmed";
 

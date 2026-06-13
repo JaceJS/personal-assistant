@@ -24,7 +24,6 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 const CATEGORY_TYPES: { value: CategoryType; label: string; emoji: string }[] = [
   { value: "expense", label: "Expense", emoji: "📤" },
   { value: "income", label: "Income", emoji: "📥" },
-  { value: "transfer", label: "Transfer", emoji: "🔄" },
 ];
 
 const PRESET_COLORS = [
@@ -43,7 +42,7 @@ const ICON_COLS = 4;
 
 const schema = z.object({
   name: z.string().min(1, "Category name is required"),
-  type: z.enum(["expense", "income", "transfer"]),
+  type: z.enum(["expense", "income"]),
   icon: z.string().nullable(),
   color: z.string().nullable(),
 });

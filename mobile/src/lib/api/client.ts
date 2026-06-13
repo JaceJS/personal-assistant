@@ -54,6 +54,7 @@ export async function apiFetch<T>(
       throw error;
     }
 
+    if (response.status === 204) return undefined as T;
     return response.json() as Promise<T>;
   } catch (err) {
     if ((err as Error).name === "AbortError") {
