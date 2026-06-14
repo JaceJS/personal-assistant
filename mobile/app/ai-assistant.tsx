@@ -11,20 +11,15 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Header } from "@/components/layout/Header";
 import { ConfirmCard } from "@/components/voice/ConfirmCard";
 import type { ConfirmPayload } from "@/components/voice/ConfirmCard";
 import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
+import { AIBubble } from "@/features/ai/components/AIBubble";
+import { ChatBubble } from "@/features/ai/components/ChatBubble";
+import { UserBubble } from "@/features/ai/components/UserBubble";
 import { useChat } from "@/features/ai/hooks/useChat";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import {
@@ -48,7 +43,6 @@ import type {
   AIMessage,
   ChatMessage,
   Message,
-  UserTextMessage,
 } from "@/features/finance/utils/chatMessageUtils";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { useToastStore } from "@/stores/toast";
@@ -157,7 +151,11 @@ export default function AIAssistantScreen() {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === id
-            ? { ...(m as ChatMessage), status: "failed", errorMessage: "Processing timed out. Please try again." }
+            ? {
+                ...(m as ChatMessage),
+                status: "failed",
+                errorMessage: "Processing timed out. Please try again.",
+              }
             : m
         )
       );
@@ -177,7 +175,11 @@ export default function AIAssistantScreen() {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === id
-            ? { ...(m as ChatMessage), status: "failed", errorMessage: "Processing timed out. Please try again." }
+            ? {
+                ...(m as ChatMessage),
+                status: "failed",
+                errorMessage: "Processing timed out. Please try again.",
+              }
             : m
         )
       );
@@ -221,7 +223,15 @@ export default function AIAssistantScreen() {
         showToast("Could not upload voice recording.", "error");
       }
     })();
-  }, [defaultAccount, isRecording, resetRecorder, setMessages, showToast, stopRecording, uploadAudio]);
+  }, [
+    defaultAccount,
+    isRecording,
+    resetRecorder,
+    setMessages,
+    showToast,
+    stopRecording,
+    uploadAudio,
+  ]);
 
   const handleCameraPress = useCallback(async () => {
     if (!defaultAccount) {
@@ -252,9 +262,9 @@ export default function AIAssistantScreen() {
     (transcript: string) => {
       if (!voiceLogId) return;
       setTranscriptVisible(false);
-      void extractVoice.mutateAsync({ voiceLogId, transcript }).catch(
-        () => showToast("Could not start extraction.", "error")
-      );
+      void extractVoice
+        .mutateAsync({ voiceLogId, transcript })
+        .catch(() => showToast("Could not start extraction.", "error"));
     },
     [extractVoice, showToast, voiceLogId]
   );
@@ -274,9 +284,9 @@ export default function AIAssistantScreen() {
       setVoiceLogId(null);
       resetRecorder();
       showToast("Transaction saved.", "success");
-      void confirmVoiceTransaction.mutateAsync({ transactionId, ...payload }).catch(
-        () => showToast("Could not save transaction.", "error")
-      );
+      void confirmVoiceTransaction
+        .mutateAsync({ transactionId, ...payload })
+        .catch(() => showToast("Could not save transaction.", "error"));
     },
     [confirmVoiceTransaction, resetRecorder, showToast, voiceStatus.data?.transaction_id]
   );
@@ -294,9 +304,9 @@ export default function AIAssistantScreen() {
       setReceiptConfirmVisible(false);
       setReceiptLogId(null);
       showToast("Transaction saved.", "success");
-      void confirmReceiptTransaction.mutateAsync({ transactionId, ...payload }).catch(
-        () => showToast("Could not save transaction.", "error")
-      );
+      void confirmReceiptTransaction
+        .mutateAsync({ transactionId, ...payload })
+        .catch(() => showToast("Could not save transaction.", "error"));
     },
     [confirmReceiptTransaction, showToast, receiptStatus.data?.transaction_id]
   );
@@ -308,7 +318,7 @@ export default function AIAssistantScreen() {
 
   const renderMessage = useCallback(({ item }: { item: Message }) => {
     if (item.type === "user") return <UserBubble message={item} />;
-    if (item.type === "ai") return <AIBubble message={item} />;
+    if (item.type === "ai") return <AIBubble message={item as AIMessage} />;
     return <ChatBubble message={item as ChatMessage} />;
   }, []);
 
@@ -426,142 +436,6 @@ export default function AIAssistantScreen() {
   );
 }
 
-// ─── Bubble components ────────────────────────────────────────────────────────
-
-function UserBubble({ message }: { message: UserTextMessage }) {
-  return (
-    <View style={userBubbleStyles.wrap}>
-      <View style={userBubbleStyles.bubble}>
-        <Text style={userBubbleStyles.text}>{message.content}</Text>
-      </View>
-    </View>
-  );
-}
-
-function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
-  const [displayed, setDisplayed] = useState('');
-  const indexRef = useRef(0);
-
-  useEffect(() => {
-    // When text resets (new message), reset position
-    if (!text) {
-      setDisplayed('');
-      indexRef.current = 0;
-      return;
-    }
-    // Animate from current index to end of new text
-    const interval = setInterval(() => {
-      indexRef.current += 1;
-      setDisplayed(text.slice(0, indexRef.current));
-      if (indexRef.current >= text.length) clearInterval(interval);
-    }, speed);
-    return () => clearInterval(interval);
-  }, [text, speed]);
-
-  return <Text style={aiBubbleStyles.text}>{displayed}</Text>;
-}
-
-function AIBubble({ message }: { message: AIMessage }) {
-  return (
-    <View style={aiBubbleStyles.wrap}>
-      <View style={aiBubbleStyles.bubble}>
-        {message.isTyping && !message.content ? (
-          <TypingIndicator />
-        ) : (
-          <TypewriterText text={message.content ?? ''} />
-        )}
-      </View>
-    </View>
-  );
-}
-
-function TypingDot({ delay }: { delay: number }) {
-  const y = useSharedValue(0);
-
-  useEffect(() => {
-    y.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(
-          withTiming(-5, { duration: 300 }),
-          withTiming(0, { duration: 300 })
-        ),
-        -1
-      )
-    );
-  }, [delay, y]);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ translateY: y.value }],
-  }));
-
-  return <Animated.View style={[aiBubbleStyles.dot, style]} />;
-}
-
-function TypingIndicator() {
-  return (
-    <View style={aiBubbleStyles.typingRow}>
-      <TypingDot delay={0} />
-      <TypingDot delay={150} />
-      <TypingDot delay={300} />
-    </View>
-  );
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Uploading...",
-  transcribing: "Transcribing...",
-  transcribed: "Reviewing transcript",
-  extracting: "Extracting transaction...",
-  completed: "Done",
-  failed: "Failed",
-};
-
-function ChatBubble({ message }: { message: ChatMessage }) {
-  const isProcessing =
-    message.status !== "completed" && message.status !== "failed";
-
-  return (
-    <View style={bubbleStyles.wrap}>
-      <View style={bubbleStyles.bubble}>
-        <Text style={bubbleStyles.typeLabel}>
-          {message.type === "voice" ? "Voice" : "Receipt"}
-        </Text>
-        <Text
-          style={[
-            bubbleStyles.status,
-            message.status === "failed" && bubbleStyles.statusFailed,
-            message.status === "completed" && bubbleStyles.statusDone,
-          ]}
-        >
-          {STATUS_LABELS[message.status] ?? message.status}
-        </Text>
-        {message.transcript && message.status === "transcribed" && (
-          <Text style={bubbleStyles.transcript} numberOfLines={3}>
-            {message.transcript}
-          </Text>
-        )}
-        {message.extractedData && message.status === "completed" && (
-          <Text style={bubbleStyles.amount}>
-            {message.extractedData.currency}{" "}
-            {message.extractedData.amount.toLocaleString()}
-          </Text>
-        )}
-        {message.errorMessage && (
-          <Text style={bubbleStyles.error}>{message.errorMessage}</Text>
-        )}
-        {isProcessing && (
-          <ActivityIndicator
-            size="small"
-            color={colors.accent.primary}
-            style={bubbleStyles.spinner}
-          />
-        )}
-      </View>
-    </View>
-  );
-}
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
@@ -598,6 +472,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border.default,
     gap: spacing.md,
+    minHeight: 68,
   },
   inputBtn: {
     width: 44,
@@ -639,101 +514,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.danger.bg,
     borderWidth: 1,
     borderColor: `${colors.danger.text}80`,
-  },
-});
-
-const userBubbleStyles = StyleSheet.create({
-  wrap: {
-    alignItems: "flex-end",
-  },
-  bubble: {
-    backgroundColor: colors.accent.primary,
-    borderRadius: radius.lg,
-    borderBottomRightRadius: radius.sm,
-    padding: spacing.md,
-    maxWidth: "80%",
-  },
-  text: {
-    ...StyleSheet.flatten(textStyles.body),
-    color: "#FFFFFF",
-  },
-});
-
-const aiBubbleStyles = StyleSheet.create({
-  wrap: {
-    alignItems: "flex-start",
-  },
-  bubble: {
-    backgroundColor: colors.bg.surface,
-    borderRadius: radius.lg,
-    borderBottomLeftRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    padding: spacing.md,
-    maxWidth: "80%",
-  },
-  text: {
-    ...StyleSheet.flatten(textStyles.body),
-    color: colors.text.primary,
-  },
-  typingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.text.muted,
-  },
-});
-
-const bubbleStyles = StyleSheet.create({
-  wrap: {
-    alignItems: "flex-start",
-  },
-  bubble: {
-    backgroundColor: colors.bg.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    padding: spacing.md,
-    maxWidth: "80%",
-    gap: spacing.xs,
-  },
-  typeLabel: {
-    ...StyleSheet.flatten(textStyles.overline),
-    color: colors.text.muted,
-    textTransform: "uppercase",
-  },
-  status: {
-    ...StyleSheet.flatten(textStyles.body),
-    color: colors.text.secondary,
-  },
-  statusFailed: {
-    color: colors.danger.text,
-  },
-  statusDone: {
-    color: colors.success?.text ?? colors.accent.primary,
-  },
-  transcript: {
-    ...StyleSheet.flatten(textStyles.body),
-    color: colors.text.primary,
-    fontStyle: "italic",
-  },
-  amount: {
-    ...StyleSheet.flatten(textStyles.h3),
-    color: colors.text.primary,
-  },
-  error: {
-    ...StyleSheet.flatten(textStyles.caption),
-    color: colors.danger.text,
-  },
-  spinner: {
-    alignSelf: "flex-start",
-    marginTop: spacing.xs,
   },
 });
