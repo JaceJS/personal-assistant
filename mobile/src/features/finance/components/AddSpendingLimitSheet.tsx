@@ -10,7 +10,7 @@ import {
 import { X } from 'lucide-react-native';
 
 import type { Category } from '@/features/finance/types';
-import { categoryIcon } from '@/features/finance/utils/categoryIcon';
+import CategoryCard from '@/features/finance/components/CategoryCard';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
 interface AddSpendingLimitSheetProps {
@@ -20,26 +20,9 @@ interface AddSpendingLimitSheetProps {
   onSelect: (category: Category) => void;
 }
 
-function CategoryRow({ category, onPress }: { category: Category; onPress: () => void }) {
-  const Icon = categoryIcon(category.name);
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && { opacity: 0.65 }]}
-    >
-      <View style={styles.iconBox}>
-        <Icon size={20} color={colors.text.muted} strokeWidth={1.5} />
-      </View>
-      <Text style={styles.name} numberOfLines={1}>{category.name}</Text>
-    </Pressable>
-  );
-}
-
-const MemoRow = React.memo(CategoryRow);
-
 function AddSpendingLimitSheet({ categories, isVisible, onDismiss, onSelect }: AddSpendingLimitSheetProps) {
   const renderItem = useCallback(({ item }: { item: Category }) => (
-    <MemoRow category={item} onPress={() => onSelect(item)} />
+    <CategoryCard category={item} onPress={onSelect} />
   ), [onSelect]);
 
   const keyExtractor = useCallback((item: Category) => item.id, []);
@@ -75,6 +58,8 @@ function AddSpendingLimitSheet({ categories, isVisible, onDismiss, onSelect }: A
               data={categories}
               keyExtractor={keyExtractor}
               renderItem={renderItem}
+              numColumns={3}
+              columnWrapperStyle={styles.columnWrapper}
               style={styles.list}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
@@ -135,27 +120,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   list: { flexShrink: 1 },
-  listContent: { paddingHorizontal: spacing['2xl'], gap: 4 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
+  listContent: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    gap: 8,
   },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.bg.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  name: {
-    ...StyleSheet.flatten(textStyles.h3),
-    color: colors.text.primary,
-    flex: 1,
-  },
+  columnWrapper: { gap: 8 },
   empty: {
     paddingHorizontal: spacing['2xl'],
     paddingVertical: spacing['2xl'],
