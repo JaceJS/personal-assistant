@@ -8,6 +8,7 @@ concrete provider.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from typing import TypeVar
 
 from pydantic import BaseModel
@@ -40,4 +41,9 @@ class LLMProvider(ABC):
     @abstractmethod
     async def chat(self, system_prompt: str, user_message: str) -> str:
         """Call the LLM for free-form conversation and return the reply text."""
+        ...
+
+    @abstractmethod
+    def stream_chat(self, system_prompt: str, user_message: str) -> AsyncIterator[str]:
+        """Stream the LLM reply token by token."""
         ...

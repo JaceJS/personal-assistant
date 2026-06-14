@@ -8,6 +8,7 @@ a different model is just a different `LLM_MODEL` value with no code change.
 from __future__ import annotations
 
 import base64
+from collections.abc import AsyncIterator
 from typing import TypeVar
 
 import instructor
@@ -86,3 +87,17 @@ class OpenRouterLLM(LLMProvider):
             ],
         )
         return completion.choices[0].message.content or ""
+
+    async def stream_chat(self, system_prompt: str, user_message: str) -> AsyncIterator[str]:
+        stream = await self._raw_client.chat.completions.create(
+            model=self._model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            stream=True,
+        )
+        async for chunk in stream:
+            token = chunk.choices[0].delta.content
+            if token:
+                yield token
