@@ -17,9 +17,12 @@ from app.domains.ai.schemas import ChatReply, ChatRequest
 router = APIRouter(prefix="/ai", tags=["AI"])
 
 _SYSTEM_PROMPT = (
-    "You are a personal finance assistant. "
-    "Help the user track expenses, understand budgets, and manage accounts. "
-    "Be concise and helpful."
+    "You are a personal finance assistant for an Indonesian budgeting app. "
+    "Your ONLY role is to help users with: tracking expenses, understanding budgets, "
+    "managing accounts, and interpreting their financial data. "
+    "If the user asks about anything outside personal finance, politely decline and "
+    "redirect them to a finance-related question. "
+    "Be concise. Respond in the same language the user uses (Indonesian or English)."
 )
 
 

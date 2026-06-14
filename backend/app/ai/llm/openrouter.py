@@ -27,7 +27,9 @@ _APP_TITLE = "voice-finance-backend"
 class OpenRouterLLM(LLMProvider):
     """LLM provider backed by OpenRouter (any OpenAI-compatible model)."""
 
-    def __init__(self, settings: Settings, *, model: str | None = None) -> None:
+    def __init__(
+        self, settings: Settings, *, model: str | None = None, max_tokens: int = 1024
+    ) -> None:
         self._raw_client = AsyncOpenAI(
             api_key=settings.openrouter_api_key,
             base_url=_OPENROUTER_BASE_URL,
@@ -35,6 +37,7 @@ class OpenRouterLLM(LLMProvider):
         )
         self._client = instructor.from_openai(self._raw_client, mode=instructor.Mode.JSON)
         self._model = model if model is not None else settings.llm_model
+        self._max_tokens = max_tokens
 
     async def extract(
         self, system_prompt: str, user_content: str, response_model: type[T]
@@ -42,6 +45,7 @@ class OpenRouterLLM(LLMProvider):
         result: T = await self._client.chat.completions.create(
             model=self._model,
             response_model=response_model,
+            max_tokens=self._max_tokens,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
@@ -60,6 +64,7 @@ class OpenRouterLLM(LLMProvider):
         result: T = await self._client.chat.completions.create(
             model=self._model,
             response_model=response_model,
+            max_tokens=self._max_tokens,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {
@@ -81,6 +86,7 @@ class OpenRouterLLM(LLMProvider):
     async def chat(self, system_prompt: str, user_message: str) -> str:
         completion = await self._raw_client.chat.completions.create(
             model=self._model,
+            max_tokens=self._max_tokens,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
@@ -91,6 +97,7 @@ class OpenRouterLLM(LLMProvider):
     async def stream_chat(self, system_prompt: str, user_message: str) -> AsyncIterator[str]:
         stream = await self._raw_client.chat.completions.create(
             model=self._model,
+            max_tokens=self._max_tokens,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},

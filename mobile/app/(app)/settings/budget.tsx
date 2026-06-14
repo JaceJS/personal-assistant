@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { ChevronLeft, Plus, Wallet } from 'lucide-react-native';
+import IconButton from '@/components/ui/IconButton';
 import { useRouter } from 'expo-router';
 import { computeUnallocated } from '@/features/finance/utils/budgetBucketUtils';
 import { splitBudgetCategories } from '@/features/finance/utils/budgetCategoryUtils';
@@ -223,13 +224,11 @@ export default function BudgetScreen() {
                   unallocated={computeUnallocated(budget.monthly_limit, [...bills, ...spending])}
                 />
               )}
-              <Pressable
+              <IconButton
+                icon={Plus}
                 onPress={() => setAddSheetVisible(true)}
-                style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.65 }]}
-                hitSlop={8}
-              >
-                <Plus size={18} color="#FFFFFF" strokeWidth={2} />
-              </Pressable>
+                accessibilityLabel="Add spending limit"
+              />
             </View>
           </View>
           {spending.length === 0 ? (
@@ -303,14 +302,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-  },
-  addBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: colors.accent.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   chip: {
     borderRadius: radius.full,

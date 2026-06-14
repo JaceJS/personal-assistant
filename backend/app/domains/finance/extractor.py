@@ -5,8 +5,10 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from app.ai.llm.base import LLMProvider
+from app.core.exceptions import BadRequestError
 
 _DEFAULT_CURRENCY = "IDR"
+CONFIDENCE_THRESHOLD = 0.4
 
 SLANG_MAP: dict[str, int] = {
     "gocap": 50_000,
@@ -58,8 +60,15 @@ class ExtractedTransaction(BaseModel):
 
 async def extract_transaction(transcript: str, llm: LLMProvider) -> ExtractedTransaction:
     """Extract a structured transaction from a voice transcript."""
-    return await llm.extract(
+    result = await llm.extract(
         system_prompt=_SYSTEM_PROMPT,
         user_content=transcript,
         response_model=ExtractedTransaction,
     )
+    if result.confidence < CONFIDENCE_THRESHOLD:
+        raise BadRequestError(
+            f"Could not extract a transaction from the transcript "
+            f"(confidence {result.confidence:.2f} < {CONFIDENCE_THRESHOLD}). "
+            "Please try again with clearer audio or more detail."
+        )
+    return result

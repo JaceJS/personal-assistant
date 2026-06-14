@@ -130,6 +130,21 @@ uv run alembic upgrade head
 
 ---
 
+## AI Knowledge & Guardrails
+
+Prompts live co-located with their extractor, not in routers or workers:
+- Chat: `app/domains/ai/router.py` — scope-restricted to finance only; refuses off-topic questions
+- Voice extraction: `app/domains/finance/extractor.py`
+- Receipt extraction: `app/domains/finance/receipt_extractor.py`
+
+Rules for every new AI feature:
+- Set `max_tokens` on `OpenRouterLLM(settings, max_tokens=N)` — never leave unbounded
+- Validate input length at the schema layer (`Field(..., max_length=N)`)
+- Extraction must raise `BadRequestError` if `confidence < CONFIDENCE_THRESHOLD` (0.4)
+- Prompts must name scope explicitly: what the AI WILL and WON'T do
+
+---
+
 ## AI Providers — Use Abstractions
 
 ```python
