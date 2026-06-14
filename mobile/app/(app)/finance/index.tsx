@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Bell, Plus } from "lucide-react-native";
+import { Plus } from "lucide-react-native";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
@@ -77,7 +77,7 @@ export default function FinanceDashboard() {
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
         }
-        right={<Bell size={22} color={colors.text.secondary} strokeWidth={1.5} />}
+
       />
 
       {accounts.length > 1 && (

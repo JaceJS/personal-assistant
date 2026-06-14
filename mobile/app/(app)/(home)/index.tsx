@@ -2,7 +2,6 @@ import { useCallback, useEffect } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Bell } from "lucide-react-native";
 
 import InsightCard from "@/components/ui/InsightCard";
 import AccountBalanceCard from "@/features/finance/components/AccountBalanceCard";
@@ -67,7 +66,7 @@ export default function HomeScreen() {
             <Text style={styles.avatarText}>{firstName[0]?.toUpperCase() ?? "U"}</Text>
           </View>
         }
-        right={<Bell size={22} color={colors.text.secondary} strokeWidth={1.5} />}
+
       />
 
       <ScrollView

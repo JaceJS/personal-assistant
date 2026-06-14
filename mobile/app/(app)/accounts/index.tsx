@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Bell, Plus, Wallet, X } from "lucide-react-native";
+import { Plus, Wallet, X } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -84,7 +84,7 @@ export default function AccountsScreen() {
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
         }
-        right={<Bell size={22} color={colors.text.secondary} strokeWidth={1.5} />}
+
       />
 
       {isLoading ? (
