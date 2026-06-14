@@ -67,4 +67,44 @@ export async function apiFetch<T>(
   }
 }
 
+// XHR-based streaming — fetch().body.getReader() returns null in React Native's
+// fetch polyfill, but XHR onprogress delivers incremental chunks reliably.
+export async function streamFetch(
+  path: string,
+  init: RequestInit,
+  onChunk: (text: string) => void,
+): Promise<void> {
+  const authHeader = await getAuthHeader();
+  const isFormData = init.body instanceof FormData;
+
+  return new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(init.method ?? 'GET', `${API_URL}${path}`);
+
+    if (!isFormData) xhr.setRequestHeader('Content-Type', 'application/json');
+    const token = authHeader.Authorization;
+    if (token) xhr.setRequestHeader('Authorization', token);
+
+    let processed = 0;
+
+    xhr.onprogress = () => {
+      const chunk = xhr.responseText.slice(processed);
+      processed = xhr.responseText.length;
+      if (chunk) onChunk(chunk);
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 400) {
+        reject(new ApiError(xhr.status, xhr.responseText));
+        return;
+      }
+      resolve();
+    };
+
+    xhr.onerror = () => reject(new ApiError(0, 'Network error'));
+
+    xhr.send(init.body as string | null | undefined);
+  });
+}
+
 export { ApiError };

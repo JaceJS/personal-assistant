@@ -438,14 +438,37 @@ function UserBubble({ message }: { message: UserTextMessage }) {
   );
 }
 
+function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
+  const [displayed, setDisplayed] = useState('');
+  const indexRef = useRef(0);
+
+  useEffect(() => {
+    // When text resets (new message), reset position
+    if (!text) {
+      setDisplayed('');
+      indexRef.current = 0;
+      return;
+    }
+    // Animate from current index to end of new text
+    const interval = setInterval(() => {
+      indexRef.current += 1;
+      setDisplayed(text.slice(0, indexRef.current));
+      if (indexRef.current >= text.length) clearInterval(interval);
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, speed]);
+
+  return <Text style={aiBubbleStyles.text}>{displayed}</Text>;
+}
+
 function AIBubble({ message }: { message: AIMessage }) {
   return (
     <View style={aiBubbleStyles.wrap}>
       <View style={aiBubbleStyles.bubble}>
-        {message.isTyping ? (
+        {message.isTyping && !message.content ? (
           <TypingIndicator />
         ) : (
-          <Text style={aiBubbleStyles.text}>{message.content}</Text>
+          <TypewriterText text={message.content ?? ''} />
         )}
       </View>
     </View>
