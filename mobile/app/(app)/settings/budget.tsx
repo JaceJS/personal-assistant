@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { ChevronLeft, Wallet } from 'lucide-react-native';
+import { ChevronLeft, Plus, Wallet } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { computeUnallocated } from '@/features/finance/utils/budgetBucketUtils';
 import { splitBudgetCategories } from '@/features/finance/utils/budgetCategoryUtils';
@@ -17,13 +17,16 @@ import { Screen } from '@/components/layout/Screen';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import AddSpendingLimitSheet from '@/features/finance/components/AddSpendingLimitSheet';
 import BudgetBucketItem from '@/features/finance/components/BudgetBucketItem';
 import BudgetEditSheet from '@/features/finance/components/BudgetEditSheet';
 import BudgetHeroCard from '@/features/finance/components/BudgetHeroCard';
+import CategoryBudgetSheet from '@/features/finance/components/CategoryBudgetSheet';
 import FixedExpenseItem from '@/features/finance/components/FixedExpenseItem';
 import YearlyPerformanceSection from '@/features/finance/components/YearlyPerformanceSection';
 import { useBudget, useUpsertBudget } from '@/features/finance/hooks/useBudget';
 import { useCategories } from '@/features/finance/hooks/useCategories';
+import type { Category } from '@/features/finance/types';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { formatRupiah } from '@/lib/utils';
 import { useToastStore } from '@/stores/toast';
@@ -62,6 +65,8 @@ export default function BudgetScreen() {
 
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [editVisible, setEditVisible] = useState(false);
+  const [addSheetVisible, setAddSheetVisible] = useState(false);
+  const [categoryToAdd, setCategoryToAdd] = useState<Category | null>(null);
 
   const { data: budget, isLoading: budgetLoading, refetch: refetchBudget } = useBudget();
   const { data: categories } = useCategories();
@@ -113,6 +118,18 @@ export default function BudgetScreen() {
     ),
     [categories, categorySpending],
   );
+
+  const available = useMemo(() => {
+    const budgetedIds = new Set([...bills.map(c => c.id), ...spending.map(c => c.id)]);
+    return (categories ?? []).filter(
+      c => c.type === 'expense' && !c.is_archived && !budgetedIds.has(c.id),
+    );
+  }, [categories, bills, spending]);
+
+  const handleSelectCategory = useCallback((cat: Category) => {
+    setAddSheetVisible(false);
+    setCategoryToAdd(cat);
+  }, []);
 
   const handleOpenEdit = useCallback(() => setEditVisible(true), []);
 
@@ -200,17 +217,26 @@ export default function BudgetScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Spending Limits</Text>
-            {budget && (bills.length > 0 || spending.length > 0) && (
-              <UnallocatedChip
-                unallocated={computeUnallocated(budget.monthly_limit, [...bills, ...spending])}
-              />
-            )}
+            <View style={styles.sectionHeaderRight}>
+              {budget && (bills.length > 0 || spending.length > 0) && (
+                <UnallocatedChip
+                  unallocated={computeUnallocated(budget.monthly_limit, [...bills, ...spending])}
+                />
+              )}
+              <Pressable
+                onPress={() => setAddSheetVisible(true)}
+                style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.65 }]}
+                hitSlop={8}
+              >
+                <Plus size={18} color="#FFFFFF" strokeWidth={2} />
+              </Pressable>
+            </View>
           </View>
           {spending.length === 0 ? (
             <EmptyState
               icon={Wallet}
               title="No spending limits"
-              subtitle="Add expense categories to set monthly limits"
+              subtitle="Tap + to add a category and set a monthly limit"
             />
           ) : (
             <Card style={CARD_STYLE}>
@@ -236,6 +262,19 @@ export default function BudgetScreen() {
         isPending={isPending}
         isUpdate={!!budget}
       />
+
+      <AddSpendingLimitSheet
+        categories={available}
+        isVisible={addSheetVisible}
+        onDismiss={() => setAddSheetVisible(false)}
+        onSelect={handleSelectCategory}
+      />
+
+      <CategoryBudgetSheet
+        category={categoryToAdd}
+        isVisible={categoryToAdd !== null}
+        onDismiss={() => setCategoryToAdd(null)}
+      />
     </Screen>
   );
 }
@@ -259,6 +298,19 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.border.subtle,
     marginLeft: 76,
+  },
+  sectionHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  addBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: colors.accent.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chip: {
     borderRadius: radius.full,
