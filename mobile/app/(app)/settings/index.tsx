@@ -13,8 +13,6 @@ import {
   PiggyBank,
   Shield,
   Tag,
-  User,
-  Wallet,
 } from "lucide-react-native";
 
 import { Header } from "@/components/layout/Header";
@@ -89,16 +87,6 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </Pressable>
-
-        {/* Account section */}
-        <SectionLabel label="Profile" />
-        <GroupedList>
-          <MenuItem
-            icon={<User size={16} color={colors.accent.primary} />}
-            label="Personal Info"
-            onPress={() => router.push("/(app)/settings/profile")}
-          />
-        </GroupedList>
 
         {/* Finance section */}
         <SectionLabel label="Finance" />
