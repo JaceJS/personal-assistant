@@ -21,6 +21,7 @@ import { AIBubble } from "@/features/ai/components/AIBubble";
 import { ChatBubble } from "@/features/ai/components/ChatBubble";
 import { UserBubble } from "@/features/ai/components/UserBubble";
 import { useChat } from "@/features/ai/hooks/useChat";
+import { useConfirmAiDraft } from "@/features/ai/hooks/useConfirmAiDraft";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import {
   useConfirmReceiptTransaction,
@@ -50,7 +51,8 @@ export default function AIAssistantScreen() {
   const router = useRouter();
   const showToast = useToastStore((s) => s.showToast);
   const { data: accounts } = useAccounts();
-  const { messages, setMessages, sendMessage } = useChat();
+  const { messages, setMessages, sendMessage, pendingDraft, dismissDraft } = useChat();
+  const confirmAiDraftMutation = useConfirmAiDraft();
 
   // Voice hooks
   const uploadAudio = useUploadAudio();
@@ -312,6 +314,18 @@ export default function AIAssistantScreen() {
     setReceiptLogId(null);
   }, []);
 
+  const handleAiConfirm = useCallback(
+    (payload: ConfirmPayload) => {
+      if (!pendingDraft) return;
+      dismissDraft();
+      showToast("Transaction saved.", "success");
+      void confirmAiDraftMutation
+        .mutateAsync({ transactionId: pendingDraft.transaction_id, payload })
+        .catch(() => showToast("Could not save transaction.", "error"));
+    },
+    [confirmAiDraftMutation, dismissDraft, pendingDraft, showToast]
+  );
+
   const renderMessage = useCallback(({ item }: { item: Message }) => {
     if (item.type === "user") return <UserBubble message={item} />;
     if (item.type === "ai") return <AIBubble message={item as AIMessage} />;
@@ -427,6 +441,27 @@ export default function AIAssistantScreen() {
         isSaving={confirmReceiptTransaction.isPending}
         onSave={handleReceiptConfirm}
         onDismiss={handleReceiptConfirmDismiss}
+      />
+
+      <ConfirmCard
+        data={
+          pendingDraft
+            ? {
+                amount: pendingDraft.amount,
+                currency: pendingDraft.currency,
+                merchant: pendingDraft.merchant,
+                category_name: pendingDraft.category_name,
+                note: pendingDraft.note,
+                confidence: 1.0,
+              }
+            : null
+        }
+        accounts={activeAccounts}
+        defaultAccountId={pendingDraft?.account_id ?? defaultAccount?.id ?? null}
+        isVisible={pendingDraft !== null}
+        isSaving={confirmAiDraftMutation.isPending}
+        onSave={handleAiConfirm}
+        onDismiss={dismissDraft}
       />
     </SafeAreaView>
   );

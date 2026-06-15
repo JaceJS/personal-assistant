@@ -17,8 +17,7 @@
       "@testing-library/jest-native/extend-expect"
     ],
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1",
-      "^test-renderer$": "<rootDir>/node_modules/react-test-renderer"
+      "^@/(.*)$": "<rootDir>/src/$1"
     },
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)"
@@ -75,6 +74,7 @@
     "prettier": "^3.8.3",
     "react-test-renderer": "^19.1.0",
     "tailwindcss": "^3.4.19",
+    "test-renderer": "^1.2.0",
     "typescript": "~5.9.2"
   },
   "private": true,
