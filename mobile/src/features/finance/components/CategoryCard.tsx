@@ -1,6 +1,5 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Lock } from 'lucide-react-native';
 
 import type { Category } from '@/features/finance/types';
 import { colors, radius, spacing } from '@/theme';
@@ -11,7 +10,6 @@ interface CategoryCardProps {
 }
 
 function CategoryCard({ category, onPress }: CategoryCardProps) {
-  const isSystem = category.user_id === null;
   const tint = category.color ? `${category.color}28` : `${colors.accent.primary}28`;
 
   return (
@@ -23,11 +21,6 @@ function CategoryCard({ category, onPress }: CategoryCardProps) {
         <View style={styles.card}>
           <View style={[styles.iconCircle, { backgroundColor: tint }]}>
             <Text style={styles.emoji}>{category.icon ?? '🏷️'}</Text>
-            {isSystem && (
-              <View style={styles.lockOverlay}>
-                <Lock size={9} color={colors.text.muted} strokeWidth={2} />
-              </View>
-            )}
           </View>
 
           <Text style={styles.cardName} numberOfLines={1}>
@@ -53,19 +46,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
     gap: spacing.xs,
-  },
-  lockOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 16,
-    height: 16,
-    borderRadius: radius.full,
-    backgroundColor: colors.bg.elevated,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   iconCircle: {
     width: 52,

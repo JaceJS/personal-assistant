@@ -39,11 +39,7 @@ import {
   createReceiptMessage,
   createVoiceMessage,
 } from "@/features/finance/utils/chatMessageUtils";
-import type {
-  AIMessage,
-  ChatMessage,
-  Message,
-} from "@/features/finance/utils/chatMessageUtils";
+import type { AIMessage, ChatMessage, Message } from "@/features/finance/utils/chatMessageUtils";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -325,7 +321,7 @@ export default function AIAssistantScreen() {
   const isSendMode = inputText.length > 0;
 
   return (
-    <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.screen} edges={["top", "left", "right", "bottom"]}>
       <Header
         title="AI Assistant"
         left={
@@ -472,7 +468,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border.default,
     gap: spacing.md,
-    minHeight: 68,
   },
   inputBtn: {
     width: 44,

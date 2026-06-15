@@ -77,7 +77,6 @@ export default function FinanceDashboard() {
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
         }
-
       />
 
       {accounts.length > 1 && (
@@ -162,7 +161,7 @@ function SectionHeader({ title, right }: { title: string; right?: React.ReactNod
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: 120 },
+  content: { paddingBottom: 132 },
 
   avatar: {
     width: 36,
