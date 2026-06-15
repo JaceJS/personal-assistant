@@ -3,13 +3,11 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import InsightCard from "@/components/ui/InsightCard";
 import AccountBalanceCard from "@/features/finance/components/AccountBalanceCard";
 import DailySpendCard from "@/features/finance/components/DailySpendCard";
 import RecentTransactions from "@/features/finance/components/RecentTransactions";
-import { useBudget } from "@/features/finance/hooks/useBudget";
+import { AIInsightCard } from "@/features/ai/components/AIInsightCard";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
-import { formatRupiah } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { colors, textStyles } from "@/theme";
@@ -26,36 +24,22 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { showToast } = useToastStore();
-  const { data: txData, isLoading: txLoading, isRefetching, refetch, error: txError } = useTransactions();
-  const { data: budget, error: budgetError } = useBudget();
+  const {
+    data: txData,
+    isLoading: txLoading,
+    isRefetching,
+    refetch,
+    error: txError,
+  } = useTransactions();
 
   useEffect(() => {
     if (txError) showToast("Failed to load transactions", "error");
   }, [txError, showToast]);
 
-  useEffect(() => {
-    if (budgetError) showToast("Failed to load budget", "error");
-  }, [budgetError, showToast]);
-
-  const handleTxPress = useCallback(
-    (id: string) => router.push(`/(app)/(home)/${id}`),
-    [router],
-  );
+  const handleTxPress = useCallback((id: string) => router.push(`/(app)/(home)/${id}`), [router]);
 
   const firstName = user?.email?.split("@")[0] ?? "there";
   const items = txData?.items ?? [];
-
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const dailyLimit =
-    budget?.monthly_limit != null ? Math.round(budget.monthly_limit / daysInMonth) : 0;
-
-  const todayStr = now.toISOString().slice(0, 10);
-  const todayItems = items.filter((t) => t.occurred_at.startsWith(todayStr));
-  const todayExpense = todayItems
-    .filter((t) => t.amount < 0)
-    .reduce((s, t) => s + Math.abs(t.amount), 0);
-  const budgetPct = dailyLimit > 0 ? Math.min(todayExpense / dailyLimit, 1) : 0;
 
   return (
     <SafeAreaView style={styles.root}>
@@ -66,7 +50,6 @@ export default function HomeScreen() {
             <Text style={styles.avatarText}>{firstName[0]?.toUpperCase() ?? "U"}</Text>
           </View>
         }
-
       />
 
       <ScrollView
@@ -87,34 +70,9 @@ export default function HomeScreen() {
 
         <AccountBalanceCard />
 
-        <DailySpendCard />
+        <AIInsightCard />
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.insightList}
-          style={styles.insightScroll}
-        >
-          <InsightCard
-            label="Today's Spend"
-            highlight={formatRupiah(todayExpense)}
-            body={todayExpense === 0 ? "No expenses recorded today" : "Daily limit tracking active"}
-            variant="accent"
-            badge="Today"
-          />
-          <InsightCard
-            label="Budget Signal"
-            body={
-              budgetPct < 0.5
-                ? "Well within daily budget — great control"
-                : budgetPct < 1
-                  ? "Approaching your daily limit"
-                  : "Daily limit exceeded today"
-            }
-            variant={budgetPct >= 1 ? "warning" : budgetPct >= 0.7 ? "info" : "success"}
-            badge={budgetPct >= 0.7 ? "Watch Out" : "On Track"}
-          />
-        </ScrollView>
+        <DailySpendCard />
 
         <RecentTransactions
           items={items.slice(0, 3)}
@@ -156,7 +114,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 20,
   },
-
-  insightScroll: { marginBottom: 16 },
-  insightList: { paddingHorizontal: 20, gap: 12 },
 });
