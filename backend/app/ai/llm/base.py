@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
@@ -21,9 +21,7 @@ class LLMProvider(ABC):
     """Extracts structured data from text or images using an LLM."""
 
     @abstractmethod
-    async def extract(
-        self, system_prompt: str, user_content: str, response_model: type[T]
-    ) -> T:
+    async def extract(self, system_prompt: str, user_content: str, response_model: type[T]) -> T:
         """Call the LLM and return its answer parsed into `response_model`."""
         ...
 
@@ -46,4 +44,18 @@ class LLMProvider(ABC):
     @abstractmethod
     def stream_chat(self, system_prompt: str, user_message: str) -> AsyncIterator[str]:
         """Stream the LLM reply token by token."""
+        ...
+
+    @abstractmethod
+    async def chat_with_tools(
+        self,
+        system_prompt: str,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+    ) -> tuple[str, list[dict[str, Any]]]:
+        """Call LLM with conversation history and tool definitions.
+
+        Returns (content, tool_calls). If tool_calls is non-empty, content is "".
+        Each tool_call: {id, type, name, arguments (dict)}.
+        """
         ...

@@ -8,8 +8,9 @@ a different model is just a different `LLM_MODEL` value with no code change.
 from __future__ import annotations
 
 import base64
+import json
 from collections.abc import AsyncIterator
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import instructor
 from openai import AsyncOpenAI
@@ -39,9 +40,7 @@ class OpenRouterLLM(LLMProvider):
         self._model = model if model is not None else settings.llm_model
         self._max_tokens = max_tokens
 
-    async def extract(
-        self, system_prompt: str, user_content: str, response_model: type[T]
-    ) -> T:
+    async def extract(self, system_prompt: str, user_content: str, response_model: type[T]) -> T:
         result: T = await self._client.chat.completions.create(
             model=self._model,
             response_model=response_model,
@@ -108,3 +107,30 @@ class OpenRouterLLM(LLMProvider):
             token = chunk.choices[0].delta.content
             if token:
                 yield token
+
+    async def chat_with_tools(
+        self,
+        system_prompt: str,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+    ) -> tuple[str, list[dict[str, Any]]]:
+        completion = await self._raw_client.chat.completions.create(  # type: ignore[call-overload]
+            model=self._model,
+            max_tokens=self._max_tokens,
+            messages=[{"role": "system", "content": system_prompt}, *messages],
+            tools=tools,
+            tool_choice="auto",
+        )
+        msg = completion.choices[0].message
+        if msg.tool_calls:
+            tool_calls = [
+                {
+                    "id": tc.id,
+                    "type": "function",
+                    "name": tc.function.name,
+                    "arguments": json.loads(tc.function.arguments),
+                }
+                for tc in msg.tool_calls
+            ]
+            return "", tool_calls
+        return msg.content or "", []
