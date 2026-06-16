@@ -5,7 +5,6 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 
 from app.core.auth import CurrentUser
-from app.core.exceptions import ForbiddenError
 from app.core.response import ApiResponse, ok, paginated
 from app.domains.finance import service
 from app.domains.finance.models import TransactionStatus
@@ -47,9 +46,7 @@ async def create_transaction(
 async def get_transaction(
     transaction_id: uuid.UUID, user_id: CurrentUser, session: DbSession
 ) -> ApiResponse[TransactionRead]:
-    tx = await service.get_transaction_or_404(session, transaction_id)
-    if tx.user_id != user_id:
-        raise ForbiddenError("You don't own this transaction")
+    tx = await service.get_transaction_or_404(session, transaction_id, user_id)
     return ok(tx)
 
 
