@@ -1,26 +1,29 @@
 import { useEffect, useRef } from "react";
-import { Animated, Pressable, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Mic, TrendingUp, BookOpen } from "lucide-react-native";
+import { MessageCircle, Mic, ScanLine, Sparkles } from "lucide-react-native";
 
-import { THEME } from "@/constants/theme";
+import { colors } from "@/theme/colors";
+import { textStyles } from "@/theme/typography";
+import { spacing } from "@/theme/spacing";
+import { radius } from "@/theme/radius";
 
 const FEATURES = [
   {
+    icon: MessageCircle,
+    label: "Chat AI",
+    desc: "Tanya, catat, dan analisis lewat obrolan",
+  },
+  {
+    icon: ScanLine,
+    label: "Scan Struk",
+    desc: "Foto struk, langsung tercatat otomatis",
+  },
+  {
     icon: Mic,
-    label: "Catat via suara",
-    desc: "Cukup bicara, transaksi tercatat otomatis",
-  },
-  {
-    icon: TrendingUp,
-    label: "Lacak keuangan",
-    desc: "Lihat pola pengeluaran & pemasukan",
-  },
-  {
-    icon: BookOpen,
-    label: "Jurnal harian",
-    desc: "Refleksi & catatan pribadi (segera hadir)",
+    label: "Input Suara",
+    desc: "Ucapkan transaksi, AI yang mencatat",
   },
 ];
 
@@ -54,188 +57,192 @@ export default function WelcomeScreen() {
   }, [fadeAnim, slideAnim, scaleAnim]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: THEME.colors.background }}>
+    <SafeAreaView style={styles.safe}>
       {/* Decorative background rings */}
-      <View
-        style={{
-          position: "absolute",
-          top: -80,
-          right: -80,
-          width: 300,
-          height: 300,
-          borderRadius: 150,
-          backgroundColor: THEME.colors.accent,
-          opacity: 0.07,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          top: -40,
-          right: -40,
-          width: 200,
-          height: 200,
-          borderRadius: 100,
-          backgroundColor: THEME.colors.accentSecondary,
-          opacity: 0.1,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          bottom: -60,
-          left: -60,
-          width: 250,
-          height: 250,
-          borderRadius: 125,
-          backgroundColor: THEME.colors.accent,
-          opacity: 0.06,
-        }}
-      />
+      <View style={styles.ringTopRight} />
+      <View style={styles.ringTopRightInner} />
+      <View style={styles.ringBottomLeft} />
 
       <Animated.View
-        style={{
-          flex: 1,
-          paddingHorizontal: THEME.spacing.lg,
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        }}
+        style={[
+          styles.container,
+          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+        ]}
       >
-        {/* Logo / Icon */}
+        {/* Hero icon */}
         <Animated.View
-          style={{
-            marginTop: 48,
-            alignItems: "center",
-            transform: [{ scale: scaleAnim }],
-          }}
+          style={[styles.iconWrap, { transform: [{ scale: scaleAnim }] }]}
         >
-          <View
-            style={{
-              width: 88,
-              height: 88,
-              borderRadius: 28,
-              backgroundColor: THEME.colors.accent,
-              alignItems: "center",
-              justifyContent: "center",
-              shadowColor: THEME.colors.accent,
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.5,
-              shadowRadius: 20,
-              elevation: 12,
-            }}
-          >
-            <Mic size={40} color="#fff" />
+          <View style={styles.iconCircle}>
+            <Sparkles size={40} color="#fff" />
           </View>
         </Animated.View>
 
         {/* Headline */}
-        <View style={{ marginTop: 40 }}>
-          <Text
-            style={{
-              fontFamily: THEME.fontFamily.bold,
-              fontSize: 34,
-              color: THEME.colors.ink,
-              lineHeight: 42,
-            }}
-          >
-            Kenali keuanganmu{"\n"}
-            <Text style={{ color: THEME.colors.accent }}>bersama suara.</Text>
+        <View style={styles.headline}>
+          <Text style={styles.headlineText}>
+            AI yang paham{"\n"}
+            <Text style={styles.headlineAccent}>keuanganmu.</Text>
           </Text>
-          <Text
-            style={{
-              fontFamily: THEME.fontFamily.regular,
-              fontSize: THEME.fontSize.base,
-              color: THEME.colors.muted,
-              marginTop: 12,
-              lineHeight: 22,
-            }}
-          >
-            Asisten pribadi berbasis suara untuk mencatat keuangan, jurnal, dan lebih banyak lagi.
+          <Text style={styles.subtitle}>
+            Catat via chat, suara, atau foto struk.{"\n"}
+            Dapatkan insight yang benar-benar personal.
           </Text>
         </View>
 
-        {/* Feature list */}
-        <View style={{ marginTop: 40, gap: 16 }}>
+        {/* Features */}
+        <View style={styles.features}>
           {FEATURES.map(({ icon: Icon, label, desc }) => (
-            <View
-              key={label}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 14,
-                backgroundColor: THEME.colors.card,
-                borderRadius: THEME.radius.lg,
-                padding: 16,
-                borderWidth: 1,
-                borderColor: THEME.colors.border,
-              }}
-            >
-              <View
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: THEME.radius.md,
-                  backgroundColor: `${THEME.colors.accent}22`,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Icon size={20} color={THEME.colors.accent} />
+            <View key={label} style={styles.featureItem}>
+              <View style={styles.featureIcon}>
+                <Icon size={20} color={colors.accent.primary} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontFamily: THEME.fontFamily.semibold,
-                    fontSize: THEME.fontSize.base,
-                    color: THEME.colors.ink,
-                  }}
-                >
-                  {label}
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: THEME.fontFamily.regular,
-                    fontSize: THEME.fontSize.sm,
-                    color: THEME.colors.muted,
-                    marginTop: 2,
-                  }}
-                >
-                  {desc}
-                </Text>
-              </View>
+              <Text style={styles.featureLabel}>{label}</Text>
+              <Text style={styles.featureDesc}>{desc}</Text>
             </View>
           ))}
         </View>
 
         {/* CTA */}
-        <View style={{ marginTop: "auto", paddingBottom: 24, paddingTop: 32 }}>
+        <View style={styles.cta}>
           <Pressable
             onPress={() => router.push("/onboarding/create-account")}
-            style={({ pressed }) => ({
-              backgroundColor: THEME.colors.accent,
-              borderRadius: THEME.radius.lg,
-              paddingVertical: 16,
-              alignItems: "center",
-              opacity: pressed ? 0.85 : 1,
-              shadowColor: THEME.colors.accent,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.4,
-              shadowRadius: 12,
-              elevation: 8,
-            })}
+            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
           >
-            <Text
-              style={{
-                fontFamily: THEME.fontFamily.bold,
-                fontSize: THEME.fontSize.md,
-                color: "#fff",
-              }}
-            >
-              Mulai Sekarang
-            </Text>
+            <View style={styles.ctaButton}>
+              <Text style={styles.ctaText}>Mulai Sekarang</Text>
+            </View>
           </Pressable>
         </View>
       </Animated.View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.bg.canvas,
+  },
+  ringTopRight: {
+    position: "absolute",
+    top: -80,
+    right: -80,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: colors.accent.primary,
+    opacity: 0.07,
+  },
+  ringTopRightInner: {
+    position: "absolute",
+    top: -40,
+    right: -40,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: colors.accent.border,
+    opacity: 0.1,
+  },
+  ringBottomLeft: {
+    position: "absolute",
+    bottom: -60,
+    left: -60,
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: colors.accent.primary,
+    opacity: 0.06,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing["2xl"],
+    alignItems: "center",
+  },
+  iconWrap: {
+    marginTop: 48,
+    alignItems: "center",
+  },
+  iconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: radius.xl,
+    backgroundColor: colors.accent.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.accent.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  headline: {
+    marginTop: 36,
+    alignItems: "center",
+  },
+  headlineText: {
+    ...textStyles.display,
+    fontSize: 36,
+    textAlign: "center",
+    lineHeight: 44,
+  },
+  headlineAccent: {
+    color: colors.accent.primary,
+  },
+  subtitle: {
+    ...textStyles.body,
+    color: colors.text.secondary,
+    textAlign: "center",
+    marginTop: 12,
+  },
+  features: {
+    flexDirection: "row",
+    marginTop: 48,
+    gap: 20,
+    justifyContent: "center",
+  },
+  featureItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 8,
+  },
+  featureIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent.subtle,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  featureLabel: {
+    ...textStyles.h3,
+    fontSize: 12,
+    textAlign: "center",
+  },
+  featureDesc: {
+    ...textStyles.caption,
+    textAlign: "center",
+    lineHeight: 16,
+  },
+  cta: {
+    marginTop: "auto",
+    paddingBottom: 24,
+    paddingTop: 32,
+    width: "100%",
+  },
+  ctaButton: {
+    backgroundColor: colors.accent.primary,
+    borderRadius: radius.lg,
+    paddingVertical: 16,
+    alignItems: "center",
+    shadowColor: colors.accent.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  ctaText: {
+    ...textStyles.h2,
+    color: "#fff",
+  },
+});

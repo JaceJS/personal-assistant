@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
@@ -9,19 +9,15 @@ import { Wallet } from "lucide-react-native";
 
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import { THEME } from "@/constants/theme";
+import { AccountTypePicker } from "@/features/finance/components/AccountTypePicker";
 import { useCreateAccount } from "@/features/finance/hooks/useAccounts";
 import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
 import { logger } from "@/lib/logger";
-import type { AccountType } from "@/features/finance/types";
-
-const ACCOUNT_TYPES: { value: AccountType; label: string; emoji: string }[] = [
-  { value: "bank", label: "Bank", emoji: "🏦" },
-  { value: "cash", label: "Tunai", emoji: "💵" },
-  { value: "ewallet", label: "E-Wallet", emoji: "📱" },
-  { value: "credit", label: "Kartu Kredit", emoji: "💳" },
-];
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { textStyles } from "@/theme/typography";
 
 const schema = z.object({
   name: z.string().min(1, "Nama akun wajib diisi"),
@@ -60,72 +56,32 @@ export default function CreateAccountOnboardingScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: THEME.colors.background }}>
+    <SafeAreaView style={styles.safe}>
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: THEME.spacing.lg, paddingBottom: 32 }}
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
         {/* Step indicator */}
-        <View style={{ flexDirection: "row", gap: 6, marginTop: 24 }}>
-          <View
-            style={{
-              height: 4,
-              flex: 1,
-              borderRadius: 2,
-              backgroundColor: THEME.colors.accent,
-            }}
-          />
-          <View
-            style={{
-              height: 4,
-              flex: 1,
-              borderRadius: 2,
-              backgroundColor: THEME.colors.accent,
-            }}
-          />
+        <View style={styles.stepRow}>
+          <View style={styles.stepDot} />
+          <View style={styles.stepDot} />
         </View>
 
         {/* Header */}
-        <View style={{ marginTop: 32 }}>
-          <View
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: THEME.radius.md,
-              backgroundColor: `${THEME.colors.accent}22`,
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 20,
-            }}
-          >
-            <Wallet size={24} color={THEME.colors.accent} />
+        <View style={styles.header}>
+          <View style={styles.iconWrap}>
+            <Wallet size={24} color={colors.accent.primary} />
           </View>
-          <Text
-            style={{
-              fontFamily: THEME.fontFamily.bold,
-              fontSize: 28,
-              color: THEME.colors.ink,
-              lineHeight: 36,
-            }}
-          >
-            Buat akun pertamamu
-          </Text>
-          <Text
-            style={{
-              fontFamily: THEME.fontFamily.regular,
-              fontSize: THEME.fontSize.base,
-              color: THEME.colors.muted,
-              marginTop: 8,
-              lineHeight: 22,
-            }}
-          >
-            Akun digunakan untuk mencatat transaksi. Kamu bisa menambah lebih banyak akun nanti.
+          <Text style={styles.title}>Buat akun pertamamu</Text>
+          <Text style={styles.subtitle}>
+            Akun digunakan untuk mencatat transaksi. Kamu bisa menambah lebih
+            banyak akun nanti.
           </Text>
         </View>
 
         {/* Form */}
-        <View style={{ marginTop: 36, gap: 20 }}>
+        <View style={styles.form}>
           <Controller
             control={control}
             name="name"
@@ -141,66 +97,20 @@ export default function CreateAccountOnboardingScreen() {
             )}
           />
 
-          {/* Type picker */}
-          <View style={{ gap: 8 }}>
-            <Text
-              style={{
-                fontFamily: THEME.fontFamily.medium,
-                fontSize: THEME.fontSize.sm,
-                color: THEME.colors.muted,
-              }}
-            >
-              Tipe Akun
-            </Text>
+          <View style={styles.typeSection}>
+            <Text style={styles.typeLabel}>Tipe Akun</Text>
             <Controller
               control={control}
               name="type"
               render={({ field: { onChange, value } }) => (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                  {ACCOUNT_TYPES.map((t) => {
-                    const isSelected = value === t.value;
-                    return (
-                      <Pressable
-                        key={t.value}
-                        onPress={() => onChange(t.value)}
-                        style={({ pressed }) => ({
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 8,
-                          paddingHorizontal: 16,
-                          paddingVertical: 12,
-                          borderRadius: THEME.radius.md,
-                          backgroundColor: isSelected
-                            ? THEME.colors.accent
-                            : THEME.colors.card,
-                          borderWidth: 1,
-                          borderColor: isSelected
-                            ? THEME.colors.accent
-                            : THEME.colors.border,
-                          opacity: pressed ? 0.8 : 1,
-                        })}
-                      >
-                        <Text style={{ fontSize: 16 }}>{t.emoji}</Text>
-                        <Text
-                          style={{
-                            fontFamily: THEME.fontFamily.medium,
-                            fontSize: THEME.fontSize.sm,
-                            color: isSelected ? "#fff" : THEME.colors.ink,
-                          }}
-                        >
-                          {t.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                <AccountTypePicker value={value} onChange={onChange} />
               )}
             />
           </View>
         </View>
 
         {/* Submit */}
-        <View style={{ marginTop: 40 }}>
+        <View style={styles.submit}>
           <Button
             label="Mulai Mencatat"
             onPress={handleSubmit(onSubmit)}
@@ -212,3 +122,66 @@ export default function CreateAccountOnboardingScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.bg.canvas,
+  },
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: spacing["2xl"],
+    paddingBottom: 32,
+  },
+  stepRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 24,
+  },
+  stepDot: {
+    height: 4,
+    flex: 1,
+    borderRadius: 2,
+    backgroundColor: colors.accent.primary,
+  },
+  header: {
+    marginTop: 32,
+  },
+  iconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent.subtle,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  title: {
+    ...textStyles.display,
+    fontSize: 28,
+    lineHeight: 36,
+    color: colors.text.primary,
+  },
+  subtitle: {
+    ...textStyles.body,
+    color: colors.text.muted,
+    marginTop: 8,
+    lineHeight: 22,
+  },
+  form: {
+    marginTop: 36,
+    gap: 20,
+  },
+  typeSection: {
+    gap: 8,
+  },
+  typeLabel: {
+    ...textStyles.overline,
+    color: colors.text.muted,
+  },
+  submit: {
+    marginTop: 40,
+  },
+});
