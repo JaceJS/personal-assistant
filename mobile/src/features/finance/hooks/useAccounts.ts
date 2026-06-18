@@ -1,43 +1,43 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  archiveAccount,
-  createAccount,
-  getAccount,
-  listAccounts,
-  updateAccount,
-} from "@/features/finance/api/accounts";
+import * as ExpoCrypto from "expo-crypto";
+import { useFinanceRepository } from "@/features/finance/repository";
 import type { AccountCreate, AccountUpdate } from "@/features/finance/types";
 
 const QUERY_KEY = "accounts";
 
 export function useAccounts() {
+  const repo = useFinanceRepository();
   return useQuery({
     queryKey: [QUERY_KEY],
-    queryFn: listAccounts,
+    queryFn: () => repo.listAccounts(),
   });
 }
 
 export function useAccount(id: string) {
+  const repo = useFinanceRepository();
   return useQuery({
     queryKey: [QUERY_KEY, id],
-    queryFn: () => getAccount(id),
+    queryFn: () => repo.getAccount(id),
     enabled: !!id,
   });
 }
 
 export function useCreateAccount() {
+  const repo = useFinanceRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: AccountCreate) => createAccount(data),
+    mutationFn: (data: AccountCreate) =>
+      repo.createAccount({ ...data, id: ExpoCrypto.randomUUID() }),
     retry: false,
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }
 
 export function useUpdateAccount(id: string) {
+  const repo = useFinanceRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: AccountUpdate) => updateAccount(id, data),
+    mutationFn: (data: AccountUpdate) => repo.updateAccount(id, data),
     retry: false,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
@@ -47,9 +47,10 @@ export function useUpdateAccount(id: string) {
 }
 
 export function useArchiveAccount() {
+  const repo = useFinanceRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => archiveAccount(id),
+    mutationFn: (id: string) => repo.updateAccount(id, { is_archived: true }),
     retry: false,
     onSuccess: (_data, id) => {
       void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });

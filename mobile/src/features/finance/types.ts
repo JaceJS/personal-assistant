@@ -1,6 +1,6 @@
 export type AccountType = "cash" | "bank" | "ewallet" | "credit";
 export type CategoryType = "expense" | "income";
-export type TransactionSource = "voice" | "manual" | "import";
+export type TransactionSource = "voice" | "manual" | "import" | "receipt";
 export type TransactionStatus = "draft" | "confirmed";
 
 export interface Account {

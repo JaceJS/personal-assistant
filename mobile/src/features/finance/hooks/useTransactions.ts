@@ -1,58 +1,57 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  createTransaction,
-  deleteTransaction,
-  getTransaction,
-  listTransactions,
-  updateTransaction,
-} from "@/features/finance/api/transactions";
+import { useFinanceRepository } from "@/features/finance/repository";
 import type { ListTransactionsParams } from "@/features/finance/api/transactions";
 import type { TransactionCreate, TransactionUpdate } from "@/features/finance/types";
 
 const QUERY_KEY = "transactions";
 
 export function useTransactions(params?: ListTransactionsParams) {
+  const repo = useFinanceRepository();
   const resolvedParams: ListTransactionsParams = { status: "confirmed", ...params };
   return useQuery({
     queryKey: [QUERY_KEY, resolvedParams],
-    queryFn: () => listTransactions(resolvedParams),
+    queryFn: () =>
+      repo.listTransactions({
+        accountId: resolvedParams.accountId,
+        limit: resolvedParams.limit,
+        offset: resolvedParams.offset,
+      }),
   });
 }
 
 export function useTransaction(id: string) {
+  const repo = useFinanceRepository();
   return useQuery({
     queryKey: [QUERY_KEY, id],
-    queryFn: () => getTransaction(id),
+    queryFn: () => repo.getTransaction(id),
     enabled: !!id,
   });
 }
 
 export function useCreateTransaction() {
+  const repo = useFinanceRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: TransactionCreate) => createTransaction(data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-    },
+    mutationFn: (data: TransactionCreate) =>
+      repo.createTransaction({ ...data, id: crypto.randomUUID() }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }
 
 export function useUpdateTransaction(id: string) {
+  const repo = useFinanceRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: TransactionUpdate) => updateTransaction(id, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-    },
+    mutationFn: (data: TransactionUpdate) => repo.updateTransaction(id, data),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }
 
 export function useDeleteTransaction() {
+  const repo = useFinanceRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteTransaction(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-    },
+    mutationFn: (id: string) => repo.deleteTransaction(id),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }

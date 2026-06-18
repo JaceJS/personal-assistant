@@ -47,7 +47,7 @@ export default function AccountsScreen() {
     defaultValues: { name: "", type: "bank" },
   });
 
-  const accounts = data?.items ?? [];
+  const accounts = data ?? [];
 
   const handleOpenModal = useCallback(() => setShowModal(true), []);
   const handleCloseModal = useCallback(() => {

@@ -6,8 +6,8 @@ import { colors, spacing, textStyles } from "@/theme";
 
 export default function AccountBalanceCard() {
   const { data } = useAccounts();
-  const accounts = (data?.items ?? []).filter((a) => !a.is_archived);
-  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
+  const accounts = (data ?? []).filter((a) => !a.is_archived);
+  const totalBalance = accounts.reduce((sum, a: { balance: number }) => sum + a.balance, 0);
 
   return (
     <View style={styles.card}>

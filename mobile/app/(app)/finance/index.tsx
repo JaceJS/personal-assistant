@@ -44,7 +44,7 @@ export default function FinanceDashboard() {
 
   const { data: accountsData } = useAccounts();
   const accounts = useMemo(
-    () => accountsData?.items.filter((a) => !a.is_archived) ?? [],
+    () => accountsData?.filter((a) => !a.is_archived) ?? [],
     [accountsData]
   );
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
