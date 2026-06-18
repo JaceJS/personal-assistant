@@ -85,7 +85,7 @@ export default function AIAssistantScreen() {
   const receiptStatus = useReceiptStatus(receiptLogId);
 
   const activeAccounts = useMemo(
-    () => accounts?.items.filter((a) => !a.is_archived) ?? [],
+    () => accounts?.filter((a) => !a.is_archived) ?? [],
     [accounts]
   );
   const defaultAccount = activeAccounts[0] ?? null;

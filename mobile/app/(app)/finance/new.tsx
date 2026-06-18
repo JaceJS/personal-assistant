@@ -44,7 +44,7 @@ export default function NewTransactionScreen() {
   });
 
   useEffect(() => {
-    const firstId = accountsData?.items[0]?.id;
+    const firstId = accountsData?.[0]?.id;
     if (firstId) setValue("account_id", firstId);
   }, [accountsData, setValue]);
 
@@ -67,7 +67,7 @@ export default function NewTransactionScreen() {
     [createTransaction, router, showToast],
   );
 
-  const noAccounts = !accountsLoading && (accountsData?.items.length ?? 0) === 0;
+  const noAccounts = !accountsLoading && (accountsData?.length ?? 0) === 0;
 
   return (
     <Screen>
