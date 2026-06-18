@@ -20,6 +20,17 @@ Indonesia-first, English UI, global-ready. Tech stack: Expo React Native + FastA
 
 Each subdirectory has its own AGENTS.md — read those when working inside them.
 
+## SDK & Package Versioning — CRITICAL
+
+Mobile uses **Expo SDK 54**. Installing packages built for a newer SDK causes native crashes (`ClassNotFoundException`).
+
+- **ALWAYS use `npx expo install <pkg>`** when adding/updating native packages in `mobile/` — never `npm install`.
+- After any native change: `npx expo install --fix` to re-align all packages.
+- Never manually pin an `expo-*` or `react-native-*` package to a version higher than what `npx expo install` resolves.
+- When in doubt, check: `node -e "console.log(require('./node_modules/expo/package.json').version)"` — should be `~54.x.x`.
+
+---
+
 ## Dev Environment Quick-Start
 
 ```bash

@@ -10,17 +10,19 @@ npm run ios         # build & run on iOS
 npm start           # Expo dev server (Expo Go compatible features only)
 npm run lint        # ESLint
 npm run gen:api     # regenerate TypeScript types from OpenAPI schema
+npm test            # run Jest test suite
 ```
 
-> Adding a new native module (e.g. expo-image-picker) requires rebuilding the dev client:
-> `npm run android` or `npm run ios` — Expo Go won't have it.
+> Adding a new native module requires rebuilding the dev client: `npm run android` or `npm run ios`.
 
 ---
 
-# 1. THE PLATFORM: EXPO
+# 1. THE PLATFORM: EXPO SDK 54
 
-- Expo managed workflow, SDK 54. Read https://docs.expo.dev/versions/v54.0.0/ before writing code.
+- Expo managed workflow, **SDK 54**. Read https://docs.expo.dev/versions/v54.0.0/ before writing code.
 - Use Expo modules (`expo-router`, `expo-audio`, `expo-image-picker`, etc.) — not bare RN equivalents.
+- **ALWAYS add/update native packages with `npx expo install <pkg>` — NEVER `npm install`.** This resolves the version compatible with SDK 54 from Expo's registry. Installing a package built for a newer SDK (e.g. expo-sqlite 56.x on SDK 54) causes `ClassNotFoundException` native crashes.
+- After any native dependency change, run `npx expo install --fix` to align all packages.
 - Do NOT run `pod install`, `gradlew`, or native build commands manually.
 
 ---
@@ -29,20 +31,16 @@ npm run gen:api     # regenerate TypeScript types from OpenAPI schema
 
 - File-system routing via `expo-router`. Routes map to files under `app/`.
 - Use `useRouter()` from `"expo-router"` to navigate. Never use `react-navigation` directly.
-- **Bug known:** Never use `/index` suffix in `router.push()` when a folder has both `index.tsx`
-  and `[id].tsx`. Use the folder path: `router.push('/(app)/accounts')` not `/(app)/accounts/index`.
-  Doing so passes `"index"` as the `[id]` param → API 422 UUID error.
-- Tab navigation: `<Tabs>` from `"expo-router"`. Custom tab bar: `FloatingTabBar` in
-  `src/components/ui/FloatingTabBar.tsx`.
-- Protected routes live in `app/(app)/`. Auth routes in `app/(auth)/`.
+- **Bug known:** Never use `/index` suffix in `router.push()` when a folder has both `index.tsx` and `[id].tsx`. Use the folder path: `router.push('/(app)/accounts')` not `/(app)/accounts/index` — doing so passes `"index"` as `[id]` → API 422 UUID error.
+- Tab navigation: `<Tabs>` from `"expo-router"`. Custom tab bar: `FloatingTabBar` in `src/components/ui/FloatingTabBar.tsx`.
+- Protected routes in `app/(app)/`. Auth routes in `app/(auth)/`.
 
 ---
 
 # 3. DATA LAYER — NO MOCKING
 
 - **Supabase = auth only** (sign in, sign out, token refresh via `src/lib/supabase.ts`).
-- **FastAPI = all data** (accounts, transactions, categories, budget, voice). Use `apiFetch()`
-  from `src/lib/api/client.ts` — it attaches the Supabase JWT automatically.
+- **FastAPI = all data** (accounts, transactions, categories, budget, voice). Use `apiFetch()` from `src/lib/api/client.ts` — it attaches the Supabase JWT automatically.
 - NEVER call Supabase REST/realtime for finance data.
 - NEVER use mock data, mock API clients, or fake responses.
 - Use TanStack Query for all server state. Query hooks live in `src/features/finance/hooks/`.
@@ -55,55 +53,32 @@ npm run gen:api     # regenerate TypeScript types from OpenAPI schema
 - **Zustand** for global client state (`src/stores/`): `auth`, `toast`, `recording`, `onboarding`.
 - **TanStack Query** for server state (default `staleTime: 5min`).
 - Keep Zustand stores flat. Persist only what survives app restarts (`onboarding`, session).
-- Do NOT store server data in Zustand — that's what TanStack Query is for.
+- Do NOT store server data in Zustand.
 
 ---
 
 # 5. THEME & STYLING
 
-The app uses **React Native StyleSheet** with design tokens — NOT Tailwind utility classes.
+Use **React Native StyleSheet** with design tokens — NOT Tailwind utility classes.
 
 ```typescript
 import { colors, radius, spacing, textStyles } from "@/theme";
 ```
 
-| Token        | File                      | Values                                                                     |
-| ------------ | ------------------------- | -------------------------------------------------------------------------- |
+| Token        | File                      | Values                                                                      |
+| ------------ | ------------------------- | --------------------------------------------------------------------------- |
 | `colors`     | `src/theme/colors.ts`     | `bg.canvas` `bg.surface` `bg.elevated` `accent.primary` `text.primary` ... |
 | `spacing`    | `src/theme/spacing.ts`    | `xs(4)` `sm(8)` `md(12)` `lg(16)` `xl(20)` `2xl(24)` `3xl(32)`             |
 | `radius`     | `src/theme/radius.ts`     | `sm(6)` `md(10)` `lg(14)` `xl(20)` `full(999)`                             |
-| `textStyles` | `src/theme/typography.ts` | See Typography section below                                               |
+| `textStyles` | `src/theme/typography.ts` | See Typography section below                                                |
 
-**Key colors:**
-
-- `colors.bg.canvas` — `#0C0C0E` (darkest background)
-- `colors.bg.surface` — `#18181C` (card/sheet background)
-- `colors.accent.primary` — `#7B6FE8` (purple, main accent)
-- `colors.accent.subtle` — `#17152E` (icon box backgrounds)
-- `colors.text.primary` — `#EEEDF5`
-- `colors.text.muted` — `#5E5C70`
+Key colors: `bg.canvas` `#0C0C0E` · `bg.surface` `#18181C` · `accent.primary` `#7B6FE8` · `text.primary` `#EEEDF5` · `text.muted` `#5E5C70`
 
 ---
 
 # 6. TYPOGRAPHY SYSTEM
 
 Font family: **Plus Jakarta Sans** (loaded via Expo Font).
-
-```typescript
-import { textStyles } from "@/theme";
-import { StyleSheet } from "react-native";
-
-const styles = StyleSheet.create({
-  title: {
-    ...StyleSheet.flatten(textStyles.h2), // spread to merge with overrides
-    color: colors.accent.primary, // override specific props
-  },
-  label: {
-    ...StyleSheet.flatten(textStyles.overline),
-    marginBottom: 6,
-  },
-});
-```
 
 | Style                 | Size | Weight | Notes                               |
 | --------------------- | ---- | ------ | ----------------------------------- |
@@ -115,15 +90,11 @@ const styles = StyleSheet.create({
 | `textStyles.caption`  | 12   | 400    | Secondary labels, currency          |
 | `textStyles.overline` | 11   | 500    | Section labels (uppercase, tracked) |
 
-**Rules:**
-
-- **NEVER** write raw `fontFamily` strings (e.g. `'PlusJakartaSans_700Bold'`).
-- **NEVER** write `fontWeight` without also spreading a `textStyles.*` base.
-- For sizes not in the scale, spread the closest base and override `fontSize` only.
-- For tappable UI with important visual styling (background, border, radius, shadow/elevation),
-  keep those visual styles on an inner `<View>` and use `<Pressable>` only as the interaction
-  wrapper. Do not rely on Pressable callback styles for persistent backgrounds; callback state
-  styles should only adjust transient feedback such as opacity or scale.
+Rules:
+- **NEVER** write raw `fontFamily` strings.
+- **NEVER** write `fontWeight` without spreading a `textStyles.*` base.
+- Spread the closest base, then override only what's different: `{ ...StyleSheet.flatten(textStyles.h2), color: colors.accent.primary }`
+- For tappable UI, keep visual styles (background, border, radius) on inner `<View>`; use `<Pressable>` only as interaction wrapper.
 
 ---
 
@@ -147,49 +118,41 @@ src/components/ui/
 
 - Use `<Screen>` + `<Header>` on every full screen. Never roll your own SafeAreaView + header.
 - Use `useToastStore().showToast(message, type)` for user-facing feedback.
+- **Never define domain components inline in screens** — extract to `src/features/<domain>/components/`.
 
 ---
 
-# 10. FILE NAMING & LOCATION
+# 8. FILE NAMING & LOCATION
 
 ```
-app/(app)/           — screen files (routes)
-src/components/ui/   — reusable UI components
-src/components/layout/ — layout wrappers
+app/(app)/                          — screen files (routes)
+src/components/ui/                  — reusable UI components
+src/components/layout/              — layout wrappers
 src/features/<domain>/
-  api/               — apiFetch() wrappers
-  components/        — domain-specific components
-  hooks/             — TanStack Query hooks
-  types.ts           — TypeScript types
-  constants.ts       — domain constants
-src/hooks/           — cross-domain hooks
-src/lib/             — utilities, clients (api, supabase, queryClient)
-src/stores/          — Zustand stores
-src/theme/           — design tokens (colors, spacing, radius, typography)
+  api/                              — apiFetch() wrappers
+  components/                       — domain-specific components
+  hooks/                            — TanStack Query hooks
+  types.ts / constants.ts
+src/hooks/                          — cross-domain hooks
+src/lib/                            — utilities, clients (api, supabase, queryClient)
+src/stores/                         — Zustand stores
+src/theme/                          — design tokens
 ```
 
 ---
 
-# 11. ERROR HANDLING
+# 9. ERROR HANDLING & PERFORMANCE
 
 - Use `useToastStore().showToast(msg, 'error')` for non-critical API errors.
 - Never show raw error messages or stack traces to users.
 - Always provide fallback values: `user?.email ?? ''`, `data?.items ?? []`.
-- Empty states: use `<EmptyState>` component, never render nothing.
-- Auth expiry: `onAuthStateChange` in `src/hooks/useAuth.ts` handles session refresh + redirect.
-
----
-
-# 12. PERFORMANCE
-
 - Memoize callbacks with `useCallback`, derived values with `useMemo`.
 - `renderItem` in any FlatList must be `useCallback`.
 - Use `SkeletonList` for loading states — never a spinner for data fetches.
-- Categories query uses `staleTime: Infinity` (loaded once, changes rarely).
 
 ---
 
-# 13. CODE QUALITY
+# 10. CODE QUALITY
 
 - TypeScript for all new code. No `any` without a comment explaining why.
 - No inline styles for anything that might repeat — extract to `StyleSheet.create`.
@@ -198,74 +161,36 @@ src/theme/           — design tokens (colors, spacing, radius, typography)
 
 ---
 
-# 14. WHAT NOT TO DO
+# 11. WHAT NOT TO DO
 
+- **NEVER** use `npm install` for expo-* or react-native packages — use `npx expo install`
+- **NEVER** manually pin an expo package to a version higher than what `npx expo install` resolves for SDK 54
 - **NEVER** call Supabase REST for data — use FastAPI via `apiFetch()`
-- **NEVER** call `apiFetch()` directly from a screen (`app/` files) — all API calls go in `src/features/<domain>/hooks/` via TanStack Query or a custom async hook
+- **NEVER** call `apiFetch()` directly from a screen — all API calls go in `src/features/<domain>/hooks/`
 - **NEVER** use mock data or fake API responses
 - **NEVER** write raw `fontFamily` strings — use `textStyles.*`
 - **NEVER** use `router.push('/(app)/accounts/index')` — use `'/(app)/accounts'`
 - **NEVER** use `react-navigation` components — only `expo-router`
-- **NEVER** add a new native module without noting it requires a dev client rebuild
 - **NEVER** use float for money — amounts are integer rupiah from the API
 - **NEVER** skip loading/error/empty states on any data-fetching screen
-- **NEVER** write implementation before the test for complex logic — TDD is required (see section 15)
+- **NEVER** write implementation before the test for complex logic (TDD required)
+- **NEVER** define domain components inline in screen files
 
 ---
 
-# 15. TESTING — TDD REQUIRED
+# 12. TESTING — TDD REQUIRED
 
-**Test-Driven Development is mandatory for complex features.** Write the failing test first, then the implementation.
-
-## When TDD Is Required
-
-- Any **utility / pure function** (calculations, data transformations, formatters)
-- Any **navigation logic** (routing decisions, back stack behavior)
-- Any **bug fix** — write a test that reproduces the bug before fixing it
-- Any **new hook** with non-trivial derived state
-- Any **component** with conditional rendering logic driven by data
-
-Simple one-liner wrappers or trivial UI-only components do not need tests.
-
-## TDD Cycle
-
-```
-RED    → Write a failing test that describes the expected behavior
-GREEN  → Write the minimum code to make the test pass
-REFACTOR → Clean up code while keeping tests green
-```
-
-Never skip the RED phase. Never write implementation before the test for the above cases.
-
-## Test Infrastructure
+Write failing test first, then implement. Required for: utility/pure functions, navigation logic, bug fixes, new hooks with non-trivial state, components with conditional rendering driven by data.
 
 ```bash
-npm test                          # run all tests
-npm test -- <pattern>             # run matching test files
-npm test -- --no-coverage         # faster, no coverage report
+npm test                  # run all tests
+npm test -- <pattern>     # run matching files
 ```
 
-| Tool | Package |
-|---|---|
-| Runner | `jest-expo` |
-| Assertions | `@testing-library/jest-native` |
-| Component rendering | `@testing-library/react-native` |
+Test runner: `jest-expo`. Assertions: `@testing-library/jest-native`. Component rendering: `@testing-library/react-native`.
 
-## File Conventions
+File conventions:
+- `src/features/<domain>/utils/__tests__/<name>.test.ts` — pure function tests
+- `src/components/ui/__tests__/<name>.test.tsx` — component tests
 
-```
-src/
-  features/<domain>/
-    utils/__tests__/<name>.test.ts      ← pure function tests
-  components/ui/__tests__/<name>.test.tsx  ← component behavior tests
-```
-
-- Test files: `*.test.ts` (logic) or `*.test.tsx` (components)
-- Import alias `@/` works in tests (configured in jest `moduleNameMapper`)
-- Native modules (Skia, Reanimated, expo-*) must be mocked at the top of the test file
-
-## What to Test
-
-- **Always**: Pure utility functions, navigation handlers, data aggregation
-- **When practical**: Component press handlers, conditional rendering
-- **Skip**: StyleSheet rules, layout dimensions, trivial one-liners
+Cover: pure utility functions, navigation handlers, data aggregation. Skip: StyleSheet rules, layout dimensions, trivial one-liners.
