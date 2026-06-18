@@ -10,11 +10,12 @@ import {
 import { useFonts } from "expo-font";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/queryClient";
+import { runMigrations } from "@/lib/db/client";
 import { Toast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingStore } from "@/stores/onboarding";
@@ -34,15 +35,26 @@ function RootLayoutInner() {
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
   });
+  const [dbReady, setDbReady] = useState(false);
 
   useAuth();
   const { initialize } = useOnboardingStore();
 
   useEffect(() => {
-    void initialize();
+    async function setup() {
+      try {
+        await runMigrations();
+        await initialize();
+      } catch (e) {
+        console.error("[startup] setup failed:", e);
+      } finally {
+        setDbReady(true);
+      }
+    }
+    void setup();
   }, [initialize]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !dbReady) return null;
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>

@@ -16,8 +16,12 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   initialized: false,
 
   initialize: async () => {
-    const value = await AsyncStorage.getItem(STORAGE_KEY);
-    set({ isComplete: value === "true", initialized: true });
+    try {
+      const value = await AsyncStorage.getItem(STORAGE_KEY);
+      set({ isComplete: value === "true", initialized: true });
+    } catch {
+      set({ isComplete: false, initialized: true });
+    }
   },
 
   complete: async () => {

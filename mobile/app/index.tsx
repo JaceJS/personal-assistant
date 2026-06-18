@@ -6,7 +6,7 @@ import { useOnboardingStore } from "@/stores/onboarding";
 import { colors } from "@/theme";
 
 export default function Index() {
-  const { session, initialized: authInitialized } = useAuthStore();
+  const { initialized: authInitialized } = useAuthStore();
   const { isComplete: onboardingComplete, initialized: onboardingInitialized } =
     useOnboardingStore();
 
@@ -18,7 +18,6 @@ export default function Index() {
     );
   }
 
-  if (!session) return <Redirect href="/(auth)/login" />;
   if (!onboardingComplete) return <Redirect href="/onboarding/welcome" />;
   return <Redirect href="/(app)" />;
 }
