@@ -2,10 +2,13 @@ import { useCallback, useState } from "react";
 import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import * as WebBrowser from "expo-web-browser";
+import * as ExpoLinking from "expo-linking";
 import {
   Banknote,
   ChevronDown,
   ChevronRight,
+  CloudUpload,
   ExternalLink,
   FileText,
   LogOut,
@@ -13,17 +16,24 @@ import {
   PiggyBank,
   Shield,
   Tag,
+  User,
 } from "lucide-react-native";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import { useAuthStore } from "@/stores/auth";
+import { useToastStore } from "@/stores/toast";
+import { supabase } from "@/lib/supabase";
 import { colors, radius, spacing, textStyles } from "@/theme";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { user, signOut } = useAuthStore();
+  const { user, isGuest, signOut } = useAuthStore();
+  const { showToast } = useToastStore();
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [backupLoading, setBackupLoading] = useState(false);
 
   const handleSignOut = useCallback(() => {
     Alert.alert("Sign out", "Are you sure you want to sign out?", [
@@ -44,6 +54,29 @@ export default function SettingsScreen() {
     }
   }, []);
 
+  const handleBackupSync = useCallback(async () => {
+    setBackupLoading(true);
+    try {
+      const redirectTo = ExpoLinking.createURL("/");
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (error || !data?.url) {
+        showToast("Could not start sign in", "error");
+        return;
+      }
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      if (result.type === "success") {
+        await supabase.auth.exchangeCodeForSession(result.url);
+      }
+    } catch {
+      showToast("Sign in failed", "error");
+    } finally {
+      setBackupLoading(false);
+    }
+  }, [showToast]);
+
   const initial = (user?.email?.[0] ?? "U").toUpperCase();
   const displayName = user?.email?.split("@")[0] ?? "User";
 
@@ -56,37 +89,69 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile hero */}
-        <Pressable
-          onPress={() => router.push("/(app)/settings/profile")}
-          style={({ pressed }) => pressed && { opacity: 0.75 }}
-        >
-          <View style={styles.profileHero}>
-            <View style={styles.avatarWrapper}>
-              <View style={styles.avatar}>
-                {avatarUri ? (
-                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-                ) : (
-                  <Text style={styles.avatarText}>{initial}</Text>
-                )}
+        {isGuest ? (
+          <GuestProfileHero />
+        ) : (
+          <Pressable
+            onPress={() => router.push("/(app)/settings/profile")}
+            style={({ pressed }) => pressed && { opacity: 0.75 }}
+          >
+            <View style={styles.profileHero}>
+              <View style={styles.avatarWrapper}>
+                <View style={styles.avatar}>
+                  {avatarUri ? (
+                    <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                  ) : (
+                    <Text style={styles.avatarText}>{initial}</Text>
+                  )}
+                </View>
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    void pickImage();
+                  }}
+                  style={styles.editBadge}
+                  hitSlop={8}
+                >
+                  <Pencil size={12} color="#fff" />
+                </Pressable>
               </View>
-              <Pressable
-                onPress={(e) => {
-                  e.stopPropagation();
-                  void pickImage();
-                }}
-                style={styles.editBadge}
-                hitSlop={8}
-              >
-                <Pencil size={12} color="#fff" />
-              </Pressable>
+              <Text style={styles.profileName}>{displayName}</Text>
+              <Text style={styles.profileEmail} numberOfLines={1}>
+                {user?.email ?? ""}
+              </Text>
             </View>
-            <Text style={styles.profileName}>{displayName}</Text>
-            <Text style={styles.profileEmail} numberOfLines={1}>
-              {user?.email ?? ""}
-            </Text>
-          </View>
-        </Pressable>
+          </Pressable>
+        )}
+
+        {isGuest && (
+          <>
+            <SectionLabel label="Account" />
+            <GroupedList>
+              <Pressable
+                onPress={() => void handleBackupSync()}
+                disabled={backupLoading}
+                style={({ pressed }) => [
+                  backupLoading && { opacity: 0.6 },
+                  pressed && !backupLoading && { opacity: 0.7 },
+                ]}
+              >
+                <View style={styles.menuItem}>
+                  <View style={[styles.iconBox, styles.iconBoxAccent]}>
+                    <CloudUpload size={16} color={colors.accent.primary} />
+                  </View>
+                  <View style={styles.backupTextCol}>
+                    <Text style={styles.menuLabel}>
+                      {backupLoading ? "Connecting..." : "Backup & Sync"}
+                    </Text>
+                    <Text style={styles.backupSubtitle}>Sign in with Google to save your data</Text>
+                  </View>
+                  <ChevronRight size={14} color={colors.text.muted} />
+                </View>
+              </Pressable>
+            </GroupedList>
+          </>
+        )}
 
         {/* Finance section */}
         <SectionLabel label="Finance" />
@@ -126,17 +191,31 @@ export default function SettingsScreen() {
           />
         </GroupedList>
 
-        {/* Sign out */}
-        <Pressable onPress={handleSignOut} style={({ pressed }) => pressed && { opacity: 0.7 }}>
-          <View style={styles.signOutButton}>
-            <LogOut size={18} color={colors.danger.text} />
-            <Text style={styles.signOutLabel}>Sign Out</Text>
-          </View>
-        </Pressable>
+        {/* Sign out — authenticated only */}
+        {!isGuest && (
+          <Pressable onPress={handleSignOut} style={({ pressed }) => pressed && { opacity: 0.7 }}>
+            <View style={styles.signOutButton}>
+              <LogOut size={18} color={colors.danger.text} />
+              <Text style={styles.signOutLabel}>Sign Out</Text>
+            </View>
+          </Pressable>
+        )}
       </ScrollView>
     </Screen>
   );
 }
+
+const GuestProfileHero = () => (
+  <View style={styles.profileHero}>
+    <View style={styles.avatarWrapper}>
+      <View style={[styles.avatar, styles.guestAvatar]}>
+        <User size={36} color={colors.accent.primary} />
+      </View>
+    </View>
+    <Text style={styles.profileName}>Guest</Text>
+    <Text style={styles.profileEmail}>Your data is stored locally</Text>
+  </View>
+);
 
 const SectionLabel = ({ label }: { label: string }) => {
   return <Text style={styles.sectionLabel}>{label.toUpperCase()}</Text>;
@@ -255,6 +334,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
+  guestAvatar: {
+    borderStyle: "dashed",
+  },
   avatarImage: {
     width: 88,
     height: 88,
@@ -313,9 +395,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
+  iconBoxAccent: {
+    backgroundColor: colors.accent.subtle,
+  },
   menuLabel: {
     ...StyleSheet.flatten(textStyles.body),
     flex: 1,
+  },
+  backupTextCol: {
+    flex: 1,
+    gap: 2,
+  },
+  backupSubtitle: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
   },
   valueRow: {
     flexDirection: "row",

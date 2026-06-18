@@ -40,7 +40,9 @@
       "expo-audio",
       "expo-secure-store",
       "expo-font",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-web-browser",
+      "expo-sqlite"
     ]
   }
 }
