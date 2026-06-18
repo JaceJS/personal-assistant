@@ -18,6 +18,7 @@ from app.core.logging import configure_logging
 from app.core.middleware import RequestLoggingMiddleware
 from app.domains.ai.router import router as ai_router
 from app.domains.finance.router import router as finance_router
+from app.domains.sync.router import router as sync_router
 from app.shared.queue import create_redis_pool
 
 _settings = get_settings()
@@ -78,6 +79,7 @@ register_exception_handlers(app)
 
 app.include_router(finance_router)
 app.include_router(ai_router, prefix="/api/v1")
+app.include_router(sync_router, prefix="/api/v1")
 
 
 def _custom_openapi() -> dict[str, object]:
