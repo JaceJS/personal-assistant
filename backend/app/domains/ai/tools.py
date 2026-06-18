@@ -184,6 +184,7 @@ async def _get_accounts(user_id: uuid.UUID, session: AsyncSession) -> dict[str, 
     return {
         "accounts": [
             {
+                "id": str(a.id),
                 "name": a.name,
                 "type": a.type.value,
                 "balance": a.balance,
