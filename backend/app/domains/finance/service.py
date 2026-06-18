@@ -10,7 +10,10 @@ from arq.connections import ArqRedis
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
+from app.ai.llm.base import LLMProvider
+from app.ai.stt.base import STTProvider
+from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError, TooManyRequestsError
+from app.domains.finance.extractor import extract_transaction
 from app.domains.finance import repository as repo
 from app.domains.finance.models import (
     Account,
@@ -26,6 +29,7 @@ from app.domains.finance.models import (
 from app.domains.finance.schemas import (
     AccountCreate,
     AccountUpdate,
+    AnonymousVoiceResult,
     BudgetUpsert,
     CategoryCreate,
     CategoryRead,
@@ -457,4 +461,51 @@ async def get_receipt_status(
         extracted_data=receipt_log.extracted_data,
         transaction_id=receipt_log.transaction_id,
         error_message=receipt_log.error_message,
+    )
+
+
+# ── Anonymous voice processing ────────────────────────────────────────────────
+
+ANON_VOICE_RATE_LIMIT = 10
+_ANON_VOICE_RATE_WINDOW_SECONDS = 3600
+
+
+async def _enforce_anonymous_rate_limit(redis: ArqRedis, client_ip: str) -> None:
+    key = f"anon_voice:{client_ip}"
+    count = await redis.incr(key)
+    if count == 1:
+        await redis.expire(key, _ANON_VOICE_RATE_WINDOW_SECONDS)
+    if count > ANON_VOICE_RATE_LIMIT:
+        raise TooManyRequestsError(
+            f"Rate limit exceeded: {ANON_VOICE_RATE_LIMIT} anonymous voice requests per hour"
+        )
+
+
+async def process_anonymous_voice(
+    file: UploadFile,
+    stt: STTProvider,
+    llm: LLMProvider,
+    redis: ArqRedis,
+    client_ip: str,
+) -> AnonymousVoiceResult:
+    content_type = file.content_type or ""
+    if not content_type.startswith("audio/"):
+        raise BadRequestError("Voice upload must be an audio file")
+
+    await _enforce_anonymous_rate_limit(redis, client_ip)
+
+    audio = await file.read()
+    if not audio:
+        raise BadRequestError("Voice upload cannot be empty")
+
+    transcript = await stt.transcribe(audio, filename=file.filename or "audio.m4a")
+    extracted = await extract_transaction(transcript, llm)
+
+    return AnonymousVoiceResult(
+        amount=extracted.amount,
+        currency=extracted.currency,
+        merchant=extracted.merchant,
+        category_name=extracted.category_name,
+        note=extracted.note,
+        confidence=extracted.confidence,
     )

@@ -214,6 +214,15 @@ class VoiceExtractResponse(BaseModel):
     status: VoiceProcessingStatus
 
 
+class AnonymousVoiceResult(BaseModel):
+    amount: int
+    currency: str
+    merchant: str | None
+    category_name: str | None
+    note: str | None
+    confidence: float
+
+
 # Receipt
 
 

@@ -51,6 +51,12 @@ class ConflictError(AppError):
     status_code = 409
 
 
+class TooManyRequestsError(AppError):
+    """The caller has exceeded the allowed request rate (HTTP 429)."""
+
+    status_code = 429
+
+
 async def _app_error_handler(_request: Request, exc: Exception) -> JSONResponse:
     """Translate an `AppError` into a JSON error response."""
     # This handler is only registered for AppError; narrow for the type checker.
