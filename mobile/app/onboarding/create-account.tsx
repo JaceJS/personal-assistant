@@ -13,6 +13,7 @@ import { AccountTypePicker } from "@/features/finance/components/AccountTypePick
 import { useCreateAccount } from "@/features/finance/hooks/useAccounts";
 import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
+import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
@@ -20,6 +21,7 @@ import { spacing } from "@/theme/spacing";
 import { textStyles } from "@/theme/typography";
 
 const schema = z.object({
+  displayName: z.string().min(1, "Nama panggilanmu wajib diisi"),
   name: z.string().min(1, "Nama akun wajib diisi"),
   type: z.enum(["cash", "bank", "ewallet", "credit"]),
 });
@@ -38,13 +40,14 @@ export default function CreateAccountOnboardingScreen() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", type: "bank" },
+    defaultValues: { displayName: "", name: "", type: "bank" },
   });
 
   const onSubmit = useCallback(
     async (values: FormValues) => {
       try {
-        await createAccount.mutateAsync(values);
+        await supabase.auth.updateUser({ data: { full_name: values.displayName.trim() } });
+        await createAccount.mutateAsync({ name: values.name, type: values.type });
         await complete();
         router.replace("/(app)");
       } catch (err) {
@@ -73,10 +76,9 @@ export default function CreateAccountOnboardingScreen() {
           <View style={styles.iconWrap}>
             <Wallet size={24} color={colors.accent.primary} />
           </View>
-          <Text style={styles.title}>Buat akun pertamamu</Text>
+          <Text style={styles.title}>Satu langkah lagi</Text>
           <Text style={styles.subtitle}>
-            Akun digunakan untuk mencatat transaksi. Kamu bisa menambah lebih
-            banyak akun nanti.
+            Ceritakan sedikit tentang dirimu dan buat akun pertamamu.
           </Text>
         </View>
 
@@ -84,14 +86,28 @@ export default function CreateAccountOnboardingScreen() {
         <View style={styles.form}>
           <Controller
             control={control}
+            name="displayName"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                label="Nama panggilanmu"
+                value={value}
+                onChangeText={onChange}
+                placeholder="contoh: Jace, Budi, Rina"
+                autoFocus
+                error={errors.displayName?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
             name="name"
             render={({ field: { onChange, value } }) => (
               <Input
-                label="Nama Akun"
+                label="Nama Akun Pertama"
                 value={value}
                 onChangeText={onChange}
                 placeholder="contoh: BCA, GoPay, Dompet"
-                autoFocus
                 error={errors.name?.message}
               />
             )}
