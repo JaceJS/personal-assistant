@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { formatRupiah } from "@/lib/utils";
@@ -9,14 +10,30 @@ export default function AccountBalanceCard() {
   const accounts = (data ?? []).filter((a) => !a.is_archived);
   const totalBalance = accounts.reduce((sum, a: { balance: number }) => sum + a.balance, 0);
 
+  const [displayBalance, setDisplayBalance] = useState(0);
+  const animatedBalance = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const listener = animatedBalance.addListener(({ value }) =>
+      setDisplayBalance(Math.round(value))
+    );
+    Animated.timing(animatedBalance, {
+      toValue: totalBalance,
+      duration: 800,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+    return () => animatedBalance.removeListener(listener);
+  }, [totalBalance, animatedBalance]);
+
   return (
     <View style={styles.card}>
-      <Text style={styles.label}>TOTAL BALANCE</Text>
-      <Text style={styles.amount}>{formatRupiah(totalBalance)}</Text>
+      <Text style={styles.label}>TOTAL SALDO</Text>
+      <Text style={styles.amount}>{formatRupiah(displayBalance)}</Text>
       <Text style={styles.sub}>
         {accounts.length === 0
-          ? "No accounts"
-          : `${accounts.length} account${accounts.length > 1 ? "s" : ""}`}
+          ? "Belum ada akun"
+          : `${accounts.length} akun`}
       </Text>
     </View>
   );

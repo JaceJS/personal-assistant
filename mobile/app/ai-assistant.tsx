@@ -352,9 +352,9 @@ export default function AIAssistantScreen() {
       {/* Chat area */}
       {messages.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>How can I help?</Text>
+          <Text style={styles.emptyTitle}>Ada yang bisa aku bantu?</Text>
           <Text style={styles.emptySubtitle}>
-            Type a message, record your voice, or scan a receipt.
+            Ketik pesan, rekam suara, atau foto struk belanjamu.
           </Text>
         </View>
       ) : (

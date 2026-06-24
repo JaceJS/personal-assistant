@@ -31,14 +31,14 @@ export default function RecentTransactions({ items, isLoading, error, onSeeAll, 
       ) : error ? (
         <EmptyState
           icon={List}
-          title="Couldn't load transactions"
-          subtitle="Pull down to refresh"
+          title="Gagal memuat transaksi"
+          subtitle="Tarik ke bawah untuk memuat ulang"
         />
       ) : items.length === 0 ? (
         <EmptyState
           icon={List}
-          title="No transactions yet"
-          subtitle="Start tracking your spending"
+          title="Belum ada transaksi"
+          subtitle="Mulai catat pengeluaran pertamamu — ketuk AI di tengah."
         />
       ) : (
         <View style={styles.list}>
