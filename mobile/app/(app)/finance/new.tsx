@@ -1,8 +1,8 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -11,12 +11,15 @@ import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
+import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useCreateTransaction } from "@/features/finance/hooks/useTransactions";
+import { getTransactionCategories } from "@/features/finance/utils/transactionCategoryUtils";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const schema = z.object({
   account_id: z.string().min(1, "Select an account"),
+  category_id: z.string().nullable().optional(),
   amount: z
     .string()
     .min(1, "Enter an amount")
@@ -30,6 +33,7 @@ type FormValues = z.infer<typeof schema>;
 export default function NewTransactionScreen() {
   const router = useRouter();
   const { data: accountsData, isLoading: accountsLoading } = useAccounts();
+  const { data: categoriesData } = useCategories();
   const createTransaction = useCreateTransaction();
   const { showToast } = useToastStore();
 
@@ -40,19 +44,33 @@ export default function NewTransactionScreen() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { account_id: "", amount: "", merchant: "", note: "" },
+    defaultValues: { account_id: "", category_id: null, amount: "", merchant: "", note: "" },
   });
+
+  const amountValue = useWatch({ control, name: "amount" });
+  const selectedCategoryId = useWatch({ control, name: "category_id" });
+
+  const availableCategories = useMemo(
+    () => getTransactionCategories(categoriesData ?? [], amountValue),
+    [categoriesData, amountValue],
+  );
 
   useEffect(() => {
     const firstId = accountsData?.[0]?.id;
     if (firstId) setValue("account_id", firstId);
   }, [accountsData, setValue]);
 
+  // Reset category when switching between income/expense
+  useEffect(() => {
+    setValue("category_id", null);
+  }, [Number(amountValue) > 0, setValue]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSubmit = useCallback(
     async (values: FormValues) => {
       try {
         await createTransaction.mutateAsync({
           account_id: values.account_id,
+          category_id: values.category_id ?? null,
           amount: Number(values.amount),
           merchant: values.merchant || null,
           note: values.note || null,
@@ -90,7 +108,7 @@ export default function NewTransactionScreen() {
             <Text style={styles.emptyText}>Create an account before adding transactions.</Text>
             <Button
               label="Create Account"
-              onPress={() => router.replace("/(app)/accounts/index")}
+              onPress={() => router.replace("/(app)/accounts")}
               variant="secondary"
             />
           </View>
@@ -110,6 +128,45 @@ export default function NewTransactionScreen() {
                 />
               )}
             />
+
+            {availableCategories.length > 0 && (
+              <View style={styles.categorySection}>
+                <Text style={styles.categoryLabel}>Category (optional)</Text>
+                <Controller
+                  control={control}
+                  name="category_id"
+                  render={({ field: { onChange } }) => (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.categoryRow}
+                    >
+                      {availableCategories.map((cat) => {
+                        const active = selectedCategoryId === cat.id;
+                        return (
+                          <Pressable
+                            key={cat.id}
+                            onPress={() => onChange(active ? null : cat.id)}
+                            style={({ pressed }) => pressed && { opacity: 0.8 }}
+                          >
+                            <View style={[styles.categoryPill, active && styles.categoryPillActive]}>
+                              <Text
+                                style={[
+                                  styles.categoryPillText,
+                                  active && styles.categoryPillTextActive,
+                                ]}
+                              >
+                                {cat.name}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  )}
+                />
+              </View>
+            )}
 
             <Controller
               control={control}
@@ -166,4 +223,32 @@ const styles = StyleSheet.create({
   form: { gap: spacing.lg, paddingTop: spacing.sm },
   fieldError: { ...StyleSheet.flatten(textStyles.caption), color: colors.danger.text },
   submitWrap: { marginTop: spacing.lg },
+
+  categorySection: { gap: spacing.sm },
+  categoryLabel: {
+    ...StyleSheet.flatten(textStyles.caption),
+    fontSize: 13,
+    color: colors.text.muted,
+  },
+  categoryRow: { gap: spacing.sm, paddingVertical: 2 },
+  categoryPill: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  categoryPillActive: {
+    backgroundColor: colors.accent.primary,
+    borderColor: colors.accent.primary,
+  },
+  categoryPillText: {
+    ...StyleSheet.flatten(textStyles.caption),
+    fontWeight: "500",
+    color: colors.text.primary,
+  },
+  categoryPillTextActive: {
+    color: colors.bg.canvas,
+  },
 });
