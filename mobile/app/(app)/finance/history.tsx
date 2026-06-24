@@ -165,8 +165,8 @@ export default function HistoryScreen() {
             placeholderTextColor={colors.text.muted}
           />
         </View>
-        <View style={styles.filterBtn}>
-          <SlidersHorizontal size={18} color={colors.text.secondary} strokeWidth={2} />
+        <View style={[styles.filterBtn, styles.filterBtnDisabled]}>
+          <SlidersHorizontal size={18} color={colors.text.muted} strokeWidth={2} />
         </View>
       </View>
 
@@ -263,6 +263,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border.default,
     alignItems: "center",
     justifyContent: "center",
+  },
+  filterBtnDisabled: {
+    opacity: 0.35,
   },
 
   rangeRow: {

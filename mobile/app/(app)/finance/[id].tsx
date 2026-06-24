@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 
@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useDeleteTransaction, useTransaction, useUpdateTransaction } from "@/features/finance/hooks/useTransactions";
 import { useToastStore } from "@/stores/toast";
 import { formatDate, formatRupiah } from "@/lib/utils";
@@ -78,8 +79,9 @@ export default function TransactionDetailScreen() {
     return (
       <Screen>
         <Header title="Transaction Detail" left={backButton} />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.accent.primary} />
+        <View style={styles.skeletonWrap}>
+          <SkeletonCard height={180} />
+          <SkeletonCard height={120} />
         </View>
       </Screen>
     );
@@ -191,6 +193,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   notFound: { ...StyleSheet.flatten(textStyles.body), color: colors.text.muted },
+  skeletonWrap: { padding: spacing['2xl'], gap: spacing.lg },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32, gap: spacing.lg },
