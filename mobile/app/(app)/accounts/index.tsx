@@ -18,6 +18,7 @@ import { ACCOUNT_TYPES } from "@/features/finance/constants";
 import { useAccounts, useCreateAccount } from "@/features/finance/hooks/useAccounts";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
+import { getDisplayName } from "@/lib/getDisplayName";
 import type { Account } from "@/features/finance/types";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
@@ -31,7 +32,7 @@ type FormValues = z.infer<typeof schema>;
 export default function AccountsScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const initial = (user?.email?.[0] ?? "U").toUpperCase();
+  const initial = (getDisplayName(user)[0] ?? "U").toUpperCase();
   const { data, isLoading, isRefetching, refetch } = useAccounts();
   const createAccount = useCreateAccount();
   const { showToast } = useToastStore();

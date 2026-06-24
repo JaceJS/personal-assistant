@@ -10,14 +10,15 @@ import { AIInsightCard } from "@/features/ai/components/AIInsightCard";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
+import { getDisplayName } from "@/lib/getDisplayName";
 import { colors, textStyles } from "@/theme";
 import { Header } from "@/components/layout/Header";
 
 function getGreeting() {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return "Selamat pagi";
+  if (h < 17) return "Selamat siang";
+  return "Selamat malam";
 }
 
 export default function HomeScreen() {
@@ -38,7 +39,7 @@ export default function HomeScreen() {
 
   const handleTxPress = useCallback((id: string) => router.push(`/(app)/(home)/${id}`), [router]);
 
-  const firstName = user?.email?.split("@")[0] ?? "there";
+  const firstName = getDisplayName(user);
   const items = txData?.items ?? [];
 
   return (

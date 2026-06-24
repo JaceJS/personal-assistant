@@ -24,6 +24,7 @@ import { Screen } from "@/components/layout/Screen";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { supabase } from "@/lib/supabase";
+import { getDisplayName } from "@/lib/getDisplayName";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -77,8 +78,8 @@ export default function SettingsScreen() {
     }
   }, [showToast]);
 
-  const initial = (user?.email?.[0] ?? "U").toUpperCase();
-  const displayName = user?.email?.split("@")[0] ?? "User";
+  const displayName = getDisplayName(user);
+  const initial = displayName[0]?.toUpperCase() ?? "U";
 
   return (
     <Screen>
