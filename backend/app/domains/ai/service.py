@@ -17,18 +17,18 @@ from app.domains.ai.tools import (
     _get_spending_by_category,
 )
 
-_INSIGHT_CACHE_PREFIX = "ai_insight"
+_INSIGHT_CACHE_PREFIX = "ai_insight_v2"
 
 _FALLBACK_INSIGHT = (
-    "Keep tracking your transactions to unlock personalized financial insights!"
+    "Terus catat transaksimu untuk mendapatkan insight keuangan yang personal!"
 )
 
 _INSIGHT_SYSTEM = (
-    "You are a personal finance assistant for an Indonesian budgeting app. "
-    "Given the user's financial summary for today, write one concise, actionable "
-    "insight (1-2 sentences max). Focus on spending patterns, budget health, or a "
-    "concrete saving tip. Be direct and encouraging. "
-    "Respond in English. Do NOT include greetings or sign-offs."
+    "Kamu adalah asisten keuangan pribadi untuk aplikasi budgeting di Indonesia. "
+    "Berdasarkan ringkasan keuangan pengguna hari ini, tulis satu insight yang singkat dan actionable "
+    "(maksimal 1-2 kalimat). Fokus pada pola pengeluaran, kondisi budget, atau tips menabung yang konkret. "
+    "Langsung dan encouraging. "
+    "Respond in Bahasa Indonesia, casual tapi profesional. Jangan sertakan salam atau penutup."
 )
 
 

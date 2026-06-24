@@ -96,6 +96,11 @@ async def test_get_insight_returns_fallback_on_llm_failure(dummy_context: dict) 
     redis.set.assert_called_once()
 
 
+def test_insight_system_prompt_in_bahasa_indonesia() -> None:
+    assert "Bahasa Indonesia" in insight_service._INSIGHT_SYSTEM
+    assert "English" not in insight_service._INSIGHT_SYSTEM
+
+
 async def test_get_insight_no_transactions_returns_gracefully() -> None:
     empty_context = {
         "summary": {"total_balance_formatted": "Rp 0", "month_expense_formatted": "Rp 0"},
