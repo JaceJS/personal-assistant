@@ -24,6 +24,21 @@ export async function postChatMessage(
   ).then((r) => r.data);
 }
 
+export interface ChatMessageRecord {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+export async function getChatSessionMessages(
+  sessionId: string,
+): Promise<{ session_id: string; messages: ChatMessageRecord[] }> {
+  return apiFetch<ApiResponse<{ session_id: string; messages: ChatMessageRecord[] }>>(
+    `/api/v1/ai/sessions/${sessionId}/messages`,
+  ).then((r) => r.data);
+}
+
 export async function confirmAiDraft(
   transactionId: string,
   payload: {

@@ -1,4 +1,5 @@
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { Camera, Mic } from "lucide-react-native";
 
 import { colors, radius, spacing, textStyles } from "@/theme";
 import type { ChatMessage } from "@/features/finance/utils/chatMessageUtils";
@@ -14,11 +15,11 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function ChatBubble({ message }: { message: ChatMessage }) {
   const isProcessing = message.status !== "completed" && message.status !== "failed";
+  const isVoice = message.type === "voice";
 
   return (
     <View style={styles.wrap}>
       <View style={styles.bubble}>
-        <Text style={styles.typeLabel}>{message.type === "voice" ? "Voice" : "Receipt"}</Text>
         <Text
           style={[
             styles.status,
@@ -46,6 +47,14 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
             style={styles.spinner}
           />
         )}
+        <View style={styles.typeFooter}>
+          {isVoice ? (
+            <Mic size={12} color={colors.text.muted} strokeWidth={1.8} />
+          ) : (
+            <Camera size={12} color={colors.text.muted} strokeWidth={1.8} />
+          )}
+          <Text style={styles.typeLabel}>{isVoice ? "Voice" : "Receipt"}</Text>
+        </View>
       </View>
     </View>
   );
@@ -53,21 +62,17 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
 
 const styles = StyleSheet.create({
   wrap: {
-    alignItems: "flex-start",
+    alignItems: "flex-end",
   },
   bubble: {
-    backgroundColor: colors.bg.surface,
+    backgroundColor: colors.accent.subtle,
     borderRadius: radius.lg,
+    borderBottomRightRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.border.default,
+    borderColor: `${colors.accent.primary}30`,
     padding: spacing.md,
     maxWidth: "80%",
     gap: spacing.xs,
-  },
-  typeLabel: {
-    ...StyleSheet.flatten(textStyles.overline),
-    color: colors.text.muted,
-    textTransform: "uppercase",
   },
   status: {
     ...StyleSheet.flatten(textStyles.body),
@@ -95,5 +100,15 @@ const styles = StyleSheet.create({
   spinner: {
     alignSelf: "flex-start",
     marginTop: spacing.xs,
+  },
+  typeFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: spacing.xs,
+  },
+  typeLabel: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
   },
 });

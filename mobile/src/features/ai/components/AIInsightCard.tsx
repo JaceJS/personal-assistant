@@ -4,7 +4,7 @@ import { useAIInsight } from "@/features/ai/hooks/useAIInsight";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const GLOW_COLOR = colors.accent.primary;
-const FALLBACK_TEXT = "Unable to load insight. Keep tracking your expenses!";
+const FALLBACK_TEXT = "Insight tidak tersedia. Terus catat pengeluaranmu!";
 
 export function AIInsightCard() {
   const { data, isLoading, isError } = useAIInsight();

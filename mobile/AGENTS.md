@@ -194,3 +194,32 @@ File conventions:
 - `src/components/ui/__tests__/<name>.test.tsx` — component tests
 
 Cover: pure utility functions, navigation handlers, data aggregation. Skip: StyleSheet rules, layout dimensions, trivial one-liners.
+
+---
+
+# 13. AUTH-GATED FEATURES
+
+All routes under `app/(app)/` require an authenticated session. Guest users (`isGuest: true`) can land here if they previously completed onboarding but signed out — the route group has no hard redirect guard.
+
+**Rule: any TanStack Query hook that calls a protected API endpoint MUST include `enabled: initialized && !isGuest`** to prevent cold-start race conditions and unnecessary 401s.
+
+```typescript
+// Pattern for every auth-gated query hook
+const { initialized, isGuest } = useAuthStore();
+return useQuery({
+  ...
+  enabled: initialized && !isGuest,
+});
+```
+
+| Feature | Endpoint | Requires auth |
+|---------|----------|--------------|
+| AI Insight card (home) | `GET /ai/insight` | ✅ Yes — reads financial summary |
+| AI Chat | `POST /ai/chat` | ✅ Yes — reads + writes financial data |
+| Chat history | `GET /ai/sessions/{id}/messages` | ✅ Yes — reads personal chat history |
+| Accounts list | `GET /accounts` | ✅ Yes |
+| Transactions | `GET /transactions` | ✅ Yes |
+| Budget | `GET /budgets` | ✅ Yes |
+| Voice upload | `POST /voice/upload` | ✅ Yes |
+
+No endpoint in this app is public. Every route on the backend uses `CurrentUser` dependency.

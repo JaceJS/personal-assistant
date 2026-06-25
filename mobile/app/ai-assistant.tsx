@@ -1,11 +1,12 @@
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { Camera, Mic, SendHorizontal, Square, X } from "lucide-react-native";
+import { Camera, Lock, Mic, SendHorizontal, Square, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Header } from "@/components/layout/Header";
+import Button from "@/components/ui/Button";
 import { ConfirmCard } from "@/components/voice/ConfirmCard";
 import type { ConfirmPayload } from "@/components/voice/ConfirmCard";
 import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
@@ -42,16 +44,25 @@ import {
 } from "@/features/finance/utils/chatMessageUtils";
 import type { AIMessage, ChatMessage, Message } from "@/features/finance/utils/chatMessageUtils";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const PROCESSING_TIMEOUT_MS = 60_000;
 
+const QUICK_CHIPS: { label: string; action: "send" | "camera"; text?: string }[] = [
+  { label: "💰 Berapa saldo saya?", action: "send", text: "Berapa saldo saya?" },
+  { label: "📝 Catat pengeluaran", action: "send", text: "Catat pengeluaran" },
+  { label: "📊 Lihat budget", action: "send", text: "Lihat budget bulanan saya" },
+  { label: "📷 Scan struk", action: "camera" },
+];
+
 export default function AIAssistantScreen() {
   const router = useRouter();
+  const { isGuest } = useAuthStore();
   const showToast = useToastStore((s) => s.showToast);
   const { data: accounts } = useAccounts();
-  const { messages, setMessages, sendMessage, pendingDraft, dismissDraft } = useChat();
+  const { messages, setMessages, sendMessage, pendingDraft, dismissDraft, isLoadingHistory } = useChat();
   const confirmAiDraftMutation = useConfirmAiDraft();
 
   // Voice hooks
@@ -349,13 +360,57 @@ export default function AIAssistantScreen() {
         }
       />
 
-      {/* Chat area */}
-      {messages.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Ada yang bisa aku bantu?</Text>
-          <Text style={styles.emptySubtitle}>
-            Ketik pesan, rekam suara, atau foto struk belanjamu.
+      {/* Guest gate */}
+      {isGuest ? (
+        <View style={styles.guestGate}>
+          <View style={styles.guestGateIcon}>
+            <Lock size={48} color={colors.accent.primary} strokeWidth={1.5} />
+          </View>
+          <Text style={styles.guestGateTitle}>Fitur ini membutuhkan akun</Text>
+          <Text style={styles.guestGateSubtitle}>
+            Masuk untuk menggunakan AI Assistant dan melihat data keuanganmu.
           </Text>
+          <Button
+            label="Masuk ke Akun"
+            onPress={() => router.push("/(app)/settings")}
+            variant="primary"
+          />
+        </View>
+      ) : (
+      <>
+      {/* Chat area */}
+      {isLoadingHistory ? (
+        <View style={styles.historyLoader}>
+          <ActivityIndicator color={colors.accent.primary} />
+        </View>
+      ) : messages.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyGreeting}>
+            <Text style={styles.emptyTitle}>Ada yang bisa aku bantu?</Text>
+            <Text style={styles.emptySubtitle}>
+              Ketik pesan, rekam suara, atau foto struk belanjamu.
+            </Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickChips}
+          >
+            {QUICK_CHIPS.map((chip) => (
+              <Pressable
+                key={chip.label}
+                onPress={() => {
+                  if (chip.action === "camera") void handleCameraPress();
+                  else void sendMessage(chip.text!);
+                }}
+                style={({ pressed }) => pressed && { opacity: 0.7 }}
+              >
+                <View style={styles.chip}>
+                  <Text style={styles.chipLabel}>{chip.label}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
       ) : (
         <FlatList
@@ -366,6 +421,30 @@ export default function AIAssistantScreen() {
           contentContainerStyle={styles.messageList}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
         />
+      )}
+
+      {/* Quick chips during conversation */}
+      {messages.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.quickChips}
+        >
+          {QUICK_CHIPS.map((chip) => (
+            <Pressable
+              key={chip.label}
+              onPress={() => {
+                if (chip.action === "camera") void handleCameraPress();
+                else void sendMessage(chip.text!);
+              }}
+              style={({ pressed }) => pressed && { opacity: 0.7 }}
+            >
+              <View style={styles.chip}>
+                <Text style={styles.chipLabel}>{chip.label}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
       )}
 
       {/* Input bar */}
@@ -387,7 +466,7 @@ export default function AIAssistantScreen() {
           style={styles.textInput}
           value={inputText}
           onChangeText={setInputText}
-          placeholder="Message..."
+          placeholder="Ketik pesan..."
           placeholderTextColor={colors.text.muted}
           returnKeyType="send"
           onSubmitEditing={handleSendText}
@@ -463,6 +542,8 @@ export default function AIAssistantScreen() {
         onSave={handleAiConfirm}
         onDismiss={dismissDraft}
       />
+      </>
+      )}
     </SafeAreaView>
   );
 }
@@ -474,11 +555,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg.canvas,
   },
-  emptyState: {
+  historyLoader: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  emptyState: {
+    flex: 1,
     paddingHorizontal: spacing["2xl"],
+    paddingBottom: spacing.lg,
+  },
+  emptyGreeting: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
   },
   emptyTitle: {
@@ -544,5 +634,49 @@ const styles = StyleSheet.create({
     backgroundColor: colors.danger.bg,
     borderWidth: 1,
     borderColor: `${colors.danger.text}80`,
+  },
+  guestGate: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing["2xl"],
+    gap: spacing.lg,
+  },
+  guestGateIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.full,
+    backgroundColor: colors.accent.subtle,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  guestGateTitle: {
+    ...StyleSheet.flatten(textStyles.h2),
+    color: colors.text.primary,
+    textAlign: "center",
+  },
+  guestGateSubtitle: {
+    ...StyleSheet.flatten(textStyles.body),
+    color: colors.text.muted,
+    textAlign: "center",
+  },
+  quickChips: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
+  },
+  chip: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.bg.surface,
+  },
+  chipLabel: {
+    ...StyleSheet.flatten(textStyles.body),
+    color: colors.text.primary,
   },
 });
