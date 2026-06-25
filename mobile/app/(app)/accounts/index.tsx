@@ -23,7 +23,7 @@ import type { Account } from "@/features/finance/types";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const schema = z.object({
-  name: z.string().min(1, "Account name is required"),
+  name: z.string().min(1, "Nama akun wajib diisi"),
   type: z.enum(["cash", "bank", "ewallet", "credit"]),
 });
 
@@ -61,9 +61,9 @@ export default function AccountsScreen() {
       try {
         await createAccount.mutateAsync(values);
         handleCloseModal();
-        showToast("Account created", "success");
+        showToast("Akun berhasil dibuat", "success");
       } catch {
-        showToast("Failed to create account. Try again.", "error");
+        showToast("Gagal membuat akun. Coba lagi.", "error");
       }
     },
     [createAccount, handleCloseModal, showToast]
@@ -109,9 +109,9 @@ export default function AccountsScreen() {
           ListEmptyComponent={
             <EmptyState
               icon={Wallet}
-              title="No accounts yet"
-              subtitle="Add an account to start tracking expenses"
-              action={{ label: "Add Account", onPress: handleOpenModal }}
+              title="Belum ada akun"
+              subtitle="Tambah akun untuk mulai mencatat pengeluaran"
+              action={{ label: "Tambah Akun", onPress: handleOpenModal }}
             />
           }
         />
@@ -123,7 +123,7 @@ export default function AccountsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Text style={[textStyles.h2, styles.modalTitle]}>New Account</Text>
+              <Text style={[textStyles.h2, styles.modalTitle]}>Akun Baru</Text>
               <Pressable
                 onPress={handleCloseModal}
                 style={({ pressed }) => pressed && { opacity: 0.6 }}
@@ -138,17 +138,17 @@ export default function AccountsScreen() {
                 name="name"
                 render={({ field: { onChange, value } }) => (
                   <Input
-                    label="Account Name"
+                    label="Nama Akun"
                     value={value}
                     onChangeText={onChange}
-                    placeholder="e.g. BCA, GoPay, Wallet"
+                    placeholder="contoh: BCA, GoPay, Dompet"
                     error={errors.name?.message}
                   />
                 )}
               />
 
               <View style={styles.typeSection}>
-                <Text style={[textStyles.caption, styles.typeLabel]}>Account Type</Text>
+                <Text style={[textStyles.caption, styles.typeLabel]}>Jenis Akun</Text>
                 <Controller
                   control={control}
                   name="type"
@@ -186,7 +186,7 @@ export default function AccountsScreen() {
               </View>
 
               <Button
-                label="Create Account"
+                label="Buat Akun"
                 onPress={handleSubmit(onSubmit)}
                 loading={createAccount.isPending}
                 fullWidth

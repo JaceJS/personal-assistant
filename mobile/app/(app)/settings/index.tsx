@@ -37,9 +37,9 @@ export default function SettingsScreen() {
   const [backupLoading, setBackupLoading] = useState(false);
 
   const handleSignOut = useCallback(() => {
-    Alert.alert("Sign out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: () => void signOut() },
+    Alert.alert("Keluar", "Yakin mau keluar?", [
+      { text: "Batal", style: "cancel" },
+      { text: "Keluar", style: "destructive", onPress: () => void signOut() },
     ]);
   }, [signOut]);
 
@@ -64,7 +64,7 @@ export default function SettingsScreen() {
         options: { redirectTo, skipBrowserRedirect: true },
       });
       if (error || !data?.url) {
-        showToast("Could not start sign in", "error");
+        showToast("Gagal memulai login", "error");
         return;
       }
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
@@ -72,7 +72,7 @@ export default function SettingsScreen() {
         await supabase.auth.exchangeCodeForSession(result.url);
       }
     } catch {
-      showToast("Sign in failed", "error");
+      showToast("Login gagal", "error");
     } finally {
       setBackupLoading(false);
     }
@@ -127,7 +127,7 @@ export default function SettingsScreen() {
 
         {isGuest && (
           <>
-            <SectionLabel label="Account" />
+            <SectionLabel label="Akun" />
             <GroupedList>
               <Pressable
                 onPress={() => void handleBackupSync()}
@@ -143,9 +143,11 @@ export default function SettingsScreen() {
                   </View>
                   <View style={styles.backupTextCol}>
                     <Text style={styles.menuLabel}>
-                      {backupLoading ? "Connecting..." : "Backup & Sync"}
+                      {backupLoading ? "Menghubungkan..." : "Backup & Sinkronisasi"}
                     </Text>
-                    <Text style={styles.backupSubtitle}>Sign in with Google to save your data</Text>
+                    <Text style={styles.backupSubtitle}>
+                      Masuk dengan Google untuk menyimpan data
+                    </Text>
                   </View>
                   <ChevronRight size={14} color={colors.text.muted} />
                 </View>
@@ -155,25 +157,20 @@ export default function SettingsScreen() {
         )}
 
         {/* Finance section */}
-        <SectionLabel label="Finance" />
+        <SectionLabel label="Keuangan" />
         <GroupedList>
           <MenuItem
             icon={<PiggyBank size={16} color={colors.accent.primary} />}
-            label="Monthly Budget"
+            label="Anggaran Bulanan"
             onPress={() => router.push("/(app)/settings/budget")}
           />
           <MenuDivider />
           <MenuItem
             icon={<Tag size={16} color={colors.accent.primary} />}
-            label="Categories"
+            label="Kategori"
             onPress={() => router.push("/(app)/settings/categories")}
           />
           <MenuDivider />
-          <ValueMenuItem
-            icon={<Banknote size={16} color={colors.accent.primary} />}
-            label="Default Currency"
-            value="IDR"
-          />
         </GroupedList>
 
         {/* Legal section */}
@@ -181,13 +178,13 @@ export default function SettingsScreen() {
         <GroupedList>
           <ExternalMenuItem
             icon={<FileText size={16} color={colors.accent.primary} />}
-            label="Terms of Service"
+            label="Syarat & Ketentuan"
             url="https://example.com/terms"
           />
           <MenuDivider />
           <ExternalMenuItem
             icon={<Shield size={16} color={colors.accent.primary} />}
-            label="Privacy Policy"
+            label="Kebijakan Privasi"
             url="https://example.com/privacy"
           />
         </GroupedList>
@@ -197,7 +194,7 @@ export default function SettingsScreen() {
           <Pressable onPress={handleSignOut} style={({ pressed }) => pressed && { opacity: 0.7 }}>
             <View style={styles.signOutButton}>
               <LogOut size={18} color={colors.danger.text} />
-              <Text style={styles.signOutLabel}>Sign Out</Text>
+              <Text style={styles.signOutLabel}>Keluar</Text>
             </View>
           </Pressable>
         )}
@@ -214,7 +211,7 @@ const GuestProfileHero = () => (
       </View>
     </View>
     <Text style={styles.profileName}>Guest</Text>
-    <Text style={styles.profileEmail}>Your data is stored locally</Text>
+    <Text style={styles.profileEmail}>Data tersimpan di perangkat ini</Text>
   </View>
 );
 

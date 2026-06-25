@@ -34,7 +34,7 @@ export default function HomeScreen() {
   } = useTransactions();
 
   useEffect(() => {
-    if (txError) showToast("Failed to load transactions", "error");
+    if (txError) showToast("Gagal memuat transaksi", "error");
   }, [txError, showToast]);
 
   const handleTxPress = useCallback((id: string) => router.push(`/(app)/(home)/${id}`), [router]);

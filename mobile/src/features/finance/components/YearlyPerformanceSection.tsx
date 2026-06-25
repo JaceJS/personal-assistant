@@ -122,7 +122,7 @@ function ChartContent({ buckets, year, chartFont }: ChartContentProps) {
   if (!hasData) {
     return (
       <View style={styles.emptyWrap}>
-        <Text style={styles.emptyText}>No data for {year}</Text>
+        <Text style={styles.emptyText}>Belum ada data untuk {year}</Text>
       </View>
     );
   }
@@ -185,7 +185,7 @@ function ChartLegend({ monthlyAvg }: ChartLegendProps) {
   return (
     <View style={styles.legend}>
       <View style={[styles.legendDot, { backgroundColor: colors.accent.primary }]} />
-      <Text style={styles.legendText}>Monthly Average: {formatRupiah(monthlyAvg)}</Text>
+      <Text style={styles.legendText}>Rata-rata Bulanan: {formatRupiah(monthlyAvg)}</Text>
     </View>
   );
 }
@@ -220,7 +220,7 @@ function YearlyPerformanceSection({
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={styles.title}>Spending Overview</Text>
+        <Text style={styles.title}>Ringkasan Pengeluaran</Text>
         <YearDropdown value={year} options={years} onChange={onYearChange} />
       </View>
 

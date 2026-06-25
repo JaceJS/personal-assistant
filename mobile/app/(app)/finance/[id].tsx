@@ -36,25 +36,25 @@ export default function TransactionDetailScreen() {
     try {
       await updateTransaction.mutateAsync({ merchant: merchant || null, note: note || null });
       setIsEditing(false);
-      showToast("Changes saved", "success");
+      showToast("Perubahan tersimpan", "success");
     } catch {
-      showToast("Failed to save changes.", "error");
+      showToast("Gagal menyimpan perubahan.", "error");
     }
   }, [updateTransaction, merchant, note, showToast]);
 
   const handleDelete = useCallback(() => {
-    Alert.alert("Delete Transaction", "Are you sure you want to delete this transaction?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert("Hapus Transaksi", "Yakin mau hapus transaksi ini?", [
+      { text: "Batal", style: "cancel" },
       {
-        text: "Delete",
+        text: "Hapus",
         style: "destructive",
         onPress: async () => {
           try {
             await deleteTransaction.mutateAsync(id);
-            showToast("Transaction deleted", "info");
+            showToast("Transaksi dihapus", "info");
             router.back();
           } catch {
-            showToast("Failed to delete transaction.", "error");
+            showToast("Gagal menghapus transaksi.", "error");
           }
         },
       },
@@ -78,7 +78,7 @@ export default function TransactionDetailScreen() {
   if (isLoading) {
     return (
       <Screen>
-        <Header title="Transaction Detail" left={backButton} />
+        <Header title="Detail Transaksi" left={backButton} />
         <View style={styles.skeletonWrap}>
           <SkeletonCard height={180} />
           <SkeletonCard height={120} />
@@ -90,9 +90,9 @@ export default function TransactionDetailScreen() {
   if (!transaction) {
     return (
       <Screen>
-        <Header title="Transaction Detail" left={backButton} />
+        <Header title="Detail Transaksi" left={backButton} />
         <View style={styles.centered}>
-          <Text style={styles.notFound}>Transaction not found</Text>
+          <Text style={styles.notFound}>Transaksi tidak ditemukan</Text>
         </View>
       </Screen>
     );
@@ -123,25 +123,25 @@ export default function TransactionDetailScreen() {
                 label="Merchant"
                 value={merchant}
                 onChangeText={setMerchant}
-                placeholder="Merchant name"
+                placeholder="Nama toko"
               />
               <Input
-                label="Note"
+                label="Catatan"
                 value={note}
                 onChangeText={setNote}
-                placeholder="Add a note"
+                placeholder="Tambahkan catatan"
                 multiline
               />
             </>
           ) : (
             <>
-              <DetailRow label="Merchant" value={transaction.merchant ?? "–"} />
-              <DetailRow label="Note" value={transaction.note ?? "–"} />
+              <DetailRow label="Merchant" value={transaction.merchant ?? "-"} />
+              <DetailRow label="Catatan" value={transaction.note ?? "-"} />
               <DetailRow
                 label="Status"
-                value={transaction.status === "confirmed" ? "Confirmed" : "Draft"}
+                value={transaction.status === "confirmed" ? "Terkonfirmasi" : "Draft"}
               />
-              <DetailRow label="Source" value={transaction.source} />
+              <DetailRow label="Sumber" value={transaction.source} />
             </>
           )}
         </View>
@@ -151,13 +151,13 @@ export default function TransactionDetailScreen() {
           {isEditing ? (
             <>
               <Button
-                label="Save"
+                label="Simpan"
                 onPress={handleSave}
                 loading={updateTransaction.isPending}
                 fullWidth
               />
               <Button
-                label="Cancel"
+                label="Batal"
                 onPress={() => setIsEditing(false)}
                 variant="ghost"
                 fullWidth
@@ -167,7 +167,7 @@ export default function TransactionDetailScreen() {
             <>
               <Button label="Edit" onPress={handleStartEdit} variant="secondary" fullWidth />
               <Button
-                label="Delete"
+                label="Hapus"
                 onPress={handleDelete}
                 variant="danger"
                 loading={deleteTransaction.isPending}

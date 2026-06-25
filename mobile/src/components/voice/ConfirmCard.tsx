@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import * as Haptics from "expo-haptics";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import Button from "@/components/ui/Button";
 import type { ExtractedTransaction } from "@/features/finance/api/voice";
@@ -63,6 +64,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
 
   const handleSave = () => {
     const parsed = parseInt(amountText, 10);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onSave({
       amount: isNaN(parsed) ? data.amount : parsed,
       accountId,
@@ -75,7 +77,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
   return (
     <BottomSheet isVisible={isVisible} onDismiss={onDismiss}>
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.sectionLabel}>Amount (Rp)</Text>
+        <Text style={styles.sectionLabel}>Jumlah (Rp)</Text>
         <TextInput
           style={[styles.amountInput, isExpense ? styles.amountExpense : styles.amountIncome]}
           value={amountText}
@@ -86,7 +88,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
 
         {accounts.length > 0 && (
           <View style={styles.field}>
-            <Text style={styles.sectionLabel}>Account</Text>
+            <Text style={styles.sectionLabel}>Akun</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
               {accounts.map((acc) => (
                 <Pressable
@@ -118,7 +120,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
 
         {categories.length > 0 && (
           <View style={styles.field}>
-            <Text style={styles.sectionLabel}>Category</Text>
+            <Text style={styles.sectionLabel}>Kategori</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
               {categories.map((cat) => (
                 <Pressable
@@ -138,20 +140,20 @@ export const ConfirmCard = React.memo(function ConfirmCard({
         )}
 
         <View style={styles.field}>
-          <Text style={styles.sectionLabel}>Note</Text>
+          <Text style={styles.sectionLabel}>Catatan</Text>
           <TextInput
             style={[styles.textInput, styles.noteInput]}
             value={note}
             onChangeText={setNote}
             multiline
-            placeholder="Optional note"
+            placeholder="Catatan opsional"
             placeholderTextColor={colors.text.muted}
           />
         </View>
 
         <View style={styles.actions}>
-          <Button label="Save Transaction" onPress={handleSave} loading={isSaving} fullWidth />
-          <Button label="Cancel" onPress={onDismiss} variant="secondary" fullWidth />
+          <Button label="Simpan Transaksi" onPress={handleSave} loading={isSaving} fullWidth />
+          <Button label="Batal" onPress={onDismiss} variant="secondary" fullWidth />
         </View>
       </ScrollView>
     </BottomSheet>

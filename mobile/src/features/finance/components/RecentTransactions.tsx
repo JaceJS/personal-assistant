@@ -1,12 +1,12 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { List } from 'lucide-react-native';
+import React from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { List } from "lucide-react-native";
 
-import EmptyState from '@/components/ui/EmptyState';
-import { SkeletonList } from '@/components/ui/Skeleton';
-import TransactionCard from '@/features/finance/components/TransactionCard';
-import type { Transaction } from '@/features/finance/types';
-import { colors, radius, textStyles } from '@/theme';
+import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonList } from "@/components/ui/Skeleton";
+import TransactionCard from "@/features/finance/components/TransactionCard";
+import type { Transaction } from "@/features/finance/types";
+import { colors, radius, textStyles } from "@/theme";
 
 interface RecentTransactionsProps {
   items: Transaction[];
@@ -16,13 +16,19 @@ interface RecentTransactionsProps {
   onPress: (id: string) => void;
 }
 
-export default function RecentTransactions({ items, isLoading, error, onSeeAll, onPress }: RecentTransactionsProps) {
+export default function RecentTransactions({
+  items,
+  isLoading,
+  error,
+  onSeeAll,
+  onPress,
+}: RecentTransactionsProps) {
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={styles.title}>Recent Transactions</Text>
+        <Text style={styles.title}>Transaksi Terbaru</Text>
         <Pressable onPress={onSeeAll}>
-          <Text style={styles.seeAll}>See All</Text>
+          <Text style={styles.seeAll}>Lihat Semua</Text>
         </Pressable>
       </View>
 
@@ -38,16 +44,13 @@ export default function RecentTransactions({ items, isLoading, error, onSeeAll, 
         <EmptyState
           icon={List}
           title="Belum ada transaksi"
-          subtitle="Mulai catat pengeluaran pertamamu — ketuk AI di tengah."
+          subtitle="Mulai catat pengeluaran pertamamu"
         />
       ) : (
         <View style={styles.list}>
           {items.map((tx, i) => (
             <React.Fragment key={tx.id}>
-              <TransactionCard
-                transaction={tx}
-                onPress={() => onPress(tx.id)}
-              />
+              <TransactionCard transaction={tx} onPress={() => onPress(tx.id)} />
               {i < items.length - 1 && <View style={styles.divider} />}
             </React.Fragment>
           ))}
@@ -60,9 +63,9 @@ export default function RecentTransactions({ items, isLoading, error, onSeeAll, 
 const styles = StyleSheet.create({
   section: { paddingHorizontal: 20 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   title: { ...StyleSheet.flatten(textStyles.h3), fontSize: 16, color: colors.text.primary },
@@ -70,7 +73,7 @@ const styles = StyleSheet.create({
   list: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   divider: { height: 1, backgroundColor: colors.border.subtle },
 });

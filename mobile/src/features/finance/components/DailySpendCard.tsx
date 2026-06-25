@@ -27,9 +27,9 @@ export default function DailySpendCard() {
   if (!budgetLoading && dailyLimit === null) {
     return (
       <View style={[styles.card, styles.cardEmpty]}>
-        <Text style={styles.title}>Daily Spending Limit</Text>
-        <Text style={styles.noLimit}>No budget set</Text>
-        <Text style={styles.noLimitSub}>Set a monthly budget to track daily spending</Text>
+        <Text style={styles.title}>Batas Pengeluaran Harian</Text>
+        <Text style={styles.noLimit}>Belum ada anggaran</Text>
+        <Text style={styles.noLimitSub}>Atur anggaran bulanan untuk memantau pengeluaran harian</Text>
       </View>
     );
   }
@@ -67,13 +67,13 @@ export default function DailySpendCard() {
         </Svg>
         <View style={styles.ringCenter}>
           <Text style={[styles.pct, { color: ringColor }]}>{Math.round(pct * 100)}%</Text>
-          <Text style={styles.usedLabel}>used</Text>
+          <Text style={styles.usedLabel}>terpakai</Text>
         </View>
       </View>
 
-      <Text style={styles.title}>Daily Spending Limit</Text>
+      <Text style={styles.title}>Batas Pengeluaran Harian</Text>
       <Text style={[styles.remaining, { color: ringColor }]}>
-        {formatRupiah(remaining)} remaining for today
+        tersisa {formatRupiah(remaining)} hari ini
       </Text>
     </View>
   );

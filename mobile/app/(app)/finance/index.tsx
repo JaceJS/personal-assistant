@@ -20,18 +20,18 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 const RECENT_COUNT = 3;
 
 const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
+  "Januari",
+  "Februari",
+  "Maret",
   "April",
-  "May",
-  "June",
-  "July",
-  "August",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
   "September",
-  "October",
+  "Oktober",
   "November",
-  "December",
+  "Desember",
 ];
 
 export default function FinanceDashboard() {
@@ -88,7 +88,7 @@ export default function FinanceDashboard() {
           style={styles.filterScroll}
         >
           <FilterPill
-            label="All"
+            label="Semua"
             active={selectedAccountId === null}
             onPress={() => setSelectedAccountId(null)}
           />
@@ -116,23 +116,23 @@ export default function FinanceDashboard() {
       >
         <ProjectedEndOfMonthCard />
 
-        <SectionHeader title="Monthly Budget" />
+        <SectionHeader title="Anggaran Bulanan" />
         <MonthlyBudgetCard totalExpense={totalExpense} />
 
-        <SectionHeader title="Cash Flow" />
+        <SectionHeader title="Arus Kas" />
         <CashFlowChart />
 
         <SectionHeader
-          title="Recent Transactions"
+          title="Transaksi Terbaru"
           right={
             <Pressable onPress={handleSeeAll} hitSlop={8}>
-              <Text style={styles.seeAll}>See All</Text>
+              <Text style={styles.seeAll}>Lihat Semua</Text>
             </Pressable>
           }
         />
         <View style={styles.transactionsCard}>
           {recentItems.length === 0 ? (
-            <Text style={styles.emptyText}>No transactions this month</Text>
+            <Text style={styles.emptyText}>Belum ada transaksi bulan ini</Text>
           ) : (
             recentItems.map((tx, idx) => (
               <View key={tx.id}>

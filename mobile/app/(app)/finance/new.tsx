@@ -18,12 +18,12 @@ import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const schema = z.object({
-  account_id: z.string().min(1, "Select an account"),
+  account_id: z.string().min(1, "Pilih akun"),
   category_id: z.string().nullable().optional(),
   amount: z
     .string()
-    .min(1, "Enter an amount")
-    .refine((v) => !isNaN(Number(v)) && Number(v) !== 0, "Invalid amount"),
+    .min(1, "Masukkan jumlah")
+    .refine((v) => !isNaN(Number(v)) && Number(v) !== 0, "Jumlah tidak valid"),
   merchant: z.string().optional(),
   note: z.string().optional(),
 });
@@ -76,10 +76,10 @@ export default function NewTransactionScreen() {
           note: values.note || null,
           occurred_at: new Date().toISOString(),
         });
-        showToast("Transaction saved", "success");
+        showToast("Transaksi tersimpan", "success");
         router.back();
       } catch {
-        showToast("Failed to save transaction. Try again.", "error");
+        showToast("Gagal menyimpan transaksi. Coba lagi.", "error");
       }
     },
     [createTransaction, router, showToast],
@@ -90,7 +90,7 @@ export default function NewTransactionScreen() {
   return (
     <Screen>
       <Header
-        title="New Transaction"
+        title="Transaksi Baru"
         left={
           <Pressable
             onPress={() => router.back()}
@@ -105,9 +105,9 @@ export default function NewTransactionScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {noAccounts ? (
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyText}>Create an account before adding transactions.</Text>
+            <Text style={styles.emptyText}>Buat akun dulu sebelum mencatat transaksi.</Text>
             <Button
-              label="Create Account"
+              label="Buat Akun"
               onPress={() => router.replace("/(app)/accounts")}
               variant="secondary"
             />
@@ -119,10 +119,10 @@ export default function NewTransactionScreen() {
               name="amount"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Amount (+ income, − expense)"
+                  label="Jumlah (+ pemasukan, - pengeluaran)"
                   value={value}
                   onChangeText={onChange}
-                  placeholder="e.g. -50000"
+                  placeholder="contoh: -50000"
                   keyboardType="numeric"
                   error={errors.amount?.message}
                 />
@@ -131,7 +131,7 @@ export default function NewTransactionScreen() {
 
             {availableCategories.length > 0 && (
               <View style={styles.categorySection}>
-                <Text style={styles.categoryLabel}>Category (optional)</Text>
+                <Text style={styles.categoryLabel}>Kategori (opsional)</Text>
                 <Controller
                   control={control}
                   name="category_id"
@@ -173,10 +173,10 @@ export default function NewTransactionScreen() {
               name="merchant"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Merchant (optional)"
+                  label="Merchant (opsional)"
                   value={value}
                   onChangeText={onChange}
-                  placeholder="Store or merchant name"
+                  placeholder="Nama toko atau merchant"
                 />
               )}
             />
@@ -186,10 +186,10 @@ export default function NewTransactionScreen() {
               name="note"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Note (optional)"
+                  label="Catatan (opsional)"
                   value={value}
                   onChangeText={onChange}
-                  placeholder="Add a note"
+                  placeholder="Tambahkan catatan"
                   multiline
                 />
               )}
@@ -201,7 +201,7 @@ export default function NewTransactionScreen() {
 
             <View style={styles.submitWrap}>
               <Button
-                label="Save Transaction"
+                label="Simpan Transaksi"
                 onPress={handleSubmit(onSubmit)}
                 loading={createTransaction.isPending}
                 disabled={accountsLoading}

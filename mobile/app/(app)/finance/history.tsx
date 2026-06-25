@@ -29,18 +29,18 @@ import { formatRupiah } from "@/lib/utils";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
+  "Januari",
+  "Februari",
+  "Maret",
   "April",
-  "May",
-  "June",
-  "July",
-  "August",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
   "September",
-  "October",
+  "Oktober",
   "November",
-  "December",
+  "Desember",
 ];
 
 type ListRow =
@@ -50,9 +50,9 @@ type ListRow =
 function formatDateLabel(dateStr: string): string {
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-  if (dateStr === today) return "Today";
-  if (dateStr === yesterday) return "Yesterday";
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  if (dateStr === today) return "Hari ini";
+  if (dateStr === yesterday) return "Kemarin";
+  return new Date(dateStr).toLocaleDateString("id-ID", {
     day: "numeric",
     month: "short",
   });
@@ -142,7 +142,7 @@ export default function HistoryScreen() {
   return (
     <Screen>
       <Header
-          title="History"
+          title="Riwayat"
           left={
             <Pressable
               onPress={() => router.back()}
@@ -161,7 +161,7 @@ export default function HistoryScreen() {
             style={styles.searchInput}
             value={query}
             onChangeText={setQuery}
-            placeholder="Search transactions..."
+            placeholder="Cari transaksi..."
             placeholderTextColor={colors.text.muted}
           />
         </View>
@@ -204,8 +204,8 @@ export default function HistoryScreen() {
           ) : (
             <EmptyState
               icon={Wallet}
-              title="No transactions"
-              subtitle="Nothing recorded this month"
+              title="Belum ada transaksi"
+              subtitle="Belum ada catatan bulan ini"
             />
           )
         }

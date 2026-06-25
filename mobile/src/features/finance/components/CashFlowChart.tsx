@@ -133,7 +133,7 @@ export default function CashFlowChart() {
           </CartesianChart>
         ) : (
           <View style={styles.emptyChart}>
-            <Text style={styles.emptyText}>No data for this year yet</Text>
+            <Text style={styles.emptyText}>Belum ada data tahun ini</Text>
           </View>
         )}
 
@@ -152,11 +152,11 @@ export default function CashFlowChart() {
       <View style={styles.legend}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.success.text }]} />
-          <Text style={styles.legendLabel}>Income</Text>
+          <Text style={styles.legendLabel}>Pemasukan</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.danger.text }]} />
-          <Text style={styles.legendLabel}>Expense</Text>
+          <Text style={styles.legendLabel}>Pengeluaran</Text>
         </View>
       </View>
     </View>
