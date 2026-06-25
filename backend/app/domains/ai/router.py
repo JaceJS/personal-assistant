@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from collections.abc import AsyncIterator
 from typing import Annotated, Any
 
@@ -17,7 +18,14 @@ from app.core.database import get_session
 from app.core.response import ApiResponse, ok
 from app.domains.ai import repository as repo
 from app.domains.ai import service
-from app.domains.ai.schemas import ChatReply, ChatRequest, DailyInsight, DraftTransaction
+from app.domains.ai.schemas import (
+    ChatMessageOut,
+    ChatReply,
+    ChatRequest,
+    DailyInsight,
+    DraftTransaction,
+    SessionHistoryResponse,
+)
 from app.domains.ai.tools import TOOLS, execute_tool
 
 router = APIRouter(prefix="/ai", tags=["AI"])
@@ -37,6 +45,24 @@ _SYSTEM_PROMPT = (
     "redirect them to a finance-related question. "
     "Be concise. Respond in the same language the user uses (Indonesian or English)."
 )
+
+
+@router.get("/sessions/{session_id}/messages", response_model=ApiResponse[SessionHistoryResponse])
+async def get_session_messages(
+    session_id: uuid.UUID,
+    user_id: CurrentUser,
+    session: DbSession,
+) -> ApiResponse[SessionHistoryResponse]:
+    msgs = await service.get_session_messages(user_id, session_id, session)
+    return ok(
+        SessionHistoryResponse(
+            session_id=session_id,
+            messages=[
+                ChatMessageOut(id=m.id, role=m.role, content=m.content, created_at=m.created_at)
+                for m in msgs
+            ],
+        )
+    )
 
 
 @router.get("/insight", response_model=ApiResponse[DailyInsight])

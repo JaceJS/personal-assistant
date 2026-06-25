@@ -10,6 +10,9 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.openrouter import OpenRouterLLM
+from app.core.exceptions import ForbiddenError, NotFoundError
+from app.domains.ai import repository as repo
+from app.domains.ai.models import ChatMessage, ChatSession
 from app.domains.ai.schemas import DailyInsight
 from app.domains.ai.tools import (
     _get_budget_status,
@@ -76,6 +79,19 @@ def _build_insight_prompt(context: dict[str, Any]) -> str:
         f"Top categories: {top_cats}. "
         f"Give me one actionable insight."
     )
+
+
+async def get_session_messages(
+    user_id: uuid.UUID,
+    session_id: uuid.UUID,
+    db: AsyncSession,
+) -> list[ChatMessage]:
+    chat_session = await db.get(ChatSession, session_id)
+    if chat_session is None:
+        raise NotFoundError("Session not found")
+    if chat_session.user_id != user_id:
+        raise ForbiddenError("Access denied")
+    return await repo.get_recent_messages(db, session_id, limit=20)
 
 
 async def get_daily_insight(

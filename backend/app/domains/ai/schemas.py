@@ -33,3 +33,15 @@ class DailyInsight(BaseModel):
     insight: str
     generated_at: datetime
     is_cached: bool
+
+
+class ChatMessageOut(BaseModel):
+    id: uuid.UUID
+    role: str
+    content: str
+    created_at: datetime
+
+
+class SessionHistoryResponse(BaseModel):
+    session_id: uuid.UUID
+    messages: list[ChatMessageOut]
