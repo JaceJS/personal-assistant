@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 import sqlalchemy as sa
@@ -149,6 +149,22 @@ class Budget(TimestampedBase):
         UUID(as_uuid=True), nullable=False, unique=True
     )
     monthly_limit: Mapped[int] = mapped_column(sa.BigInteger(), nullable=False)
+
+
+class SavingsGoal(TimestampedBase):
+    __tablename__ = "savings_goals"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    name: Mapped[str] = mapped_column(sa.Text(), nullable=False)
+    icon: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
+    target_amount: Mapped[int] = mapped_column(sa.BigInteger(), nullable=False)
+    current_amount: Mapped[int] = mapped_column(
+        sa.BigInteger(), nullable=False, server_default=sa.text("0")
+    )
+    target_date: Mapped[date | None] = mapped_column(sa.Date(), nullable=True)
+    is_archived: Mapped[bool] = mapped_column(
+        sa.Boolean(), nullable=False, server_default=sa.false()
+    )
 
 
 class Transaction(TimestampedBase):

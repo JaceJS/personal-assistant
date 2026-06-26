@@ -20,6 +20,7 @@ from app.domains.finance.models import (
     Budget,
     Category,
     ReceiptLog,
+    SavingsGoal,
     Transaction,
     TransactionStatus,
     UserCategoryBudget,
@@ -36,6 +37,9 @@ from app.domains.finance.schemas import (
     CategoryUpdate,
     ReceiptStatusRead,
     ReceiptUploadResponse,
+    SavingsGoalContribute,
+    SavingsGoalCreate,
+    SavingsGoalUpdate,
     TransactionCreate,
     TransactionUpdate,
     VoiceExtractResponse,
@@ -44,6 +48,68 @@ from app.domains.finance.schemas import (
 )
 from app.shared.queue import RECEIPT_PROCESSING_JOB, VOICE_EXTRACTION_JOB, VOICE_PROCESSING_JOB
 from app.shared.storage import R2Storage
+
+# ── Savings Goals ─────────────────────────────────────────────────────────────
+
+async def list_savings_goals(session: AsyncSession, user_id: uuid.UUID) -> list[SavingsGoal]:
+    return await repo.list_savings_goals(session, user_id)
+
+
+async def get_savings_goal(
+    session: AsyncSession, goal_id: uuid.UUID, user_id: uuid.UUID
+) -> SavingsGoal:
+    goal = await repo.get_savings_goal(session, goal_id)
+    if goal is None:
+        raise NotFoundError(f"Savings goal {goal_id} not found")
+    if goal.user_id != user_id:
+        raise ForbiddenError("You don't own this savings goal")
+    return goal
+
+
+async def create_savings_goal(
+    session: AsyncSession, user_id: uuid.UUID, data: SavingsGoalCreate
+) -> SavingsGoal:
+    if data.target_amount <= 0:
+        raise BadRequestError("target_amount must be greater than 0")
+    return await repo.create_savings_goal(
+        session,
+        user_id,
+        name=data.name,
+        icon=data.icon,
+        target_amount=data.target_amount,
+        target_date=data.target_date,
+        current_amount=0,
+    )
+
+
+async def update_savings_goal(
+    session: AsyncSession, goal_id: uuid.UUID, user_id: uuid.UUID, data: SavingsGoalUpdate
+) -> SavingsGoal:
+    goal = await get_savings_goal(session, goal_id, user_id)
+    updates: dict = {k: v for k, v in data.model_dump().items() if v is not None}
+    if "target_amount" in updates and updates["target_amount"] <= 0:
+        raise BadRequestError("target_amount must be greater than 0")
+    return await repo.update_savings_goal(session, goal, **updates)
+
+
+async def contribute_to_savings_goal(
+    session: AsyncSession,
+    goal_id: uuid.UUID,
+    user_id: uuid.UUID,
+    data: SavingsGoalContribute,
+) -> SavingsGoal:
+    goal = await get_savings_goal(session, goal_id, user_id)
+    new_amount = goal.current_amount + data.amount
+    new_amount = max(0, min(new_amount, goal.target_amount))
+    return await repo.update_savings_goal(session, goal, current_amount=new_amount)
+
+
+async def delete_savings_goal(
+    session: AsyncSession, goal_id: uuid.UUID, user_id: uuid.UUID
+) -> None:
+    goal = await get_savings_goal(session, goal_id, user_id)
+    await repo.update_savings_goal(session, goal, is_archived=True)
+
 
 # ── Budget ────────────────────────────────────────────────────────────────────
 

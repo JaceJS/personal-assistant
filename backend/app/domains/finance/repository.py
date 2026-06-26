@@ -15,12 +15,43 @@ from app.domains.finance.models import (
     Budget,
     Category,
     ReceiptLog,
+    SavingsGoal,
     Transaction,
     TransactionStatus,
     UserCategoryBudget,
     VoiceLog,
     VoiceProcessingStatus,
 )
+
+# ── Savings Goals ─────────────────────────────────────────────────────────────
+
+async def list_savings_goals(session: AsyncSession, user_id: uuid.UUID) -> list[SavingsGoal]:
+    result = await session.execute(
+        sa.select(SavingsGoal)
+        .where(SavingsGoal.user_id == user_id, SavingsGoal.is_archived.is_(False))
+        .order_by(SavingsGoal.created_at.desc())
+    )
+    return list(result.scalars())
+
+
+async def get_savings_goal(session: AsyncSession, goal_id: uuid.UUID) -> SavingsGoal | None:
+    return await session.get(SavingsGoal, goal_id)
+
+
+async def create_savings_goal(session: AsyncSession, user_id: uuid.UUID, **kwargs: Any) -> SavingsGoal:
+    goal = SavingsGoal(user_id=user_id, **kwargs)
+    session.add(goal)
+    await session.flush()
+    return goal
+
+
+async def update_savings_goal(session: AsyncSession, goal: SavingsGoal, **kwargs: Any) -> SavingsGoal:
+    for key, value in kwargs.items():
+        setattr(goal, key, value)
+    await session.flush()
+    await session.refresh(goal)
+    return goal
+
 
 # ── Budget ────────────────────────────────────────────────────────────────────
 
