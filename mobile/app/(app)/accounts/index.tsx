@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Plus, Wallet, X } from "lucide-react-native";
+import { ChevronLeft, Plus, Wallet, X } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,9 +16,7 @@ import { SkeletonList } from "@/components/ui/Skeleton";
 import AccountCard from "@/features/finance/components/AccountCard";
 import { ACCOUNT_TYPES } from "@/features/finance/constants";
 import { useAccounts, useCreateAccount } from "@/features/finance/hooks/useAccounts";
-import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
-import { getDisplayName } from "@/lib/getDisplayName";
 import type { Account } from "@/features/finance/types";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
@@ -31,8 +29,6 @@ type FormValues = z.infer<typeof schema>;
 
 export default function AccountsScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
-  const initial = (getDisplayName(user)[0] ?? "U").toUpperCase();
   const { data, isLoading, isRefetching, refetch } = useAccounts();
   const createAccount = useCreateAccount();
   const { showToast } = useToastStore();
@@ -76,17 +72,18 @@ export default function AccountsScreen() {
     [router]
   );
 
+  const backButton = (
+    <Pressable
+      onPress={() => router.canGoBack() ? router.back() : router.replace("/(app)/settings")}
+      style={({ pressed }) => pressed && { opacity: 0.6 }}
+    >
+      <ChevronLeft size={22} color={colors.text.muted} />
+    </Pressable>
+  );
+
   return (
     <Screen>
-      <Header
-        title="Accounts"
-        left={
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
-          </View>
-        }
-
-      />
+      <Header title="Akun" left={backButton} />
 
       {isLoading ? (
         <View style={styles.listPad}>
@@ -205,21 +202,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.canvas,
   },
 
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.accent.subtle,
-    borderWidth: 1,
-    borderColor: colors.accent.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    ...StyleSheet.flatten(textStyles.h3),
-    fontSize: 14,
-    color: colors.accent.text,
-  },
   listPad: {
     paddingHorizontal: spacing["2xl"],
   },

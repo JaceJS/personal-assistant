@@ -7,6 +7,7 @@ export default function FinanceLayout() {
       <Stack.Screen name="new" />
       <Stack.Screen name="history" />
       <Stack.Screen name="budget" />
+      <Stack.Screen name="savings-goals" />
       <Stack.Screen name="[id]" />
     </Stack>
   );

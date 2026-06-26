@@ -7,7 +7,7 @@ import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import type { Transaction } from "@/features/finance/types";
 import { useChartFont } from "@/hooks/useChartFont";
 import { formatRupiah } from "@/lib/utils";
-import { colors, radius, textStyles } from "@/theme";
+import { colors, radius, spacing, textStyles } from "@/theme";
 import { ChartTooltip, TOOLTIP_WIDTH } from "./ChartTooltip";
 import { clampTooltipX } from "../utils/chartTooltipUtils";
 
@@ -169,9 +169,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border.default,
-    marginHorizontal: 20,
+    marginHorizontal: spacing.xl,
     marginBottom: 12,
-    padding: 16,
+    padding: spacing.xl,
   },
   chartContainer: {
     height: CHART_HEIGHT,

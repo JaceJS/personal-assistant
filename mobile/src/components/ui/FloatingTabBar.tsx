@@ -1,6 +1,6 @@
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
-import { Bot, Building2, Home, Settings, Wallet } from "lucide-react-native";
+import { Bot, Clock, Home, Settings, Target } from "lucide-react-native";
 import { useCallback } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -17,15 +17,15 @@ import { handleTabPress } from "./tabPressUtils";
 
 const TAB_ICONS: Record<string, typeof Home> = {
   "(home)": Home,
-  finance: Wallet,
-  accounts: Building2,
+  goals: Target,
+  history: Clock,
   settings: Settings,
 };
 
 const TAB_LABELS: Record<string, string> = {
   "(home)": "Home",
-  finance: "Finance",
-  accounts: "Accounts",
+  goals: "Goal",
+  history: "Aktivitas",
   settings: "Settings",
 };
 

@@ -1,18 +1,20 @@
-import { useCallback, useEffect } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo } from "react";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { Plus } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Header } from "@/components/layout/Header";
 import AccountBalanceCard from "@/features/finance/components/AccountBalanceCard";
 import DailySpendCard from "@/features/finance/components/DailySpendCard";
-import RecentTransactions from "@/features/finance/components/RecentTransactions";
+import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
+import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
 import { AIInsightCard } from "@/features/ai/components/AIInsightCard";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { getDisplayName } from "@/lib/getDisplayName";
-import { colors, textStyles } from "@/theme";
-import { Header } from "@/components/layout/Header";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -25,22 +27,46 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { showToast } = useToastStore();
+
+  const now = new Date();
+  const dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const dateTo = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+
   const {
-    data: txData,
-    isLoading: txLoading,
+    data: monthTxData,
     isRefetching,
     refetch,
     error: txError,
-  } = useTransactions();
+  } = useTransactions({ dateFrom, dateTo, limit: 200 });
 
   useEffect(() => {
     if (txError) showToast("Gagal memuat transaksi", "error");
   }, [txError, showToast]);
 
-  const handleTxPress = useCallback((id: string) => router.push(`/(app)/(home)/${id}`), [router]);
+  const totalExpense = useMemo(
+    () =>
+      (monthTxData?.items ?? [])
+        .filter((t) => t.amount < 0)
+        .reduce((s, t) => s + Math.abs(t.amount), 0),
+    [monthTxData],
+  );
 
   const firstName = getDisplayName(user);
-  const items = txData?.items ?? [];
+
+  const addButton = useCallback(
+    () => (
+      <Pressable
+        onPress={() => router.push("/(app)/finance/new")}
+        hitSlop={8}
+        style={({ pressed }) => pressed && { opacity: 0.7 }}
+      >
+        <View style={styles.addBtn}>
+          <Plus size={18} color={colors.accent.primary} strokeWidth={2} />
+        </View>
+      </Pressable>
+    ),
+    [router],
+  );
 
   return (
     <SafeAreaView style={styles.root}>
@@ -51,6 +77,7 @@ export default function HomeScreen() {
             <Text style={styles.avatarText}>{firstName[0]?.toUpperCase() ?? "U"}</Text>
           </View>
         }
+        right={addButton()}
       />
 
       <ScrollView
@@ -71,17 +98,13 @@ export default function HomeScreen() {
 
         <AccountBalanceCard />
 
+        <MonthlyBudgetCard totalExpense={totalExpense} />
+
+        <ProjectedEndOfMonthCard />
+
         <AIInsightCard />
 
         <DailySpendCard />
-
-        <RecentTransactions
-          items={items.slice(0, 3)}
-          isLoading={txLoading}
-          error={!!txError}
-          onSeeAll={() => router.push("/history")}
-          onPress={handleTxPress}
-        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -108,11 +131,20 @@ const styles = StyleSheet.create({
     color: colors.accent.text,
   },
 
+  addBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent.subtle,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   greeting: {
     ...StyleSheet.flatten(textStyles.display),
     fontSize: 26,
     letterSpacing: -0.5,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.xl,
     marginBottom: 20,
   },
 });

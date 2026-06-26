@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useBudget } from '@/features/finance/hooks/useBudget';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { formatRupiah } from '@/lib/utils';
-import { colors, radius, textStyles } from '@/theme';
+import { colors, radius, spacing, textStyles } from '@/theme';
 
 const RING_RADIUS = 36;
 const RING_STROKE_W = 6;
@@ -34,9 +34,14 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
   if (!budget) {
     return (
       <View style={styles.card}>
-        <Pressable style={styles.promptRow} onPress={() => router.push('/(app)/finance/budget')}>
-          <Text style={styles.promptText}>Set a monthly budget</Text>
-          <Text style={styles.promptArrow}>→</Text>
+        <Pressable
+          onPress={() => router.push('/(app)/finance/budget')}
+          style={({ pressed }) => pressed && { opacity: 0.7 }}
+        >
+          <View style={styles.promptRow}>
+            <Text style={styles.promptText}>Set a monthly budget</Text>
+            <Text style={styles.promptArrow}>→</Text>
+          </View>
         </Pressable>
       </View>
     );
@@ -110,9 +115,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border.default,
-    marginHorizontal: 20,
+    marginHorizontal: spacing.xl,
     marginBottom: 12,
-    padding: 16,
+    padding: spacing.xl,
   },
 
   promptRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },

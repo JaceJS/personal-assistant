@@ -6,6 +6,7 @@ import * as WebBrowser from "expo-web-browser";
 import * as ExpoLinking from "expo-linking";
 import {
   Banknote,
+  Building2,
   ChevronDown,
   ChevronRight,
   CloudUpload,
@@ -159,6 +160,12 @@ export default function SettingsScreen() {
         {/* Finance section */}
         <SectionLabel label="Keuangan" />
         <GroupedList>
+          <MenuItem
+            icon={<Building2 size={16} color={colors.accent.primary} />}
+            label="Kelola Akun"
+            onPress={() => router.push("/(app)/accounts")}
+          />
+          <MenuDivider />
           <MenuItem
             icon={<PiggyBank size={16} color={colors.accent.primary} />}
             label="Anggaran Bulanan"

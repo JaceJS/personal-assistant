@@ -67,6 +67,7 @@ export default function FinanceDashboard() {
 
   const handleAdd = useCallback(() => router.push("/(app)/finance/new"), [router]);
   const handleSeeAll = useCallback(() => router.push("/(app)/finance/history"), [router]);
+  const handleGoToSavings = useCallback(() => router.push("/(app)/finance/savings-goals"), [router]);
 
   return (
     <Screen>
@@ -118,6 +119,28 @@ export default function FinanceDashboard() {
 
         <SectionHeader title="Anggaran Bulanan" />
         <MonthlyBudgetCard totalExpense={totalExpense} />
+
+        <SectionHeader
+          title="Tabungan Tujuan"
+          right={
+            <Pressable onPress={handleGoToSavings} hitSlop={8}>
+              <Text style={styles.seeAll}>Lihat Semua</Text>
+            </Pressable>
+          }
+        />
+        <Pressable
+          onPress={handleGoToSavings}
+          style={({ pressed }) => [styles.savingsEntryWrap, pressed && { opacity: 0.8 }]}
+        >
+          <View style={styles.savingsEntryCard}>
+            <Text style={styles.savingsEntryEmoji}>🎯</Text>
+            <View style={styles.savingsEntryText}>
+              <Text style={styles.savingsEntryTitle}>Tabungan Tujuan</Text>
+              <Text style={styles.savingsEntrySubtitle}>DP motor, liburan, dana darurat…</Text>
+            </View>
+            <Text style={styles.savingsEntryChevron}>›</Text>
+          </View>
+        </Pressable>
 
         <SectionHeader title="Arus Kas" />
         <CashFlowChart />
@@ -205,6 +228,36 @@ const styles = StyleSheet.create({
     color: colors.accent.primary,
   },
 
+  savingsEntryWrap: {
+    marginHorizontal: spacing.xl,
+    marginBottom: 12,
+  },
+  savingsEntryCard: {
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.xl,
+    gap: spacing.md,
+  },
+  savingsEntryEmoji: { fontSize: 28 },
+  savingsEntryText: { flex: 1 },
+  savingsEntryTitle: {
+    ...StyleSheet.flatten(textStyles.h3),
+    color: colors.text.primary,
+  },
+  savingsEntrySubtitle: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
+    marginTop: 2,
+  },
+  savingsEntryChevron: {
+    fontSize: 22,
+    color: colors.text.muted,
+    fontWeight: '300',
+  },
   transactionsCard: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,

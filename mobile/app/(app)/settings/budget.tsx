@@ -15,6 +15,7 @@ import { splitBudgetCategories } from '@/features/finance/utils/budgetCategoryUt
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
@@ -34,14 +35,6 @@ import { useToastStore } from '@/stores/toast';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
 const CARD_STYLE = { padding: 0, overflow: 'hidden' as const, borderWidth: 1, borderColor: colors.border.default };
-
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-    </View>
-  );
-}
 
 function Divider() {
   return <View style={styles.divider} />;
