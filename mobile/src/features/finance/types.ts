@@ -53,6 +53,39 @@ export interface Budget {
   updated_at: string;
 }
 
+export interface SavingsGoal {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string | null;
+  target_amount: number;
+  current_amount: number;
+  target_date: string | null;
+  is_archived: boolean;
+  is_completed: boolean;
+  progress_pct: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SavingsGoalCreate {
+  name: string;
+  icon?: string | null;
+  target_amount: number;
+  target_date?: string | null;
+}
+
+export interface SavingsGoalUpdate {
+  name?: string;
+  icon?: string | null;
+  target_amount?: number;
+  target_date?: string | null;
+}
+
+export interface SavingsGoalContribute {
+  amount: number;
+}
+
 export interface BudgetUpsert {
   monthly_limit: number;
 }
