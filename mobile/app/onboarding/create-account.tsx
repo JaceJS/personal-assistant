@@ -46,7 +46,10 @@ export default function CreateAccountOnboardingScreen() {
   const onSubmit = useCallback(
     async (values: FormValues) => {
       try {
-        await supabase.auth.updateUser({ data: { full_name: values.displayName.trim() } });
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await supabase.auth.updateUser({ data: { full_name: values.displayName.trim() } });
+        }
         await createAccount.mutateAsync({ name: values.name, type: values.type });
         await complete();
         router.replace("/(app)");
@@ -67,7 +70,7 @@ export default function CreateAccountOnboardingScreen() {
       >
         {/* Step indicator */}
         <View style={styles.stepRow}>
-          <View style={styles.stepDot} />
+          <View style={[styles.stepDot, styles.stepDotDone]} />
           <View style={styles.stepDot} />
         </View>
 
@@ -161,6 +164,9 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 2,
     backgroundColor: colors.accent.primary,
+  },
+  stepDotDone: {
+    backgroundColor: colors.text.muted,
   },
   header: {
     marginTop: 32,

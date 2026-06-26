@@ -69,6 +69,12 @@ export default function WelcomeScreen() {
           { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
         ]}
       >
+        {/* Step indicator */}
+        <View style={styles.stepRow}>
+          <View style={styles.stepDot} />
+          <View style={styles.stepDotInactive} />
+        </View>
+
         {/* Hero icon */}
         <Animated.View
           style={[styles.iconWrap, { transform: [{ scale: scaleAnim }] }]}
@@ -159,8 +165,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing["2xl"],
     alignItems: "center",
   },
+  stepRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 16,
+    alignSelf: "stretch",
+  },
+  stepDot: {
+    height: 4,
+    flex: 1,
+    borderRadius: 2,
+    backgroundColor: colors.accent.primary,
+  },
+  stepDotInactive: {
+    height: 4,
+    flex: 1,
+    borderRadius: 2,
+    backgroundColor: colors.border.default,
+  },
   iconWrap: {
-    marginTop: 48,
+    marginTop: 40,
     alignItems: "center",
   },
   iconCircle: {
