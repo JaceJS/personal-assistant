@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Pencil, Trash2 } from 'lucide-react-native';
 
@@ -24,7 +24,7 @@ import { colors, radius, spacing, textStyles } from '@/theme';
 export default function GoalDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: goal, isLoading } = useSavingsGoal(id);
+  const { data: goal, isLoading, isRefetching, refetch } = useSavingsGoal(id);
   const contribute = useContributeSavingsGoal();
   const update = useUpdateSavingsGoal();
   const deleteGoal = useDeleteSavingsGoal();
@@ -150,6 +150,13 @@ export default function GoalDetailScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.accent.primary}
+          />
+        }
       >
         {/* Hero */}
         <View style={styles.hero}>

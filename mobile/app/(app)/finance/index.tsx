@@ -67,7 +67,7 @@ export default function FinanceDashboard() {
 
   const handleAdd = useCallback(() => router.push("/(app)/finance/new"), [router]);
   const handleSeeAll = useCallback(() => router.push("/(app)/finance/history"), [router]);
-  const handleGoToSavings = useCallback(() => router.push("/(app)/finance/savings-goals"), [router]);
+  const handleGoToSavings = useCallback(() => router.push("/(app)/goals"), [router]);
 
   return (
     <Screen>
