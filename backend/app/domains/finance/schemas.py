@@ -21,7 +21,7 @@ class SavingsGoalCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     icon: str | None = None
     target_amount: int
-    target_date: str | None = None  # ISO date "YYYY-MM-DD"
+    target_date: date | None = None
 
     @field_validator("name")
     @classmethod
@@ -33,7 +33,7 @@ class SavingsGoalUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
     icon: str | None = None
     target_amount: int | None = None
-    target_date: str | None = None
+    target_date: date | None = None
 
     @field_validator("name")
     @classmethod
@@ -69,7 +69,7 @@ class SavingsGoalRead(BaseModel):
     updated_at: datetime
 
     @classmethod
-    def from_model(cls, goal: object) -> "SavingsGoalRead":
+    def from_model(cls, goal: object) -> SavingsGoalRead:
         from app.domains.finance.models import SavingsGoal as GoalModel
         g: GoalModel = goal  # type: ignore[assignment]
         pct = min(g.current_amount / g.target_amount * 100.0, 100.0) if g.target_amount > 0 else 0.0

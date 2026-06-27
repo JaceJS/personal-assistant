@@ -13,8 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai.llm.base import LLMProvider
 from app.ai.stt.base import STTProvider
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError, TooManyRequestsError
-from app.domains.finance.extractor import extract_transaction
 from app.domains.finance import repository as repo
+from app.domains.finance.extractor import extract_transaction
 from app.domains.finance.models import (
     Account,
     Budget,
@@ -86,7 +86,7 @@ async def update_savings_goal(
     session: AsyncSession, goal_id: uuid.UUID, user_id: uuid.UUID, data: SavingsGoalUpdate
 ) -> SavingsGoal:
     goal = await get_savings_goal(session, goal_id, user_id)
-    updates: dict = {k: v for k, v in data.model_dump().items() if v is not None}
+    updates: dict = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
     if "target_amount" in updates and updates["target_amount"] <= 0:
         raise BadRequestError("target_amount must be greater than 0")
     return await repo.update_savings_goal(session, goal, **updates)
