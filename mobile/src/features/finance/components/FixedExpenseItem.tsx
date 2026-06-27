@@ -18,8 +18,8 @@ function FixedExpenseItem({ category, spent }: FixedExpenseItemProps) {
   const isPaid = spent > 0;
 
   const committedLabel = category.budget_limit
-    ? `Committed: ${formatRupiah(category.budget_limit)}`
-    : 'No amount set';
+    ? `Komitmen: ${formatRupiah(category.budget_limit)}`
+    : 'Belum ada jumlah';
 
   const handlePress = useCallback(() => {
     setSheetVisible(true);
@@ -42,7 +42,7 @@ function FixedExpenseItem({ category, spent }: FixedExpenseItemProps) {
           <View style={styles.right}>
             <Text style={styles.spent}>{formatRupiah(spent)}</Text>
             <Text style={[styles.badge, isPaid ? styles.badgePaid : styles.badgePending]}>
-              {isPaid ? 'Paid' : 'Pending'}
+              {isPaid ? 'Lunas' : 'Pending'}
             </Text>
           </View>
         </View>

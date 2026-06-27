@@ -39,7 +39,7 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
           style={({ pressed }) => pressed && { opacity: 0.7 }}
         >
           <View style={styles.promptRow}>
-            <Text style={styles.promptText}>Set a monthly budget</Text>
+            <Text style={styles.promptText}>Atur budget bulanan</Text>
             <Text style={styles.promptArrow}>→</Text>
           </View>
         </Pressable>
@@ -61,7 +61,7 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
       <View style={styles.card}>
       <View style={styles.topRow}>
         <View style={styles.topLeft}>
-          <Text style={styles.budgetLabel}>TOTAL MONTHLY BUDGET</Text>
+          <Text style={styles.budgetLabel}>TOTAL BUDGET BULANAN</Text>
           <Text style={styles.budgetAmount}>{formatRupiah(monthlyLimit)}</Text>
         </View>
         <View style={styles.ringWrap}>
@@ -96,11 +96,11 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
 
       <View style={styles.spentRow}>
         <View>
-          <Text style={styles.rowLabel}>Spent</Text>
+          <Text style={styles.rowLabel}>Terpakai</Text>
           <Text style={styles.rowAmount}>{formatRupiah(totalExpense)}</Text>
         </View>
         <View style={styles.remainingCol}>
-          <Text style={styles.rowLabel}>Remaining</Text>
+          <Text style={styles.rowLabel}>Tersisa</Text>
           <Text style={[styles.rowAmount, { color: colors.accent.text }]}>{formatRupiah(remaining)}</Text>
         </View>
       </View>

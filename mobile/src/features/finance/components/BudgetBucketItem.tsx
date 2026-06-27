@@ -10,10 +10,10 @@ import { colors, radius, textStyles } from '@/theme';
 import CategoryBudgetSheet from './CategoryBudgetSheet';
 
 const STATUS_LABELS: Record<BucketStatus, string> = {
-  'no-limit': 'No Limit',
-  'on-track': 'On Track',
-  warning: 'Warning',
-  over: 'Over Budget',
+  'no-limit': 'Tanpa Batas',
+  'on-track': 'Aman',
+  warning: 'Waspada',
+  over: 'Melebihi',
 };
 
 const STATUS_COLORS: Record<BucketStatus, string> = {
@@ -46,7 +46,7 @@ function BudgetBucketItem({ category, spent }: BudgetBucketItemProps) {
 
   const limitLabel = category.budget_limit
     ? `/ ${formatRupiah(category.budget_limit)}`
-    : 'Tap to set limit';
+    : 'Ketuk untuk atur batas';
 
   return (
     <>

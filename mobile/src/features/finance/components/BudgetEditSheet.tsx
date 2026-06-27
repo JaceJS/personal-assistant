@@ -63,7 +63,7 @@ function BudgetEditSheet({
           <View style={styles.content}>
             <View style={styles.titleRow}>
               <Text style={styles.title}>
-                {isUpdate ? 'Update Budget' : 'Set Monthly Budget'}
+                {isUpdate ? 'Ubah Budget' : 'Atur Budget Bulanan'}
               </Text>
               <Pressable
                 style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
@@ -74,16 +74,16 @@ function BudgetEditSheet({
             </View>
 
             <Input
-              label="Amount in Rupiah (IDR)"
+              label="Jumlah dalam Rupiah (IDR)"
               value={inputValue}
               onChangeText={setInputValue}
               keyboardType="numeric"
-              placeholder="e.g. 10000000"
+              placeholder="mis. 10.000.000"
               autoFocus
             />
 
             <Button
-              label={isPending ? 'Saving…' : 'Save Budget'}
+              label={isPending ? 'Simpan…' : 'Simpan Budget'}
               onPress={handleSave}
               variant="primary"
               disabled={!hasValidInput || isPending}

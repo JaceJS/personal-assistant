@@ -39,7 +39,7 @@ function AddSpendingLimitSheet({ categories, isVisible, onDismiss, onSelect }: A
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <View style={styles.titleRow}>
-            <Text style={styles.title}>Add Spending Limit</Text>
+            <Text style={styles.title}>Tambah Batas Pengeluaran</Text>
             <Pressable
               style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
               onPress={onDismiss}
@@ -47,11 +47,11 @@ function AddSpendingLimitSheet({ categories, isVisible, onDismiss, onSelect }: A
               <X size={16} color={colors.text.secondary} strokeWidth={1.5} />
             </Pressable>
           </View>
-          <Text style={styles.subtitle}>Choose a category to set a monthly limit</Text>
+          <Text style={styles.subtitle}>Pilih kategori buat atur batas bulanan</Text>
 
           {categories.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>All expense categories already have limits set.</Text>
+              <Text style={styles.emptyText}>Semua kategori pengeluaran sudah punya batas.</Text>
             </View>
           ) : (
             <FlatList

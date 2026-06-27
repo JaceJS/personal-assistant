@@ -72,7 +72,7 @@ export default function FinanceDashboard() {
   return (
     <Screen>
       <Header
-        title="Finance"
+        title="Keuangan"
         subtitle={monthLabel}
         left={
           <View style={styles.avatar}>

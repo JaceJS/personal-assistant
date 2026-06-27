@@ -24,8 +24,8 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
       <View style={styles.card}>
         <View style={styles.noBudgetRow}>
           <View style={styles.noBudgetText}>
-            <Text style={styles.label}>TOTAL MONTHLY BUDGET</Text>
-            <Text style={styles.noBudgetHint}>No budget set yet</Text>
+            <Text style={styles.label}>TOTAL BUDGET BULANAN</Text>
+            <Text style={styles.noBudgetHint}>Belum ada budget</Text>
           </View>
           <Pressable
             style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
@@ -45,7 +45,7 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
     <View style={styles.card}>
       <View style={styles.topRow}>
         <View style={styles.topLeft}>
-          <Text style={styles.label}>TOTAL MONTHLY BUDGET</Text>
+          <Text style={styles.label}>TOTAL BUDGET BULANAN</Text>
           <Text style={styles.amount}>{formatRupiah(budget.monthly_limit)}</Text>
         </View>
         <Pressable
@@ -69,7 +69,7 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
       </View>
 
       <Text style={[styles.pctText, { color: barColor }]}>
-        {Math.round(pct * 100)}% Used
+        {Math.round(pct * 100)}% terpakai
       </Text>
     </View>
   );

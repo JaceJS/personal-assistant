@@ -37,13 +37,13 @@ export default function ProjectedEndOfMonthCard() {
     <View style={styles.card}>
       <View style={styles.glow} />
       <View style={styles.header}>
-        <Text style={styles.label}>Projected End of Month</Text>
+        <Text style={styles.label}>Estimasi Akhir Bulan</Text>
         <TrendIcon size={18} color={trendColor} strokeWidth={2} />
       </View>
       <Text style={styles.amount}>{formatRupiah(currNet)}</Text>
       <Text style={[styles.change, { color: trendColor }]}>
         {isHigher ? '↑' : '↓'} {Math.abs(pctChange)}%{' '}
-        {isHigher ? 'higher' : 'lower'} than last month surplus
+        {isHigher ? 'lebih dari bulan lalu' : 'lebih rendah dari bulan lalu'}
       </Text>
     </View>
   );

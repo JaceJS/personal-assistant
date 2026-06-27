@@ -53,9 +53,9 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
       {
         onSuccess: () => {
           onDismiss();
-          showToast('Budget limit saved', 'success');
+          showToast('Batas pengeluaran disimpan', 'success');
         },
-        onError: () => showToast('Failed to save budget limit', 'error'),
+        onError: () => showToast('Gagal simpan batas pengeluaran', 'error'),
       },
     );
   }, [category, inputValue, isFixed, updateCategory, onDismiss, showToast]);
@@ -67,14 +67,14 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
       {
         onSuccess: () => {
           onDismiss();
-          showToast('Budget limit removed', 'success');
+          showToast('Batas pengeluaran dihapus', 'success');
         },
-        onError: () => showToast('Failed to remove budget limit', 'error'),
+        onError: () => showToast('Gagal hapus batas pengeluaran', 'error'),
       },
     );
   }, [category, updateCategory, onDismiss, showToast]);
 
-  const inputLabel = isFixed ? 'Monthly Amount (IDR)' : 'Monthly Limit (IDR)';
+  const inputLabel = isFixed ? 'Jumlah Bulanan (IDR)' : 'Batas Bulanan (IDR)';
   const saveDisabled = (isFixed && !hasValidInput) || updateCategory.isPending;
 
   return (
@@ -95,7 +95,7 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
             <View style={styles.titleRow}>
               <View>
                 <Text style={styles.title}>
-                  {category?.budget_limit ? 'Edit Limit' : 'Set Limit'}
+                  {category?.budget_limit ? 'Ubah Batas' : 'Atur Batas'}
                 </Text>
                 <Text style={styles.subtitle}>{category?.name}</Text>
               </View>
@@ -112,14 +112,14 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
               value={inputValue}
               onChangeText={setInputValue}
               keyboardType="numeric"
-              placeholder="e.g. 3000000"
+              placeholder="mis. 3.000.000"
               autoFocus
             />
 
             <View style={styles.switchRow}>
               <View style={styles.switchInfo}>
-                <Text style={styles.switchLabel}>Fixed monthly expense</Text>
-                <Text style={styles.switchDesc}>Committed cost — rent, subscriptions, utilities</Text>
+                <Text style={styles.switchLabel}>Pengeluaran tetap</Text>
+                <Text style={styles.switchDesc}>Biaya tetap — sewa, langganan, tagihan rutin</Text>
               </View>
               <Switch
                 value={isFixed}
@@ -130,7 +130,7 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
             </View>
 
             <Button
-              label={updateCategory.isPending ? 'Saving…' : 'Save Limit'}
+              label={updateCategory.isPending ? 'Simpan…' : 'Simpan Batas'}
               onPress={handleSave}
               variant="primary"
               disabled={saveDisabled}
@@ -139,7 +139,7 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
 
             {!isFixed && category?.budget_limit ? (
               <Button
-                label="Remove Limit"
+                label="Hapus Batas"
                 onPress={handleClear}
                 variant="ghost"
                 disabled={updateCategory.isPending}

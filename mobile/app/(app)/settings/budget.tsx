@@ -45,7 +45,7 @@ function UnallocatedChip({ unallocated }: { unallocated: number }) {
   return (
     <View style={[styles.chip, isOver ? styles.chipOver : styles.chipOk]}>
       <Text style={[styles.chipText, { color: isOver ? colors.danger.text : colors.success.text }]}>
-        {isOver ? `Rp ${formatRupiah(Math.abs(unallocated))} over` : `${formatRupiah(unallocated)} free`}
+        {isOver ? `Rp ${formatRupiah(Math.abs(unallocated))} melebihi` : `${formatRupiah(unallocated)} tersisa`}
       </Text>
     </View>
   );
@@ -132,7 +132,7 @@ export default function BudgetScreen() {
       { monthly_limit: amount },
       {
         onSuccess: () => setEditVisible(false),
-        onError: () => showToast('Failed to save budget', 'error'),
+        onError: () => showToast('Gagal simpan budget', 'error'),
       }
     );
   }, [saveBudget, showToast]);
@@ -184,12 +184,12 @@ export default function BudgetScreen() {
         />
 
         <View style={styles.section}>
-          <SectionHeader title="Monthly Bills" />
+          <SectionHeader title="Tagihan Rutin" />
           {bills.length === 0 ? (
             <Card style={CARD_STYLE}>
               <View style={styles.emptyFixed}>
                 <Text style={styles.emptyFixedText}>
-                  No monthly bills yet. Open any spending category and toggle "Fixed monthly expense" to commit it.
+                  Belum ada tagihan rutin. Buka kategori pengeluaran dan aktifkan "Pengeluaran Tetap" buat menambahkan.
                 </Text>
               </View>
             </Card>
@@ -210,7 +210,7 @@ export default function BudgetScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Spending Limits</Text>
+            <Text style={styles.sectionTitle}>Batas Pengeluaran</Text>
             <View style={styles.sectionHeaderRight}>
               {budget && (bills.length > 0 || spending.length > 0) && (
                 <UnallocatedChip
@@ -220,15 +220,15 @@ export default function BudgetScreen() {
               <IconButton
                 icon={Plus}
                 onPress={() => setAddSheetVisible(true)}
-                accessibilityLabel="Add spending limit"
+                accessibilityLabel="Tambah batas pengeluaran"
               />
             </View>
           </View>
           {spending.length === 0 ? (
             <EmptyState
               icon={Wallet}
-              title="No spending limits"
-              subtitle="Tap + to add a category and set a monthly limit"
+              title="Belum ada batas pengeluaran"
+              subtitle="Ketuk + buat tambah kategori dan atur batas bulanan"
             />
           ) : (
             <Card style={CARD_STYLE}>
