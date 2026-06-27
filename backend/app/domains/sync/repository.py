@@ -12,6 +12,7 @@ from app.domains.finance.models import (
     Account,
     Budget,
     Category,
+    SavingsGoal,
     Transaction,
     TransactionStatus,
 )
@@ -19,6 +20,7 @@ from app.domains.sync.schemas import (
     AccountImport,
     BudgetImport,
     CategoryImport,
+    SavingsGoalImport,
     TransactionImport,
 )
 
@@ -124,3 +126,32 @@ async def import_budget(
     await session.execute(stmt)
     await session.flush()
     return 1
+
+
+async def import_savings_goals(
+    session: AsyncSession, user_id: uuid.UUID, goals: list[SavingsGoalImport]
+) -> int:
+    if not goals:
+        return 0
+    stmt = (
+        pg_insert(SavingsGoal)
+        .values(
+            [
+                {
+                    "id": g.id,
+                    "user_id": user_id,
+                    "name": g.name,
+                    "icon": g.icon,
+                    "target_amount": g.target_amount,
+                    "current_amount": g.current_amount,
+                    "target_date": g.target_date,
+                    "is_archived": False,
+                }
+                for g in goals
+            ]
+        )
+        .on_conflict_do_nothing(index_elements=["id"])
+    )
+    result = await session.execute(stmt)
+    await session.flush()
+    return result.rowcount

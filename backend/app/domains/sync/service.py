@@ -17,6 +17,7 @@ async def bulk_import(
     categories_count = await repo.import_categories(session, user_id, payload.categories)
     transactions_count = await repo.import_transactions(session, user_id, payload.transactions)
     budgets_count = await repo.import_budget(session, user_id, payload.budget)
+    savings_goals_count = await repo.import_savings_goals(session, user_id, payload.savings_goals)
 
     return BulkImportResult(
         imported=ImportCounts(
@@ -24,5 +25,6 @@ async def bulk_import(
             categories=categories_count,
             transactions=transactions_count,
             budgets=budgets_count,
+            savings_goals=savings_goals_count,
         )
     )

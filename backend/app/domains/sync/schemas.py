@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -42,11 +42,21 @@ class BudgetImport(BaseModel):
     monthly_limit: int
 
 
+class SavingsGoalImport(BaseModel):
+    id: uuid.UUID
+    name: str
+    icon: str | None = None
+    target_amount: int
+    current_amount: int = 0
+    target_date: date | None = None
+
+
 class BulkImportPayload(BaseModel):
     accounts: list[AccountImport] = []
     categories: list[CategoryImport] = []
     transactions: list[TransactionImport] = []
     budget: BudgetImport | None = None
+    savings_goals: list[SavingsGoalImport] = []
 
 
 class ImportCounts(BaseModel):
@@ -54,6 +64,7 @@ class ImportCounts(BaseModel):
     categories: int = 0
     transactions: int = 0
     budgets: int = 0
+    savings_goals: int = 0
 
 
 class BulkImportResult(BaseModel):
