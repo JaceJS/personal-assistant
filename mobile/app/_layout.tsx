@@ -1,6 +1,7 @@
 import "../global.css";
 
 import * as Sentry from "@sentry/react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
@@ -8,9 +9,10 @@ import {
   PlusJakartaSans_700Bold,
 } from "@expo-google-fonts/plus-jakarta-sans";
 import { useFonts } from "expo-font";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -25,6 +27,13 @@ Sentry.init({
   enabled: !__DEV__,
   tracesSampleRate: 0.2,
   environment: __DEV__ ? "development" : "production",
+});
+
+focusManager.setEventListener((handleFocus) => {
+  const subscription = AppState.addEventListener("change", (state) => {
+    handleFocus(state === "active");
+  });
+  return () => subscription.remove();
 });
 
 
@@ -68,11 +77,13 @@ function RootLayoutInner() {
 
 function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ErrorBoundary>
-        <RootLayoutInner />
-      </ErrorBoundary>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary>
+          <RootLayoutInner />
+        </ErrorBoundary>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 

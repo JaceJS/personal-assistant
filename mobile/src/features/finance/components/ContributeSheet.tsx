@@ -11,7 +11,7 @@ import {
 import { X } from 'lucide-react-native';
 
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import RupiahInput from '@/components/ui/RupiahInput';
 import { formatRupiah } from '@/lib/utils';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
@@ -35,24 +35,23 @@ function ContributeSheet({
   goalName,
 }: ContributeSheetProps) {
   const [mode, setMode] = useState<Mode>('add');
-  const [rawInput, setRawInput] = useState('');
+  const [amount, setAmount] = useState(0);
 
   useEffect(() => {
     if (isVisible) {
       setMode('add');
-      setRawInput('');
+      setAmount(0);
     }
   }, [isVisible]);
 
-  const parsedAmount = Number(rawInput.replace(/\D/g, ''));
-  const isValid = parsedAmount > 0;
+  const isValid = amount > 0;
 
-  const handleQuick = useCallback((amt: number) => setRawInput(String(amt)), []);
+  const handleQuick = useCallback((amt: number) => setAmount(amt), []);
 
   const handleConfirm = useCallback(() => {
     if (!isValid) return;
-    onContribute(mode === 'add' ? parsedAmount : -parsedAmount);
-  }, [isValid, mode, parsedAmount, onContribute]);
+    onContribute(mode === 'add' ? amount : -amount);
+  }, [isValid, mode, amount, onContribute]);
 
   return (
     <Modal
@@ -117,11 +116,11 @@ function ContributeSheet({
                   onPress={() => handleQuick(amt)}
                   style={({ pressed }) => pressed && { opacity: 0.7 }}
                 >
-                  <View style={[styles.quickChip, parsedAmount === amt && styles.quickChipActive]}>
+                  <View style={[styles.quickChip, amount === amt && styles.quickChipActive]}>
                     <Text
                       style={[
                         styles.quickChipText,
-                        parsedAmount === amt && styles.quickChipTextActive,
+                        amount === amt && styles.quickChipTextActive,
                       ]}
                     >
                       {formatRupiah(amt)}
@@ -131,11 +130,10 @@ function ContributeSheet({
               ))}
             </View>
 
-            <Input
+            <RupiahInput
               label="Jumlah (Rupiah)"
-              value={rawInput}
-              onChangeText={setRawInput}
-              keyboardType="numeric"
+              value={amount}
+              onChange={setAmount}
               placeholder="atau masukkan manual"
             />
 

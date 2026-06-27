@@ -8,7 +8,7 @@ import {
   contributeToSavingsGoal,
   deleteSavingsGoal,
 } from "@/features/finance/api/savingsGoals";
-import type { SavingsGoalContribute, SavingsGoalCreate, SavingsGoalUpdate } from "@/features/finance/types";
+import type { SavingsGoal, SavingsGoalContribute, SavingsGoalCreate, SavingsGoalUpdate } from "@/features/finance/types";
 
 const QUERY_KEY = "savings-goals";
 
@@ -31,41 +31,55 @@ export function useSavingsGoal(id: string) {
 }
 
 export function useCreateSavingsGoal() {
+  const isGuest = useAuthStore((s) => s.isGuest);
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: SavingsGoalCreate) => createSavingsGoal(data),
+    mutationFn: (data: SavingsGoalCreate) => {
+      if (isGuest) return Promise.resolve({} as SavingsGoal);
+      return createSavingsGoal(data);
+    },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }
 
 export function useUpdateSavingsGoal() {
+  const isGuest = useAuthStore((s) => s.isGuest);
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: SavingsGoalUpdate }) =>
-      updateSavingsGoal(id, data),
-    onSuccess: (_, { id }) => {
+    mutationFn: ({ id, data }: { id: string; data: SavingsGoalUpdate }) => {
+      if (isGuest) return Promise.resolve({} as SavingsGoal);
+      return updateSavingsGoal(id, data);
+    },
+    onSuccess: (updatedGoal, { id }) => {
+      queryClient.setQueryData([QUERY_KEY, id], updatedGoal);
       void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY, id] });
     },
   });
 }
 
 export function useContributeSavingsGoal() {
+  const isGuest = useAuthStore((s) => s.isGuest);
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: SavingsGoalContribute }) =>
-      contributeToSavingsGoal(id, data),
-    onSuccess: (_, { id }) => {
+    mutationFn: ({ id, data }: { id: string; data: SavingsGoalContribute }) => {
+      if (isGuest) return Promise.resolve({} as SavingsGoal);
+      return contributeToSavingsGoal(id, data);
+    },
+    onSuccess: (updatedGoal, { id }) => {
+      queryClient.setQueryData([QUERY_KEY, id], updatedGoal);
       void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY, id] });
     },
   });
 }
 
 export function useDeleteSavingsGoal() {
+  const isGuest = useAuthStore((s) => s.isGuest);
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteSavingsGoal(id),
+    mutationFn: (id: string) => {
+      if (isGuest) return Promise.resolve();
+      return deleteSavingsGoal(id);
+    },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }

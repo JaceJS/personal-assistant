@@ -6,16 +6,19 @@ import { ChevronLeft, Plus } from 'lucide-react-native';
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
 import Button from '@/components/ui/Button';
+import GuestGate from '@/components/ui/GuestGate';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import SavingsGoalCard from '@/features/finance/components/SavingsGoalCard';
 import SavingsGoalFormSheet from '@/features/finance/components/SavingsGoalFormSheet';
 import { useCreateSavingsGoal, useSavingsGoals } from '@/features/finance/hooks/useSavingsGoals';
 import type { SavingsGoal, SavingsGoalCreate } from '@/features/finance/types';
+import { useAuthStore } from '@/stores/auth';
 import { useToastStore } from '@/stores/toast';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
 export default function SavingsGoalsScreen() {
   const router = useRouter();
+  const isGuest = useAuthStore((s) => s.isGuest);
   const { data: goals, isLoading, isRefetching, refetch } = useSavingsGoals();
   const createGoal = useCreateSavingsGoal();
   const { showToast } = useToastStore();
@@ -54,6 +57,15 @@ export default function SavingsGoalsScreen() {
       <ChevronLeft size={22} color={colors.text.secondary} strokeWidth={2} />
     </Pressable>
   );
+
+  if (isGuest) {
+    return (
+      <Screen>
+        <Header title="Tabungan Tujuan" left={backButton} />
+        <GuestGate subtitle="Masuk untuk membuat dan mengelola savings goals kamu." />
+      </Screen>
+    );
+  }
 
   const addButton = (
     <Pressable

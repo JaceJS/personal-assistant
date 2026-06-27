@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Pencil, Trash2 } from 'lucide-react-native';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
 import Button from '@/components/ui/Button';
+import GuestGate from '@/components/ui/GuestGate';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import ContributeSheet from '@/features/finance/components/ContributeSheet';
 import SavingsGoalFormSheet from '@/features/finance/components/SavingsGoalFormSheet';
@@ -18,13 +19,15 @@ import {
 import type { SavingsGoalCreate } from '@/features/finance/types';
 import { daysRemaining, requiredMonthlyContribution } from '@/features/finance/utils/savingsGoalUtils';
 import { formatRupiah } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth';
 import { useToastStore } from '@/stores/toast';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
 export default function SavingsGoalDetailScreen() {
   const router = useRouter();
+  const isGuest = useAuthStore((s) => s.isGuest);
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: goal, isLoading } = useSavingsGoal(id);
+  const { data: goal, isLoading, isRefetching, refetch } = useSavingsGoal(id);
   const contribute = useContributeSavingsGoal();
   const update = useUpdateSavingsGoal();
   const deleteGoal = useDeleteSavingsGoal();
@@ -88,6 +91,15 @@ export default function SavingsGoalDetailScreen() {
     </Pressable>
   );
 
+  if (isGuest) {
+    return (
+      <Screen>
+        <Header title="Tabungan Tujuan" left={backButton} />
+        <GuestGate subtitle="Masuk untuk melihat dan mengelola savings goals kamu." />
+      </Screen>
+    );
+  }
+
   const editButton = (
     <View style={styles.headerActions}>
       <Pressable
@@ -150,6 +162,13 @@ export default function SavingsGoalDetailScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.accent.primary}
+          />
+        }
       >
         {/* Hero */}
         <View style={styles.hero}>

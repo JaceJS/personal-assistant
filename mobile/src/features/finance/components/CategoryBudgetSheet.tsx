@@ -12,7 +12,7 @@ import {
 import { X } from 'lucide-react-native';
 
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import RupiahInput from '@/components/ui/RupiahInput';
 import type { Category } from '@/features/finance/types';
 import { useUpdateCategory } from '@/features/finance/hooks/useCategories';
 import { useToastStore } from '@/stores/toast';
@@ -25,23 +25,22 @@ interface CategoryBudgetSheetProps {
 }
 
 function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetSheetProps) {
-  const [inputValue, setInputValue] = useState('');
+  const [amount, setAmount] = useState(0);
   const [isFixed, setIsFixed] = useState(false);
   const updateCategory = useUpdateCategory();
   const { showToast } = useToastStore();
 
   useEffect(() => {
     if (isVisible && category) {
-      setInputValue(category.budget_limit ? String(category.budget_limit) : '');
+      setAmount(category.budget_limit ?? 0);
       setIsFixed(category.is_fixed);
     }
   }, [isVisible, category]);
 
-  const hasValidInput = Number(inputValue.replace(/\D/g, '')) > 0;
+  const hasValidInput = amount > 0;
 
   const handleSave = useCallback(() => {
     if (!category) return;
-    const amount = Number(inputValue.replace(/\D/g, ''));
     updateCategory.mutate(
       {
         id: category.id,
@@ -58,7 +57,7 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
         onError: () => showToast('Gagal simpan batas pengeluaran', 'error'),
       },
     );
-  }, [category, inputValue, isFixed, updateCategory, onDismiss, showToast]);
+  }, [category, amount, isFixed, updateCategory, onDismiss, showToast]);
 
   const handleClear = useCallback(() => {
     if (!category) return;
@@ -107,11 +106,10 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
               </Pressable>
             </View>
 
-            <Input
+            <RupiahInput
               label={inputLabel}
-              value={inputValue}
-              onChangeText={setInputValue}
-              keyboardType="numeric"
+              value={amount}
+              onChange={setAmount}
               placeholder="mis. 3.000.000"
               autoFocus
             />

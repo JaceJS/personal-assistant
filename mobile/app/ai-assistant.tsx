@@ -1,6 +1,6 @@
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { Camera, Lock, Mic, SendHorizontal, Square, X } from "lucide-react-native";
+import { Camera, Mic, SendHorizontal, Square, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Header } from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
+import GuestGate from "@/components/ui/GuestGate";
 import { ConfirmCard } from "@/components/voice/ConfirmCard";
 import type { ConfirmPayload } from "@/components/voice/ConfirmCard";
 import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
@@ -362,20 +363,7 @@ export default function AIAssistantScreen() {
 
       {/* Guest gate */}
       {isGuest ? (
-        <View style={styles.guestGate}>
-          <View style={styles.guestGateIcon}>
-            <Lock size={48} color={colors.accent.primary} strokeWidth={1.5} />
-          </View>
-          <Text style={styles.guestGateTitle}>Fitur ini membutuhkan akun</Text>
-          <Text style={styles.guestGateSubtitle}>
-            Masuk untuk menggunakan AI Assistant dan melihat data keuanganmu.
-          </Text>
-          <Button
-            label="Masuk ke Akun"
-            onPress={() => router.push("/(app)/settings")}
-            variant="primary"
-          />
-        </View>
+        <GuestGate subtitle="Masuk untuk menggunakan AI Assistant dan melihat data keuanganmu." />
       ) : (
       <>
       {/* Chat area */}
@@ -634,32 +622,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.danger.bg,
     borderWidth: 1,
     borderColor: `${colors.danger.text}80`,
-  },
-  guestGate: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing["2xl"],
-    gap: spacing.lg,
-  },
-  guestGateIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: radius.full,
-    backgroundColor: colors.accent.subtle,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.sm,
-  },
-  guestGateTitle: {
-    ...StyleSheet.flatten(textStyles.h2),
-    color: colors.text.primary,
-    textAlign: "center",
-  },
-  guestGateSubtitle: {
-    ...StyleSheet.flatten(textStyles.body),
-    color: colors.text.muted,
-    textAlign: "center",
   },
   quickChips: {
     flexDirection: "row",

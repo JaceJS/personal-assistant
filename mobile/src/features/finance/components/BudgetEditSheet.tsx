@@ -11,7 +11,7 @@ import {
 import { X } from 'lucide-react-native';
 
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import RupiahInput from '@/components/ui/RupiahInput';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
 interface BudgetEditSheetProps {
@@ -31,20 +31,19 @@ function BudgetEditSheet({
   isPending,
   isUpdate,
 }: BudgetEditSheetProps) {
-  const [inputValue, setInputValue] = useState('');
+  const [amount, setAmount] = useState(0);
 
   useEffect(() => {
     if (isVisible) {
-      setInputValue(initialValue ? String(initialValue) : '');
+      setAmount(initialValue ?? 0);
     }
   }, [isVisible, initialValue]);
 
-  const hasValidInput = Number(inputValue.replace(/\D/g, '')) > 0;
+  const hasValidInput = amount > 0;
 
   const handleSave = useCallback(() => {
-    const amount = Number(inputValue.replace(/\D/g, ''));
     if (amount > 0) onSave(amount);
-  }, [inputValue, onSave]);
+  }, [amount, onSave]);
 
   return (
     <Modal
@@ -73,11 +72,10 @@ function BudgetEditSheet({
               </Pressable>
             </View>
 
-            <Input
+            <RupiahInput
               label="Jumlah dalam Rupiah (IDR)"
-              value={inputValue}
-              onChangeText={setInputValue}
-              keyboardType="numeric"
+              value={amount}
+              onChange={setAmount}
               placeholder="mis. 10.000.000"
               autoFocus
             />

@@ -13,6 +13,7 @@ import { X } from 'lucide-react-native';
 
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import RupiahInput from '@/components/ui/RupiahInput';
 import type { SavingsGoal, SavingsGoalCreate } from '@/features/finance/types';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
@@ -37,20 +38,19 @@ function SavingsGoalFormSheet({
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('🎯');
-  const [targetAmount, setTargetAmount] = useState('');
+  const [targetAmount, setTargetAmount] = useState(0);
   const [targetDate, setTargetDate] = useState('');
 
   useEffect(() => {
     if (isVisible) {
       setName(initialValues?.name ?? '');
       setIcon(initialValues?.icon ?? '🎯');
-      setTargetAmount(initialValues?.target_amount ? String(initialValues.target_amount) : '');
+      setTargetAmount(initialValues?.target_amount ?? 0);
       setTargetDate(initialValues?.target_date ?? '');
     }
   }, [isVisible, initialValues]);
 
-  const parsedAmount = Number(targetAmount.replace(/\D/g, ''));
-  const isValid = name.trim().length > 0 && parsedAmount > 0;
+  const isValid = name.trim().length > 0 && targetAmount > 0;
 
   const handleSave = useCallback(() => {
     if (!isValid) return;
@@ -58,10 +58,10 @@ function SavingsGoalFormSheet({
     onSave({
       name: name.trim(),
       icon: icon || null,
-      target_amount: parsedAmount,
+      target_amount: targetAmount,
       target_date: dateVal,
     });
-  }, [isValid, name, icon, parsedAmount, targetDate, onSave]);
+  }, [isValid, name, icon, targetAmount, targetDate, onSave]);
 
   return (
     <Modal
@@ -125,12 +125,11 @@ function SavingsGoalFormSheet({
               autoFocus={!isEdit}
             />
 
-            <Input
+            <RupiahInput
               label="Target (Rupiah)"
               value={targetAmount}
-              onChangeText={setTargetAmount}
-              keyboardType="numeric"
-              placeholder="contoh: 15000000"
+              onChange={setTargetAmount}
+              placeholder="mis. 15.000.000"
             />
 
             <Input
