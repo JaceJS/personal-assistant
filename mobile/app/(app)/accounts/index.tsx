@@ -8,9 +8,9 @@ import { z } from "zod";
 
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
+import { HeaderButton } from "@/components/ui/HeaderButton";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
-import Fab from "@/components/ui/Fab";
 import Input from "@/components/ui/Input";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import AccountCard from "@/features/finance/components/AccountCard";
@@ -73,17 +73,25 @@ export default function AccountsScreen() {
   );
 
   const backButton = (
-    <Pressable
-      onPress={() => router.canGoBack() ? router.back() : router.replace("/(app)/settings")}
-      style={({ pressed }) => pressed && { opacity: 0.6 }}
-    >
-      <ChevronLeft size={22} color={colors.text.muted} />
-    </Pressable>
+    <HeaderButton
+      icon={ChevronLeft}
+      onPress={() => (router.canGoBack() ? router.back() : router.replace("/(app)/settings"))}
+      color={colors.text.muted}
+      iconSize={22}
+    />
+  );
+
+  const addButton = (
+    <HeaderButton
+      icon={Plus}
+      onPress={handleOpenModal}
+      accessibilityLabel="Add account"
+    />
   );
 
   return (
     <Screen>
-      <Header title="Akun" left={backButton} />
+      <Header title="Akun" left={backButton} right={addButton} />
 
       {isLoading ? (
         <View style={styles.listPad}>
@@ -113,8 +121,6 @@ export default function AccountsScreen() {
           }
         />
       )}
-
-      <Fab onPress={handleOpenModal} icon={Plus} accessibilityLabel="Add account" />
 
       <Modal visible={showModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>

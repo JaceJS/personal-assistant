@@ -40,11 +40,11 @@ export function AIInsightCard() {
 const styles = StyleSheet.create({
   skeletonWrapper: {
     marginHorizontal: spacing["2xl"],
-    marginBottom: spacing["2xl"],
+    marginBottom: spacing.lg,
   },
   card: {
     marginHorizontal: spacing["2xl"],
-    marginBottom: spacing["2xl"],
+    marginBottom: spacing.lg,
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: `${GLOW_COLOR}4D`,

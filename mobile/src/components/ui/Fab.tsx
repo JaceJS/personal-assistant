@@ -1,12 +1,11 @@
 import React from "react";
-import { Pressable, StyleSheet, TouchableOpacity } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { LucideIcon } from "lucide-react-native";
 import { colors, radius } from "@/theme";
-import { Text } from "react-native";
 
 const FAB_SIZE = 56;
-const TAB_BAR_CLEARANCE = 80; // FloatingTabBar height (~67) + breathing room
+const TAB_BAR_CLEARANCE = 90; // FloatingTabBar height (~67) + breathing room
 
 interface FabProps {
   onPress: () => void;
@@ -22,30 +21,32 @@ const Fab: React.FC<FabProps> = ({ onPress, icon: Icon, accessibilityLabel }) =>
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      style={[styles.fab, { bottom: insets.bottom + TAB_BAR_CLEARANCE }]}
+      style={[styles.pressable, { bottom: insets.bottom + TAB_BAR_CLEARANCE }]}
     >
       {({ pressed }) => (
-        <Icon
-          size={24}
-          color={colors.bg.elevated}
-          strokeWidth={2.5}
-          style={{ opacity: pressed ? 0.85 : 1 }}
-        />
+        <View style={[styles.fab, { opacity: pressed ? 0.85 : 1 }]}>
+          <Icon size={24} color={colors.bg.elevated} strokeWidth={2.5} />
+        </View>
       )}
     </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
-  fab: {
+  pressable: {
     position: "absolute",
-    justifyContent: "center",
-    alignItems: "center",
     right: 20,
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    zIndex: 99,
+  },
+  fab: {
     width: FAB_SIZE,
     height: FAB_SIZE,
     borderRadius: radius.full,
     backgroundColor: colors.accent.primary,
+    justifyContent: "center",
+    alignItems: "center",
 
     shadowColor: colors.accent.primary,
     shadowOffset: { width: 0, height: 0 },
@@ -54,7 +55,6 @@ const styles = StyleSheet.create({
 
     elevation: 6,
   },
-  pressed: { opacity: 0.85 },
 });
 
 export default React.memo(Fab);

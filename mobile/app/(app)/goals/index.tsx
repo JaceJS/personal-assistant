@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
+import { HeaderButton } from '@/components/ui/HeaderButton';
 import Button from '@/components/ui/Button';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import SavingsGoalCard from '@/features/finance/components/SavingsGoalCard';
@@ -46,15 +47,11 @@ export default function GoalsScreen() {
   const ongoing = active.filter((g) => !g.is_completed);
 
   const addButton = (
-    <Pressable
+    <HeaderButton
+      icon={Plus}
       onPress={() => setShowForm(true)}
-      hitSlop={8}
-      style={({ pressed }) => pressed && { opacity: 0.7 }}
-    >
-      <View style={styles.addBtn}>
-        <Plus size={18} color={colors.accent.primary} strokeWidth={2} />
-      </View>
-    </Pressable>
+      accessibilityLabel="Add goal"
+    />
   );
 
   return (

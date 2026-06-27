@@ -164,16 +164,20 @@ export default function TransactionDetailScreen() {
               />
             </>
           ) : (
-            <>
-              <Button label="Edit" onPress={handleStartEdit} variant="secondary" fullWidth />
-              <Button
-                label="Hapus"
+            <View style={{ gap: spacing.sm, alignItems: "center", width: "100%" }}>
+              <Button label="Edit Transaksi" onPress={handleStartEdit} variant="secondary" fullWidth />
+              <Pressable
                 onPress={handleDelete}
-                variant="danger"
-                loading={deleteTransaction.isPending}
-                fullWidth
-              />
-            </>
+                style={({ pressed }) => [
+                  { paddingVertical: spacing.xs, marginTop: spacing.xs },
+                  pressed && { opacity: 0.6 }
+                ]}
+              >
+                <Text style={[textStyles.body, { color: colors.danger.text, fontWeight: "500" }]}>
+                  Hapus Transaksi
+                </Text>
+              </Pressable>
+            </View>
           )}
         </View>
       </ScrollView>

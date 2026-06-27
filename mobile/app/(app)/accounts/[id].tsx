@@ -1,10 +1,11 @@
 import { useCallback, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ChevronLeft, CreditCard, Landmark, Smartphone, Wallet } from "lucide-react-native";
+import { ChevronLeft, CreditCard, Landmark, Pencil, Smartphone, Trash2, Wallet } from "lucide-react-native";
 
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
+import { HeaderButton } from "@/components/ui/HeaderButton";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { SkeletonList } from "@/components/ui/Skeleton";
@@ -90,11 +91,19 @@ export default function AccountDetailScreen() {
   }, [account, archiveAccount, id, router, showToast]);
 
   const headerLeft = (
-    <Pressable onPress={() => router.back()}>
-      {({ pressed }) => (
-        <ChevronLeft size={22} color={THEME.colors.muted} style={{ opacity: pressed ? 0.5 : 1 }} />
-      )}
-    </Pressable>
+    <HeaderButton
+      icon={ChevronLeft}
+      onPress={() => router.back()}
+      color={THEME.colors.muted}
+      iconSize={22}
+    />
+  );
+
+  const headerRight = !isEditing && (
+    <View style={{ flexDirection: "row", gap: spacing.md, alignItems: "center" }}>
+      <HeaderButton icon={Pencil} onPress={handleStartEdit} />
+      <HeaderButton icon={Trash2} onPress={handleDelete} variant="danger" />
+    </View>
   );
 
   if (isLoading) {
@@ -123,7 +132,7 @@ export default function AccountDetailScreen() {
 
   return (
     <Screen>
-      <Header title="Account Detail" left={headerLeft} />
+      <Header title="Account Detail" left={headerLeft} right={headerRight} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero Card */}
         <View style={styles.heroCard}>
@@ -149,7 +158,7 @@ export default function AccountDetailScreen() {
         </View>
 
         {/* Actions / Edit */}
-        {isEditing ? (
+        {isEditing && (
           <View style={styles.editCard}>
             <Input label="Account Name" value={name} onChangeText={setName} autoFocus />
             <Button
@@ -159,17 +168,6 @@ export default function AccountDetailScreen() {
               fullWidth
             />
             <Button label="Cancel" onPress={() => setIsEditing(false)} variant="ghost" fullWidth />
-          </View>
-        ) : (
-          <View style={styles.actionsSection}>
-            <Button label="Edit Name" onPress={handleStartEdit} variant="warning" fullWidth />
-            <Button
-              label="Delete Account"
-              onPress={handleDelete}
-              variant="danger"
-              loading={archiveAccount.isPending}
-              fullWidth
-            />
           </View>
         )}
       </ScrollView>

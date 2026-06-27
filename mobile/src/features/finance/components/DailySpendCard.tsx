@@ -83,8 +83,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bg.surface,
     borderRadius: 16,
-    marginHorizontal: 20,
-    marginBottom: 16,
+    marginHorizontal: spacing["2xl"],
+    marginBottom: spacing.lg,
     paddingVertical: 24,
     paddingHorizontal: 20,
     alignItems: 'center',

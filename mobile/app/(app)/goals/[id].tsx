@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Pencil, Trash2 } from 'lucide-react-native';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
+import { HeaderButton } from '@/components/ui/HeaderButton';
 import Button from '@/components/ui/Button';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import ContributeSheet from '@/features/finance/components/ContributeSheet';
@@ -40,7 +41,7 @@ export default function GoalDetailScreen() {
         setShowContribute(false);
         showToast(amount > 0 ? 'Berhasil menabung!' : 'Dana berhasil ditarik', 'success');
       } catch {
-        showToast('Gagal. Coba lagi.', 'error');
+        showToast('Gagal menabung. Coba lagi.', 'error');
       }
     },
     [contribute, id, showToast],
@@ -51,16 +52,16 @@ export default function GoalDetailScreen() {
       try {
         await update.mutateAsync({ id, data });
         setShowEdit(false);
-        showToast('Goal diperbarui', 'success');
+        showToast('Goal diperbarui!', 'success');
       } catch {
-        showToast('Gagal memperbarui. Coba lagi.', 'error');
+        showToast('Gagal memperbarui goal.', 'error');
       }
     },
     [update, id, showToast],
   );
 
   const handleDelete = useCallback(() => {
-    Alert.alert('Hapus Goal?', 'Goal ini akan diarsipkan dan tidak bisa dilihat lagi.', [
+    Alert.alert('Hapus Goal', `Yakin mau hapus goal "${goal?.name}"?`, [
       { text: 'Batal', style: 'cancel' },
       {
         text: 'Hapus',
@@ -71,43 +72,26 @@ export default function GoalDetailScreen() {
             showToast('Goal dihapus', 'info');
             router.back();
           } catch {
-            showToast('Gagal menghapus. Coba lagi.', 'error');
+            showToast('Gagal menghapus goal.', 'error');
           }
         },
       },
     ]);
-  }, [deleteGoal, id, router, showToast]);
+  }, [deleteGoal, goal, id, router, showToast]);
 
   const backButton = (
-    <Pressable
+    <HeaderButton
+      icon={ChevronLeft}
       onPress={() => router.back()}
-      hitSlop={8}
-      style={({ pressed }) => pressed && { opacity: 0.6 }}
-    >
-      <ChevronLeft size={22} color={colors.text.secondary} strokeWidth={2} />
-    </Pressable>
+      color={colors.text.secondary}
+      iconSize={22}
+    />
   );
 
   const editButton = (
-    <View style={styles.headerActions}>
-      <Pressable
-        onPress={() => setShowEdit(true)}
-        hitSlop={8}
-        style={({ pressed }) => pressed && { opacity: 0.7 }}
-      >
-        <View style={styles.iconBtn}>
-          <Pencil size={16} color={colors.text.secondary} strokeWidth={1.5} />
-        </View>
-      </Pressable>
-      <Pressable
-        onPress={handleDelete}
-        hitSlop={8}
-        style={({ pressed }) => pressed && { opacity: 0.7 }}
-      >
-        <View style={styles.iconBtn}>
-          <Trash2 size={16} color={colors.danger.text} strokeWidth={1.5} />
-        </View>
-      </Pressable>
+    <View style={{ flexDirection: "row", gap: spacing.md, alignItems: "center" }}>
+      <HeaderButton icon={Pencil} onPress={() => setShowEdit(true)} />
+      <HeaderButton icon={Trash2} onPress={handleDelete} variant="danger" />
     </View>
   );
 

@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo } from "react";
+import { RefreshControl, ScrollView, StyleSheet, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
+import Fab from "@/components/ui/Fab";
 import AccountBalanceCard from "@/features/finance/components/AccountBalanceCard";
 import DailySpendCard from "@/features/finance/components/DailySpendCard";
 import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
@@ -14,7 +15,7 @@ import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { getDisplayName } from "@/lib/getDisplayName";
-import { colors, radius, spacing, textStyles } from "@/theme";
+import { colors, spacing, textStyles } from "@/theme";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -53,32 +54,9 @@ export default function HomeScreen() {
 
   const firstName = getDisplayName(user);
 
-  const addButton = useCallback(
-    () => (
-      <Pressable
-        onPress={() => router.push("/(app)/finance/new")}
-        hitSlop={8}
-        style={({ pressed }) => pressed && { opacity: 0.7 }}
-      >
-        <View style={styles.addBtn}>
-          <Plus size={18} color={colors.accent.primary} strokeWidth={2} />
-        </View>
-      </Pressable>
-    ),
-    [router],
-  );
-
   return (
-    <SafeAreaView style={styles.root}>
-      <Header
-        title=""
-        left={
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{firstName[0]?.toUpperCase() ?? "U"}</Text>
-          </View>
-        }
-        right={addButton()}
-      />
+    <Screen>
+      <Header title="Overview" />
 
       <ScrollView
         style={styles.scroll}
@@ -106,40 +84,19 @@ export default function HomeScreen() {
 
         <DailySpendCard />
       </ScrollView>
-    </SafeAreaView>
+
+      <Fab
+        onPress={() => router.push({ pathname: "/(app)/finance/new", params: { from: "home" } })}
+        icon={Plus}
+        accessibilityLabel="Add transaction"
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg.canvas },
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 120 },
-
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.accent.subtle,
-    borderWidth: 1,
-    borderColor: colors.accent.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    ...StyleSheet.flatten(textStyles.h3),
-    fontSize: 14,
-    color: colors.accent.text,
-  },
-
-  addBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    backgroundColor: colors.accent.subtle,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
+  scrollContent: { paddingBottom: 120, paddingTop: spacing.xs },
   greeting: {
     ...StyleSheet.flatten(textStyles.display),
     fontSize: 26,

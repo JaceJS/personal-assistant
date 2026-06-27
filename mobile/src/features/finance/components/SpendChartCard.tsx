@@ -174,8 +174,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,
-    marginHorizontal: 20,
-    marginBottom: 16,
+    marginHorizontal: spacing["2xl"],
+    marginBottom: spacing.lg,
     padding: 16,
   },
   spendHeader: {

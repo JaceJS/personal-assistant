@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.surface,
     borderRadius: 16,
     marginHorizontal: spacing["2xl"],
-    marginBottom: spacing["2xl"],
+    marginBottom: spacing.lg,
     padding: 20,
   },
   label: {

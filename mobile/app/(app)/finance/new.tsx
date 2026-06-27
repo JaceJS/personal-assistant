@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,10 +32,27 @@ type FormValues = z.infer<typeof schema>;
 
 export default function NewTransactionScreen() {
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const { data: accountsData, isLoading: accountsLoading } = useAccounts();
   const { data: categoriesData } = useCategories();
   const createTransaction = useCreateTransaction();
   const { showToast } = useToastStore();
+
+  const handleBack = useCallback(() => {
+    if (from === "home") {
+      router.replace("/(app)/(home)");
+    } else if (from === "finance") {
+      router.replace("/(app)/finance");
+    } else if (from === "history") {
+      router.replace("/(app)/finance/history");
+    } else if (from === "activity") {
+      router.replace("/(app)/history");
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(app)/(home)");
+    }
+  }, [from, router]);
 
   const {
     control,
@@ -77,12 +94,12 @@ export default function NewTransactionScreen() {
           occurred_at: new Date().toISOString(),
         });
         showToast("Transaksi tersimpan", "success");
-        router.back();
+        handleBack();
       } catch {
         showToast("Gagal menyimpan transaksi. Coba lagi.", "error");
       }
     },
-    [createTransaction, router, showToast],
+    [createTransaction, handleBack, showToast],
   );
 
   const noAccounts = !accountsLoading && (accountsData?.length ?? 0) === 0;
@@ -93,7 +110,7 @@ export default function NewTransactionScreen() {
         title="Transaksi Baru"
         left={
           <Pressable
-            onPress={() => router.back()}
+            onPress={handleBack}
             hitSlop={8}
             style={({ pressed }) => pressed && { opacity: 0.6 }}
           >

@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft, Plus, Tag } from "lucide-react-native";
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
-import Fab from "@/components/ui/Fab";
+import { HeaderButton } from "@/components/ui/HeaderButton";
 import FilterPill from "@/components/ui/FilterPill";
 import EmptyState from "@/components/ui/EmptyState";
 import CategoryActionSheet from "@/features/finance/components/CategoryActionSheet";
@@ -68,17 +68,20 @@ export default function CategoriesScreen() {
     (category: Category) => {
       Alert.alert(
         "Archive Category",
-        `Archive "${category.name}"? It will no longer appear in transaction lists.`,
+        `Are you sure you want to archive "${category.name}"?`,
         [
           { text: "Cancel", style: "cancel" },
           {
             text: "Archive",
             style: "destructive",
-            onPress: () =>
-              archiveCategory.mutate(category.id, {
-                onSuccess: () => showToast("Category archived", "success"),
-                onError: () => showToast("Failed to archive category", "error"),
-              }),
+            onPress: async () => {
+              try {
+                await archiveCategory.mutateAsync(category.id);
+                showToast("Category archived", "info");
+              } catch {
+                showToast("Failed to archive category", "error");
+              }
+            },
           },
         ]
       );
@@ -87,17 +90,25 @@ export default function CategoriesScreen() {
   );
 
   const backButton = (
-    <Pressable
+    <HeaderButton
+      icon={ChevronLeft}
       onPress={() => (router.canGoBack() ? router.back() : router.replace("/(app)/settings"))}
-      style={({ pressed }) => pressed && { opacity: 0.6 }}
-    >
-      <ChevronLeft size={22} color={colors.text.muted} />
-    </Pressable>
+      color={colors.text.muted}
+      iconSize={22}
+    />
+  );
+
+  const addButton = (
+    <HeaderButton
+      icon={Plus}
+      onPress={handleOpenCreate}
+      accessibilityLabel="Add category"
+    />
   );
 
   return (
     <Screen>
-      <Header title="Categories" left={backButton} />
+      <Header title="Categories" left={backButton} right={addButton} />
 
       <View style={styles.filters}>
         {TYPE_FILTER_OPTIONS.map((opt) => (
@@ -178,8 +189,6 @@ export default function CategoriesScreen() {
         editingCategory={editingCategory}
         onDismiss={handleDismiss}
       />
-
-      <Fab onPress={handleOpenCreate} icon={Plus} accessibilityLabel="Add category" />
     </Screen>
   );
 }

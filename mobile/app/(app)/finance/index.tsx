@@ -65,7 +65,7 @@ export default function FinanceDashboard() {
 
   const recentItems = useMemo(() => items.slice(0, RECENT_COUNT), [items]);
 
-  const handleAdd = useCallback(() => router.push("/(app)/finance/new"), [router]);
+  const handleAdd = useCallback(() => router.push({ pathname: "/(app)/finance/new", params: { from: "finance" } }), [router]);
   const handleSeeAll = useCallback(() => router.push("/(app)/finance/history"), [router]);
   const handleGoToSavings = useCallback(() => router.push("/(app)/goals"), [router]);
 

@@ -21,6 +21,7 @@ import {
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import EmptyState from "@/components/ui/EmptyState";
+import Fab from "@/components/ui/Fab";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import TransactionCard from "@/features/finance/components/TransactionCard";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
@@ -219,12 +220,11 @@ export default function HistoryScreen() {
         }
       />
 
-      <Pressable
-        onPress={() => router.push("/(app)/finance/new")}
-        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
-      >
-        <Plus size={22} color={colors.bg.canvas} strokeWidth={2.5} />
-      </Pressable>
+      <Fab
+        onPress={() => router.push({ pathname: "/(app)/finance/new", params: { from: "history" } })}
+        icon={Plus}
+        accessibilityLabel="Add transaction"
+      />
     </Screen>
   );
 }
@@ -312,15 +312,4 @@ const styles = StyleSheet.create({
   list: { flex: 1 },
   listContent: { paddingBottom: 100 },
 
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 52,
-    height: 52,
-    borderRadius: radius.full,
-    backgroundColor: colors.accent.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
 });
