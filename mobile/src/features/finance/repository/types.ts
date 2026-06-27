@@ -4,6 +4,7 @@ import type {
   AccountUpdate,
   Category,
   CategoryCreate,
+  CategoryUpdate,
   Transaction,
   TransactionCreate,
   TransactionUpdate,
@@ -26,9 +27,17 @@ export interface FinanceRepository {
   listCategories(): Promise<Category[]>;
   getCategory(id: string): Promise<Category | null>;
   createCategory(data: CategoryCreate & { id: string }): Promise<Category>;
+  updateCategory(id: string, data: CategoryUpdate): Promise<Category>;
+  archiveCategory(id: string): Promise<void>;
 
   // Transactions
-  listTransactions(params?: { accountId?: string; limit?: number; offset?: number }): Promise<{
+  listTransactions(params?: {
+    accountId?: string;
+    limit?: number;
+    offset?: number;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<{
     items: Transaction[];
     total: number;
   }>;

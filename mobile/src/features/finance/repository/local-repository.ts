@@ -1,4 +1,4 @@
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, gte, lte } from "drizzle-orm";
 import { db as defaultDb } from "@/lib/db/client";
 import { accounts, categories, transactions, budgets, savingsGoals } from "@/lib/db/schema";
 import type {
@@ -7,6 +7,7 @@ import type {
   AccountUpdate,
   Category,
   CategoryCreate,
+  CategoryUpdate,
   Transaction,
   TransactionCreate,
   TransactionUpdate,
@@ -184,19 +185,46 @@ export class LocalRepository implements FinanceRepository {
     return toCategory(row);
   }
 
+  async updateCategory(id: string, data: CategoryUpdate): Promise<Category> {
+    const ts = now();
+    this.db
+      .update(categories)
+      .set({ ...data, updated_at: ts })
+      .where(eq(categories.id, id))
+      .run();
+    const row = this.db.select().from(categories).where(eq(categories.id, id)).get();
+    return toCategory(row);
+  }
+
+  async archiveCategory(id: string): Promise<void> {
+    const ts = now();
+    this.db
+      .update(categories)
+      .set({ is_archived: true, updated_at: ts })
+      .where(eq(categories.id, id))
+      .run();
+  }
+
   // --- Transactions ---
 
   async listTransactions(
-    params: { accountId?: string; limit?: number; offset?: number } = {}
+    params: { accountId?: string; limit?: number; offset?: number; dateFrom?: string; dateTo?: string } = {}
   ): Promise<{ items: Transaction[]; total: number }> {
-    const { accountId, limit, offset = 0 } = params;
+    const { accountId, limit, offset = 0, dateFrom, dateTo } = params;
+
+    const conditions = [];
+    if (accountId) conditions.push(eq(transactions.account_id, accountId));
+    if (dateFrom) conditions.push(gte(transactions.occurred_at, dateFrom));
+    if (dateTo) conditions.push(lte(transactions.occurred_at, dateTo));
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     let query = this.db.select().from(transactions);
     let countQuery = this.db.select({ value: count() }).from(transactions);
 
-    if (accountId) {
-      query = query.where(eq(transactions.account_id, accountId));
-      countQuery = countQuery.where(eq(transactions.account_id, accountId));
+    if (whereClause) {
+      query = query.where(whereClause);
+      countQuery = countQuery.where(whereClause);
     }
 
     if (limit !== undefined) {

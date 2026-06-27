@@ -150,6 +150,26 @@ describe("LocalRepository", () => {
     it("returns null for unknown category id", async () => {
       expect(await repo.getCategory("nonexistent")).toBeNull();
     });
+
+    it("updates category name and icon", async () => {
+      await repo.createCategory({ id: "cat-1", name: "Makan", type: "expense" });
+      const updated = await repo.updateCategory("cat-1", { name: "Makan & Minum", icon: "🍔" });
+      expect(updated.name).toBe("Makan & Minum");
+      expect(updated.icon).toBe("🍔");
+      expect(updated.id).toBe("cat-1");
+    });
+
+    it("archives category via updateCategory", async () => {
+      await repo.createCategory({ id: "cat-1", name: "Makan", type: "expense" });
+      const updated = await repo.updateCategory("cat-1", { is_archived: true });
+      expect(updated.is_archived).toBe(true);
+    });
+
+    it("updates budget_limit on category", async () => {
+      await repo.createCategory({ id: "cat-1", name: "Makan", type: "expense" });
+      const updated = await repo.updateCategory("cat-1", { budget_limit: 500_000 });
+      expect(updated.budget_limit).toBe(500_000);
+    });
   });
 
   describe("transactions", () => {
@@ -204,6 +224,31 @@ describe("LocalRepository", () => {
       await repo.createTransaction(BASE_TX);
       const updated = await repo.updateTransaction("tx-1", { note: "lunch" });
       expect(updated.note).toBe("lunch");
+    });
+
+    it("filters by dateFrom", async () => {
+      await repo.createTransaction({ ...BASE_TX, id: "tx-old", occurred_at: "2024-01-15T10:00:00.000Z" });
+      await repo.createTransaction({ ...BASE_TX, id: "tx-new", occurred_at: "2025-06-20T10:00:00.000Z" });
+      const result = await repo.listTransactions({ dateFrom: "2025-06-01" });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe("tx-new");
+    });
+
+    it("filters by dateTo", async () => {
+      await repo.createTransaction({ ...BASE_TX, id: "tx-old", occurred_at: "2024-01-15T10:00:00.000Z" });
+      await repo.createTransaction({ ...BASE_TX, id: "tx-new", occurred_at: "2025-06-20T10:00:00.000Z" });
+      const result = await repo.listTransactions({ dateTo: "2024-12-31" });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe("tx-old");
+    });
+
+    it("filters by dateFrom and dateTo together", async () => {
+      await repo.createTransaction({ ...BASE_TX, id: "tx-jan", occurred_at: "2025-01-10T00:00:00.000Z" });
+      await repo.createTransaction({ ...BASE_TX, id: "tx-jun", occurred_at: "2025-06-20T00:00:00.000Z" });
+      await repo.createTransaction({ ...BASE_TX, id: "tx-dec", occurred_at: "2025-12-01T00:00:00.000Z" });
+      const result = await repo.listTransactions({ dateFrom: "2025-06-01", dateTo: "2025-06-30" });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe("tx-jun");
     });
   });
 

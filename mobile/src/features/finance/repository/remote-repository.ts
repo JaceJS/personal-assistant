@@ -9,6 +9,7 @@ import type {
   AccountUpdate,
   Category,
   CategoryCreate,
+  CategoryUpdate,
   Transaction,
   TransactionCreate,
   TransactionUpdate,
@@ -58,13 +59,23 @@ export class RemoteRepository implements FinanceRepository {
     return categoriesApi.createCategory(apiData);
   }
 
+  async updateCategory(id: string, data: CategoryUpdate): Promise<Category> {
+    return categoriesApi.updateCategory(id, data);
+  }
+
+  async archiveCategory(id: string): Promise<void> {
+    return categoriesApi.archiveCategory(id);
+  }
+
   async listTransactions(
-    params?: { accountId?: string; limit?: number; offset?: number }
+    params?: { accountId?: string; limit?: number; offset?: number; dateFrom?: string; dateTo?: string }
   ): Promise<{ items: Transaction[]; total: number }> {
     return transactionsApi.listTransactions({
       accountId: params?.accountId,
       limit: params?.limit,
       offset: params?.offset,
+      dateFrom: params?.dateFrom,
+      dateTo: params?.dateTo,
       status: "confirmed",
     });
   }
