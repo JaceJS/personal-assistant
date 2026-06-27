@@ -9,6 +9,10 @@ import type {
   TransactionUpdate,
   Budget,
   BudgetUpsert,
+  SavingsGoal,
+  SavingsGoalCreate,
+  SavingsGoalUpdate,
+  SavingsGoalContribute,
 } from "../types";
 
 export interface FinanceRepository {
@@ -36,4 +40,12 @@ export interface FinanceRepository {
   // Budget
   getBudget(): Promise<Budget | null>;
   upsertBudget(data: BudgetUpsert & { id: string }): Promise<Budget>;
+
+  // Savings Goals
+  listSavingsGoals(): Promise<SavingsGoal[]>;
+  getSavingsGoal(id: string): Promise<SavingsGoal | null>;
+  createSavingsGoal(data: SavingsGoalCreate & { id: string }): Promise<SavingsGoal>;
+  updateSavingsGoal(id: string, data: SavingsGoalUpdate): Promise<SavingsGoal>;
+  contributeToSavingsGoal(id: string, data: SavingsGoalContribute): Promise<SavingsGoal>;
+  deleteSavingsGoal(id: string): Promise<void>;
 }

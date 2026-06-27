@@ -54,6 +54,19 @@ export const budgets = sqliteTable("budgets", {
   updated_at: text("updated_at").notNull(),
 });
 
+export const savingsGoals = sqliteTable("savings_goals", {
+  id: text("id").primaryKey(),
+  user_id: text("user_id"),
+  name: text("name").notNull(),
+  icon: text("icon"),
+  target_amount: integer("target_amount").notNull(),
+  current_amount: integer("current_amount").notNull().default(0),
+  target_date: text("target_date"),
+  is_archived: integer("is_archived", { mode: "boolean" }).notNull().default(false),
+  created_at: text("created_at").notNull(),
+  updated_at: text("updated_at").notNull(),
+});
+
 // Tracks offline voice recordings waiting to be uploaded + processed
 export const voiceQueue = sqliteTable("voice_queue", {
   id: text("id").primaryKey(),
@@ -70,4 +83,5 @@ export type DbAccount = typeof accounts.$inferSelect;
 export type DbCategory = typeof categories.$inferSelect;
 export type DbTransaction = typeof transactions.$inferSelect;
 export type DbBudget = typeof budgets.$inferSelect;
+export type DbSavingsGoal = typeof savingsGoals.$inferSelect;
 export type DbVoiceQueueItem = typeof voiceQueue.$inferSelect;

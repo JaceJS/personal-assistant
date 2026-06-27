@@ -1,55 +1,43 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/auth";
-import {
-  listSavingsGoals,
-  getSavingsGoal,
-  createSavingsGoal,
-  updateSavingsGoal,
-  contributeToSavingsGoal,
-  deleteSavingsGoal,
-} from "@/features/finance/api/savingsGoals";
+import * as ExpoCrypto from "expo-crypto";
+import { useFinanceRepository } from "@/features/finance/repository";
 import type { SavingsGoal, SavingsGoalContribute, SavingsGoalCreate, SavingsGoalUpdate } from "@/features/finance/types";
 
 const QUERY_KEY = "savings-goals";
 
 export function useSavingsGoals() {
-  const { initialized, isGuest } = useAuthStore();
+  const repo = useFinanceRepository();
   return useQuery({
     queryKey: [QUERY_KEY],
-    queryFn: listSavingsGoals,
-    enabled: initialized && !isGuest,
+    queryFn: () => repo.listSavingsGoals(),
   });
 }
 
 export function useSavingsGoal(id: string) {
-  const { initialized, isGuest } = useAuthStore();
+  const repo = useFinanceRepository();
   return useQuery({
     queryKey: [QUERY_KEY, id],
-    queryFn: () => getSavingsGoal(id),
-    enabled: initialized && !isGuest && !!id,
+    queryFn: () => repo.getSavingsGoal(id),
+    enabled: !!id,
   });
 }
 
 export function useCreateSavingsGoal() {
-  const isGuest = useAuthStore((s) => s.isGuest);
+  const repo = useFinanceRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: SavingsGoalCreate) => {
-      if (isGuest) return Promise.resolve({} as SavingsGoal);
-      return createSavingsGoal(data);
-    },
+    mutationFn: (data: SavingsGoalCreate) =>
+      repo.createSavingsGoal({ ...data, id: ExpoCrypto.randomUUID() }),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }
 
 export function useUpdateSavingsGoal() {
-  const isGuest = useAuthStore((s) => s.isGuest);
+  const repo = useFinanceRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: SavingsGoalUpdate }) => {
-      if (isGuest) return Promise.resolve({} as SavingsGoal);
-      return updateSavingsGoal(id, data);
-    },
+    mutationFn: ({ id, data }: { id: string; data: SavingsGoalUpdate }) =>
+      repo.updateSavingsGoal(id, data),
     onSuccess: (updatedGoal, { id }) => {
       queryClient.setQueryData([QUERY_KEY, id], updatedGoal);
       void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
@@ -58,13 +46,11 @@ export function useUpdateSavingsGoal() {
 }
 
 export function useContributeSavingsGoal() {
-  const isGuest = useAuthStore((s) => s.isGuest);
+  const repo = useFinanceRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: SavingsGoalContribute }) => {
-      if (isGuest) return Promise.resolve({} as SavingsGoal);
-      return contributeToSavingsGoal(id, data);
-    },
+    mutationFn: ({ id, data }: { id: string; data: SavingsGoalContribute }) =>
+      repo.contributeToSavingsGoal(id, data),
     onSuccess: (updatedGoal, { id }) => {
       queryClient.setQueryData([QUERY_KEY, id], updatedGoal);
       void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
@@ -73,13 +59,10 @@ export function useContributeSavingsGoal() {
 }
 
 export function useDeleteSavingsGoal() {
-  const isGuest = useAuthStore((s) => s.isGuest);
+  const repo = useFinanceRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => {
-      if (isGuest) return Promise.resolve();
-      return deleteSavingsGoal(id);
-    },
+    mutationFn: (id: string) => repo.deleteSavingsGoal(id),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }

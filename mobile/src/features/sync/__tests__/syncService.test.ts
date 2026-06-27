@@ -5,17 +5,19 @@ const makeRepo = (overrides: Record<string, jest.Mock> = {}) => ({
   listCategories: jest.fn().mockResolvedValue([]),
   listTransactions: jest.fn().mockResolvedValue({ items: [], total: 0 }),
   getBudget: jest.fn().mockResolvedValue(null),
+  listSavingsGoals: jest.fn().mockResolvedValue([]),
   ...overrides,
 });
 
-const IMPORTED = { accounts: 1, categories: 1, transactions: 1, budgets: 1 };
+const IMPORTED = { accounts: 1, categories: 1, transactions: 1, budgets: 1, savings_goals: 1 };
 const ACCOUNT = { id: "acc-1", name: "Cash", type: "cash", currency: "IDR" };
 const CATEGORY = { id: "cat-1", name: "Food", type: "expense" };
 const TRANSACTION = { id: "tx-1", amount: -50000, account_id: "acc-1" };
 const BUDGET = { id: "bud-1", monthly_limit: 5_000_000, updated_at: "2024-01-01T00:00:00Z" };
+const GOAL = { id: "goal-1", name: "Motor", target_amount: 15_000_000, current_amount: 0, target_date: null, is_archived: false };
 
 describe("syncLocalData", () => {
-  it("skips sync when no accounts, transactions, or budget exist", async () => {
+  it("skips sync when no accounts, transactions, budget, or goals exist", async () => {
     const repo = makeRepo();
     const syncApi = jest.fn();
 
@@ -43,6 +45,7 @@ describe("syncLocalData", () => {
       listCategories: jest.fn().mockResolvedValue([CATEGORY]),
       listTransactions: jest.fn().mockResolvedValue({ items: [TRANSACTION], total: 1 }),
       getBudget: jest.fn().mockResolvedValue(BUDGET),
+      listSavingsGoals: jest.fn().mockResolvedValue([GOAL]),
     });
     const syncApi = jest.fn().mockResolvedValue(IMPORTED);
 
@@ -53,6 +56,7 @@ describe("syncLocalData", () => {
       categories: [CATEGORY],
       transactions: [TRANSACTION],
       budgets: [BUDGET],
+      savings_goals: [GOAL],
     });
     expect(result).toEqual({ skipped: false, imported: IMPORTED });
   });

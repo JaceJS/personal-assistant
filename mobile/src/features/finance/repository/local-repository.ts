@@ -1,6 +1,6 @@
 import { eq, and, count } from "drizzle-orm";
 import { db as defaultDb } from "@/lib/db/client";
-import { accounts, categories, transactions, budgets } from "@/lib/db/schema";
+import { accounts, categories, transactions, budgets, savingsGoals } from "@/lib/db/schema";
 import type {
   Account,
   AccountCreate,
@@ -12,6 +12,10 @@ import type {
   TransactionUpdate,
   Budget,
   BudgetUpsert,
+  SavingsGoal,
+  SavingsGoalCreate,
+  SavingsGoalUpdate,
+  SavingsGoalContribute,
 } from "../types";
 import type { FinanceRepository } from "./types";
 import { DEFAULT_CATEGORIES } from "../constants/defaultCategories";
@@ -75,6 +79,24 @@ function toBudget(row: typeof budgets.$inferSelect): Budget {
     id: row.id,
     user_id: row.user_id ?? "",
     monthly_limit: row.monthly_limit,
+    updated_at: row.updated_at,
+  };
+}
+
+function toSavingsGoal(row: typeof savingsGoals.$inferSelect): SavingsGoal {
+  const pct = row.target_amount > 0 ? (row.current_amount / row.target_amount) * 100.0 : 0.0;
+  return {
+    id: row.id,
+    user_id: row.user_id ?? "",
+    name: row.name,
+    icon: row.icon ?? null,
+    target_amount: row.target_amount,
+    current_amount: row.current_amount,
+    target_date: row.target_date ?? null,
+    is_archived: Boolean(row.is_archived),
+    is_completed: row.current_amount >= row.target_amount,
+    progress_pct: Math.min(Math.round(pct * 100) / 100, 100.0),
+    created_at: row.created_at,
     updated_at: row.updated_at,
   };
 }
@@ -254,5 +276,91 @@ export class LocalRepository implements FinanceRepository {
       .run();
     const row = this.db.select().from(budgets).where(eq(budgets.id, data.id)).get();
     return toBudget(row);
+  }
+
+  // --- Savings Goals ---
+
+  async listSavingsGoals(): Promise<SavingsGoal[]> {
+    const rows = this.db
+      .select()
+      .from(savingsGoals)
+      .where(eq(savingsGoals.is_archived, false))
+      .all();
+    return rows.map(toSavingsGoal);
+  }
+
+  async getSavingsGoal(id: string): Promise<SavingsGoal | null> {
+    const row = this.db
+      .select()
+      .from(savingsGoals)
+      .where(eq(savingsGoals.id, id))
+      .get();
+    return row ? toSavingsGoal(row) : null;
+  }
+
+  async createSavingsGoal(data: SavingsGoalCreate & { id: string }): Promise<SavingsGoal> {
+    const ts = now();
+    const row = {
+      id: data.id,
+      user_id: null,
+      name: data.name,
+      icon: data.icon ?? null,
+      target_amount: data.target_amount,
+      current_amount: 0,
+      target_date: data.target_date ?? null,
+      is_archived: false,
+      created_at: ts,
+      updated_at: ts,
+    };
+    this.db.insert(savingsGoals).values(row).run();
+    return toSavingsGoal(row);
+  }
+
+  async updateSavingsGoal(id: string, data: SavingsGoalUpdate): Promise<SavingsGoal> {
+    const ts = now();
+    this.db
+      .update(savingsGoals)
+      .set({ ...data, updated_at: ts })
+      .where(eq(savingsGoals.id, id))
+      .run();
+    const row = this.db
+      .select()
+      .from(savingsGoals)
+      .where(eq(savingsGoals.id, id))
+      .get();
+    return toSavingsGoal(row);
+  }
+
+  async contributeToSavingsGoal(id: string, data: SavingsGoalContribute): Promise<SavingsGoal> {
+    const ts = now();
+    const goal = this.db
+      .select()
+      .from(savingsGoals)
+      .where(eq(savingsGoals.id, id))
+      .get();
+    if (!goal) {
+      throw new Error("Savings goal not found");
+    }
+    const newAmount = goal.current_amount + data.amount;
+    this.db
+      .update(savingsGoals)
+      .set({ current_amount: newAmount, updated_at: ts })
+      .where(eq(savingsGoals.id, id))
+      .run();
+    const row = this.db
+      .select()
+      .from(savingsGoals)
+      .where(eq(savingsGoals.id, id))
+      .get();
+    return toSavingsGoal(row);
+  }
+
+  async deleteSavingsGoal(id: string): Promise<void> {
+    const ts = now();
+    this.db
+      .update(savingsGoals)
+      .set({ is_archived: true, updated_at: ts })
+      .where(eq(savingsGoals.id, id))
+      .run();
   }
 }

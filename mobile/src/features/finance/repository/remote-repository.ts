@@ -2,6 +2,7 @@ import * as accountsApi from "@/features/finance/api/accounts";
 import * as categoriesApi from "@/features/finance/api/categories";
 import * as transactionsApi from "@/features/finance/api/transactions";
 import * as budgetApi from "@/features/finance/api/budget";
+import * as savingsGoalsApi from "@/features/finance/api/savingsGoals";
 import type {
   Account,
   AccountCreate,
@@ -13,6 +14,10 @@ import type {
   TransactionUpdate,
   Budget,
   BudgetUpsert,
+  SavingsGoal,
+  SavingsGoalCreate,
+  SavingsGoalUpdate,
+  SavingsGoalContribute,
 } from "../types";
 import type { FinanceRepository } from "./types";
 
@@ -92,5 +97,36 @@ export class RemoteRepository implements FinanceRepository {
   async upsertBudget(data: BudgetUpsert & { id: string }): Promise<Budget> {
     const { id: _id, ...apiData } = data;
     return budgetApi.upsertBudget(apiData);
+  }
+
+  // --- Savings Goals ---
+
+  async listSavingsGoals(): Promise<SavingsGoal[]> {
+    return savingsGoalsApi.listSavingsGoals();
+  }
+
+  async getSavingsGoal(id: string): Promise<SavingsGoal | null> {
+    try {
+      return await savingsGoalsApi.getSavingsGoal(id);
+    } catch {
+      return null;
+    }
+  }
+
+  async createSavingsGoal(data: SavingsGoalCreate & { id: string }): Promise<SavingsGoal> {
+    const { id: _id, ...apiData } = data;
+    return savingsGoalsApi.createSavingsGoal(apiData);
+  }
+
+  async updateSavingsGoal(id: string, data: SavingsGoalUpdate): Promise<SavingsGoal> {
+    return savingsGoalsApi.updateSavingsGoal(id, data);
+  }
+
+  async contributeToSavingsGoal(id: string, data: SavingsGoalContribute): Promise<SavingsGoal> {
+    return savingsGoalsApi.contributeToSavingsGoal(id, data);
+  }
+
+  async deleteSavingsGoal(id: string): Promise<void> {
+    return savingsGoalsApi.deleteSavingsGoal(id);
   }
 }

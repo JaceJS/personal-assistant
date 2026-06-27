@@ -139,7 +139,7 @@ describe("LocalRepository", () => {
     it("seeds default categories on first call when empty", async () => {
       const cats = await repo.listCategories();
       expect(cats.length).toBeGreaterThan(0);
-      expect(cats.some((c) => c.name === "Food & Drinks")).toBe(true);
+      expect(cats.some((c) => c.name === "Makan & Minum")).toBe(true);
     });
 
     it("gets category by id", async () => {

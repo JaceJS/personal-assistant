@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 import type { ApiResponse } from "@/features/finance/types";
-import type { Account, Category, Transaction, Budget } from "@/features/finance/types";
+import type { Account, Category, Transaction, Budget, SavingsGoal } from "@/features/finance/types";
 import type { ImportCounts } from "./syncService";
 
 interface BulkImportResult {
@@ -12,6 +12,7 @@ interface BulkImportPayload {
   categories: Category[];
   transactions: Transaction[];
   budgets: Budget[];
+  savings_goals: SavingsGoal[];
 }
 
 export function importLocalData(payload: BulkImportPayload): Promise<ImportCounts> {
