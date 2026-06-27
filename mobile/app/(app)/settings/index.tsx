@@ -2,8 +2,6 @@ import { useCallback, useState } from "react";
 import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import * as WebBrowser from "expo-web-browser";
-import * as ExpoLinking from "expo-linking";
 import {
   Banknote,
   Building2,
@@ -26,9 +24,8 @@ import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { supabase } from "@/lib/supabase";
 import { getDisplayName } from "@/lib/getDisplayName";
+import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 import { colors, radius, spacing, textStyles } from "@/theme";
-
-WebBrowser.maybeCompleteAuthSession();
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -59,21 +56,8 @@ export default function SettingsScreen() {
   const handleBackupSync = useCallback(async () => {
     setBackupLoading(true);
     try {
-      const redirectTo = ExpoLinking.createURL("/");
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo, skipBrowserRedirect: true },
-      });
-      if (error || !data?.url) {
-        showToast("Gagal memulai login", "error");
-        return;
-      }
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-      if (result.type === "success") {
-        await supabase.auth.exchangeCodeForSession(result.url);
-      }
-    } catch {
-      showToast("Login gagal", "error");
+      const result = await signInWithGoogle();
+      if (result === "error") showToast("Login gagal, coba lagi ya", "error");
     } finally {
       setBackupLoading(false);
     }

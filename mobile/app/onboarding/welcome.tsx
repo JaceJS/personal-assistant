@@ -1,13 +1,18 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MessageCircle, Mic, ScanLine, Sparkles } from "lucide-react-native";
+import { Lock, MessageCircle, Mic, ScanLine, Sparkles } from "lucide-react-native";
 
+import { OnboardingHeader } from "@/components/layout/OnboardingHeader";
 import { colors } from "@/theme/colors";
 import { textStyles } from "@/theme/typography";
 import { spacing } from "@/theme/spacing";
 import { radius } from "@/theme/radius";
+import { useAuthStore } from "@/stores/auth";
+import { useOnboardingStore } from "@/stores/onboarding";
+import { useToastStore } from "@/stores/toast";
+import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 
 const FEATURES = [
   {
@@ -29,6 +34,10 @@ const FEATURES = [
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { isGuest, initialized } = useAuthStore();
+  const { complete } = useOnboardingStore();
+  const { showToast } = useToastStore();
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -56,6 +65,31 @@ export default function WelcomeScreen() {
     ]).start();
   }, [fadeAnim, slideAnim, scaleAnim]);
 
+  // Kalau user baru saja login via Google dari layar ini, selesaikan onboarding
+  useEffect(() => {
+    if (initialized && !isGuest) {
+      complete().then(() => router.replace("/(app)"));
+    }
+  }, [isGuest, initialized, complete, router]);
+
+  const handleSkipAsGuest = useCallback(async () => {
+    await complete();
+    showToast("Siap! Datamu aman di HP ini 💾", "success");
+    router.replace("/(app)");
+  }, [complete, showToast, router]);
+
+  const handleGoogleLogin = useCallback(async () => {
+    setLoginLoading(true);
+    try {
+      const result = await signInWithGoogle();
+      if (result === "error") showToast("Login gagal, coba lagi ya", "error");
+      // "success": useEffect di atas yang handle navigate
+      // "cancelled": diam aja
+    } finally {
+      setLoginLoading(false);
+    }
+  }, [showToast]);
+
   return (
     <SafeAreaView style={styles.safe}>
       {/* Decorative background rings */}
@@ -63,17 +97,14 @@ export default function WelcomeScreen() {
       <View style={styles.ringTopRightInner} />
       <View style={styles.ringBottomLeft} />
 
+      <OnboardingHeader currentStep={1} totalSteps={3} />
+
       <Animated.View
         style={[
           styles.container,
           { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
         ]}
       >
-        {/* Step indicator */}
-        <View style={styles.stepRow}>
-          <View style={styles.stepDot} />
-          <View style={styles.stepDotInactive} />
-        </View>
 
         {/* Hero icon */}
         <Animated.View
@@ -94,6 +125,10 @@ export default function WelcomeScreen() {
             Catat via chat, suara, atau foto struk.{"\n"}
             Dapatkan insight yang benar-benar personal.
           </Text>
+          <View style={styles.trustBadge}>
+            <Lock size={12} color={colors.success.text} />
+            <Text style={styles.trustText}>Datamu aman, beneran 🔒</Text>
+          </View>
         </View>
 
         {/* Features */}
@@ -112,12 +147,29 @@ export default function WelcomeScreen() {
         {/* CTA */}
         <View style={styles.cta}>
           <Pressable
-            onPress={() => router.push("/onboarding/create-account")}
+            onPress={() => router.push("/onboarding/profile")}
             style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
           >
             <View style={styles.ctaButton}>
-              <Text style={styles.ctaText}>Mulai Sekarang</Text>
+              <Text style={styles.ctaText}>Gas Sekarang!</Text>
             </View>
+          </Pressable>
+
+          <Pressable
+            onPress={handleGoogleLogin}
+            disabled={loginLoading}
+            style={({ pressed }) => ({ opacity: pressed || loginLoading ? 0.7 : 1 })}
+          >
+            <Text style={styles.loginLink}>
+              {loginLoading ? "Membuka Google..." : "Udah punya akun? Masuk aja"}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleSkipAsGuest}
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+          >
+            <Text style={styles.skipText}>Coba dulu ah →</Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -165,24 +217,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing["2xl"],
     alignItems: "center",
   },
-  stepRow: {
-    flexDirection: "row",
-    gap: 6,
-    marginTop: 16,
-    alignSelf: "stretch",
-  },
-  stepDot: {
-    height: 4,
-    flex: 1,
-    borderRadius: 2,
-    backgroundColor: colors.accent.primary,
-  },
-  stepDotInactive: {
-    height: 4,
-    flex: 1,
-    borderRadius: 2,
-    backgroundColor: colors.border.default,
-  },
   iconWrap: {
     marginTop: 40,
     alignItems: "center",
@@ -219,9 +253,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 12,
   },
+  trustBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+    backgroundColor: colors.success.bg,
+  },
+  trustText: {
+    ...textStyles.caption,
+    color: colors.success.text,
+  },
   features: {
     flexDirection: "row",
-    marginTop: 48,
+    marginTop: 36,
     gap: 20,
     justifyContent: "center",
   },
@@ -253,12 +301,16 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     paddingTop: 32,
     width: "100%",
+    gap: 12,
+    alignItems: "center",
   },
   ctaButton: {
     backgroundColor: colors.accent.primary,
     borderRadius: radius.lg,
     paddingVertical: 16,
+    paddingHorizontal: 48,
     alignItems: "center",
+    width: "100%",
     shadowColor: colors.accent.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
@@ -268,5 +320,16 @@ const styles = StyleSheet.create({
   ctaText: {
     ...textStyles.h2,
     color: "#fff",
+  },
+  loginLink: {
+    ...textStyles.body,
+    color: colors.accent.primary,
+    paddingVertical: 8,
+    textAlign: "center",
+  },
+  skipText: {
+    ...textStyles.caption,
+    color: colors.text.muted,
+    paddingVertical: 4,
   },
 });
