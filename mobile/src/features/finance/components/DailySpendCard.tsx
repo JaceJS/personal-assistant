@@ -4,7 +4,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { useBudget } from '@/features/finance/hooks/useBudget';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { formatRupiah } from '@/lib/utils';
-import { colors, textStyles } from '@/theme';
+import { colors, spacing, textStyles } from '@/theme';
 const RADIUS = 68;
 const STROKE_W = 10;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;

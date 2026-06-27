@@ -1,3 +1,4 @@
+import * as ExpoCrypto from "expo-crypto";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFinanceRepository } from "@/features/finance/repository";
 import type { ListTransactionsParams } from "@/features/finance/api/transactions";
@@ -15,6 +16,8 @@ export function useTransactions(params?: ListTransactionsParams) {
         accountId: resolvedParams.accountId,
         limit: resolvedParams.limit,
         offset: resolvedParams.offset,
+        dateFrom: resolvedParams.dateFrom,
+        dateTo: resolvedParams.dateTo,
       }),
   });
 }
@@ -33,7 +36,7 @@ export function useCreateTransaction() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: TransactionCreate) =>
-      repo.createTransaction({ ...data, id: crypto.randomUUID() }),
+      repo.createTransaction({ ...data, id: ExpoCrypto.randomUUID() }),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }

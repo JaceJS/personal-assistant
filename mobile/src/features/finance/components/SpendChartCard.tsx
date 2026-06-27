@@ -8,7 +8,7 @@ import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { buildDailyBuckets, buildMonthlyBuckets, buildWeeklyBuckets } from '@/features/finance/utils/chart';
 import { formatRupiah } from '@/lib/utils';
 import { useChartFont } from '@/hooks/useChartFont';
-import { colors, radius } from '@/theme';
+import { colors, radius, spacing } from '@/theme';
 
 type Period = 'D' | 'W' | 'M';
 

@@ -1,3 +1,4 @@
+import * as ExpoCrypto from "expo-crypto";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFinanceRepository } from "@/features/finance/repository";
 import type { Budget, BudgetUpsert } from "@/features/finance/types";
@@ -17,7 +18,7 @@ export function useUpsertBudget() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: BudgetUpsert) =>
-      repo.upsertBudget({ ...data, id: crypto.randomUUID() }),
+      repo.upsertBudget({ ...data, id: ExpoCrypto.randomUUID() }),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
   });
 }
