@@ -49,7 +49,7 @@ export default function HomeScreen() {
       (monthTxData?.items ?? [])
         .filter((t) => t.amount < 0)
         .reduce((s, t) => s + Math.abs(t.amount), 0),
-    [monthTxData],
+    [monthTxData]
   );
 
   const firstName = getDisplayName(user);
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.flatten(textStyles.display),
     fontSize: 26,
     letterSpacing: -0.5,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing["2xl"],
     marginBottom: 20,
   },
 });

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { colors, radius } from "@/theme";
 
-type HeaderButtonVariant = "primary" | "danger";
+type HeaderButtonVariant = "primary" | "danger" | "warning";
 
 interface HeaderButtonProps {
   icon: LucideIcon;
@@ -22,10 +22,18 @@ export function HeaderButton({
   iconSize = 18,
   accessibilityLabel,
 }: HeaderButtonProps) {
-  const isDanger = variant === "danger";
-  const bg = isDanger ? colors.danger.bg : colors.accent.subtle;
-  const border = isDanger ? `${colors.danger.text}4D` : colors.accent.border;
-  const iconColor = isDanger ? colors.danger.text : (color ?? colors.accent.primary);
+  const bg =
+    variant === "danger" ? colors.danger.bg :
+    variant === "warning" ? colors.warning.bg :
+    colors.accent.subtle;
+  const border =
+    variant === "danger" ? `${colors.danger.text}4D` :
+    variant === "warning" ? `${colors.warning.text}4D` :
+    colors.accent.border;
+  const iconColor =
+    variant === "danger" ? colors.danger.text :
+    variant === "warning" ? colors.warning.text :
+    (color ?? colors.accent.primary);
 
   return (
     <Pressable

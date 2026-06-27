@@ -101,7 +101,7 @@ export default function AccountDetailScreen() {
 
   const headerRight = !isEditing && (
     <View style={{ flexDirection: "row", gap: spacing.md, alignItems: "center" }}>
-      <HeaderButton icon={Pencil} onPress={handleStartEdit} />
+      <HeaderButton icon={Pencil} onPress={handleStartEdit} variant="warning" />
       <HeaderButton icon={Trash2} onPress={handleDelete} variant="danger" />
     </View>
   );

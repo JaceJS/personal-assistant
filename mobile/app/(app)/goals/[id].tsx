@@ -90,7 +90,7 @@ export default function GoalDetailScreen() {
 
   const editButton = (
     <View style={{ flexDirection: "row", gap: spacing.md, alignItems: "center" }}>
-      <HeaderButton icon={Pencil} onPress={() => setShowEdit(true)} />
+      <HeaderButton icon={Pencil} onPress={() => setShowEdit(true)} variant="warning" />
       <HeaderButton icon={Trash2} onPress={handleDelete} variant="danger" />
     </View>
   );
