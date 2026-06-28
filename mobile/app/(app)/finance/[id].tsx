@@ -197,6 +197,13 @@ export default function TransactionDetailScreen() {
               </View>
 
               {/* Amount input using RupiahInput */}
+              {/* Date Picker */}
+              <DatePicker
+                label="Tanggal Transaksi"
+                value={occurredAt}
+                onChange={setOccurredAt}
+              />
+
               <RupiahInput
                 label="Jumlah"
                 placeholder="0"
@@ -247,13 +254,6 @@ export default function TransactionDetailScreen() {
                   </ScrollView>
                 </View>
               )}
-
-              {/* Date Picker */}
-              <DatePicker
-                label="Tanggal Transaksi"
-                value={occurredAt}
-                onChange={setOccurredAt}
-              />
 
               <Input
                 label="Merchant"

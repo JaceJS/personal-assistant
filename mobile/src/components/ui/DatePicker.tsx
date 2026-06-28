@@ -106,6 +106,79 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
         <View style={styles.sheetContent}>
           <Text style={styles.sheetTitle}>Pilih Tanggal</Text>
 
+          {/* Quick Select Presets */}
+          <View style={styles.presetsRow}>
+            <View
+              style={[
+                styles.presetBtn,
+                isSameDay(value, new Date()) && styles.presetBtnActive,
+              ]}
+            >
+              <Pressable
+                onPress={() => selectPreset(0)}
+                style={({ pressed }) => [
+                  styles.presetPressable,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.presetText,
+                    isSameDay(value, new Date()) && styles.presetTextActive,
+                  ]}
+                >
+                  Hari Ini
+                </Text>
+              </Pressable>
+            </View>
+            <View
+              style={[
+                styles.presetBtn,
+                isSameDay(value, subDays(new Date(), 1)) && styles.presetBtnActive,
+              ]}
+            >
+              <Pressable
+                onPress={() => selectPreset(1)}
+                style={({ pressed }) => [
+                  styles.presetPressable,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.presetText,
+                    isSameDay(value, subDays(new Date(), 1)) && styles.presetTextActive,
+                  ]}
+                >
+                  Kemarin
+                </Text>
+              </Pressable>
+            </View>
+            <View
+              style={[
+                styles.presetBtn,
+                isSameDay(value, subDays(new Date(), 2)) && styles.presetBtnActive,
+              ]}
+            >
+              <Pressable
+                onPress={() => selectPreset(2)}
+                style={({ pressed }) => [
+                  styles.presetPressable,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.presetText,
+                    isSameDay(value, subDays(new Date(), 2)) && styles.presetTextActive,
+                  ]}
+                >
+                  2 Hari Lalu
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
           {/* Calendar Month Selector Header */}
           <View style={styles.monthHeader}>
             <View style={styles.navBtn}>
@@ -190,79 +263,6 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
             ))}
           </View>
 
-          {/* Quick Select Presets */}
-          <View style={styles.presetsRow}>
-            <View
-              style={[
-                styles.presetBtn,
-                isSameDay(value, new Date()) && styles.presetBtnActive,
-              ]}
-            >
-              <Pressable
-                onPress={() => selectPreset(0)}
-                style={({ pressed }) => [
-                  styles.presetPressable,
-                  pressed && { opacity: 0.8 },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.presetText,
-                    isSameDay(value, new Date()) && styles.presetTextActive,
-                  ]}
-                >
-                  Hari Ini
-                </Text>
-              </Pressable>
-            </View>
-            <View
-              style={[
-                styles.presetBtn,
-                isSameDay(value, subDays(new Date(), 1)) && styles.presetBtnActive,
-              ]}
-            >
-              <Pressable
-                onPress={() => selectPreset(1)}
-                style={({ pressed }) => [
-                  styles.presetPressable,
-                  pressed && { opacity: 0.8 },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.presetText,
-                    isSameDay(value, subDays(new Date(), 1)) && styles.presetTextActive,
-                  ]}
-                >
-                  Kemarin
-                </Text>
-              </Pressable>
-            </View>
-            <View
-              style={[
-                styles.presetBtn,
-                isSameDay(value, subDays(new Date(), 2)) && styles.presetBtnActive,
-              ]}
-            >
-              <Pressable
-                onPress={() => selectPreset(2)}
-                style={({ pressed }) => [
-                  styles.presetPressable,
-                  pressed && { opacity: 0.8 },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.presetText,
-                    isSameDay(value, subDays(new Date(), 2)) && styles.presetTextActive,
-                  ]}
-                >
-                  2 Hari Lalu
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
           {/* Confirm Action Button */}
           <View style={styles.footer}>
             <Button label="Konfirmasi" onPress={handleConfirm} fullWidth />
@@ -296,6 +296,7 @@ const styles = StyleSheet.create({
     height: "100%",
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: spacing.lg,
   },
   triggerIcon: {

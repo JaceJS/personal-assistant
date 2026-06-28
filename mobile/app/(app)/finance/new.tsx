@@ -155,6 +155,19 @@ export default function NewTransactionScreen() {
               </Pressable>
             </View>
 
+            {/* Date Picker */}
+            <Controller
+              control={control}
+              name="occurred_at"
+              render={({ field: { onChange, value } }) => (
+                <DatePicker
+                  label="Tanggal Transaksi"
+                  value={value}
+                  onChange={onChange}
+                />
+              )}
+            />
+
             {/* Amount input using RupiahInput */}
             <Controller
               control={control}
@@ -235,19 +248,6 @@ export default function NewTransactionScreen() {
                 />
               </View>
             )}
-
-            {/* Date Picker */}
-            <Controller
-              control={control}
-              name="occurred_at"
-              render={({ field: { onChange, value } }) => (
-                <DatePicker
-                  label="Tanggal Transaksi"
-                  value={value}
-                  onChange={onChange}
-                />
-              )}
-            />
 
             {/* Collapsible toggle for merchant & notes */}
             <Pressable
