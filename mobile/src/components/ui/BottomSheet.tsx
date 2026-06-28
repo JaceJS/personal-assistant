@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,11 +30,11 @@ export function BottomSheet({ isVisible, onDismiss, children }: BottomSheetProps
 
   useEffect(() => {
     if (isVisible) {
-      backdropOpacity.value = withTiming(1, { duration: 200 });
-      translateY.value = withSpring(0, { damping: 22, stiffness: 220 });
+      backdropOpacity.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.cubic) });
+      translateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
     } else {
-      backdropOpacity.value = withTiming(0, { duration: 150 });
-      translateY.value = withSpring(600, { damping: 22, stiffness: 220 });
+      backdropOpacity.value = withTiming(0, { duration: 200, easing: Easing.in(Easing.cubic) });
+      translateY.value = withTiming(600, { duration: 200, easing: Easing.in(Easing.cubic) });
     }
   }, [isVisible, translateY, backdropOpacity]);
 
