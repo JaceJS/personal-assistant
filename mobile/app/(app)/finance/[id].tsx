@@ -292,29 +292,29 @@ export default function TransactionDetailScreen() {
             </>
           )}
         </View>
-
+        {isEditing && (
+          <View style={styles.editActionsRow}>
+            <View style={styles.buttonWrapper}>
+              <Button
+                label="Batal"
+                onPress={() => setIsEditing(false)}
+                variant="ghost"
+                fullWidth
+              />
+            </View>
+            <View style={styles.buttonWrapper}>
+              <Button
+                label="Simpan"
+                onPress={handleSave}
+                loading={updateTransaction.isPending}
+                fullWidth
+              />
+            </View>
+          </View>
+        )}
       </ScrollView>
 
-      {isEditing ? (
-        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 140 }]}>
-          <View style={styles.buttonWrapper}>
-            <Button
-              label="Simpan"
-              onPress={handleSave}
-              loading={updateTransaction.isPending}
-              fullWidth
-            />
-          </View>
-          <View style={styles.buttonWrapper}>
-            <Button
-              label="Batal"
-              onPress={() => setIsEditing(false)}
-              variant="ghost"
-              fullWidth
-            />
-          </View>
-        </View>
-      ) : (
+      {!isEditing && (
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 140 }]}>
           <View style={styles.buttonWrapper}>
             <Button label="Edit" variant="warning" onPress={handleStartEdit} fullWidth />
@@ -361,6 +361,11 @@ const styles = StyleSheet.create({
   rowValue: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13, color: colors.text.primary, flex: 1, textAlign: 'right' },
 
   actions: { gap: spacing.md },
+  editActionsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xl,
+  },
 
   bottomBar: {
     flexDirection: 'row',
