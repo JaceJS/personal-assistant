@@ -8,6 +8,7 @@ import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import RupiahInput from "@/components/ui/RupiahInput";
+import DatePicker from "@/components/ui/DatePicker";
 import { SearchableDropdown } from "@/components/ui/SearchableDropdown";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
@@ -42,6 +43,7 @@ export default function TransactionDetailScreen() {
   const [amount, setAmount] = useState<number>(0);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string>("");
+  const [occurredAt, setOccurredAt] = useState<Date>(new Date());
   const [isEditing, setIsEditing] = useState(false);
 
   const accountName = useMemo(
@@ -67,6 +69,7 @@ export default function TransactionDetailScreen() {
     setAmount(Math.abs(transaction.amount));
     setCategoryId(transaction.category_id);
     setAccountId(transaction.account_id);
+    setOccurredAt(new Date(transaction.occurred_at));
     setNote(transaction.note ?? "");
     setMerchant(transaction.merchant ?? "");
     setIsEditing(true);
@@ -91,13 +94,14 @@ export default function TransactionDetailScreen() {
         account_id: accountId,
         merchant: merchant || null,
         note: note || null,
+        occurred_at: occurredAt.toISOString(),
       });
       setIsEditing(false);
       showToast("Perubahan tersimpan", "success");
     } catch {
       showToast("Gagal menyimpan perubahan.", "error");
     }
-  }, [updateTransaction, txType, amount, categoryId, accountId, merchant, note, showToast]);
+  }, [updateTransaction, txType, amount, categoryId, accountId, merchant, note, occurredAt, showToast]);
 
   const handleDelete = useCallback(() => {
     Alert.alert("Hapus Transaksi", "Yakin mau hapus transaksi ini?", [
@@ -243,6 +247,13 @@ export default function TransactionDetailScreen() {
                   </ScrollView>
                 </View>
               )}
+
+              {/* Date Picker */}
+              <DatePicker
+                label="Tanggal Transaksi"
+                value={occurredAt}
+                onChange={setOccurredAt}
+              />
 
               <Input
                 label="Merchant"

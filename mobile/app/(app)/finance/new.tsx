@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
+import DatePicker from "@/components/ui/DatePicker";
 import Input from "@/components/ui/Input";
 import RupiahInput from "@/components/ui/RupiahInput";
 import { SearchableDropdown } from "@/components/ui/SearchableDropdown";
@@ -25,6 +26,7 @@ const schema = z.object({
     .min(1, "Masukkan jumlah"),
   merchant: z.string().optional(),
   note: z.string().optional(),
+  occurred_at: z.date({ required_error: "Pilih tanggal" }),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -63,7 +65,14 @@ export default function NewTransactionScreen() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { account_id: "", category_id: null, amount: 0, merchant: "", note: "" },
+    defaultValues: {
+      account_id: "",
+      category_id: null,
+      amount: 0,
+      merchant: "",
+      note: "",
+      occurred_at: new Date(),
+    },
   });
 
   const selectedAccountId = useWatch({ control, name: "account_id" });
@@ -93,7 +102,7 @@ export default function NewTransactionScreen() {
           amount: finalAmount,
           merchant: values.merchant || null,
           note: values.note || null,
-          occurred_at: new Date().toISOString(),
+          occurred_at: values.occurred_at.toISOString(),
         });
         showToast("Transaksi tersimpan", "success");
         handleBack();
@@ -226,6 +235,19 @@ export default function NewTransactionScreen() {
                 />
               </View>
             )}
+
+            {/* Date Picker */}
+            <Controller
+              control={control}
+              name="occurred_at"
+              render={({ field: { onChange, value } }) => (
+                <DatePicker
+                  label="Tanggal Transaksi"
+                  value={value}
+                  onChange={onChange}
+                />
+              )}
+            />
 
             {/* Collapsible toggle for merchant & notes */}
             <Pressable

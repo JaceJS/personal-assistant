@@ -3,6 +3,7 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -23,11 +24,14 @@ import { Screen } from '@/components/layout/Screen';
 import EmptyState from '@/components/ui/EmptyState';
 import Fab from '@/components/ui/Fab';
 import { SkeletonList } from '@/components/ui/Skeleton';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import DatePicker from '@/components/ui/DatePicker';
+import Button from '@/components/ui/Button';
 import TransactionCard from '@/features/finance/components/TransactionCard';
 import { useCategories } from '@/features/finance/hooks/useCategories';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import type { Transaction } from '@/features/finance/types';
-import { formatRupiah } from '@/lib/utils';
+import { formatRupiah, formatShortDate } from '@/lib/utils';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
 const MONTH_NAMES = [
@@ -78,7 +82,7 @@ function formatDateLabel(dateStr: string): string {
 export default function AktivitasScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ categoryId?: string; year?: string; month?: string }>();
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
 
   const initialYear = params.year ? Number(params.year) : now.getFullYear();
   const initialMonth = params.month !== undefined ? Number(params.month) : now.getMonth();
@@ -92,17 +96,75 @@ export default function AktivitasScreen() {
   );
   const [query, setQuery] = useState('');
 
-  const dateFrom = [
-    selectedMonth.year,
-    String(selectedMonth.month + 1).padStart(2, '0'),
-    '01',
-  ].join('-');
+  const [isCustomDateRange, setIsCustomDateRange] = useState(false);
+  const [customDateFrom, setCustomDateFrom] = useState<Date>(
+    new Date(now.getFullYear(), now.getMonth(), 1)
+  );
+  const [customDateTo, setCustomDateTo] = useState<Date>(new Date());
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [tempCategoryId, setTempCategoryId] = useState<string | null>(params.categoryId ?? null);
+  const [tempIsCustom, setTempIsCustom] = useState(false);
+  const [tempDateFrom, setTempDateFrom] = useState<Date>(
+    new Date(now.getFullYear(), now.getMonth(), 1)
+  );
+  const [tempDateTo, setTempDateTo] = useState<Date>(new Date());
+
+  const openFilter = useCallback(() => {
+    setTempCategoryId(activeCategoryId);
+    setTempIsCustom(isCustomDateRange);
+    setTempDateFrom(customDateFrom);
+    setTempDateTo(customDateTo);
+    setIsFilterOpen(true);
+  }, [activeCategoryId, isCustomDateRange, customDateFrom, customDateTo]);
+
+  const applyFilter = useCallback(() => {
+    setActiveCategoryId(tempCategoryId);
+    setIsCustomDateRange(tempIsCustom);
+    setCustomDateFrom(tempDateFrom);
+    setCustomDateTo(tempDateTo);
+    setIsFilterOpen(false);
+  }, [tempCategoryId, tempIsCustom, tempDateFrom, tempDateTo]);
+
+  const resetFilter = useCallback(() => {
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const today = new Date();
+    setTempCategoryId(null);
+    setTempIsCustom(false);
+    setTempDateFrom(startOfCurrentMonth);
+    setTempDateTo(today);
+    setActiveCategoryId(null);
+    setIsCustomDateRange(false);
+    setCustomDateFrom(startOfCurrentMonth);
+    setCustomDateTo(today);
+    setIsFilterOpen(false);
+  }, [now]);
+
+  const dateFrom = isCustomDateRange
+    ? [
+        customDateFrom.getFullYear(),
+        String(customDateFrom.getMonth() + 1).padStart(2, '0'),
+        String(customDateFrom.getDate()).padStart(2, '0'),
+      ].join('-')
+    : [
+        selectedMonth.year,
+        String(selectedMonth.month + 1).padStart(2, '0'),
+        '01',
+      ].join('-');
+
   const lastDay = new Date(selectedMonth.year, selectedMonth.month + 1, 0).getDate();
-  const dateTo = [
-    selectedMonth.year,
-    String(selectedMonth.month + 1).padStart(2, '0'),
-    String(lastDay).padStart(2, '0'),
-  ].join('-');
+
+  const dateTo = isCustomDateRange
+    ? [
+        customDateTo.getFullYear(),
+        String(customDateTo.getMonth() + 1).padStart(2, '0'),
+        String(customDateTo.getDate()).padStart(2, '0'),
+      ].join('-')
+    : [
+        selectedMonth.year,
+        String(selectedMonth.month + 1).padStart(2, '0'),
+        String(lastDay).padStart(2, '0'),
+      ].join('-');
 
   const canGoForward =
     selectedMonth.year < now.getFullYear() ||
@@ -194,9 +256,15 @@ export default function AktivitasScreen() {
             placeholderTextColor={colors.text.muted}
           />
         </View>
-        <View style={[styles.filterBtn, styles.filterBtnDisabled]}>
-          <SlidersHorizontal size={18} color={colors.text.muted} strokeWidth={2} />
-        </View>
+        <Pressable onPress={openFilter}>
+          <View style={[styles.filterBtn, (activeCategoryId !== null || isCustomDateRange) && styles.filterBtnActive]}>
+            <SlidersHorizontal
+              size={18}
+              color={(activeCategoryId !== null || isCustomDateRange) ? colors.bg.canvas : colors.text.primary}
+              strokeWidth={2}
+            />
+          </View>
+        </Pressable>
       </View>
 
       {activeCategoryId && (
@@ -213,15 +281,23 @@ export default function AktivitasScreen() {
       )}
 
       <View style={styles.rangeRow}>
-        <Pressable style={styles.monthNav} hitSlop={8} onPress={goBack}>
-          <ChevronLeft size={16} color={colors.text.secondary} strokeWidth={2} />
-          <Text style={styles.monthNavText}>
-            {MONTH_NAMES[selectedMonth.month].slice(0, 3)} {selectedMonth.year}
-          </Text>
-          <Pressable hitSlop={8} onPress={goForward} style={{ opacity: canGoForward ? 1 : 0.3 }}>
-            <ChevronRight size={16} color={colors.text.secondary} strokeWidth={2} />
+        {isCustomDateRange ? (
+          <Pressable style={styles.monthNav} hitSlop={8} onPress={openFilter}>
+            <Text style={styles.monthNavText}>
+              {formatShortDate(customDateFrom)} − {formatShortDate(customDateTo)}
+            </Text>
           </Pressable>
-        </Pressable>
+        ) : (
+          <Pressable style={styles.monthNav} hitSlop={8} onPress={goBack}>
+            <ChevronLeft size={16} color={colors.text.secondary} strokeWidth={2} />
+            <Text style={styles.monthNavText}>
+              {MONTH_NAMES[selectedMonth.month].slice(0, 3)} {selectedMonth.year}
+            </Text>
+            <Pressable hitSlop={8} onPress={goForward} style={{ opacity: canGoForward ? 1 : 0.3 }}>
+              <ChevronRight size={16} color={colors.text.secondary} strokeWidth={2} />
+            </Pressable>
+          </Pressable>
+        )}
         <Text
           style={[
             styles.periodTotal,
@@ -266,6 +342,116 @@ export default function AktivitasScreen() {
         icon={Plus}
         accessibilityLabel="Add transaction"
       />
+
+      <BottomSheet isVisible={isFilterOpen} onDismiss={() => setIsFilterOpen(false)}>
+        <View style={styles.sheetContent}>
+          <Text style={styles.sheetTitle}>Filter Transaksi</Text>
+
+          {/* Category Filter Section */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionLabel}>Kategori</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillsRow}>
+              <View style={[styles.filterPill, tempCategoryId === null && styles.filterPillActive]}>
+                <Pressable
+                  onPress={() => setTempCategoryId(null)}
+                  style={({ pressed }) => [
+                    styles.filterPillPressable,
+                    pressed && { opacity: 0.8 }
+                  ]}
+                >
+                  <Text style={[styles.filterPillText, tempCategoryId === null && styles.filterPillTextActive]}>
+                    Semua
+                  </Text>
+                </Pressable>
+              </View>
+              {categoriesData?.filter(c => !c.is_archived).map((cat) => {
+                const active = tempCategoryId === cat.id;
+                return (
+                  <View key={cat.id} style={[styles.filterPill, active && styles.filterPillActive]}>
+                    <Pressable
+                      onPress={() => setTempCategoryId(cat.id)}
+                      style={({ pressed }) => [
+                        styles.filterPillPressable,
+                        pressed && { opacity: 0.8 }
+                      ]}
+                    >
+                      <Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>
+                        {cat.icon} {cat.name}
+                      </Text>
+                    </Pressable>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Date Range Selection Section */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionLabel}>Rentang Waktu</Text>
+            <View style={styles.toggleContainer}>
+              <View style={styles.toggleBtnWrapper}>
+                <View style={[styles.toggleBtn, !tempIsCustom && styles.toggleBtnActive]}>
+                  <Pressable
+                    onPress={() => setTempIsCustom(false)}
+                    style={({ pressed }) => [
+                      styles.togglePressableContent,
+                      pressed && { opacity: 0.8 }
+                    ]}
+                  >
+                    <Text style={[styles.toggleText, !tempIsCustom && styles.toggleTextActive]}>
+                      Bulanan
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+              <View style={styles.toggleBtnWrapper}>
+                <View style={[styles.toggleBtn, tempIsCustom && styles.toggleBtnActive]}>
+                  <Pressable
+                    onPress={() => setTempIsCustom(true)}
+                    style={({ pressed }) => [
+                      styles.togglePressableContent,
+                      pressed && { opacity: 0.8 }
+                    ]}
+                  >
+                    <Text style={[styles.toggleText, tempIsCustom && styles.toggleTextActive]}>
+                      Kustom
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {tempIsCustom && (
+            <View style={styles.datePickerRow}>
+              <View style={styles.datePickerCol}>
+                <DatePicker
+                  label="Dari Tanggal"
+                  value={tempDateFrom}
+                  onChange={setTempDateFrom}
+                />
+              </View>
+              <View style={styles.datePickerCol}>
+                <DatePicker
+                  label="Sampai Tanggal"
+                  value={tempDateTo}
+                  onChange={setTempDateTo}
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Actions footer */}
+          <View style={styles.footerButtons}>
+            <View style={styles.footerBtnWrapper}>
+              <Button label="Reset" variant="ghost" onPress={resetFilter} fullWidth />
+            </View>
+            <View style={styles.footerBtnWrapper}>
+              <Button label="Terapkan" onPress={applyFilter} fullWidth />
+            </View>
+          </View>
+        </View>
+      </BottomSheet>
     </Screen>
   );
 }
@@ -305,7 +491,115 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBtnDisabled: { opacity: 0.35 },
+  filterBtnActive: {
+    backgroundColor: colors.accent.primary,
+    borderColor: colors.accent.primary,
+  },
+
+  pillsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingVertical: 4,
+  },
+  filterPill: {
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.bg.canvas,
+    overflow: 'hidden',
+  },
+  filterPillActive: {
+    backgroundColor: colors.accent.primary,
+    borderColor: colors.accent.primary,
+  },
+  filterPillPressable: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterPillText: {
+    ...StyleSheet.flatten(textStyles.caption),
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.text.secondary,
+  },
+  filterPillTextActive: {
+    color: colors.bg.canvas,
+    fontWeight: '600',
+  },
+
+  filterSection: {
+    gap: spacing.sm,
+  },
+  filterSectionLabel: {
+    ...StyleSheet.flatten(textStyles.caption),
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text.muted,
+  },
+
+  toggleContainer: {
+    flexDirection: "row",
+    backgroundColor: colors.bg.canvas,
+    borderRadius: radius.md,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  toggleBtnWrapper: {
+    flex: 1,
+  },
+  toggleBtn: {
+    borderRadius: radius.sm,
+    overflow: "hidden",
+  },
+  toggleBtnActive: {
+    backgroundColor: colors.accent.primary,
+  },
+  togglePressableContent: {
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  toggleText: {
+    ...StyleSheet.flatten(textStyles.h3),
+    color: colors.text.muted,
+  },
+  toggleTextActive: {
+    color: colors.bg.canvas,
+    fontWeight: "600",
+  },
+
+  datePickerRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+  },
+  datePickerCol: {
+    flex: 1,
+  },
+
+  sheetContent: {
+    paddingHorizontal: spacing["2xl"],
+    paddingTop: spacing.sm,
+    gap: spacing.lg,
+  },
+  sheetTitle: {
+    ...StyleSheet.flatten(textStyles.h2),
+    color: colors.text.primary,
+    textAlign: "center",
+    marginBottom: spacing.xs,
+  },
+
+  footerButtons: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  footerBtnWrapper: {
+    flex: 1,
+  },
 
   rangeRow: {
     flexDirection: 'row',
