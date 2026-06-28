@@ -194,7 +194,15 @@ export default function NewTransactionScreen() {
               )}
             />
 
-            {/* Account Selector (if user has multiple accounts) */}
+            {/* Account Selector */}
+            {accountsData && accountsData.length === 1 && (
+              <View style={styles.accountSection}>
+                <Text style={styles.accountLabel}>Akun</Text>
+                <View style={styles.singleAccountRow}>
+                  <Text style={styles.singleAccountName}>{accountsData[0].name}</Text>
+                </View>
+              </View>
+            )}
             {accountsData && accountsData.length > 1 && (
               <View style={styles.accountSection}>
                 <Text style={styles.accountLabel}>Pilih Dompet / Akun</Text>
@@ -357,6 +365,19 @@ const styles = StyleSheet.create({
     ...StyleSheet.flatten(textStyles.caption),
     fontSize: 13,
     color: colors.text.muted,
+  },
+  singleAccountRow: {
+    backgroundColor: colors.bg.elevated,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  singleAccountName: {
+    ...StyleSheet.flatten(textStyles.body),
+    fontSize: 14,
+    color: colors.text.secondary,
   },
   accountRow: { gap: spacing.sm, paddingVertical: 2 },
   accountPill: {

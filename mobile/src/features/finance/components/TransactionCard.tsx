@@ -5,7 +5,7 @@ import type { LucideIcon } from 'lucide-react-native';
 
 import ListItem from '@/components/ui/ListItem';
 import type { Transaction } from '@/features/finance/types';
-import { formatRupiah, formatShortDate } from '@/lib/utils';
+import { formatRupiah } from '@/lib/utils';
 import { colors, textStyles } from '@/theme';
 
 interface TransactionCardProps {
@@ -26,27 +26,31 @@ function categoryIcon(name?: string | null): LucideIcon {
 }
 
 function getCardLabels(transaction: Transaction, categoryName?: string) {
+  const timeStr = new Date(transaction.occurred_at)
+    .toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  const sourceMap: Record<string, string> = { voice: 'Suara', receipt: 'Struk' };
+  const sourceLabel = sourceMap[transaction.source];
+  const timeLine = sourceLabel ? `${timeStr} · ${sourceLabel}` : timeStr;
+
   if (transaction.merchant) {
+    const extra = categoryName ?? transaction.note;
     return {
       title: transaction.merchant,
-      subtitle: categoryName ?? transaction.note ?? formatShortDate(transaction.occurred_at),
+      subtitle: extra ? `${extra} · ${timeLine}` : timeLine,
     };
   }
   if (categoryName) {
     return {
       title: categoryName,
-      subtitle: transaction.note ?? formatShortDate(transaction.occurred_at),
+      subtitle: transaction.note ? `${transaction.note} · ${timeLine}` : timeLine,
     };
   }
   if (transaction.note) {
-    return {
-      title: transaction.note,
-      subtitle: formatShortDate(transaction.occurred_at),
-    };
+    return { title: transaction.note, subtitle: timeLine };
   }
   return {
-    title: 'Transaction',
-    subtitle: formatShortDate(transaction.occurred_at),
+    title: 'Transaksi',
+    subtitle: timeStr,
   };
 }
 
@@ -55,7 +59,7 @@ function TransactionCard({ transaction, categoryName, showId, onPress }: Transac
   const Icon = categoryIcon(categoryName);
   const { title, subtitle } = getCardLabels(transaction, categoryName);
   const amountText = `${isExpense ? '−' : '+'} ${formatRupiah(Math.abs(transaction.amount))}`;
-  const amountColor = isExpense ? colors.danger.text : colors.accent.primary;
+  const amountColor = isExpense ? colors.danger.text : colors.success.text;
 
   const rightElement = showId ? (
     <View style={styles.rightCol}>

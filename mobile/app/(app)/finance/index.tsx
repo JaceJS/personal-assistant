@@ -12,6 +12,7 @@ import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
 import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
 import TransactionCard from "@/features/finance/components/TransactionCard";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
+import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { useAuthStore } from "@/stores/auth";
 import { getDisplayName } from "@/lib/getDisplayName";
@@ -44,6 +45,7 @@ export default function FinanceDashboard() {
   const monthLabel = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
 
   const { data: accountsData } = useAccounts();
+  const { data: categoriesData } = useCategories();
   const accounts = useMemo(
     () => accountsData?.filter((a) => !a.is_archived) ?? [],
     [accountsData]
@@ -157,15 +159,19 @@ export default function FinanceDashboard() {
           {recentItems.length === 0 ? (
             <Text style={styles.emptyText}>Belum ada transaksi bulan ini</Text>
           ) : (
-            recentItems.map((tx, idx) => (
-              <View key={tx.id}>
-                {idx > 0 && <View style={styles.divider} />}
-                <TransactionCard
-                  transaction={tx}
-                  onPress={() => router.push(`/(app)/finance/${tx.id}`)}
-                />
-              </View>
-            ))
+            recentItems.map((tx, idx) => {
+              const categoryName = categoriesData?.find(c => c.id === tx.category_id)?.name;
+              return (
+                <View key={tx.id}>
+                  {idx > 0 && <View style={styles.divider} />}
+                  <TransactionCard
+                    transaction={tx}
+                    categoryName={categoryName}
+                    onPress={() => router.push({ pathname: `/(app)/finance/${tx.id}`, params: { from: 'finance' } })}
+                  />
+                </View>
+              );
+            })
           )}
         </View>
       </ScrollView>

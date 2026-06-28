@@ -1,4 +1,4 @@
-"""Finance domain service — ownership checks and account balance management."""
+"""Finance domain service for ownership checks and account balance management."""
 
 from __future__ import annotations
 
@@ -200,7 +200,24 @@ async def get_category_read(
     return _build_category_read(category, ucb)
 
 
+async def seed_default_categories(
+    session: AsyncSession, user_id: uuid.UUID
+) -> list[Category]:
+    system_cats = await repo.list_system_categories(session)
+    seeded = []
+    for sc in system_cats:
+        cat = await repo.create_category(
+            session, user_id,
+            name=sc.name, type=sc.type, icon=sc.icon, color=sc.color,
+        )
+        seeded.append(cat)
+    await session.flush()
+    return seeded
+
+
 async def list_categories(session: AsyncSession, user_id: uuid.UUID) -> list[CategoryRead]:
+    if not await repo.has_user_categories(session, user_id):
+        await seed_default_categories(session, user_id)
     categories = await repo.list_categories(session, user_id)
     budget_map = await repo.get_user_category_budgets_map(session, user_id)
     return [_build_category_read(cat, budget_map.get(cat.id)) for cat in categories]
@@ -224,8 +241,8 @@ async def update_category(
     meta_data = data.model_dump(exclude={"budget_limit", "is_fixed"}, exclude_unset=True)
     budget_data = data.model_dump(include={"budget_limit", "is_fixed"}, exclude_unset=True)
 
-    if meta_data and category.user_id is None:
-        raise ForbiddenError("System categories cannot be modified")
+    if category.user_id != user_id:
+        raise ForbiddenError("You don't own this category")
     if meta_data:
         category = await repo.update_category(session, category, **meta_data)
 
@@ -249,8 +266,8 @@ async def archive_category(
     session: AsyncSession, category_id: uuid.UUID, user_id: uuid.UUID
 ) -> None:
     category = await get_category_or_404(session, category_id, user_id)
-    if category.user_id is None:
-        raise ForbiddenError("System categories cannot be archived")
+    if category.user_id != user_id:
+        raise ForbiddenError("You don't own this category")
     await repo.archive_category(session, category)
 
 

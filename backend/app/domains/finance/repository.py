@@ -1,4 +1,4 @@
-"""Finance domain repository — plain async query functions, no generic base."""
+"""Finance domain repository with plain async query functions and no generic base."""
 
 from __future__ import annotations
 
@@ -118,7 +118,24 @@ async def get_category(session: AsyncSession, category_id: uuid.UUID) -> Categor
 async def list_categories(session: AsyncSession, user_id: uuid.UUID) -> list[Category]:
     result = await session.execute(
         sa.select(Category).where(
-            sa.or_(Category.user_id == user_id, Category.user_id.is_(None)),
+            Category.user_id == user_id,
+            Category.is_archived.is_(False),
+        )
+    )
+    return list(result.scalars())
+
+
+async def has_user_categories(session: AsyncSession, user_id: uuid.UUID) -> bool:
+    result = await session.execute(
+        sa.select(sa.func.count()).select_from(Category).where(Category.user_id == user_id)
+    )
+    return (result.scalar() or 0) > 0
+
+
+async def list_system_categories(session: AsyncSession) -> list[Category]:
+    result = await session.execute(
+        sa.select(Category).where(
+            Category.user_id.is_(None),
             Category.is_archived.is_(False),
         )
     )
@@ -188,7 +205,10 @@ async def upsert_user_category_budget(
     )
     result = await session.execute(stmt)
     await session.flush()
-    return result.scalar_one()
+    ucb = result.scalar_one()
+    # pg_insert RETURNING may resolve to a stale identity-map object; refresh for correct values.
+    await session.refresh(ucb)
+    return ucb
 
 
 # ── Transactions ──────────────────────────────────────────────────────────────

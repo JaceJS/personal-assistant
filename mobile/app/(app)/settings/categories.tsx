@@ -64,22 +64,22 @@ export default function CategoriesScreen() {
     setEditingCategory(null);
   }, []);
 
-  const handleArchive = useCallback(
+  const handleDelete = useCallback(
     (category: Category) => {
       Alert.alert(
-        "Archive Category",
-        `Are you sure you want to archive "${category.name}"?`,
+        "Delete Category",
+        `Delete "${category.name}"? Existing transactions are kept.`,
         [
           { text: "Cancel", style: "cancel" },
           {
-            text: "Archive",
+            text: "Delete",
             style: "destructive",
             onPress: async () => {
               try {
                 await archiveCategory.mutateAsync(category.id);
-                showToast("Category archived", "info");
+                showToast("Category deleted", "info");
               } catch {
-                showToast("Failed to archive category", "error");
+                showToast("Failed to delete category", "error");
               }
             },
           },
@@ -181,7 +181,7 @@ export default function CategoriesScreen() {
         category={actionCategory}
         onDismiss={() => setActionCategory(null)}
         onEdit={(c) => { setActionCategory(null); handleOpenEdit(c); }}
-        onArchive={(c) => { setActionCategory(null); handleArchive(c); }}
+        onDelete={(c) => { setActionCategory(null); handleDelete(c); }}
       />
 
       <CategoryFormSheet

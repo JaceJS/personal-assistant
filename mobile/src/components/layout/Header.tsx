@@ -52,6 +52,8 @@ const styles = StyleSheet.create({
   },
   sideSlotRight: {
     alignItems: 'flex-end',
+    width: 'auto',
+    minWidth: 44,
   },
   centerSlot: {
     flex: 1,

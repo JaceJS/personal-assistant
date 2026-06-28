@@ -76,13 +76,13 @@ export default function HomeScreen() {
 
         <AccountBalanceCard />
 
+        <DailySpendCard />
+
         <MonthlyBudgetCard totalExpense={totalExpense} />
 
         <ProjectedEndOfMonthCard />
 
         <AIInsightCard />
-
-        <DailySpendCard />
       </ScrollView>
 
       <Fab

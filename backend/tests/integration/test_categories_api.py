@@ -6,11 +6,12 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
+import sqlalchemy as sa
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.finance import repository as repo
-from app.domains.finance.models import AccountType, CategoryType
+from app.domains.finance.models import AccountType, Category, CategoryType
 
 pytestmark = pytest.mark.integration
 
@@ -119,6 +120,7 @@ async def test_update_system_category_is_forbidden(
     client: AsyncClient,
     db_session: AsyncSession,
 ) -> None:
+    # System categories (user_id=NULL) are shared seed data; no user owns them.
     system = await repo.create_category(
         db_session, None, name="System", type=CategoryType.expense,
     )
@@ -277,3 +279,58 @@ async def test_new_category_is_not_fixed_by_default(
 
     assert response.status_code == 200
     assert response.json()["data"]["is_fixed"] is False
+
+
+# ── Lazy seeding ──────────────────────────────────────────────────────────────
+
+async def _clear_system_categories(session: AsyncSession) -> None:
+    await session.execute(sa.delete(Category).where(Category.user_id.is_(None)))
+    await session.commit()
+
+
+async def test_list_categories_seeds_defaults_on_first_call(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    await _clear_system_categories(db_session)
+    await repo.create_category(db_session, None, name="Food", type=CategoryType.expense)
+    await repo.create_category(db_session, None, name="Salary", type=CategoryType.income)
+    await db_session.commit()
+
+    response = await client.get("/api/v1/categories")
+
+    assert response.status_code == 200
+    names = [c["name"] for c in response.json()["data"]]
+    assert "Food" in names
+    assert "Salary" in names
+
+
+async def test_list_categories_seeded_are_user_owned(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    await _clear_system_categories(db_session)
+    await repo.create_category(db_session, None, name="Food", type=CategoryType.expense)
+    await db_session.commit()
+
+    response = await client.get("/api/v1/categories")
+    data = response.json()["data"]
+
+    assert len(data) > 0
+    assert all(c["user_id"] == str(test_user_id) for c in data)
+
+
+async def test_list_categories_does_not_double_seed(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    await _clear_system_categories(db_session)
+    await repo.create_category(db_session, None, name="Food", type=CategoryType.expense)
+    await db_session.commit()
+
+    await client.get("/api/v1/categories")
+    response = await client.get("/api/v1/categories")
+
+    names = [c["name"] for c in response.json()["data"]]
+    assert names.count("Food") == 1
