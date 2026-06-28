@@ -50,11 +50,26 @@ type ListRow =
   | { type: "item"; key: string; data: Transaction };
 
 function formatDateLabel(dateStr: string): string {
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-  const fullDate = new Date(dateStr).toLocaleDateString("id-ID", {
-    day: "numeric", month: "long", year: "numeric",
+  const now = new Date();
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+
+  const yesterdayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yesterday = [
+    yesterdayDate.getFullYear(),
+    String(yesterdayDate.getMonth() + 1).padStart(2, '0'),
+    String(yesterdayDate.getDate()).padStart(2, '0'),
+  ].join('-');
+
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const dateObj = new Date(year, month - 1, day);
+  const fullDate = dateObj.toLocaleDateString('id-ID', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
+
   if (dateStr === today) return `Hari ini - ${fullDate}`;
   if (dateStr === yesterday) return `Kemarin - ${fullDate}`;
   return fullDate;
@@ -70,10 +85,17 @@ export default function HistoryScreen() {
   });
   const [query, setQuery] = useState("");
 
-  const dateFrom = new Date(selectedMonth.year, selectedMonth.month, 1).toISOString().slice(0, 10);
-  const dateTo = new Date(selectedMonth.year, selectedMonth.month + 1, 0)
-    .toISOString()
-    .slice(0, 10);
+  const dateFrom = [
+    selectedMonth.year,
+    String(selectedMonth.month + 1).padStart(2, '0'),
+    '01',
+  ].join('-');
+  const lastDay = new Date(selectedMonth.year, selectedMonth.month + 1, 0).getDate();
+  const dateTo = [
+    selectedMonth.year,
+    String(selectedMonth.month + 1).padStart(2, '0'),
+    String(lastDay).padStart(2, '0'),
+  ].join('-');
 
   const canGoForward =
     selectedMonth.year < now.getFullYear() ||

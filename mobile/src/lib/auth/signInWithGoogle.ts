@@ -11,7 +11,7 @@ export async function signInWithGoogle(): Promise<"success" | "cancelled" | "err
     const userInfo = await GoogleSignin.signIn();
     
     // Support both older and newer versions of the library API (data wrapping)
-    const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
+    const idToken = userInfo.data?.idToken || (userInfo as { idToken?: string }).idToken;
     if (!idToken) return "error";
 
     const { data, error } = await supabase.auth.signInWithIdToken({
@@ -21,8 +21,9 @@ export async function signInWithGoogle(): Promise<"success" | "cancelled" | "err
 
     if (error || !data?.session) return "error";
     return "success";
-  } catch (err: any) {
-    if (err.code === "SIGN_IN_CANCELLED" || err.message?.includes("cancelled") || err.code === "12501") {
+  } catch (err) {
+    const error = err as { code?: string; message?: string };
+    if (error.code === "SIGN_IN_CANCELLED" || error.message?.includes("cancelled") || error.code === "12501") {
       return "cancelled";
     }
     return "error";

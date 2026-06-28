@@ -22,7 +22,10 @@ async def test_get_category_forbidden_for_other_users_category(
 ) -> None:
     other_user = uuid.uuid4()
     category = await repo.create_category(
-        db_session, other_user, name="Private", type=CategoryType.expense,
+        db_session,
+        other_user,
+        name="Private",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -37,7 +40,10 @@ async def test_get_system_default_category_is_readable(
 ) -> None:
     # System defaults have user_id IS NULL and are shared by everyone.
     category = await repo.create_category(
-        db_session, None, name="Groceries", type=CategoryType.expense,
+        db_session,
+        None,
+        name="Groceries",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -53,12 +59,18 @@ async def test_create_transaction_forbidden_with_other_users_category(
     test_user_id: uuid.UUID,
 ) -> None:
     account = await repo.create_account(
-        db_session, test_user_id,
-        name="Dompet", type=AccountType.cash, currency="IDR",
+        db_session,
+        test_user_id,
+        name="Dompet",
+        type=AccountType.cash,
+        currency="IDR",
     )
     other_user = uuid.uuid4()
     foreign_category = await repo.create_category(
-        db_session, other_user, name="Private", type=CategoryType.expense,
+        db_session,
+        other_user,
+        name="Private",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -79,11 +91,17 @@ async def test_create_transaction_allows_own_category(
     test_user_id: uuid.UUID,
 ) -> None:
     account = await repo.create_account(
-        db_session, test_user_id,
-        name="Dompet", type=AccountType.cash, currency="IDR",
+        db_session,
+        test_user_id,
+        name="Dompet",
+        type=AccountType.cash,
+        currency="IDR",
     )
     category = await repo.create_category(
-        db_session, test_user_id, name="Food", type=CategoryType.expense,
+        db_session,
+        test_user_id,
+        name="Food",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -100,13 +118,17 @@ async def test_create_transaction_allows_own_category(
 
 # ── Update category ───────────────────────────────────────────────────────────
 
+
 async def test_update_own_category_success(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user_id: uuid.UUID,
 ) -> None:
     category = await repo.create_category(
-        db_session, test_user_id, name="Old", type=CategoryType.expense,
+        db_session,
+        test_user_id,
+        name="Old",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -122,7 +144,10 @@ async def test_update_system_category_is_forbidden(
 ) -> None:
     # System categories (user_id=NULL) are shared seed data; no user owns them.
     system = await repo.create_category(
-        db_session, None, name="System", type=CategoryType.expense,
+        db_session,
+        None,
+        name="System",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -137,7 +162,10 @@ async def test_update_other_users_category_is_forbidden(
 ) -> None:
     other = uuid.uuid4()
     category = await repo.create_category(
-        db_session, other, name="Private", type=CategoryType.expense,
+        db_session,
+        other,
+        name="Private",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -156,13 +184,17 @@ async def test_update_nonexistent_category_is_not_found(
 
 # ── Archive category ──────────────────────────────────────────────────────────
 
+
 async def test_archive_own_category_returns_204(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user_id: uuid.UUID,
 ) -> None:
     category = await repo.create_category(
-        db_session, test_user_id, name="ToBye", type=CategoryType.expense,
+        db_session,
+        test_user_id,
+        name="ToBye",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -177,7 +209,10 @@ async def test_archive_removes_category_from_list(
     test_user_id: uuid.UUID,
 ) -> None:
     category = await repo.create_category(
-        db_session, test_user_id, name="ToBye", type=CategoryType.expense,
+        db_session,
+        test_user_id,
+        name="ToBye",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -193,7 +228,10 @@ async def test_archive_system_category_is_forbidden(
     db_session: AsyncSession,
 ) -> None:
     system = await repo.create_category(
-        db_session, None, name="Sys", type=CategoryType.expense,
+        db_session,
+        None,
+        name="Sys",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -208,7 +246,10 @@ async def test_archive_other_users_category_is_forbidden(
 ) -> None:
     other = uuid.uuid4()
     category = await repo.create_category(
-        db_session, other, name="Private", type=CategoryType.expense,
+        db_session,
+        other,
+        name="Private",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -227,13 +268,17 @@ async def test_archive_nonexistent_category_is_not_found(
 
 # ── Fixed expense flag ────────────────────────────────────────────────────────
 
+
 async def test_mark_category_as_fixed(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user_id: uuid.UUID,
 ) -> None:
     cat = await repo.create_category(
-        db_session, test_user_id, name="Rent", type=CategoryType.expense,
+        db_session,
+        test_user_id,
+        name="Rent",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -254,7 +299,10 @@ async def test_unmark_category_as_fixed(
     test_user_id: uuid.UUID,
 ) -> None:
     cat = await repo.create_category(
-        db_session, test_user_id, name="Rent", type=CategoryType.expense,
+        db_session,
+        test_user_id,
+        name="Rent",
+        type=CategoryType.expense,
     )
     await db_session.commit()
     await client.patch(f"/api/v1/categories/{cat.id}", json={"is_fixed": True})
@@ -271,7 +319,10 @@ async def test_new_category_is_not_fixed_by_default(
     test_user_id: uuid.UUID,
 ) -> None:
     cat = await repo.create_category(
-        db_session, test_user_id, name="Food", type=CategoryType.expense,
+        db_session,
+        test_user_id,
+        name="Food",
+        type=CategoryType.expense,
     )
     await db_session.commit()
 
@@ -282,6 +333,7 @@ async def test_new_category_is_not_fixed_by_default(
 
 
 # ── Lazy seeding ──────────────────────────────────────────────────────────────
+
 
 async def _clear_system_categories(session: AsyncSession) -> None:
     await session.execute(sa.delete(Category).where(Category.user_id.is_(None)))

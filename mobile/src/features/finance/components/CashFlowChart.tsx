@@ -50,7 +50,11 @@ function buildCashFlowBuckets(items: Transaction[]): CashFlowPoint[] {
 export default function CashFlowChart() {
   const now = new Date();
   const yearStart = `${now.getFullYear()}-01-01`;
-  const today = now.toISOString().slice(0, 10);
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
   const chartFont = useChartFont();
 
   const { data } = useTransactions({ dateFrom: yearStart, dateTo: today, limit: 1000 });

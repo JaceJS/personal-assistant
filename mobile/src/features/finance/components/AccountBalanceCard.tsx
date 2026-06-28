@@ -3,7 +3,7 @@ import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { formatRupiah } from "@/lib/utils";
-import { colors, spacing, textStyles } from "@/theme";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function AccountBalanceCard() {
   const { data } = useAccounts();
@@ -28,6 +28,7 @@ export default function AccountBalanceCard() {
 
   return (
     <View style={styles.card}>
+      <View style={styles.glow} />
       <Text style={styles.label}>TOTAL SALDO</Text>
       <Text style={styles.amount}>{formatRupiah(displayBalance)}</Text>
       <Text style={styles.sub}>
@@ -42,10 +43,23 @@ export default function AccountBalanceCard() {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bg.surface,
-    borderRadius: 16,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.default,
     marginHorizontal: spacing["2xl"],
     marginBottom: spacing.lg,
     padding: 20,
+    overflow: "hidden",
+  },
+  glow: {
+    position: "absolute",
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: colors.accent.primary,
+    top: -40,
+    right: -30,
+    opacity: 0.12,
   },
   label: {
     ...StyleSheet.flatten(textStyles.overline),

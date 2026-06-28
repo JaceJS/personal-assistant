@@ -26,8 +26,11 @@ async def test_upload_voice_creates_log_and_enqueues_job(
     test_user_id: uuid.UUID,
 ) -> None:
     account = await repo.create_account(
-        db_session, test_user_id,
-        name="Wallet", type=AccountType.cash, currency="IDR",
+        db_session,
+        test_user_id,
+        name="Wallet",
+        type=AccountType.cash,
+        currency="IDR",
     )
     await db_session.commit()
 
@@ -69,8 +72,11 @@ async def test_upload_voice_rejects_non_audio_file(
     test_user_id: uuid.UUID,
 ) -> None:
     account = await repo.create_account(
-        db_session, test_user_id,
-        name="Wallet", type=AccountType.cash, currency="IDR",
+        db_session,
+        test_user_id,
+        name="Wallet",
+        type=AccountType.cash,
+        currency="IDR",
     )
     await db_session.commit()
 
@@ -114,8 +120,11 @@ async def test_get_voice_status_returns_completed_transaction(
     test_user_id: uuid.UUID,
 ) -> None:
     account = await repo.create_account(
-        db_session, test_user_id,
-        name="Wallet", type=AccountType.cash, currency="IDR",
+        db_session,
+        test_user_id,
+        name="Wallet",
+        type=AccountType.cash,
+        currency="IDR",
     )
     voice_log = await repo.create_voice_log(
         db_session, test_user_id, audio_url="voice/user/recording.m4a"

@@ -17,6 +17,7 @@ from app.domains.finance.models import (
 
 # ── Savings Goals ─────────────────────────────────────────────────────────────
 
+
 class SavingsGoalCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     icon: str | None = None
@@ -71,6 +72,7 @@ class SavingsGoalRead(BaseModel):
     @classmethod
     def from_model(cls, goal: object) -> SavingsGoalRead:
         from app.domains.finance.models import SavingsGoal as GoalModel
+
         g: GoalModel = goal  # type: ignore[assignment]
         pct = min(g.current_amount / g.target_amount * 100.0, 100.0) if g.target_amount > 0 else 0.0
         return cls(
@@ -91,6 +93,7 @@ class SavingsGoalRead(BaseModel):
 
 # ── Budget ────────────────────────────────────────────────────────────────────
 
+
 class BudgetUpsert(BaseModel):
     monthly_limit: int
 
@@ -105,6 +108,7 @@ class BudgetRead(BaseModel):
 
 
 # ── Account ───────────────────────────────────────────────────────────────────
+
 
 class AccountCreate(BaseModel):
     name: str
@@ -152,6 +156,7 @@ class AccountRead(BaseModel):
 
 
 # ── Category ──────────────────────────────────────────────────────────────────
+
 
 class CategoryCreate(BaseModel):
     name: str
@@ -204,6 +209,7 @@ class CategoryRead(BaseModel):
 
 
 # ── Transaction ───────────────────────────────────────────────────────────────
+
 
 class TransactionCreate(BaseModel):
     account_id: uuid.UUID

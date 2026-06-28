@@ -40,8 +40,16 @@ export default function FinanceDashboard() {
   const { user } = useAuthStore();
   const initial = (getDisplayName(user)[0] ?? "U").toUpperCase();
   const now = new Date();
-  const dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const dateTo = now.toISOString().slice(0, 10);
+  const dateFrom = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    '01',
+  ].join('-');
+  const dateTo = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
   const monthLabel = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
 
   const { data: accountsData } = useAccounts();
@@ -120,7 +128,7 @@ export default function FinanceDashboard() {
         <ProjectedEndOfMonthCard />
 
         <SectionHeader title="Anggaran Bulanan" />
-        <MonthlyBudgetCard totalExpense={totalExpense} />
+        <MonthlyBudgetCard totalExpense={totalExpense} from="finance" />
 
         <SectionHeader
           title="Tabungan Tujuan"

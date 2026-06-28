@@ -138,9 +138,7 @@ async def seed() -> None:
 
     async with AsyncSession(engine, expire_on_commit=False) as session:
         # Load names of existing system categories to skip duplicates
-        result = await session.execute(
-            sa.select(Category.name).where(Category.user_id.is_(None))
-        )
+        result = await session.execute(sa.select(Category.name).where(Category.user_id.is_(None)))
         existing_names: set[str] = {row[0] for row in result}
 
         added = 0

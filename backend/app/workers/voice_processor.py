@@ -91,7 +91,9 @@ async def process_voice(
                 vl = await repo.get_voice_log(err_session, log_id)
                 if vl is not None:
                     await repo.update_voice_log_status(
-                        err_session, vl, VoiceProcessingStatus.failed,
+                        err_session,
+                        vl,
+                        VoiceProcessingStatus.failed,
                         error_message=f"{type(exc).__name__}: {exc}",
                     )
                     await err_session.commit()
@@ -126,15 +128,14 @@ async def extract_voice(
             return
 
         try:
-            await repo.update_voice_log_status(
-                session, voice_log, VoiceProcessingStatus.extracting
-            )
+            await repo.update_voice_log_status(session, voice_log, VoiceProcessingStatus.extracting)
             await session.commit()
 
             extracted = await extract_transaction(transcript, llm)
 
             await repo.create_transaction(
-                session, voice_log.user_id,
+                session,
+                voice_log.user_id,
                 account_id=acc_id,
                 amount=extracted.amount,
                 currency=extracted.currency,
@@ -146,7 +147,9 @@ async def extract_voice(
                 voice_log_id=voice_log.id,
             )
             await repo.update_voice_log_status(
-                session, voice_log, VoiceProcessingStatus.completed,
+                session,
+                voice_log,
+                VoiceProcessingStatus.completed,
                 extracted_data={**extracted.model_dump(), "note": extracted.note or transcript},
                 confidence_score=extracted.confidence,
             )
@@ -163,7 +166,9 @@ async def extract_voice(
                 vl = await repo.get_voice_log(err_session, log_id)
                 if vl is not None:
                     await repo.update_voice_log_status(
-                        err_session, vl, VoiceProcessingStatus.failed,
+                        err_session,
+                        vl,
+                        VoiceProcessingStatus.failed,
                         error_message=f"{type(exc).__name__}: {exc}",
                     )
                     await err_session.commit()
@@ -201,7 +206,8 @@ async def process_receipt(
             extracted = await extract_from_receipt(image_bytes, media_type, vision_llm)
 
             tx = await repo.create_transaction(
-                session, receipt_log.user_id,
+                session,
+                receipt_log.user_id,
                 account_id=acc_id,
                 amount=extracted.amount,
                 currency=extracted.currency,
@@ -212,7 +218,9 @@ async def process_receipt(
                 status=TransactionStatus.draft,
             )
             await repo.update_receipt_log_status(
-                session, receipt_log, VoiceProcessingStatus.completed,
+                session,
+                receipt_log,
+                VoiceProcessingStatus.completed,
                 ocr_text=extracted.note,
                 extracted_data=extracted.model_dump(),
                 transaction_id=tx.id,
@@ -230,7 +238,9 @@ async def process_receipt(
                 rl = await repo.get_receipt_log(err_session, log_id)
                 if rl is not None:
                     await repo.update_receipt_log_status(
-                        err_session, rl, VoiceProcessingStatus.failed,
+                        err_session,
+                        rl,
+                        VoiceProcessingStatus.failed,
                         error_message=f"{type(exc).__name__}: {exc}",
                     )
                     await err_session.commit()

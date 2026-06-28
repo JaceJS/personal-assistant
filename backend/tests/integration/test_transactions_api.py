@@ -21,8 +21,11 @@ async def test_create_transaction_updates_account_balance(
     test_user_id: uuid.UUID,
 ) -> None:
     account = await repo.create_account(
-        db_session, test_user_id,
-        name="Dompet", type=AccountType.cash, currency="IDR",
+        db_session,
+        test_user_id,
+        name="Dompet",
+        type=AccountType.cash,
+        currency="IDR",
     )
     await db_session.commit()
 
@@ -47,8 +50,11 @@ async def test_create_transaction_forbidden_for_other_users_account(
 ) -> None:
     other_user = uuid.uuid4()
     account = await repo.create_account(
-        db_session, other_user,
-        name="Other", type=AccountType.bank, currency="IDR",
+        db_session,
+        other_user,
+        name="Other",
+        type=AccountType.bank,
+        currency="IDR",
     )
     await db_session.commit()
 
@@ -68,11 +74,15 @@ async def test_get_transaction_returns_detail(
     test_user_id: uuid.UUID,
 ) -> None:
     account = await repo.create_account(
-        db_session, test_user_id,
-        name="Dompet", type=AccountType.cash, currency="IDR",
+        db_session,
+        test_user_id,
+        name="Dompet",
+        type=AccountType.cash,
+        currency="IDR",
     )
     tx = await repo.create_transaction(
-        db_session, test_user_id,
+        db_session,
+        test_user_id,
         account_id=account.id,
         amount=-25_000,
         currency="IDR",
@@ -94,11 +104,15 @@ async def test_get_transaction_forbidden_for_other_users_transaction(
 ) -> None:
     other_user = uuid.uuid4()
     account = await repo.create_account(
-        db_session, other_user,
-        name="Other", type=AccountType.bank, currency="IDR",
+        db_session,
+        other_user,
+        name="Other",
+        type=AccountType.bank,
+        currency="IDR",
     )
     tx = await repo.create_transaction(
-        db_session, other_user,
+        db_session,
+        other_user,
         account_id=account.id,
         amount=-10_000,
         currency="IDR",
@@ -150,4 +164,3 @@ async def test_create_account_with_initial_balance_and_transaction(
     acc_check = await client.get(f"/api/v1/accounts/{account_id}")
     assert acc_check.status_code == 200
     assert acc_check.json()["data"]["balance"] == 750_000
-

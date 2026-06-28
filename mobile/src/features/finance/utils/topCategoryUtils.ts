@@ -4,6 +4,7 @@ export interface CategorySpend {
   categoryId: string | null;
   name: string;
   color: string | null;
+  icon: string | null;
   total: number;
   pct: number;
   barPct: number;
@@ -44,6 +45,7 @@ export function buildTopCategories(
       categoryId,
       name: cat?.name ?? 'Other',
       color: cat?.color ?? null,
+      icon: cat?.icon ?? null,
       total,
       pct: totalExpense > 0 ? total / totalExpense : 0,
       barPct: total / maxTotal,

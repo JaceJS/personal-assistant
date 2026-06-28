@@ -51,10 +51,19 @@ export default function SpendChartCard() {
 
   const chartDateFrom = period === 'M'
     ? `${now.getFullYear()}-01-01`
-    : new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    : [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        '01',
+      ].join('-');
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const chartDateTo = period === 'M'
     ? `${now.getFullYear()}-12-31`
-    : new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+    : [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(lastDay).padStart(2, '0'),
+      ].join('-');
 
   const { data: chartTxData } = useTransactions({ dateFrom: chartDateFrom, dateTo: chartDateTo, limit: 200 });
   const chartFont = useChartFont();

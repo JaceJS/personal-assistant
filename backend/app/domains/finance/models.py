@@ -57,9 +57,7 @@ class Account(TimestampedBase):
 
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     name: Mapped[str] = mapped_column(sa.Text(), nullable=False)
-    type: Mapped[AccountType] = mapped_column(
-        _pg_enum(AccountType, "account_type"), nullable=False
-    )
+    type: Mapped[AccountType] = mapped_column(_pg_enum(AccountType, "account_type"), nullable=False)
     currency: Mapped[str] = mapped_column(sa.Text(), nullable=False, server_default="IDR")
     initial_balance: Mapped[int] = mapped_column(
         sa.BigInteger(), nullable=False, server_default=sa.text("0")
@@ -93,9 +91,7 @@ class UserCategoryBudget(TimestampedBase):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     category_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     budget_limit: Mapped[int | None] = mapped_column(sa.BigInteger(), nullable=True)
-    is_fixed: Mapped[bool] = mapped_column(
-        sa.Boolean(), nullable=False, server_default=sa.false()
-    )
+    is_fixed: Mapped[bool] = mapped_column(sa.Boolean(), nullable=False, server_default=sa.false())
     __table_args__ = (sa.UniqueConstraint("user_id", "category_id"),)
 
 
@@ -148,9 +144,7 @@ class ReceiptLog(TimestampedBase):
 class Budget(TimestampedBase):
     __tablename__ = "budgets"
 
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, unique=True
-    )
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, unique=True)
     monthly_limit: Mapped[int] = mapped_column(sa.BigInteger(), nullable=False)
 
 

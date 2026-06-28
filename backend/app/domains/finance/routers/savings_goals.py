@@ -58,7 +58,5 @@ async def contribute_to_savings_goal(
 
 
 @router.delete("/savings-goals/{goal_id}", status_code=204)
-async def delete_savings_goal(
-    goal_id: uuid.UUID, user_id: CurrentUser, session: DbSession
-) -> None:
+async def delete_savings_goal(goal_id: uuid.UUID, user_id: CurrentUser, session: DbSession) -> None:
     await service.delete_savings_goal(session, goal_id, user_id)

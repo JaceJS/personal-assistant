@@ -53,7 +53,7 @@ describe('signInWithGoogle - Native Login Flow', () => {
   it('should return "cancelled" when the user cancels the login', async () => {
     (GoogleSignin.hasPlayServices as jest.Mock).mockResolvedValue(true);
     const cancelError = new Error('User cancelled the sign in flow');
-    (cancelError as any).code = 'SIGN_IN_CANCELLED';
+    (cancelError as unknown as { code: string }).code = 'SIGN_IN_CANCELLED';
     (GoogleSignin.signIn as jest.Mock).mockRejectedValue(cancelError);
 
     const result = await signInWithGoogle();

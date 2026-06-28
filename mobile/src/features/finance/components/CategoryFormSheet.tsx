@@ -16,6 +16,7 @@ import { X } from "lucide-react-native";
 
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { PRESET_COLORS, PRESET_ICONS } from "@/features/finance/constants";
 import type { Category, CategoryType } from "@/features/finance/types";
 import { useCreateCategory, useUpdateCategory } from "@/features/finance/hooks/useCategories";
 import { useToastStore } from "@/stores/toast";
@@ -26,18 +27,6 @@ const CATEGORY_TYPES: { value: CategoryType; label: string; emoji: string }[] = 
   { value: "income", label: "Pemasukan", emoji: "📥" },
 ];
 
-const PRESET_COLORS = [
-  "#E17055",
-  "#00CEC9",
-  "#6C5CE7",
-  "#00B894",
-  "#FDCB6E",
-  "#A29BFE",
-  "#FD79A8",
-  "#F0932B",
-];
-
-const PRESET_ICONS = ["🍔", "🚗", "🏠", "👗", "💊", "📚", "🎮", "✈️", "💼", "🎁", "⚡", "💰"];
 const ICON_COLS = 6;
 
 const schema = z.object({
@@ -207,33 +196,32 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
                     {row.map((icon) => {
                       const isSelected = selectedIcon === icon;
                       return (
-                        <Pressable
+                        <View
                           key={icon}
-                          onPress={() => setValue("icon", icon)}
-                          style={({ pressed }) => [
-                            styles.iconCellWrapper,
-                            pressed && { opacity: 0.7 },
+                          style={[
+                            styles.iconCell,
+                            isSelected
+                              ? {
+                                  backgroundColor: `${selectedColor ?? colors.accent.primary}33`,
+                                  borderColor: selectedColor ?? colors.accent.primary,
+                                }
+                              : styles.iconCellInactive,
                           ]}
                         >
-                          <View
-                            style={[
-                              styles.iconCell,
-                              isSelected
-                                ? {
-                                    backgroundColor: `${selectedColor ?? colors.accent.primary}33`,
-                                    borderColor: selectedColor ?? colors.accent.primary,
-                                  }
-                                : styles.iconCellInactive,
+                          <Text style={styles.iconEmoji}>{icon}</Text>
+                          <Pressable
+                            onPress={() => setValue("icon", icon)}
+                            style={({ pressed }) => [
+                              StyleSheet.absoluteFillObject,
+                              pressed && { backgroundColor: "rgba(255, 255, 255, 0.05)" },
                             ]}
-                          >
-                            <Text style={styles.iconEmoji}>{icon}</Text>
-                          </View>
-                        </Pressable>
+                          />
+                        </View>
                       );
                     })}
                     {row.length < ICON_COLS &&
                       Array.from({ length: ICON_COLS - row.length }).map((_, j) => (
-                        <View key={`pad-${j}`} style={styles.iconCellWrapper} />
+                        <View key={`pad-${j}`} style={styles.iconCellPlaceholder} />
                       ))}
                   </View>
                 ))}
@@ -289,23 +277,25 @@ const styles = StyleSheet.create({
   sheetContent: {
     padding: spacing["2xl"],
     paddingBottom: 40,
+    alignItems: "stretch",
   },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: spacing["2xl"],
+    alignSelf: "stretch",
   },
   modalTitle: {
     ...StyleSheet.flatten(textStyles.h2),
     color: colors.text.primary,
   },
-  modalForm: { gap: spacing.xl },
+  modalForm: { gap: spacing.xl, alignSelf: "stretch" },
 
-  section: { gap: spacing.sm },
+  section: { gap: spacing.sm, alignSelf: "stretch" },
   sectionLabel: { fontSize: 13, fontWeight: "500", color: colors.text.muted },
 
-  typeRow: { flexDirection: "row", gap: spacing.sm },
+  typeRow: { flexDirection: "row", gap: spacing.sm, alignSelf: "stretch" },
   typeBtn: {
     flex: 1,
     alignItems: "center",
@@ -320,21 +310,27 @@ const styles = StyleSheet.create({
   typeBtnLabelActive: { color: colors.bg.canvas },
   typeBtnLabelInactive: { color: colors.text.muted },
 
-  iconGrid: { gap: spacing.sm },
-  iconRow: { flexDirection: "row", gap: 6 },
-  iconCellWrapper: { flex: 1 },
+  iconGrid: { gap: spacing.sm, alignSelf: "stretch" },
+  iconRow: { flexDirection: "row", gap: 6, width: "100%", alignSelf: "stretch" },
   iconCell: {
     height: 44,
     flex: 1,
     borderRadius: radius.md,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    overflow: "hidden",
   },
   iconCellInactive: { backgroundColor: colors.bg.elevated, borderColor: colors.border.default },
-  iconEmoji: { fontSize: 20 },
+  iconCellPlaceholder: { flex: 1, height: 44 },
+  iconEmoji: {
+    fontSize: 20,
+    textAlign: "center",
+    textAlignVertical: "center",
+    includeFontPadding: false,
+  },
 
-  colorRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
+  colorRow: { flexDirection: "row", gap: 10, flexWrap: "wrap", alignSelf: "stretch" },
   colorDot: { width: 32, height: 32, borderRadius: 16 },
   colorDotSelected: { borderWidth: 3, borderColor: colors.text.primary },
 });

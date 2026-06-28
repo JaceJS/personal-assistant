@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import ListItem from '@/components/ui/ListItem';
+import CategoryIcon from './CategoryIcon';
 import type { Category, Transaction } from '@/features/finance/types';
 import { formatRupiah } from '@/lib/utils';
 import { colors, textStyles } from '@/theme';
@@ -49,9 +50,12 @@ function TransactionCard({ transaction, category, showId, onPress }: Transaction
   const tintColor = category?.color ?? (isExpense ? colors.danger.text : colors.success.text);
 
   const emojiCircle = (
-    <View style={[styles.emojiCircle, { backgroundColor: `${tintColor}28` }]}>
-      <Text style={styles.emojiText}>{emoji}</Text>
-    </View>
+    <CategoryIcon
+      icon={emoji}
+      color={tintColor}
+      size={44}
+      emojiSize={22}
+    />
   );
 
   const rightElement = showId ? (
@@ -75,15 +79,6 @@ function TransactionCard({ transaction, category, showId, onPress }: Transaction
 }
 
 const styles = StyleSheet.create({
-  emojiCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  emojiText: { fontSize: 22, lineHeight: 26 },
   rightCol: { alignItems: 'flex-end', gap: 4 },
   amount: { ...StyleSheet.flatten(textStyles.h3) },
   txnId: { fontSize: 10, color: colors.text.muted },

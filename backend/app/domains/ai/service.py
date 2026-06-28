@@ -22,9 +22,7 @@ from app.domains.ai.tools import (
 
 _INSIGHT_CACHE_PREFIX = "ai_insight_v2"
 
-_FALLBACK_INSIGHT = (
-    "Terus catat transaksimu untuk mendapatkan insight keuangan yang personal!"
-)
+_FALLBACK_INSIGHT = "Terus catat transaksimu untuk mendapatkan insight keuangan yang personal!"
 
 _INSIGHT_SYSTEM = (
     "Kamu adalah asisten keuangan pribadi untuk aplikasi budgeting di Indonesia. "
@@ -46,9 +44,7 @@ def _seconds_until_midnight() -> int:
     return max(int((tomorrow - now).total_seconds()), 1)
 
 
-async def _fetch_financial_context(
-    user_id: uuid.UUID, session: AsyncSession
-) -> dict[str, Any]:
+async def _fetch_financial_context(user_id: uuid.UUID, session: AsyncSession) -> dict[str, Any]:
     summary, budget, categories = (
         await _get_financial_summary(user_id, session),
         await _get_budget_status(user_id, session),
@@ -62,9 +58,7 @@ def _build_insight_prompt(context: dict[str, Any]) -> str:
     budget = context["budget"]
     cats = context["categories"].get("categories", [])
 
-    top_cats = ", ".join(
-        f"{c['name']} ({c['amount_formatted']})" for c in cats[:3]
-    ) or "none yet"
+    top_cats = ", ".join(f"{c['name']} ({c['amount_formatted']})" for c in cats[:3]) or "none yet"
 
     budget_line = (
         f"Budget: {budget.get('month_spent_formatted', 'N/A')} of "

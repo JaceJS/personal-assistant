@@ -52,6 +52,7 @@ from app.shared.storage import R2Storage
 
 # ── Savings Goals ─────────────────────────────────────────────────────────────
 
+
 async def list_savings_goals(session: AsyncSession, user_id: uuid.UUID) -> list[SavingsGoal]:
     return await repo.list_savings_goals(session, user_id)
 
@@ -116,17 +117,17 @@ async def delete_savings_goal(
 
 # ── Budget ────────────────────────────────────────────────────────────────────
 
+
 async def get_budget(session: AsyncSession, user_id: uuid.UUID) -> Budget | None:
     return await repo.get_budget(session, user_id)
 
 
-async def upsert_budget(
-    session: AsyncSession, user_id: uuid.UUID, data: BudgetUpsert
-) -> Budget:
+async def upsert_budget(session: AsyncSession, user_id: uuid.UUID, data: BudgetUpsert) -> Budget:
     return await repo.upsert_budget(session, user_id, data.monthly_limit)
 
 
 # ── Accounts ──────────────────────────────────────────────────────────────────
+
 
 async def get_account_or_404(
     session: AsyncSession, account_id: uuid.UUID, user_id: uuid.UUID
@@ -143,9 +144,7 @@ async def list_accounts(session: AsyncSession, user_id: uuid.UUID) -> list[Accou
     return await repo.list_accounts(session, user_id)
 
 
-async def create_account(
-    session: AsyncSession, user_id: uuid.UUID, data: AccountCreate
-) -> Account:
+async def create_account(session: AsyncSession, user_id: uuid.UUID, data: AccountCreate) -> Account:
     return await repo.create_account(
         session,
         user_id,
@@ -165,6 +164,7 @@ async def update_account(
 
 
 # ── Categories ────────────────────────────────────────────────────────────────
+
 
 async def get_category_or_404(
     session: AsyncSession, category_id: uuid.UUID, user_id: uuid.UUID
@@ -206,15 +206,17 @@ async def get_category_read(
     return _build_category_read(category, ucb)
 
 
-async def seed_default_categories(
-    session: AsyncSession, user_id: uuid.UUID
-) -> list[Category]:
+async def seed_default_categories(session: AsyncSession, user_id: uuid.UUID) -> list[Category]:
     system_cats = await repo.list_system_categories(session)
     seeded = []
     for sc in system_cats:
         cat = await repo.create_category(
-            session, user_id,
-            name=sc.name, type=sc.type, icon=sc.icon, color=sc.color,
+            session,
+            user_id,
+            name=sc.name,
+            type=sc.type,
+            icon=sc.icon,
+            color=sc.color,
         )
         seeded.append(cat)
     await session.flush()
@@ -233,8 +235,12 @@ async def create_category(
     session: AsyncSession, user_id: uuid.UUID, data: CategoryCreate
 ) -> CategoryRead:
     category = await repo.create_category(
-        session, user_id,
-        name=data.name, type=data.type, icon=data.icon, color=data.color,
+        session,
+        user_id,
+        name=data.name,
+        type=data.type,
+        icon=data.icon,
+        color=data.color,
     )
     return _build_category_read(category, None)
 
@@ -256,7 +262,9 @@ async def update_category(
     if budget_data:
         existing = await repo.get_user_category_budget(session, user_id, category_id)
         ucb = await repo.upsert_user_category_budget(
-            session, user_id, category_id,
+            session,
+            user_id,
+            category_id,
             budget_limit=budget_data.get(
                 "budget_limit", existing.budget_limit if existing else None
             ),
@@ -278,6 +286,7 @@ async def archive_category(
 
 
 # ── Transactions ──────────────────────────────────────────────────────────────
+
 
 async def get_transaction_or_404(
     session: AsyncSession, tx_id: uuid.UUID, user_id: uuid.UUID
@@ -303,14 +312,24 @@ async def list_transactions(
     offset: int = 0,
 ) -> tuple[list[Transaction], int]:
     items = await repo.list_transactions(
-        session, user_id,
-        account_id=account_id, date_from=date_from, date_to=date_to,
-        search=search, status=status, limit=limit, offset=offset,
+        session,
+        user_id,
+        account_id=account_id,
+        date_from=date_from,
+        date_to=date_to,
+        search=search,
+        status=status,
+        limit=limit,
+        offset=offset,
     )
     total = await repo.count_transactions(
-        session, user_id,
-        account_id=account_id, date_from=date_from, date_to=date_to,
-        search=search, status=status,
+        session,
+        user_id,
+        account_id=account_id,
+        date_from=date_from,
+        date_to=date_to,
+        search=search,
+        status=status,
     )
     return items, total
 
@@ -324,7 +343,8 @@ async def create_transaction(
         await get_category_or_404(session, data.category_id, user_id)
 
     tx = await repo.create_transaction(
-        session, user_id,
+        session,
+        user_id,
         account_id=data.account_id,
         category_id=data.category_id,
         amount=data.amount,
@@ -377,9 +397,7 @@ async def update_transaction(
     return updated
 
 
-async def delete_transaction(
-    session: AsyncSession, user_id: uuid.UUID, tx_id: uuid.UUID
-) -> None:
+async def delete_transaction(session: AsyncSession, user_id: uuid.UUID, tx_id: uuid.UUID) -> None:
     tx = await get_transaction_or_404(session, tx_id, user_id)
 
     if tx.status == TransactionStatus.confirmed:

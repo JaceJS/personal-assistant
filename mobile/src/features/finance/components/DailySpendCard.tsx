@@ -4,17 +4,25 @@ import Svg, { Circle } from 'react-native-svg';
 import { useBudget } from '@/features/finance/hooks/useBudget';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { formatRupiah } from '@/lib/utils';
-import { colors, spacing, textStyles } from '@/theme';
-const RADIUS = 68;
-const STROKE_W = 10;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+import { colors, radius, spacing, textStyles } from '@/theme';
+
+const RING_R = 36;
+const RING_STROKE = 7;
+const RING_SIZE = (RING_R + RING_STROKE) * 2;
+const RING_CENTER = RING_SIZE / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RING_R;
 
 export default function DailySpendCard() {
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+
   const { data: budget, isLoading: budgetLoading } = useBudget();
   const { data } = useTransactions({ dateFrom: today, dateTo: today, limit: 100 });
 
-  const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const dailyLimit = budget?.monthly_limit != null
     ? Math.round(budget.monthly_limit / daysInMonth)
@@ -27,7 +35,7 @@ export default function DailySpendCard() {
   if (!budgetLoading && dailyLimit === null) {
     return (
       <View style={[styles.card, styles.cardEmpty]}>
-        <Text style={styles.title}>Batas Pengeluaran Harian</Text>
+        <Text style={styles.emptyTitle}>Batas Pengeluaran Harian</Text>
         <Text style={styles.noLimit}>Belum ada anggaran</Text>
         <Text style={styles.noLimitSub}>Atur anggaran bulanan untuk memantau pengeluaran harian</Text>
       </View>
@@ -45,24 +53,35 @@ export default function DailySpendCard() {
 
   return (
     <View style={styles.card}>
+      <View style={styles.left}>
+        <Text style={styles.overline}>PENGELUARAN HARI INI</Text>
+        <Text style={[styles.spend, { color: ringColor }]}>{formatRupiah(todaySpend)}</Text>
+        <Text style={styles.limitLabel}>dari {formatRupiah(limit)}</Text>
+        <View style={[styles.remainingChip, { borderColor: ringColor + '44' }]}>
+          <Text style={[styles.remainingText, { color: ringColor }]}>
+            sisa {formatRupiah(remaining)}
+          </Text>
+        </View>
+      </View>
+
       <View style={styles.ringWrap}>
-        <Svg width={176} height={176} viewBox="0 0 176 176">
+        <Svg width={RING_SIZE} height={RING_SIZE}>
           <Circle
-            cx={88} cy={88} r={RADIUS}
+            cx={RING_CENTER} cy={RING_CENTER} r={RING_R}
             stroke={colors.bg.elevated}
-            strokeWidth={STROKE_W}
+            strokeWidth={RING_STROKE}
             fill="none"
           />
           <Circle
-            cx={88} cy={88} r={RADIUS}
+            cx={RING_CENTER} cy={RING_CENTER} r={RING_R}
             stroke={ringColor}
-            strokeWidth={STROKE_W}
+            strokeWidth={RING_STROKE}
             fill="none"
             strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
             strokeDashoffset={dashOffset}
             strokeLinecap="round"
             rotation="-90"
-            origin="88, 88"
+            origin={`${RING_CENTER}, ${RING_CENTER}`}
           />
         </Svg>
         <View style={styles.ringCenter}>
@@ -70,11 +89,6 @@ export default function DailySpendCard() {
           <Text style={styles.usedLabel}>terpakai</Text>
         </View>
       </View>
-
-      <Text style={styles.title}>Batas Pengeluaran Harian</Text>
-      <Text style={[styles.remaining, { color: ringColor }]}>
-        tersisa {formatRupiah(remaining)} hari ini
-      </Text>
     </View>
   );
 }
@@ -82,54 +96,84 @@ export default function DailySpendCard() {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bg.surface,
-    borderRadius: 16,
-    marginHorizontal: spacing["2xl"],
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    marginHorizontal: spacing['2xl'],
     marginBottom: spacing.lg,
-    paddingVertical: 24,
-    paddingHorizontal: 20,
+    padding: spacing.xl,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cardEmpty: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  left: {
+    flex: 1,
+    gap: 4,
+    paddingRight: spacing.md,
+  },
+  overline: {
+    ...StyleSheet.flatten(textStyles.overline),
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  spend: {
+    ...StyleSheet.flatten(textStyles.display),
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  limitLabel: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
+    marginTop: 2,
+  },
+  remainingChip: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    borderWidth: 1,
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  remainingText: {
+    ...StyleSheet.flatten(textStyles.caption),
+    fontSize: 12,
+    fontWeight: '600',
   },
   ringWrap: {
-    width: 176,
-    height: 176,
+    width: RING_SIZE,
+    height: RING_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
   },
   ringCenter: {
     position: 'absolute',
     alignItems: 'center',
   },
   pct: {
-    ...StyleSheet.flatten(textStyles.display),
-    fontSize: 30,
+    ...StyleSheet.flatten(textStyles.caption),
+    fontSize: 14,
     fontWeight: '800',
-    letterSpacing: -1,
+    letterSpacing: -0.3,
   },
   usedLabel: {
     ...StyleSheet.flatten(textStyles.caption),
+    fontSize: 9,
     color: colors.text.muted,
-    marginTop: 2,
   },
-  title: {
-    ...StyleSheet.flatten(textStyles.h2),
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0,
+  emptyTitle: {
+    ...StyleSheet.flatten(textStyles.h3),
     color: colors.text.primary,
     marginBottom: 6,
   },
-  remaining: {
-    ...StyleSheet.flatten(textStyles.mono),
-    fontWeight: '500',
-  },
-  cardEmpty: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
   noLimit: {
-    ...StyleSheet.flatten(textStyles.h2),
-    fontWeight: '700',
+    ...StyleSheet.flatten(textStyles.h3),
     color: colors.text.secondary,
     marginTop: 12,
     marginBottom: 6,

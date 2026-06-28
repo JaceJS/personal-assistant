@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { categoryIcon } from '@/features/finance/utils/categoryIcon';
+import CategoryIcon from './CategoryIcon';
 import { formatRupiah } from '@/lib/utils';
 import type { CategorySpend } from '@/features/finance/utils/topCategoryUtils';
 import { colors, radius, spacing, textStyles } from '@/theme';
@@ -12,7 +12,6 @@ interface CategorySpendRowProps {
 }
 
 const CategorySpendRow = React.memo(function CategorySpendRow({ row, onPress }: CategorySpendRowProps) {
-  const Icon = categoryIcon(row.name);
   const iconColor = row.color ?? colors.accent.primary;
 
   return (
@@ -22,9 +21,12 @@ const CategorySpendRow = React.memo(function CategorySpendRow({ row, onPress }: 
       disabled={!onPress}
     >
       <View style={styles.row}>
-        <View style={[styles.iconBox, { backgroundColor: `${iconColor}22` }]}>
-          <Icon size={16} color={iconColor} strokeWidth={2} />
-        </View>
+        <CategoryIcon
+          icon={row.icon}
+          color={row.color}
+          size={36}
+          emojiSize={18}
+        />
 
         <View style={styles.meta}>
           <View style={styles.topLine}>
@@ -50,13 +52,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     gap: spacing.md,
-  },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   meta: { flex: 1, gap: 6 },
   topLine: {

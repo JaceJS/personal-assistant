@@ -1,10 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
 
 import { Screen } from "@/components/layout/Screen";
-import { Header } from "@/components/layout/Header";
 import Fab from "@/components/ui/Fab";
 import AccountBalanceCard from "@/features/finance/components/AccountBalanceCard";
 import DailySpendCard from "@/features/finance/components/DailySpendCard";
@@ -12,6 +11,7 @@ import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
 import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
 import TopCategoriesCard from "@/features/finance/components/TopCategoriesCard";
 import { AIInsightCard } from "@/features/ai/components/AIInsightCard";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
@@ -27,12 +27,22 @@ function getGreeting() {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const { showToast } = useToastStore();
 
   const now = new Date();
-  const dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const dateTo = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const dateFrom = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    '01',
+  ].join('-');
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const dateTo = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(lastDay).padStart(2, '0'),
+  ].join('-');
 
   const {
     data: monthTxData,
@@ -53,6 +63,14 @@ export default function HomeScreen() {
     [monthTxData]
   );
 
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      refetch(),
+      queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+      queryClient.invalidateQueries({ queryKey: ["budget"] }),
+    ]);
+  }, [refetch, queryClient]);
+
   const firstName = getDisplayName(user);
 
   return (
@@ -64,7 +82,7 @@ export default function HomeScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
-            onRefresh={refetch}
+            onRefresh={handleRefresh}
             tintColor={colors.accent.primary}
           />
         }
@@ -78,7 +96,7 @@ export default function HomeScreen() {
 
         <DailySpendCard />
 
-        <MonthlyBudgetCard totalExpense={totalExpense} />
+        <MonthlyBudgetCard totalExpense={totalExpense} from="home" />
 
         <TopCategoriesCard />
 

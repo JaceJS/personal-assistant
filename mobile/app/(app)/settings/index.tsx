@@ -150,7 +150,7 @@ export default function SettingsScreen() {
           <MenuItem
             icon={<PiggyBank size={16} color={colors.accent.primary} />}
             label="Budget Bulanan"
-            onPress={() => router.push("/(app)/settings/budget")}
+            onPress={() => router.push("/(app)/settings/budget?from=settings")}
           />
           <MenuDivider />
           <MenuItem

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Category } from '@/features/finance/types';
-import { categoryIcon } from '@/features/finance/utils/categoryIcon';
+import CategoryIcon from './CategoryIcon';
 import { computeBucketStatus, getBucketBarWidth } from '@/features/finance/utils/budgetBucketUtils';
 import type { BucketStatus } from '@/features/finance/utils/budgetBucketUtils';
 import { formatRupiah } from '@/lib/utils';
@@ -37,7 +37,6 @@ interface BudgetBucketItemProps {
 
 function BudgetBucketItem({ category, spent }: BudgetBucketItemProps) {
   const [sheetVisible, setSheetVisible] = useState(false);
-  const Icon = categoryIcon(category.name);
   const status = computeBucketStatus(spent, category.budget_limit);
   const barPct = getBucketBarWidth(spent, category.budget_limit);
   const handlePress = useCallback(() => {
@@ -55,9 +54,12 @@ function BudgetBucketItem({ category, spent }: BudgetBucketItemProps) {
         style={({ pressed }) => [styles.item, pressed && { opacity: 0.75 }]}
       >
         <View style={styles.row}>
-          <View style={styles.iconBox}>
-            <Icon size={20} color={colors.text.muted} strokeWidth={1.5} />
-          </View>
+          <CategoryIcon
+            icon={category.icon}
+            color={category.color}
+            size={48}
+            emojiSize={24}
+          />
           <View style={styles.info}>
             <Text style={styles.name} numberOfLines={1}>{category.name}</Text>
             <Text style={styles.subtitle}>{formatRupiah(spent)} {limitLabel}</Text>
@@ -98,15 +100,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 12,
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.md,
-    backgroundColor: colors.bg.elevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
   },
   info: { flex: 1, gap: 3 },
   name: { ...StyleSheet.flatten(textStyles.h3), color: colors.text.primary },

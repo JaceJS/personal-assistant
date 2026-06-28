@@ -27,9 +27,15 @@ async def list_transactions(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ApiResponse[list[TransactionRead]]:
     items, total = await service.list_transactions(
-        session, user_id,
-        account_id=account_id, date_from=date_from, date_to=date_to,
-        search=search, status=status, limit=limit, offset=offset,
+        session,
+        user_id,
+        account_id=account_id,
+        date_from=date_from,
+        date_to=date_to,
+        search=search,
+        status=status,
+        limit=limit,
+        offset=offset,
     )
     return paginated(items, total=total, limit=limit, offset=offset)  # type: ignore[arg-type]
 

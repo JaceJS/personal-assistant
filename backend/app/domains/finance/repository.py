@@ -25,6 +25,7 @@ from app.domains.finance.models import (
 
 # ── Savings Goals ─────────────────────────────────────────────────────────────
 
+
 async def list_savings_goals(session: AsyncSession, user_id: uuid.UUID) -> list[SavingsGoal]:
     result = await session.execute(
         sa.select(SavingsGoal)
@@ -59,10 +60,9 @@ async def update_savings_goal(
 
 # ── Budget ────────────────────────────────────────────────────────────────────
 
+
 async def get_budget(session: AsyncSession, user_id: uuid.UUID) -> Budget | None:
-    result = await session.execute(
-        sa.select(Budget).where(Budget.user_id == user_id)
-    )
+    result = await session.execute(sa.select(Budget).where(Budget.user_id == user_id))
     return result.scalar_one_or_none()
 
 
@@ -82,6 +82,7 @@ async def upsert_budget(session: AsyncSession, user_id: uuid.UUID, monthly_limit
 
 
 # ── Accounts ──────────────────────────────────────────────────────────────────
+
 
 async def get_account(session: AsyncSession, account_id: uuid.UUID) -> Account | None:
     return await session.get(Account, account_id)
@@ -110,6 +111,7 @@ async def update_account(session: AsyncSession, account: Account, **kwargs: Any)
 
 
 # ── Categories ────────────────────────────────────────────────────────────────
+
 
 async def get_category(session: AsyncSession, category_id: uuid.UUID) -> Category | None:
     return await session.get(Category, category_id)
@@ -194,8 +196,10 @@ async def upsert_user_category_budget(
     stmt = (
         pg_insert(UserCategoryBudget)
         .values(
-            user_id=user_id, category_id=category_id,
-            budget_limit=budget_limit, is_fixed=is_fixed,
+            user_id=user_id,
+            category_id=category_id,
+            budget_limit=budget_limit,
+            is_fixed=is_fixed,
         )
         .on_conflict_do_update(
             constraint="user_category_budgets_user_id_category_id_key",
@@ -212,6 +216,7 @@ async def upsert_user_category_budget(
 
 
 # ── Transactions ──────────────────────────────────────────────────────────────
+
 
 async def get_transaction(session: AsyncSession, tx_id: uuid.UUID) -> Transaction | None:
     return await session.get(Transaction, tx_id)
@@ -242,9 +247,13 @@ async def list_transactions(
     if account_id is not None:
         q = q.where(Transaction.account_id == account_id)
     if date_from is not None:
-        q = q.where(sa.cast(Transaction.occurred_at, sa.Date) >= date_from)
+        q = q.where(
+            sa.cast(sa.func.timezone("Asia/Jakarta", Transaction.occurred_at), sa.Date) >= date_from
+        )
     if date_to is not None:
-        q = q.where(sa.cast(Transaction.occurred_at, sa.Date) <= date_to)
+        q = q.where(
+            sa.cast(sa.func.timezone("Asia/Jakarta", Transaction.occurred_at), sa.Date) <= date_to
+        )
     if search is not None:
         pattern = f"%{search}%"
         q = q.where(
@@ -274,9 +283,13 @@ async def count_transactions(
     if account_id is not None:
         q = q.where(Transaction.account_id == account_id)
     if date_from is not None:
-        q = q.where(sa.cast(Transaction.occurred_at, sa.Date) >= date_from)
+        q = q.where(
+            sa.cast(sa.func.timezone("Asia/Jakarta", Transaction.occurred_at), sa.Date) >= date_from
+        )
     if date_to is not None:
-        q = q.where(sa.cast(Transaction.occurred_at, sa.Date) <= date_to)
+        q = q.where(
+            sa.cast(sa.func.timezone("Asia/Jakarta", Transaction.occurred_at), sa.Date) <= date_to
+        )
     if search is not None:
         pattern = f"%{search}%"
         q = q.where(
@@ -314,6 +327,7 @@ async def delete_transaction(session: AsyncSession, tx: Transaction) -> None:
 
 
 # ── Voice logs ────────────────────────────────────────────────────────────────
+
 
 async def get_voice_log(session: AsyncSession, voice_log_id: uuid.UUID) -> VoiceLog | None:
     return await session.get(VoiceLog, voice_log_id)
@@ -369,6 +383,7 @@ async def update_voice_log_status(
 
 
 # ── Receipt logs ──────────────────────────────────────────────────────────────
+
 
 async def get_receipt_log(session: AsyncSession, receipt_log_id: uuid.UUID) -> ReceiptLog | None:
     return await session.get(ReceiptLog, receipt_log_id)

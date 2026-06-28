@@ -1,16 +1,19 @@
-import type { AccountType } from "./types";
+export const PRESET_COLORS = [
+  "#E17055", // Red-orange
+  "#00CEC9", // Teal
+  "#6C5CE7", // Purple
+  "#00B894", // Green
+  "#FDCB6E", // Yellow
+  "#A29BFE", // Light purple
+  "#FD79A8", // Pink
+  "#F0932B", // Orange
+];
 
-export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  cash: "Cash",
-  bank: "Bank",
-  ewallet: "E-Wallet",
-  credit: "Credit Card",
-};
-
-
-export const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
-  { value: "cash", label: "Cash" },
-  { value: "bank", label: "Bank" },
-  { value: "ewallet", label: "E-Wallet" },
-  { value: "credit", label: "Credit Card" },
+export const PRESET_ICONS = [
+  "🍔", "🍕", "🍜", "🍰", "☕", "🥤", "🍻", "🍎", "🍳",
+  "🚗", "🛵", "🚲", "✈️", "🚇", "🚢", "🏨", "🏠", "⚡",
+  "💧", "📶", "📺", "🧹", "🛍️", "🛒", "👕", "👠", "💄",
+  "💇", "💊", "🏥", "🏋️", "🏃", "🩺", "🎮", "🎬", "🎤",
+  "🎪", "🎨", "📖", "💰", "💳", "💼", "📈", "🏢", "💵",
+  "🎁", "💖", "👶", "🐱", "🏷️"
 ];

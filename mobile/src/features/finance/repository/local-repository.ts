@@ -246,8 +246,14 @@ export class LocalRepository implements FinanceRepository {
 
     const conditions = [];
     if (accountId) conditions.push(eq(transactions.account_id, accountId));
-    if (dateFrom) conditions.push(gte(transactions.occurred_at, dateFrom));
-    if (dateTo) conditions.push(lte(transactions.occurred_at, dateTo));
+    if (dateFrom) {
+      const fromStr = dateFrom.includes("T") ? dateFrom : `${dateFrom}T00:00:00.000Z`;
+      conditions.push(gte(transactions.occurred_at, fromStr));
+    }
+    if (dateTo) {
+      const toStr = dateTo.includes("T") ? dateTo : `${dateTo}T23:59:59.999Z`;
+      conditions.push(lte(transactions.occurred_at, toStr));
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 

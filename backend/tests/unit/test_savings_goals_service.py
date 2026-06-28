@@ -51,6 +51,7 @@ def _make_goal(
 
 # ── list_savings_goals ────────────────────────────────────────────────────────
 
+
 async def test_list_savings_goals_returns_only_active() -> None:
     session = _make_session()
     goals = [_make_goal(), _make_goal(name="Liburan Bali")]
@@ -64,6 +65,7 @@ async def test_list_savings_goals_returns_only_active() -> None:
 
 
 # ── get_savings_goal ──────────────────────────────────────────────────────────
+
 
 async def test_get_savings_goal_raises_not_found_when_missing() -> None:
     session = _make_session()
@@ -99,6 +101,7 @@ async def test_get_savings_goal_returns_goal_for_correct_owner() -> None:
 
 # ── create_savings_goal ───────────────────────────────────────────────────────
 
+
 async def test_create_savings_goal_requires_positive_target() -> None:
     session = _make_session()
     data = SavingsGoalCreate(name="DP Motor", target_amount=0)
@@ -122,6 +125,7 @@ async def test_create_savings_goal_success() -> None:
 
 # ── contribute_to_savings_goal ────────────────────────────────────────────────
 
+
 async def test_contribute_increases_current_amount() -> None:
     session = _make_session()
     goal = _make_goal(current_amount=1_000_000, target_amount=5_000_000)
@@ -131,9 +135,7 @@ async def test_contribute_increases_current_amount() -> None:
         mock_repo.get_savings_goal = AsyncMock(return_value=goal)
         mock_repo.update_savings_goal = AsyncMock(return_value=goal)
 
-        await finance_service.contribute_to_savings_goal(
-            session, _GOAL_ID, _USER_ID, contribute
-        )
+        await finance_service.contribute_to_savings_goal(session, _GOAL_ID, _USER_ID, contribute)
 
     mock_repo.update_savings_goal.assert_called_once()
     call_kwargs = mock_repo.update_savings_goal.call_args[1]
@@ -149,9 +151,7 @@ async def test_contribute_clamps_current_amount_to_zero_on_withdrawal() -> None:
         mock_repo.get_savings_goal = AsyncMock(return_value=goal)
         mock_repo.update_savings_goal = AsyncMock(return_value=goal)
 
-        await finance_service.contribute_to_savings_goal(
-            session, _GOAL_ID, _USER_ID, contribute
-        )
+        await finance_service.contribute_to_savings_goal(session, _GOAL_ID, _USER_ID, contribute)
 
     call_kwargs = mock_repo.update_savings_goal.call_args[1]
     assert call_kwargs["current_amount"] == 0
@@ -166,9 +166,7 @@ async def test_contribute_does_not_exceed_target_amount() -> None:
         mock_repo.get_savings_goal = AsyncMock(return_value=goal)
         mock_repo.update_savings_goal = AsyncMock(return_value=goal)
 
-        await finance_service.contribute_to_savings_goal(
-            session, _GOAL_ID, _USER_ID, contribute
-        )
+        await finance_service.contribute_to_savings_goal(session, _GOAL_ID, _USER_ID, contribute)
 
     call_kwargs = mock_repo.update_savings_goal.call_args[1]
     assert call_kwargs["current_amount"] == 5_000_000
@@ -196,6 +194,7 @@ async def test_contribute_raises_bad_request_for_zero_amount() -> None:
 
 
 # ── delete_savings_goal (soft) ────────────────────────────────────────────────
+
 
 async def test_delete_savings_goal_archives_not_deletes() -> None:
     session = _make_session()

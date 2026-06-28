@@ -35,8 +35,13 @@ transaction_status = postgresql.ENUM(
     "draft", "confirmed", name="transaction_status", create_type=False
 )
 voice_processing_status = postgresql.ENUM(
-    "pending", "transcribing", "extracting", "completed", "failed",
-    name="voice_processing_status", create_type=False,
+    "pending",
+    "transcribing",
+    "extracting",
+    "completed",
+    "failed",
+    name="voice_processing_status",
+    create_type=False,
 )
 
 _ENUMS = [
@@ -61,10 +66,12 @@ def _uuid_pk() -> sa.Column:
 def _timestamps() -> list[sa.Column]:
     """The created_at / updated_at audit columns shared by every table."""
     return [
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False,
-                  server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False,
-                  server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
     ]
 
 
@@ -107,8 +114,9 @@ def upgrade() -> None:
         sa.Column("transcript", sa.Text(), nullable=True),
         sa.Column("extracted_data", postgresql.JSONB(), nullable=True),
         sa.Column("confidence_score", sa.Float(), nullable=True),
-        sa.Column("processing_status", voice_processing_status, nullable=False,
-                  server_default="pending"),
+        sa.Column(
+            "processing_status", voice_processing_status, nullable=False, server_default="pending"
+        ),
         sa.Column("error_message", sa.Text(), nullable=True),
         *_timestamps(),
     )
@@ -122,10 +130,18 @@ def upgrade() -> None:
         "transactions",
         _uuid_pk(),
         sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("account_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("accounts.id", ondelete="RESTRICT"), nullable=False),
-        sa.Column("category_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("categories.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "account_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("accounts.id", ondelete="RESTRICT"),
+            nullable=False,
+        ),
+        sa.Column(
+            "category_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("categories.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
         # amount is negative for an expense, positive for income.
         sa.Column("amount", sa.BigInteger(), nullable=False),
         sa.Column("currency", sa.Text(), nullable=False, server_default="IDR"),
@@ -134,8 +150,12 @@ def upgrade() -> None:
         sa.Column("occurred_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("source", transaction_source, nullable=False, server_default="manual"),
         sa.Column("status", transaction_status, nullable=False, server_default="confirmed"),
-        sa.Column("voice_log_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("voice_logs.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "voice_log_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("voice_logs.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
         *_timestamps(),
     )
     op.create_index(

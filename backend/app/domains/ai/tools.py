@@ -163,7 +163,7 @@ async def _get_financial_summary(user_id: uuid.UUID, session: AsyncSession) -> d
     ).where(
         Transaction.user_id == user_id,
         Transaction.status == TransactionStatus.confirmed,
-        sa.cast(Transaction.occurred_at, sa.Date) >= first,
+        sa.cast(sa.func.timezone("Asia/Jakarta", Transaction.occurred_at), sa.Date) >= first,
     )
     row = (await session.execute(q)).one()
 
@@ -208,7 +208,7 @@ async def _get_budget_status(user_id: uuid.UUID, session: AsyncSession) -> dict[
         Transaction.user_id == user_id,
         Transaction.amount < 0,
         Transaction.status == TransactionStatus.confirmed,
-        sa.cast(Transaction.occurred_at, sa.Date) >= first,
+        sa.cast(sa.func.timezone("Asia/Jakarta", Transaction.occurred_at), sa.Date) >= first,
     )
     spent = abs((await session.execute(q)).scalar_one())
 
@@ -285,7 +285,7 @@ async def _get_spending_by_category(user_id: uuid.UUID, session: AsyncSession) -
             Transaction.user_id == user_id,
             Transaction.amount < 0,
             Transaction.status == TransactionStatus.confirmed,
-            sa.cast(Transaction.occurred_at, sa.Date) >= first,
+            sa.cast(sa.func.timezone("Asia/Jakarta", Transaction.occurred_at), sa.Date) >= first,
         )
         .group_by(sa.func.coalesce(Category.name, "Uncategorized"))
         .order_by(sa.func.sum(Transaction.amount).asc())

@@ -1,11 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import RupiahInput from "@/components/ui/RupiahInput";
+import { SearchableDropdown } from "@/components/ui/SearchableDropdown";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCategories } from "@/features/finance/hooks/useCategories";
@@ -23,6 +26,7 @@ const SOURCE_LABELS: Record<string, string> = {
 
 export default function TransactionDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data: transaction, isLoading } = useTransaction(id);
   const updateTransaction = useUpdateTransaction(id);
@@ -34,6 +38,10 @@ export default function TransactionDetailScreen() {
 
   const [note, setNote] = useState<string>("");
   const [merchant, setMerchant] = useState<string>("");
+  const [txType, setTxType] = useState<"expense" | "income">("expense");
+  const [amount, setAmount] = useState<number>(0);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [accountId, setAccountId] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
 
   const accountName = useMemo(
@@ -55,20 +63,41 @@ export default function TransactionDetailScreen() {
 
   const handleStartEdit = useCallback(() => {
     if (!transaction) return;
+    setTxType(transaction.amount < 0 ? "expense" : "income");
+    setAmount(Math.abs(transaction.amount));
+    setCategoryId(transaction.category_id);
+    setAccountId(transaction.account_id);
     setNote(transaction.note ?? "");
     setMerchant(transaction.merchant ?? "");
     setIsEditing(true);
   }, [transaction]);
 
+  const handleToggleTxType = useCallback((type: "expense" | "income") => {
+    setTxType(type);
+    setCategoryId(null);
+  }, []);
+
+  const availableCategories = useMemo(
+    () => categoriesData?.filter((c) => c.type === txType && !c.is_archived) ?? [],
+    [categoriesData, txType]
+  );
+
   const handleSave = useCallback(async () => {
     try {
-      await updateTransaction.mutateAsync({ merchant: merchant || null, note: note || null });
+      const finalAmount = txType === "expense" ? -amount : amount;
+      await updateTransaction.mutateAsync({
+        amount: finalAmount,
+        category_id: categoryId,
+        account_id: accountId,
+        merchant: merchant || null,
+        note: note || null,
+      });
       setIsEditing(false);
       showToast("Perubahan tersimpan", "success");
     } catch {
       showToast("Gagal menyimpan perubahan.", "error");
     }
-  }, [updateTransaction, merchant, note, showToast]);
+  }, [updateTransaction, txType, amount, categoryId, accountId, merchant, note, showToast]);
 
   const handleDelete = useCallback(() => {
     Alert.alert("Hapus Transaksi", "Yakin mau hapus transaksi ini?", [
@@ -121,7 +150,13 @@ export default function TransactionDetailScreen() {
     <Screen>
       <Header title="Detail Transaksi" onBack={handleBack} />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: isEditing ? insets.bottom + 160 : 32 },
+        ]}
+      >
         <View style={styles.amountHero}>
           <Text style={[styles.amount, { color: amountColor }]}>
             {isExpense ? "" : "+"}
@@ -132,7 +167,83 @@ export default function TransactionDetailScreen() {
 
         <View style={styles.card}>
           {isEditing ? (
-            <>
+            <View style={styles.formGap}>
+              {/* Transaction Type Segmented Toggle */}
+              <View style={styles.toggleContainer}>
+                <Pressable
+                  onPress={() => handleToggleTxType("expense")}
+                  style={styles.togglePressable}
+                >
+                  <View style={txType === "expense" ? [styles.toggleBtn, styles.toggleBtnActive] : styles.toggleBtn}>
+                    <Text style={txType === "expense" ? [styles.toggleText, styles.toggleTextActive] : styles.toggleText}>
+                      Pengeluaran
+                    </Text>
+                  </View>
+                </Pressable>
+                <Pressable
+                  onPress={() => handleToggleTxType("income")}
+                  style={styles.togglePressable}
+                >
+                  <View style={txType === "income" ? [styles.toggleBtn, styles.toggleBtnActive] : styles.toggleBtn}>
+                    <Text style={txType === "income" ? [styles.toggleText, styles.toggleTextActive] : styles.toggleText}>
+                      Pemasukan
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+
+              {/* Amount input using RupiahInput */}
+              <RupiahInput
+                label="Jumlah"
+                placeholder="0"
+                value={amount}
+                onChange={setAmount}
+              />
+
+              {/* Category selection using SearchableDropdown */}
+              <SearchableDropdown
+                label="Kategori (opsional)"
+                placeholder="Pilih Kategori"
+                items={availableCategories.map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  icon: c.icon ?? undefined,
+                }))}
+                selectedId={categoryId}
+                onSelect={setCategoryId}
+              />
+
+              {/* Account Selector */}
+              {accountsData && accountsData.length > 1 && (
+                <View style={styles.accountSection}>
+                  <Text style={styles.accountLabel}>Pilih Dompet / Akun</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.accountRow}
+                  >
+                    {accountsData.map((acc) => {
+                      const active = accountId === acc.id;
+                      return (
+                        <Pressable
+                          key={acc.id}
+                          onPress={() => setAccountId(acc.id)}
+                          style={({ pressed }) => pressed && { opacity: 0.8 }}
+                        >
+                          <View style={active ? [styles.accountPill, styles.accountPillActive] : styles.accountPill}>
+                            <Text
+                              style={active ? [styles.accountPillText, styles.accountPillTextActive] : styles.accountPillText}
+                            >
+                              {acc.name}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
+
               <Input
                 label="Merchant"
                 value={merchant}
@@ -146,7 +257,7 @@ export default function TransactionDetailScreen() {
                 placeholder="Tambahkan catatan"
                 multiline
               />
-            </>
+            </View>
           ) : (
             <>
               <DetailRow label="Tanggal" value={formatDate(transaction.occurred_at)} />
@@ -190,9 +301,13 @@ export default function TransactionDetailScreen() {
       </ScrollView>
 
       {!isEditing && (
-        <View style={styles.bottomBar}>
-          <Button label="Edit" variant="warning" onPress={handleStartEdit} fullWidth />
-          <Button label="Hapus" variant="danger" onPress={handleDelete} fullWidth />
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 140 }]}>
+          <View style={styles.buttonWrapper}>
+            <Button label="Edit" variant="warning" onPress={handleStartEdit} fullWidth />
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button label="Hapus" variant="danger" onPress={handleDelete} fullWidth />
+          </View>
         </View>
       )}
     </Screen>
@@ -242,5 +357,70 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border.default,
     backgroundColor: colors.bg.canvas,
+  },
+  buttonWrapper: {
+    flex: 1,
+  },
+  formGap: {
+    gap: spacing.lg,
+  },
+  toggleContainer: {
+    flexDirection: "row",
+    backgroundColor: colors.bg.canvas,
+    borderRadius: radius.md,
+    padding: 4,
+    marginBottom: spacing.xs,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  togglePressable: {
+    flex: 1,
+    borderRadius: radius.sm,
+    overflow: "hidden",
+  },
+  toggleBtn: {
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.sm,
+  },
+  toggleBtnActive: {
+    backgroundColor: colors.accent.primary,
+  },
+  toggleText: {
+    ...StyleSheet.flatten(textStyles.h3),
+    color: colors.text.muted,
+  },
+  toggleTextActive: {
+    color: colors.bg.canvas,
+    fontWeight: "600",
+  },
+  accountSection: { gap: spacing.sm },
+  accountLabel: {
+    ...StyleSheet.flatten(textStyles.caption),
+    fontSize: 13,
+    color: colors.text.muted,
+  },
+  accountRow: { gap: spacing.sm, paddingVertical: 2 },
+  accountPill: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  accountPillActive: {
+    backgroundColor: colors.accent.primary,
+    borderColor: colors.accent.primary,
+  },
+  accountPillText: {
+    ...StyleSheet.flatten(textStyles.caption),
+    fontWeight: "500",
+    color: colors.text.primary,
+  },
+  accountPillTextActive: {
+    color: colors.bg.canvas,
   },
 });

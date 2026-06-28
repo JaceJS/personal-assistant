@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Plus, Wallet } from 'lucide-react-native';
 import IconButton from '@/components/ui/IconButton';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { computeUnallocated } from '@/features/finance/utils/budgetBucketUtils';
 import { splitBudgetCategories } from '@/features/finance/utils/budgetCategoryUtils';
 
@@ -52,6 +52,7 @@ function UnallocatedChip({ unallocated }: { unallocated: number }) {
 
 export default function BudgetScreen() {
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
@@ -140,11 +141,19 @@ export default function BudgetScreen() {
     await Promise.all([refetchBudget(), refetchTx()]);
   }, [refetchBudget, refetchTx]);
 
+  const handleBack = useCallback(() => {
+    if (from === 'home') router.replace('/(app)/(home)');
+    else if (from === 'finance') router.replace('/(app)/finance');
+    else if (from === 'settings') router.replace('/(app)/settings');
+    else if (router.canGoBack()) router.back();
+    else router.replace('/(app)/(home)');
+  }, [from, router]);
+
   return (
     <Screen>
       <Header
         title="Budget"
-        onBack={() => router.canGoBack() ? router.back() : router.replace('/(app)/settings')}
+        onBack={handleBack}
       />
 
       <ScrollView

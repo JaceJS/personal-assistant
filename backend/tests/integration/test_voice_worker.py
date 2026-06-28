@@ -22,8 +22,11 @@ async def test_process_voice_creates_draft_transaction(
     test_user_id: uuid.UUID,
 ) -> None:
     account = await repo.create_account(
-        db_session, test_user_id,
-        name="Wallet", type=AccountType.cash, currency="IDR",
+        db_session,
+        test_user_id,
+        name="Wallet",
+        type=AccountType.cash,
+        currency="IDR",
     )
     voice_log = await repo.create_voice_log(
         db_session, test_user_id, audio_url="recordings/test.webm"
