@@ -79,8 +79,8 @@ export default function BudgetScreen() {
     limit: 1000,
   });
 
-  const currentYearTransactions = currentYearData?.items ?? [];
-  const selectedYearTransactions = selectedYearData?.items ?? [];
+  const currentYearTransactions = useMemo(() => currentYearData?.items ?? [], [currentYearData]);
+  const selectedYearTransactions = useMemo(() => selectedYearData?.items ?? [], [selectedYearData]);
 
   const currentMonthSpent = useMemo(() => {
     return currentYearTransactions

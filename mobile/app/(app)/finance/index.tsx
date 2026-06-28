@@ -56,7 +56,7 @@ export default function FinanceDashboard() {
     limit: 200,
     ...(selectedAccountId ? { accountId: selectedAccountId } : {}),
   });
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data]);
 
   const totalExpense = useMemo(
     () => items.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0),

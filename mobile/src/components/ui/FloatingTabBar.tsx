@@ -17,15 +17,15 @@ import { handleTabPress } from "./tabPressUtils";
 
 const TAB_ICONS: Record<string, typeof Home> = {
   "(home)": Home,
-  goals: Target,
   history: Clock,
+  goals: Target,
   settings: Settings,
 };
 
 const TAB_LABELS: Record<string, string> = {
   "(home)": "Home",
-  goals: "Goal",
   history: "Aktivitas",
+  goals: "Goal",
   settings: "Settings",
 };
 

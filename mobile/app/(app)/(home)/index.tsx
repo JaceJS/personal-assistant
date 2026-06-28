@@ -71,7 +71,7 @@ export default function HomeScreen() {
         }
       >
         <Text style={styles.greeting}>
-          {getGreeting()}, {firstName}.
+          {getGreeting()}{firstName ? `, ${firstName}` : ''}!
         </Text>
 
         <AccountBalanceCard />

@@ -3,9 +3,7 @@ import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } 
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import {
-  Banknote,
   Building2,
-  ChevronDown,
   ChevronRight,
   CloudUpload,
   ExternalLink,
@@ -22,7 +20,6 @@ import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
-import { supabase } from "@/lib/supabase";
 import { getDisplayName } from "@/lib/getDisplayName";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -244,27 +241,6 @@ const MenuItem = ({
         <ChevronRight size={14} color={colors.text.muted} />
       </View>
     </Pressable>
-  );
-};
-
-const ValueMenuItem = ({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) => {
-  return (
-    <View style={styles.menuItem}>
-      <View style={styles.iconBox}>{icon}</View>
-      <Text style={styles.menuLabel}>{label}</Text>
-      <View style={styles.valueRow}>
-        <Text style={styles.valueText}>{value}</Text>
-        <ChevronDown size={14} color={colors.text.muted} />
-      </View>
-    </View>
   );
 };
 

@@ -96,7 +96,7 @@ export default function AktivitasScreen() {
     dateTo,
     limit: 200,
   });
-  const allItems = data?.items ?? [];
+  const allItems = useMemo(() => data?.items ?? [], [data]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
