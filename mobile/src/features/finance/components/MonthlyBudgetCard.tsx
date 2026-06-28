@@ -44,9 +44,10 @@ export default function MonthlyBudgetCard({ totalExpense, from }: MonthlyBudgetC
   }
 
   const monthlyLimit = budget.monthly_limit;
-  const pct = Math.min(totalExpense / monthlyLimit, 1);
+  const displayPct = monthlyLimit > 0 ? totalExpense / monthlyLimit : 0;
+  const barPct = Math.min(displayPct, 1);
   const remaining = Math.max(monthlyLimit - totalExpense, 0);
-  const barColor = getBudgetColor(pct);
+  const barColor = getBudgetColor(barPct);
 
   const now = new Date();
   const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -64,12 +65,12 @@ export default function MonthlyBudgetCard({ totalExpense, from }: MonthlyBudgetC
             <Text style={styles.budgetAmount}>{formatRupiah(monthlyLimit)}</Text>
           </View>
           <View style={[styles.pctBadge, { borderColor: barColor + '44' }]}>
-            <Text style={[styles.pctText, { color: barColor }]}>{Math.round(pct * 100)}%</Text>
+            <Text style={[styles.pctText, { color: barColor }]}>{Math.round(displayPct * 100)}%</Text>
           </View>
         </View>
 
         <View style={styles.barTrack}>
-          <View style={[styles.barFill, { width: `${Math.round(pct * 100)}%` as `${number}%`, backgroundColor: barColor }]} />
+          <View style={[styles.barFill, { width: `${Math.round(barPct * 100)}%` as `${number}%`, backgroundColor: barColor }]} />
         </View>
 
         <View style={styles.spentRow}>

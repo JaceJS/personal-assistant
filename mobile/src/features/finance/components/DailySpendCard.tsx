@@ -43,12 +43,13 @@ export default function DailySpendCard() {
   }
 
   const limit = dailyLimit ?? 0;
-  const pct = limit > 0 ? Math.min(todaySpend / limit, 1) : 0;
+  const displayPct = limit > 0 ? todaySpend / limit : 0;
+  const barPct = Math.min(displayPct, 1);
   const remaining = Math.max(limit - todaySpend, 0);
-  const dashOffset = CIRCUMFERENCE * (1 - pct);
+  const dashOffset = CIRCUMFERENCE * (1 - barPct);
   const ringColor =
-    pct >= 1 ? colors.danger.text :
-    pct >= 0.7 ? colors.warning.text :
+    barPct >= 1 ? colors.danger.text :
+    barPct >= 0.7 ? colors.warning.text :
     colors.accent.primary;
 
   return (
@@ -85,7 +86,7 @@ export default function DailySpendCard() {
           />
         </Svg>
         <View style={styles.ringCenter}>
-          <Text style={[styles.pct, { color: ringColor }]}>{Math.round(pct * 100)}%</Text>
+          <Text style={[styles.pct, { color: ringColor }]}>{Math.round(displayPct * 100)}%</Text>
           <Text style={styles.usedLabel}>terpakai</Text>
         </View>
       </View>

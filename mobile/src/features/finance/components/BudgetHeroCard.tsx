@@ -38,8 +38,9 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
     );
   }
 
-  const pct = Math.min(totalSpent / budget.monthly_limit, 1);
-  const barColor = getBudgetBarColor(pct);
+  const displayPct = budget.monthly_limit > 0 ? totalSpent / budget.monthly_limit : 0;
+  const barPct = Math.min(displayPct, 1);
+  const barColor = getBudgetBarColor(barPct);
 
   return (
     <View style={styles.card}>
@@ -61,7 +62,7 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
           style={[
             styles.barFill,
             {
-              width: `${Math.round(pct * 100)}%` as `${number}%`,
+              width: `${Math.round(barPct * 100)}%` as `${number}%`,
               backgroundColor: barColor,
             },
           ]}
@@ -69,7 +70,7 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
       </View>
 
       <Text style={[styles.pctText, { color: barColor }]}>
-        {Math.round(pct * 100)}% terpakai
+        {Math.round(displayPct * 100)}% terpakai
       </Text>
     </View>
   );
