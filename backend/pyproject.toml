@@ -21,6 +21,7 @@ dependencies = [
     "httpx>=0.28",
     "python-multipart>=0.0.20",
     "structlog>=24.4",
+    "filetype>=1.2.0",
 ]
 
 # Dependency groups (PEP 735). The "dev" group is installed by default with `uv sync`.

@@ -43,8 +43,11 @@ def _mock_llm(extracted: dict | None = None) -> MagicMock:
 
 def _mock_redis(incr_return: int = 1) -> AsyncMock:
     redis = AsyncMock()
-    redis.incr = AsyncMock(return_value=incr_return)
-    redis.expire = AsyncMock()
+    pipe = MagicMock()
+    pipe.set = MagicMock()
+    pipe.incr = MagicMock()
+    pipe.execute = AsyncMock(return_value=[None, incr_return])
+    redis.pipeline = MagicMock(return_value=pipe)
     redis.close = AsyncMock()
     return redis
 
@@ -60,7 +63,9 @@ async def test_process_anonymous_returns_extracted_transaction(
         patch("app.domains.finance.routers.voice.get_stt_provider", return_value=stt),
         patch("app.domains.finance.routers.voice.OpenRouterLLM", return_value=llm),
         patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
+        patch("app.core.upload_utils.filetype.guess") as mock_guess,
     ):
+        mock_guess.return_value.mime = "audio/webm"
         response = await client.post(
             "/api/v1/voice/process-anonymous",
             files={"file": _AUDIO_FILE},
@@ -79,7 +84,10 @@ async def test_process_anonymous_rejects_non_audio_file(client: AsyncClient) -> 
     redis = _mock_redis()
 
     mock_pool = AsyncMock(return_value=redis)
-    with patch("app.domains.finance.routers.voice.create_redis_pool", mock_pool):
+    with (
+        patch("app.domains.finance.routers.voice.create_redis_pool", mock_pool),
+        patch("app.core.upload_utils.filetype.guess", return_value=None),
+    ):
         response = await client.post(
             "/api/v1/voice/process-anonymous",
             files={"file": _TEXT_FILE},
@@ -95,7 +103,9 @@ async def test_process_anonymous_rate_limited_after_10_requests(
 
     with (
         patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
+        patch("app.core.upload_utils.filetype.guess") as mock_guess,
     ):
+        mock_guess.return_value.mime = "audio/webm"
         response = await client.post(
             "/api/v1/voice/process-anonymous",
             files={"file": _AUDIO_FILE},
@@ -116,7 +126,9 @@ async def test_process_anonymous_does_not_save_voice_log(
         patch("app.domains.finance.routers.voice.get_stt_provider", return_value=stt),
         patch("app.domains.finance.routers.voice.OpenRouterLLM", return_value=llm),
         patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
+        patch("app.core.upload_utils.filetype.guess") as mock_guess,
     ):
+        mock_guess.return_value.mime = "audio/webm"
         response = await client.post(
             "/api/v1/voice/process-anonymous",
             files={"file": _AUDIO_FILE},
@@ -141,7 +153,9 @@ async def test_process_anonymous_no_auth_required() -> None:
         patch("app.domains.finance.routers.voice.get_stt_provider", return_value=stt),
         patch("app.domains.finance.routers.voice.OpenRouterLLM", return_value=llm),
         patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
+        patch("app.core.upload_utils.filetype.guess") as mock_guess,
     ):
+        mock_guess.return_value.mime = "audio/webm"
         async with RawClient(
             transport=ASGITransport(app=fastapi_app), base_url="http://test"
         ) as ac:

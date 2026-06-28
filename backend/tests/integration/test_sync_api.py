@@ -117,7 +117,7 @@ async def test_import_handles_empty_payload(client: AsyncClient) -> None:
 
     assert response.status_code == 200
     data = response.json()["data"]["imported"]
-    assert data == {"accounts": 0, "categories": 0, "transactions": 0, "budgets": 0}
+    assert data == {"accounts": 0, "categories": 0, "transactions": 0, "budgets": 0, "savings_goals": 0}
 
 
 async def test_import_requires_auth() -> None:

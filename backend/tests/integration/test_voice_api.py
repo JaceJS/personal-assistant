@@ -39,9 +39,11 @@ async def test_upload_voice_creates_log_and_enqueues_job(
     redis.close = AsyncMock()
 
     with (
-        patch("app.domains.finance.router.R2Storage", return_value=storage),
-        patch("app.domains.finance.router.create_redis_pool", AsyncMock(return_value=redis)),
+        patch("app.domains.finance.routers.voice.R2Storage", return_value=storage),
+        patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
+        patch("app.core.upload_utils.filetype.guess") as mock_guess,
     ):
+        mock_guess.return_value.mime = "audio/webm"
         response = await client.post(
             "/api/v1/voice/upload",
             data={"account_id": str(account.id)},
@@ -83,7 +85,10 @@ async def test_upload_voice_rejects_non_audio_file(
     redis = AsyncMock()
     redis.close = AsyncMock()
 
-    with patch("app.domains.finance.router.create_redis_pool", AsyncMock(return_value=redis)):
+    with (
+        patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
+        patch("app.core.upload_utils.filetype.guess", return_value=None),
+    ):
         response = await client.post(
             "/api/v1/voice/upload",
             data={"account_id": str(account.id)},

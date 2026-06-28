@@ -53,6 +53,13 @@ async def test_process_voice_creates_draft_transaction(
             voice_log_id=str(voice_log.id),
             account_id=str(account.id),
         )
+        from app.workers.voice_processor import extract_voice
+        await extract_voice(
+            ctx,
+            voice_log_id=str(voice_log.id),
+            account_id=str(account.id),
+            transcript="beli makan gocap di warung",
+        )
 
     await db_session.refresh(voice_log)
     assert voice_log.processing_status == VoiceProcessingStatus.completed

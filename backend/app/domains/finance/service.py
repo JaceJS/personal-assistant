@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
-from pathlib import Path
 from typing import Any
 
 from arq.connections import ArqRedis
@@ -14,6 +13,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai.llm.base import LLMProvider
 from app.ai.stt.base import STTProvider
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError, TooManyRequestsError
+from app.core.upload_utils import (
+    AUDIO_EXT_MAP,
+    AUDIO_MIME_ALLOWLIST,
+    IMAGE_EXT_MAP,
+    IMAGE_MIME_ALLOWLIST,
+    MAX_AUDIO_BYTES,
+    MAX_IMAGE_BYTES,
+    read_and_validate_upload,
+)
 from app.domains.finance import repository as repo
 from app.domains.finance.extractor import extract_transaction
 from app.domains.finance.models import (
@@ -133,6 +141,17 @@ async def get_account_or_404(
     session: AsyncSession, account_id: uuid.UUID, user_id: uuid.UUID
 ) -> Account:
     account = await repo.get_account(session, account_id)
+    if account is None:
+        raise NotFoundError(f"Account {account_id} not found")
+    if account.user_id != user_id:
+        raise ForbiddenError("You don't own this account")
+    return account
+
+
+async def _get_account_for_balance_update(
+    session: AsyncSession, account_id: uuid.UUID, user_id: uuid.UUID
+) -> Account:
+    account = await repo.get_account_for_update(session, account_id)
     if account is None:
         raise NotFoundError(f"Account {account_id} not found")
     if account.user_id != user_id:
@@ -337,7 +356,7 @@ async def list_transactions(
 async def create_transaction(
     session: AsyncSession, user_id: uuid.UUID, data: TransactionCreate
 ) -> Transaction:
-    account = await get_account_or_404(session, data.account_id, user_id)
+    account = await _get_account_for_balance_update(session, data.account_id, user_id)
 
     if data.category_id is not None:
         await get_category_or_404(session, data.category_id, user_id)
@@ -379,18 +398,18 @@ async def update_transaction(
         updated = await repo.update_transaction(session, tx, **updates)
         # Reverse balance on old account if the transaction was already confirmed.
         if tx.status == TransactionStatus.confirmed:
-            old_acct = await get_account_or_404(session, tx.account_id, user_id)
+            old_acct = await _get_account_for_balance_update(session, tx.account_id, user_id)
             await repo.update_account(session, old_acct, balance=old_acct.balance - tx.amount)
         # Apply balance to new account if it is now (or remains) confirmed.
         if updated.status == TransactionStatus.confirmed:
-            new_acct = await get_account_or_404(session, updated.account_id, user_id)
+            new_acct = await _get_account_for_balance_update(session, updated.account_id, user_id)
             await repo.update_account(session, new_acct, balance=new_acct.balance + updated.amount)
     else:
         old_balance_effect = tx.amount if tx.status == TransactionStatus.confirmed else 0
         updated = await repo.update_transaction(session, tx, **updates)
         new_balance_effect = updated.amount if updated.status == TransactionStatus.confirmed else 0
         if old_balance_effect != new_balance_effect:
-            account = await get_account_or_404(session, updated.account_id, user_id)
+            account = await _get_account_for_balance_update(session, updated.account_id, user_id)
             delta = new_balance_effect - old_balance_effect
             await repo.update_account(session, account, balance=account.balance + delta)
 
@@ -401,7 +420,7 @@ async def delete_transaction(session: AsyncSession, user_id: uuid.UUID, tx_id: u
     tx = await get_transaction_or_404(session, tx_id, user_id)
 
     if tx.status == TransactionStatus.confirmed:
-        account = await get_account_or_404(session, tx.account_id, user_id)
+        account = await _get_account_for_balance_update(session, tx.account_id, user_id)
         await repo.update_account(session, account, balance=account.balance - tx.amount)
 
     await repo.delete_transaction(session, tx)
@@ -421,19 +440,16 @@ async def create_voice_upload(
 ) -> VoiceUploadResponse:
     await get_account_or_404(session, account_id, user_id)
 
-    content_type = file.content_type or ""
-    if not content_type.startswith("audio/"):
-        raise BadRequestError("Voice upload must be an audio file")
-
-    audio = await file.read()
-    if not audio:
-        raise BadRequestError("Voice upload cannot be empty")
-
-    suffix = Path(file.filename or "").suffix.lower()
-    object_ext = suffix if suffix else ".webm"
+    audio, detected_mime, object_ext = await read_and_validate_upload(
+        file,
+        max_bytes=MAX_AUDIO_BYTES,
+        mime_allowlist=AUDIO_MIME_ALLOWLIST,
+        ext_map=AUDIO_EXT_MAP,
+        default_ext=".webm",
+    )
     object_key = f"voice/{user_id}/{uuid.uuid4()}{object_ext}"
 
-    await storage.upload(object_key, audio, content_type)
+    await storage.upload(object_key, audio, detected_mime)
     voice_log = await repo.create_voice_log(
         session, user_id, audio_url=object_key, account_id=account_id
     )
@@ -519,19 +535,16 @@ async def create_receipt_upload(
 ) -> ReceiptUploadResponse:
     await get_account_or_404(session, account_id, user_id)
 
-    content_type = file.content_type or ""
-    if not content_type.startswith("image/"):
-        raise BadRequestError("Receipt upload must be an image file")
-
-    image = await file.read()
-    if not image:
-        raise BadRequestError("Receipt upload cannot be empty")
-
-    suffix = Path(file.filename or "").suffix.lower()
-    object_ext = suffix if suffix else ".jpg"
+    image, detected_mime, object_ext = await read_and_validate_upload(
+        file,
+        max_bytes=MAX_IMAGE_BYTES,
+        mime_allowlist=IMAGE_MIME_ALLOWLIST,
+        ext_map=IMAGE_EXT_MAP,
+        default_ext=".jpg",
+    )
     object_key = f"receipt/{user_id}/{uuid.uuid4()}{object_ext}"
 
-    await storage.upload(object_key, image, content_type)
+    await storage.upload(object_key, image, detected_mime)
     receipt_log = await repo.create_receipt_log(
         session, user_id, account_id=account_id, image_url=object_key
     )
@@ -582,9 +595,11 @@ _ANON_VOICE_RATE_WINDOW_SECONDS = 3600
 
 async def _enforce_anonymous_rate_limit(redis: ArqRedis, client_ip: str) -> None:
     key = f"anon_voice:{client_ip}"
-    count = await redis.incr(key)
-    if count == 1:
-        await redis.expire(key, _ANON_VOICE_RATE_WINDOW_SECONDS)
+    pipe = redis.pipeline()
+    pipe.set(key, 0, nx=True, ex=_ANON_VOICE_RATE_WINDOW_SECONDS)
+    pipe.incr(key)
+    results = await pipe.execute()
+    count: int = results[1]
     if count > ANON_VOICE_RATE_LIMIT:
         raise TooManyRequestsError(
             f"Rate limit exceeded: {ANON_VOICE_RATE_LIMIT} anonymous voice requests per hour"
@@ -598,17 +613,17 @@ async def process_anonymous_voice(
     redis: ArqRedis,
     client_ip: str,
 ) -> AnonymousVoiceResult:
-    content_type = file.content_type or ""
-    if not content_type.startswith("audio/"):
-        raise BadRequestError("Voice upload must be an audio file")
-
     await _enforce_anonymous_rate_limit(redis, client_ip)
 
-    audio = await file.read()
-    if not audio:
-        raise BadRequestError("Voice upload cannot be empty")
+    audio, _mime, _ext = await read_and_validate_upload(
+        file,
+        max_bytes=MAX_AUDIO_BYTES,
+        mime_allowlist=AUDIO_MIME_ALLOWLIST,
+        ext_map=AUDIO_EXT_MAP,
+        default_ext=".webm",
+    )
 
-    transcript = await stt.transcribe(audio, filename=file.filename or "audio.m4a")
+    transcript = await stt.transcribe(audio, filename=file.filename or "audio.webm")
     extracted = await extract_transaction(transcript, llm)
 
     return AnonymousVoiceResult(

@@ -88,6 +88,13 @@ async def get_account(session: AsyncSession, account_id: uuid.UUID) -> Account |
     return await session.get(Account, account_id)
 
 
+async def get_account_for_update(session: AsyncSession, account_id: uuid.UUID) -> Account | None:
+    result = await session.execute(
+        sa.select(Account).where(Account.id == account_id).with_for_update()
+    )
+    return result.scalar_one_or_none()
+
+
 async def list_accounts(session: AsyncSession, user_id: uuid.UUID) -> list[Account]:
     result = await session.execute(
         sa.select(Account).where(Account.user_id == user_id, Account.is_archived.is_(False))
