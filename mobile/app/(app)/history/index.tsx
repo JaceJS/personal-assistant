@@ -3,7 +3,6 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -26,6 +25,7 @@ import Fab from '@/components/ui/Fab';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import DatePicker from '@/components/ui/DatePicker';
+import { MultiSearchableDropdown } from '@/components/ui/MultiSearchableDropdown';
 import Button from '@/components/ui/Button';
 import TransactionCard from '@/features/finance/components/TransactionCard';
 import { useCategories } from '@/features/finance/hooks/useCategories';
@@ -91,8 +91,8 @@ export default function AktivitasScreen() {
     year: initialYear,
     month: initialMonth,
   });
-  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(
-    params.categoryId ?? null,
+  const [activeCategoryIds, setActiveCategoryIds] = useState<string[]>(
+    params.categoryId ? [params.categoryId] : []
   );
   const [query, setQuery] = useState('');
 
@@ -103,7 +103,9 @@ export default function AktivitasScreen() {
   const [customDateTo, setCustomDateTo] = useState<Date>(new Date());
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [tempCategoryId, setTempCategoryId] = useState<string | null>(params.categoryId ?? null);
+  const [tempCategoryIds, setTempCategoryIds] = useState<string[]>(
+    params.categoryId ? [params.categoryId] : []
+  );
   const [tempIsCustom, setTempIsCustom] = useState(false);
   const [tempDateFrom, setTempDateFrom] = useState<Date>(
     new Date(now.getFullYear(), now.getMonth(), 1)
@@ -111,29 +113,29 @@ export default function AktivitasScreen() {
   const [tempDateTo, setTempDateTo] = useState<Date>(new Date());
 
   const openFilter = useCallback(() => {
-    setTempCategoryId(activeCategoryId);
+    setTempCategoryIds(activeCategoryIds);
     setTempIsCustom(isCustomDateRange);
     setTempDateFrom(customDateFrom);
     setTempDateTo(customDateTo);
     setIsFilterOpen(true);
-  }, [activeCategoryId, isCustomDateRange, customDateFrom, customDateTo]);
+  }, [activeCategoryIds, isCustomDateRange, customDateFrom, customDateTo]);
 
   const applyFilter = useCallback(() => {
-    setActiveCategoryId(tempCategoryId);
+    setActiveCategoryIds(tempCategoryIds);
     setIsCustomDateRange(tempIsCustom);
     setCustomDateFrom(tempDateFrom);
     setCustomDateTo(tempDateTo);
     setIsFilterOpen(false);
-  }, [tempCategoryId, tempIsCustom, tempDateFrom, tempDateTo]);
+  }, [tempCategoryIds, tempIsCustom, tempDateFrom, tempDateTo]);
 
   const resetFilter = useCallback(() => {
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const today = new Date();
-    setTempCategoryId(null);
+    setTempCategoryIds([]);
     setTempIsCustom(false);
     setTempDateFrom(startOfCurrentMonth);
     setTempDateTo(today);
-    setActiveCategoryId(null);
+    setActiveCategoryIds([]);
     setIsCustomDateRange(false);
     setCustomDateFrom(startOfCurrentMonth);
     setCustomDateTo(today);
@@ -191,8 +193,8 @@ export default function AktivitasScreen() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let items = activeCategoryId
-      ? allItems.filter((t) => t.category_id === activeCategoryId)
+    let items = activeCategoryIds.length > 0
+      ? allItems.filter((t) => t.category_id && activeCategoryIds.includes(t.category_id))
       : allItems;
     if (q) {
       items = items.filter(
@@ -200,7 +202,7 @@ export default function AktivitasScreen() {
       );
     }
     return [...items].sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
-  }, [allItems, query, activeCategoryId]);
+  }, [allItems, query, activeCategoryIds]);
 
   const periodTotal = useMemo(() => filtered.reduce((s, t) => s + t.amount, 0), [filtered]);
 
@@ -257,26 +259,32 @@ export default function AktivitasScreen() {
           />
         </View>
         <Pressable onPress={openFilter}>
-          <View style={[styles.filterBtn, (activeCategoryId !== null || isCustomDateRange) && styles.filterBtnActive]}>
+          <View style={[styles.filterBtn, (activeCategoryIds.length > 0 || isCustomDateRange) && styles.filterBtnActive]}>
             <SlidersHorizontal
               size={18}
-              color={(activeCategoryId !== null || isCustomDateRange) ? colors.bg.canvas : colors.text.primary}
+              color={(activeCategoryIds.length > 0 || isCustomDateRange) ? colors.bg.canvas : colors.text.primary}
               strokeWidth={2}
             />
           </View>
         </Pressable>
       </View>
 
-      {activeCategoryId && (
+      {activeCategoryIds.length > 0 && (
         <View style={styles.filterChipRow}>
-          <View style={styles.filterChip}>
-            <Text style={styles.filterChipText}>
-              {categoriesData?.find((c) => c.id === activeCategoryId)?.name ?? 'Kategori'}
-            </Text>
-            <Pressable hitSlop={8} onPress={() => setActiveCategoryId(null)}>
-              <Text style={styles.filterChipClear}>✕</Text>
-            </Pressable>
-          </View>
+          {activeCategoryIds.map((id) => {
+            const cat = categoriesData?.find((c) => c.id === id);
+            if (!cat) return null;
+            return (
+              <View key={id} style={styles.filterChip}>
+                <Text style={styles.filterChipText}>
+                  {cat.icon ? `${cat.icon} ` : ""}{cat.name}
+                </Text>
+                <Pressable hitSlop={8} onPress={() => setActiveCategoryIds(activeCategoryIds.filter((x) => x !== id))}>
+                  <Text style={styles.filterChipClear}>✕</Text>
+                </Pressable>
+              </View>
+            );
+          })}
         </View>
       )}
 
@@ -346,79 +354,45 @@ export default function AktivitasScreen() {
       <BottomSheet isVisible={isFilterOpen} onDismiss={() => setIsFilterOpen(false)}>
         <View style={styles.sheetContent}>
           <Text style={styles.sheetTitle}>Filter Transaksi</Text>
-
           {/* Category Filter Section */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterSectionLabel}>Kategori</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillsRow}>
-              <View style={[styles.filterPill, tempCategoryId === null && styles.filterPillActive]}>
-                <Pressable
-                  onPress={() => setTempCategoryId(null)}
-                  style={({ pressed }) => [
-                    styles.filterPillPressable,
-                    pressed && { opacity: 0.8 }
-                  ]}
-                >
-                  <Text style={[styles.filterPillText, tempCategoryId === null && styles.filterPillTextActive]}>
-                    Semua
-                  </Text>
-                </Pressable>
-              </View>
-              {categoriesData?.filter(c => !c.is_archived).map((cat) => {
-                const active = tempCategoryId === cat.id;
-                return (
-                  <View key={cat.id} style={[styles.filterPill, active && styles.filterPillActive]}>
-                    <Pressable
-                      onPress={() => setTempCategoryId(cat.id)}
-                      style={({ pressed }) => [
-                        styles.filterPillPressable,
-                        pressed && { opacity: 0.8 }
-                      ]}
-                    >
-                      <Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>
-                        {cat.icon} {cat.name}
-                      </Text>
-                    </Pressable>
-                  </View>
-                );
-              })}
-            </ScrollView>
+            <MultiSearchableDropdown
+              label="Kategori"
+              placeholder="Semua Kategori"
+              items={categoriesData?.filter((c) => !c.is_archived).map((cat) => ({
+                id: cat.id,
+                name: cat.name,
+                icon: cat.icon ?? undefined,
+              })) ?? []}
+              selectedIds={tempCategoryIds}
+              onSelect={setTempCategoryIds}
+            />
           </View>
 
           {/* Date Range Selection Section */}
           <View style={styles.filterSection}>
             <Text style={styles.filterSectionLabel}>Rentang Waktu</Text>
             <View style={styles.toggleContainer}>
-              <View style={styles.toggleBtnWrapper}>
-                <View style={[styles.toggleBtn, !tempIsCustom && styles.toggleBtnActive]}>
-                  <Pressable
-                    onPress={() => setTempIsCustom(false)}
-                    style={({ pressed }) => [
-                      styles.togglePressableContent,
-                      pressed && { opacity: 0.8 }
-                    ]}
-                  >
-                    <Text style={[styles.toggleText, !tempIsCustom && styles.toggleTextActive]}>
-                      Bulanan
-                    </Text>
-                  </Pressable>
+              <Pressable
+                onPress={() => setTempIsCustom(false)}
+                style={styles.toggleBtnWrapper}
+              >
+                <View style={!tempIsCustom ? [styles.toggleBtn, styles.toggleBtnActive] : styles.toggleBtn}>
+                  <Text style={!tempIsCustom ? [styles.toggleText, styles.toggleTextActive] : styles.toggleText}>
+                    Bulanan
+                  </Text>
                 </View>
-              </View>
-              <View style={styles.toggleBtnWrapper}>
-                <View style={[styles.toggleBtn, tempIsCustom && styles.toggleBtnActive]}>
-                  <Pressable
-                    onPress={() => setTempIsCustom(true)}
-                    style={({ pressed }) => [
-                      styles.togglePressableContent,
-                      pressed && { opacity: 0.8 }
-                    ]}
-                  >
-                    <Text style={[styles.toggleText, tempIsCustom && styles.toggleTextActive]}>
-                      Kustom
-                    </Text>
-                  </Pressable>
+              </Pressable>
+              <Pressable
+                onPress={() => setTempIsCustom(true)}
+                style={styles.toggleBtnWrapper}
+              >
+                <View style={tempIsCustom ? [styles.toggleBtn, styles.toggleBtnActive] : styles.toggleBtn}>
+                  <Text style={tempIsCustom ? [styles.toggleText, styles.toggleTextActive] : styles.toggleText}>
+                    Kustom
+                  </Text>
                 </View>
-              </View>
+              </Pressable>
             </View>
           </View>
 
@@ -506,17 +480,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.default,
     backgroundColor: colors.bg.canvas,
-    overflow: 'hidden',
-  },
-  filterPillActive: {
-    backgroundColor: colors.accent.primary,
-    borderColor: colors.accent.primary,
-  },
-  filterPillPressable: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  filterPillActive: {
+    backgroundColor: colors.accent.primary,
+    borderColor: colors.accent.primary,
   },
   filterPillText: {
     ...StyleSheet.flatten(textStyles.caption),
@@ -541,26 +512,26 @@ const styles = StyleSheet.create({
 
   toggleContainer: {
     flexDirection: "row",
-    backgroundColor: colors.bg.canvas,
+    backgroundColor: colors.bg.surface,
     borderRadius: radius.md,
     padding: 4,
-    borderWidth: 1,
-    borderColor: colors.border.default,
+    marginBottom: spacing.xs,
+    overflow: "hidden",
   },
   toggleBtnWrapper: {
     flex: 1,
-  },
-  toggleBtn: {
     borderRadius: radius.sm,
     overflow: "hidden",
   },
-  toggleBtnActive: {
-    backgroundColor: colors.accent.primary,
-  },
-  togglePressableContent: {
+  toggleBtn: {
     paddingVertical: spacing.md,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: radius.sm,
+    width: "100%",
+  },
+  toggleBtnActive: {
+    backgroundColor: colors.accent.primary,
   },
   toggleText: {
     ...StyleSheet.flatten(textStyles.h3),
@@ -656,6 +627,8 @@ const styles = StyleSheet.create({
 
   filterChipRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
     paddingHorizontal: spacing.xl,
     marginBottom: 8,
   },

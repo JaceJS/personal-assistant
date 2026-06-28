@@ -23,7 +23,7 @@ const TAB_ICONS: Record<string, typeof Home> = {
 };
 
 const TAB_LABELS: Record<string, string> = {
-  "(home)": "Home",
+  "(home)": "Beranda",
   history: "Aktivitas",
   goals: "Goal",
   settings: "Profil",
