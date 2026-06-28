@@ -8,6 +8,7 @@ export const accounts = sqliteTable("accounts", {
   name: text("name").notNull(),
   type: text("type", { enum: ["cash", "bank", "ewallet", "credit"] }).notNull(),
   currency: text("currency").notNull().default("IDR"),
+  initial_balance: integer("initial_balance").notNull().default(0),
   balance: integer("balance").notNull().default(0),
   is_archived: integer("is_archived", { mode: "boolean" }).notNull().default(false),
   created_at: text("created_at").notNull(),

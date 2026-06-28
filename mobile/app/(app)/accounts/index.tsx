@@ -12,6 +12,7 @@ import { HeaderButton } from "@/components/ui/HeaderButton";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
+import RupiahInput from "@/components/ui/RupiahInput";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import AccountCard from "@/features/finance/components/AccountCard";
 import { ACCOUNT_TYPES } from "@/features/finance/constants";
@@ -23,6 +24,7 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 const schema = z.object({
   name: z.string().min(1, "Nama akun wajib diisi"),
   type: z.enum(["cash", "bank", "ewallet", "credit"]),
+  initial_balance: z.number().optional().default(0),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -41,7 +43,7 @@ export default function AccountsScreen() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", type: "bank" },
+    defaultValues: { name: "", type: "bank", initial_balance: 0 },
   });
 
   const accounts = data ?? [];
@@ -146,6 +148,20 @@ export default function AccountsScreen() {
                     onChangeText={onChange}
                     placeholder="contoh: BCA, GoPay, Dompet"
                     error={errors.name?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="initial_balance"
+                render={({ field: { onChange, value } }) => (
+                  <RupiahInput
+                    label="Saldo Awal"
+                    placeholder="0"
+                    value={value}
+                    onChange={onChange}
+                    error={errors.initial_balance?.message}
                   />
                 )}
               />

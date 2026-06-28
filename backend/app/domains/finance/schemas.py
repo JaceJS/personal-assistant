@@ -110,6 +110,7 @@ class AccountCreate(BaseModel):
     name: str
     type: AccountType
     currency: str = "IDR"
+    initial_balance: int = 0
 
     @field_validator("name")
     @classmethod
@@ -143,6 +144,7 @@ class AccountRead(BaseModel):
     name: str
     type: AccountType
     currency: str
+    initial_balance: int
     balance: int
     is_archived: bool
     created_at: datetime

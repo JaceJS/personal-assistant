@@ -33,6 +33,7 @@ function toAccount(row: typeof accounts.$inferSelect): Account {
     name: row.name,
     type: row.type,
     currency: row.currency,
+    initial_balance: row.initial_balance,
     balance: row.balance,
     is_archived: Boolean(row.is_archived),
     created_at: row.created_at,
@@ -112,23 +113,54 @@ export class LocalRepository implements FinanceRepository {
 
   async listAccounts(): Promise<Account[]> {
     const rows = this.db.select().from(accounts).all();
-    return rows.map(toAccount);
+    const accountsList = rows.map(toAccount);
+    for (const acc of accountsList) {
+      const txRows = this.db
+        .select({ amount: transactions.amount })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.account_id, acc.id),
+            eq(transactions.status, "confirmed")
+          )
+        )
+        .all();
+      const sum = txRows.reduce((accSum, t) => accSum + t.amount, 0);
+      acc.balance = acc.initial_balance + sum;
+    }
+    return accountsList;
   }
 
   async getAccount(id: string): Promise<Account | null> {
     const row = this.db.select().from(accounts).where(eq(accounts.id, id)).get();
-    return row ? toAccount(row) : null;
+    if (!row) return null;
+    const acc = toAccount(row);
+    const txRows = this.db
+      .select({ amount: transactions.amount })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.account_id, acc.id),
+          eq(transactions.status, "confirmed")
+        )
+      )
+      .all();
+    const sum = txRows.reduce((accSum, t) => accSum + t.amount, 0);
+    acc.balance = acc.initial_balance + sum;
+    return acc;
   }
 
   async createAccount(data: AccountCreate & { id: string }): Promise<Account> {
     const ts = now();
+    const initialBal = data.initial_balance ?? 0;
     const row = {
       id: data.id,
       user_id: null,
       name: data.name,
       type: data.type,
       currency: data.currency ?? "IDR",
-      balance: 0,
+      initial_balance: initialBal,
+      balance: initialBal,
       is_archived: false,
       created_at: ts,
       updated_at: ts,

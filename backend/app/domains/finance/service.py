@@ -147,7 +147,13 @@ async def create_account(
     session: AsyncSession, user_id: uuid.UUID, data: AccountCreate
 ) -> Account:
     return await repo.create_account(
-        session, user_id, name=data.name, type=data.type, currency=data.currency
+        session,
+        user_id,
+        name=data.name,
+        type=data.type,
+        currency=data.currency,
+        initial_balance=data.initial_balance,
+        balance=data.initial_balance,
     )
 
 

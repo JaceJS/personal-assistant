@@ -9,6 +9,7 @@ export interface Account {
   name: string;
   type: AccountType;
   currency: string;
+  initial_balance: number;
   balance: number;
   is_archived: boolean;
   created_at: string;
@@ -111,6 +112,7 @@ export interface AccountCreate {
   name: string;
   type: AccountType;
   currency?: string;
+  initial_balance?: number;
 }
 
 export interface AccountUpdate {

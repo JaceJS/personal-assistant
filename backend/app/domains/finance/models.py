@@ -61,6 +61,9 @@ class Account(TimestampedBase):
         _pg_enum(AccountType, "account_type"), nullable=False
     )
     currency: Mapped[str] = mapped_column(sa.Text(), nullable=False, server_default="IDR")
+    initial_balance: Mapped[int] = mapped_column(
+        sa.BigInteger(), nullable=False, server_default=sa.text("0")
+    )
     balance: Mapped[int] = mapped_column(
         sa.BigInteger(), nullable=False, server_default=sa.text("0")
     )

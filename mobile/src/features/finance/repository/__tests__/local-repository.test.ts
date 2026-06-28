@@ -14,6 +14,7 @@ function makeTestDb() {
       name TEXT NOT NULL,
       type TEXT NOT NULL,
       currency TEXT NOT NULL DEFAULT 'IDR',
+      initial_balance INTEGER NOT NULL DEFAULT 0,
       balance INTEGER NOT NULL DEFAULT 0,
       is_archived INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
@@ -119,6 +120,36 @@ describe("LocalRepository", () => {
       await repo.createAccount(BASE_ACCOUNT);
       const updated = await repo.updateAccount("acc-1", { is_archived: true });
       expect(updated.is_archived).toBe(true);
+    });
+
+    it("calculates balance dynamically based on initial_balance and confirmed transactions", async () => {
+      await repo.createAccount({
+        id: "acc-1",
+        name: "BCA",
+        type: "bank",
+        initial_balance: 500000,
+      });
+
+      await repo.createTransaction({
+        id: "tx-1",
+        account_id: "acc-1",
+        amount: -100000,
+        occurred_at: new Date().toISOString(),
+      });
+
+      await repo.createTransaction({
+        id: "tx-2",
+        account_id: "acc-1",
+        amount: 250000,
+        occurred_at: new Date().toISOString(),
+      });
+
+      const accounts = await repo.listAccounts();
+      expect(accounts).toHaveLength(1);
+      expect(accounts[0].balance).toBe(650000);
+
+      const acc = await repo.getAccount("acc-1");
+      expect(acc?.balance).toBe(650000);
     });
   });
 

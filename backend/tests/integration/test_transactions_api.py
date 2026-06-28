@@ -117,3 +117,37 @@ async def test_get_transaction_not_found(client: AsyncClient) -> None:
     response = await client.get(f"/api/v1/transactions/{uuid.uuid4()}")
 
     assert response.status_code == 404
+
+
+async def test_create_account_with_initial_balance_and_transaction(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    # 1. Create account with initial balance
+    account_payload = {
+        "name": "BCA Rekening",
+        "type": "bank",
+        "initial_balance": 1_000_000,
+    }
+    acc_response = await client.post("/api/v1/accounts", json=account_payload)
+    assert acc_response.status_code == 201
+    account_id = acc_response.json()["data"]["id"]
+    assert acc_response.json()["data"]["initial_balance"] == 1_000_000
+    assert acc_response.json()["data"]["balance"] == 1_000_000
+
+    # 2. Add transaction of -250,000
+    tx_payload = {
+        "account_id": account_id,
+        "amount": -250_000,
+        "currency": "IDR",
+        "occurred_at": datetime.now(UTC).isoformat(),
+    }
+    tx_response = await client.post("/api/v1/transactions", json=tx_payload)
+    assert tx_response.status_code == 201
+
+    # 3. Retrieve account and check that its balance is now 750,000
+    acc_check = await client.get(f"/api/v1/accounts/{account_id}")
+    assert acc_check.status_code == 200
+    assert acc_check.json()["data"]["balance"] == 750_000
+

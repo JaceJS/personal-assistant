@@ -15,6 +15,13 @@
       "when": 1782541686798,
       "tag": "0001_ordinary_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1782629341225,
+      "tag": "0002_woozy_marauders",
+      "breakpoints": true
     }
   ]
 }
