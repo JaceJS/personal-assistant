@@ -1,20 +1,30 @@
-import * as WebBrowser from "expo-web-browser";
-import * as ExpoLinking from "expo-linking";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { supabase } from "@/lib/supabase";
 
-WebBrowser.maybeCompleteAuthSession();
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+});
 
 export async function signInWithGoogle(): Promise<"success" | "cancelled" | "error"> {
-  const redirectTo = ExpoLinking.createURL("/");
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo, skipBrowserRedirect: true },
-  });
-  if (error || !data?.url) return "error";
+  try {
+    await GoogleSignin.hasPlayServices();
+    const userInfo = await GoogleSignin.signIn();
+    
+    // Support both older and newer versions of the library API (data wrapping)
+    const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
+    if (!idToken) return "error";
 
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-  if (result.type !== "success") return "cancelled";
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: "google",
+      token: idToken,
+    });
 
-  await supabase.auth.exchangeCodeForSession(result.url);
-  return "success";
+    if (error || !data?.session) return "error";
+    return "success";
+  } catch (err: any) {
+    if (err.code === "SIGN_IN_CANCELLED" || err.message?.includes("cancelled") || err.code === "12501") {
+      return "cancelled";
+    }
+    return "error";
+  }
 }
