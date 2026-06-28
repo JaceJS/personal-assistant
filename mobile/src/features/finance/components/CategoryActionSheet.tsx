@@ -39,9 +39,9 @@ function CategoryActionSheet({
         </View>
 
         <View style={styles.actions}>
-          <Button label="Edit" variant="secondary" fullWidth onPress={() => onEdit(category)} />
+          <Button label="Ubah" variant="secondary" fullWidth onPress={() => onEdit(category)} />
           <Button
-            label="Delete"
+            label="Hapus"
             variant="danger"
             fullWidth
             onPress={() => onDelete(category)}

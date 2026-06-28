@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, Pencil, Trash2 } from 'lucide-react-native';
+import { Pencil, Trash2 } from 'lucide-react-native';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
-import { HeaderButton } from '@/components/ui/HeaderButton';
+import { HeaderActions, HeaderButton } from '@/components/ui/HeaderButton';
 import Button from '@/components/ui/Button';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import ContributeSheet from '@/features/finance/components/ContributeSheet';
@@ -79,26 +79,17 @@ export default function GoalDetailScreen() {
     ]);
   }, [deleteGoal, goal, id, router, showToast]);
 
-  const backButton = (
-    <HeaderButton
-      icon={ChevronLeft}
-      onPress={() => router.back()}
-      color={colors.text.secondary}
-      iconSize={22}
-    />
-  );
-
   const editButton = (
-    <View style={{ flexDirection: "row", gap: spacing.md, alignItems: "center" }}>
+    <HeaderActions>
       <HeaderButton icon={Pencil} onPress={() => setShowEdit(true)} variant="warning" />
       <HeaderButton icon={Trash2} onPress={handleDelete} variant="danger" />
-    </View>
+    </HeaderActions>
   );
 
   if (isLoading) {
     return (
       <Screen>
-        <Header title="Goal" left={backButton} />
+        <Header title="Goal" onBack={() => router.back()} />
         <View style={styles.skeletonWrap}>
           <SkeletonCard height={200} />
           <SkeletonCard height={120} />
@@ -110,7 +101,7 @@ export default function GoalDetailScreen() {
   if (!goal) {
     return (
       <Screen>
-        <Header title="Goal" left={backButton} />
+        <Header title="Goal" onBack={() => router.back()} />
         <View style={styles.centered}>
           <Text style={styles.notFound}>Goal tidak ditemukan</Text>
         </View>
@@ -128,7 +119,7 @@ export default function GoalDetailScreen() {
 
   return (
     <Screen>
-      <Header title={goal.name} left={backButton} right={editButton} />
+      <Header title={goal.name} onBack={() => router.back()} right={editButton} />
 
       <ScrollView
         style={styles.scroll}

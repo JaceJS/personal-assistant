@@ -22,8 +22,8 @@ import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const CATEGORY_TYPES: { value: CategoryType; label: string; emoji: string }[] = [
-  { value: "expense", label: "Expense", emoji: "📤" },
-  { value: "income", label: "Income", emoji: "📥" },
+  { value: "expense", label: "Pengeluaran", emoji: "📤" },
+  { value: "income", label: "Pemasukan", emoji: "📥" },
 ];
 
 const PRESET_COLORS = [
@@ -38,10 +38,10 @@ const PRESET_COLORS = [
 ];
 
 const PRESET_ICONS = ["🍔", "🚗", "🏠", "👗", "💊", "📚", "🎮", "✈️", "💼", "🎁", "⚡", "💰"];
-const ICON_COLS = 4;
+const ICON_COLS = 6;
 
 const schema = z.object({
-  name: z.string().min(1, "Category name is required"),
+  name: z.string().min(1, "Nama kategori wajib diisi"),
   type: z.enum(["expense", "income"]),
   icon: z.string().nullable(),
   color: z.string().nullable(),
@@ -105,14 +105,14 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
       try {
         if (editingCategory) {
           await updateCategory.mutateAsync({ id: editingCategory.id, data: values });
-          showToast("Category updated", "success");
+          showToast("Kategori diperbarui", "success");
         } else {
           await createCategory.mutateAsync(values);
-          showToast("Category created", "success");
+          showToast("Kategori dibuat", "success");
         }
         onDismiss();
       } catch {
-        showToast(`Failed to ${editingCategory ? "update" : "create"} category`, "error");
+        showToast(editingCategory ? "Gagal update kategori" : "Gagal buat kategori", "error");
       }
     },
     [createCategory, updateCategory, editingCategory, onDismiss, showToast]
@@ -141,7 +141,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {editingCategory ? "Edit Category" : "New Category"}
+              {editingCategory ? "Edit Kategori" : "Kategori Baru"}
             </Text>
             <Pressable onPress={onDismiss} style={({ pressed }) => pressed && { opacity: 0.6 }}>
               <X size={22} color={colors.text.muted} />
@@ -154,10 +154,10 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
               name="name"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Category Name"
+                  label="Nama Kategori"
                   value={value}
                   onChangeText={onChange}
-                  placeholder="e.g. Food, Transport, Salary"
+                  placeholder="mis. Makan, Transport, Gaji"
                   error={errors.name?.message}
                   autoFocus
                 />
@@ -165,7 +165,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
             />
 
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Type</Text>
+              <Text style={styles.sectionLabel}>Tipe</Text>
               <Controller
                 control={control}
                 name="type"
@@ -200,7 +200,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Icon</Text>
+              <Text style={styles.sectionLabel}>Ikon</Text>
               <View style={styles.iconGrid}>
                 {iconRows.map((row, rowIdx) => (
                   <View key={rowIdx} style={styles.iconRow}>
@@ -241,7 +241,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Color</Text>
+              <Text style={styles.sectionLabel}>Warna</Text>
               <View style={styles.colorRow}>
                 {PRESET_COLORS.map((color) => {
                   const isSelected = selectedColor === color;
@@ -261,7 +261,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
             </View>
 
             <Button
-              label={editingCategory ? "Save Changes" : "Create Category"}
+              label={editingCategory ? "Simpan" : "Buat Kategori"}
               onPress={handleSubmit(onSubmit)}
               loading={isPending}
               fullWidth
@@ -284,6 +284,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     maxHeight: "90%",
+    alignSelf: "stretch",
   },
   sheetContent: {
     padding: spacing["2xl"],
@@ -320,10 +321,11 @@ const styles = StyleSheet.create({
   typeBtnLabelInactive: { color: colors.text.muted },
 
   iconGrid: { gap: spacing.sm },
-  iconRow: { flexDirection: "row" },
-  iconCellWrapper: { flex: 1, marginHorizontal: 3 },
+  iconRow: { flexDirection: "row", gap: 6 },
+  iconCellWrapper: { flex: 1 },
   iconCell: {
     height: 44,
+    flex: 1,
     borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",

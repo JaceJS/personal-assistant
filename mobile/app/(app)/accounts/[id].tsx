@@ -1,11 +1,11 @@
 import { useCallback, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ChevronLeft, CreditCard, Landmark, Pencil, Smartphone, Trash2, Wallet } from "lucide-react-native";
+import { CreditCard, Landmark, Pencil, Smartphone, Trash2, Wallet } from "lucide-react-native";
 
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
-import { HeaderButton } from "@/components/ui/HeaderButton";
+import { HeaderActions, HeaderButton } from "@/components/ui/HeaderButton";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { SkeletonList } from "@/components/ui/Skeleton";
@@ -19,7 +19,6 @@ import {
 import { useToastStore } from "@/stores/toast";
 import { formatRupiah } from "@/lib/utils";
 import { colors, radius, spacing, textStyles } from "@/theme";
-import { THEME } from "@/constants/theme";
 
 function TypeIcon({ type }: { type: AccountType }) {
   const props = { size: 22, color: colors.accent.text };
@@ -80,7 +79,7 @@ export default function AccountDetailScreen() {
             try {
               await archiveAccount.mutateAsync(id);
               showToast("Account deleted", "info");
-              router.back();
+              router.replace("/(app)/accounts");
             } catch {
               showToast("Failed to delete account.", "error");
             }
@@ -90,26 +89,17 @@ export default function AccountDetailScreen() {
     );
   }, [account, archiveAccount, id, router, showToast]);
 
-  const headerLeft = (
-    <HeaderButton
-      icon={ChevronLeft}
-      onPress={() => router.back()}
-      color={THEME.colors.muted}
-      iconSize={22}
-    />
-  );
-
   const headerRight = !isEditing && (
-    <View style={{ flexDirection: "row", gap: spacing.md, alignItems: "center" }}>
+    <HeaderActions>
       <HeaderButton icon={Pencil} onPress={handleStartEdit} variant="warning" />
       <HeaderButton icon={Trash2} onPress={handleDelete} variant="danger" />
-    </View>
+    </HeaderActions>
   );
 
   if (isLoading) {
     return (
       <Screen>
-        <Header title="Account Detail" left={headerLeft} />
+        <Header title="Detail Akun" onBack={() => router.replace("/(app)/accounts")} />
         <View style={styles.content}>
           <SkeletonList count={1} />
         </View>
@@ -120,8 +110,9 @@ export default function AccountDetailScreen() {
   if (!account) {
     return (
       <Screen>
+        <Header title="Detail Akun" onBack={() => router.replace("/(app)/accounts")} />
         <View style={styles.centered}>
-          <Text style={styles.notFound}>Account not found</Text>
+          <Text style={styles.notFound}>Akun tidak ditemukan</Text>
         </View>
       </Screen>
     );
@@ -132,7 +123,7 @@ export default function AccountDetailScreen() {
 
   return (
     <Screen>
-      <Header title="Account Detail" left={headerLeft} right={headerRight} />
+      <Header title="Detail Akun" onBack={() => router.replace("/(app)/accounts")} right={headerRight} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero Card */}
         <View style={styles.heroCard}>

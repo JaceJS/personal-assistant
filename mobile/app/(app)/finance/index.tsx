@@ -160,13 +160,13 @@ export default function FinanceDashboard() {
             <Text style={styles.emptyText}>Belum ada transaksi bulan ini</Text>
           ) : (
             recentItems.map((tx, idx) => {
-              const categoryName = categoriesData?.find(c => c.id === tx.category_id)?.name;
+              const category = categoriesData?.find(c => c.id === tx.category_id);
               return (
                 <View key={tx.id}>
                   {idx > 0 && <View style={styles.divider} />}
                   <TransactionCard
                     transaction={tx}
-                    categoryName={categoryName}
+                    category={category}
                     onPress={() => router.push({ pathname: `/(app)/finance/${tx.id}`, params: { from: 'finance' } })}
                   />
                 </View>

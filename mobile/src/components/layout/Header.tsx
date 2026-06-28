@@ -1,19 +1,24 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ChevronLeft } from 'lucide-react-native';
 import { colors, spacing, textStyles } from '@/theme';
 
 interface HeaderProps {
   title: string;
   subtitle?: string;
-  left?: React.ReactNode;
+  onBack?: () => void;
   right?: React.ReactNode;
 }
 
-export function Header({ title, subtitle, left, right }: HeaderProps) {
-  if (left) {
+export function Header({ title, subtitle, onBack, right }: HeaderProps) {
+  if (onBack) {
     return (
       <View style={styles.appBar}>
-        <View style={styles.sideSlot}>{left}</View>
+        <View style={styles.sideSlot}>
+          <Pressable onPress={onBack} hitSlop={8} style={({ pressed }) => pressed && styles.pressed}>
+            <ChevronLeft size={22} color={colors.text.muted} strokeWidth={2} />
+          </Pressable>
+        </View>
         <View style={styles.centerSlot}>
           <Text style={styles.centeredTitle} numberOfLines={1}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -64,6 +69,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: -0.2,
     color: colors.text.primary,
+  },
+  pressed: {
+    opacity: 0.6,
   },
 
   container: {

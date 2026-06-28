@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ChevronLeft,
   ChevronRight,
@@ -62,12 +62,19 @@ function formatDateLabel(dateStr: string): string {
 
 export default function AktivitasScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ categoryId?: string; year?: string; month?: string }>();
   const now = new Date();
 
+  const initialYear = params.year ? Number(params.year) : now.getFullYear();
+  const initialMonth = params.month !== undefined ? Number(params.month) : now.getMonth();
+
   const [selectedMonth, setSelectedMonth] = useState({
-    year: now.getFullYear(),
-    month: now.getMonth(),
+    year: initialYear,
+    month: initialMonth,
   });
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(
+    params.categoryId ?? null,
+  );
   const [query, setQuery] = useState('');
 
   const dateFrom = new Date(selectedMonth.year, selectedMonth.month, 1)
@@ -102,13 +109,16 @@ export default function AktivitasScreen() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const items = q
-      ? allItems.filter(
-          (t) => t.merchant?.toLowerCase().includes(q) || t.note?.toLowerCase().includes(q),
-        )
+    let items = activeCategoryId
+      ? allItems.filter((t) => t.category_id === activeCategoryId)
       : allItems;
+    if (q) {
+      items = items.filter(
+        (t) => t.merchant?.toLowerCase().includes(q) || t.note?.toLowerCase().includes(q),
+      );
+    }
     return [...items].sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
-  }, [allItems, query]);
+  }, [allItems, query, activeCategoryId]);
 
   const periodTotal = useMemo(() => filtered.reduce((s, t) => s + t.amount, 0), [filtered]);
 
@@ -131,12 +141,12 @@ export default function AktivitasScreen() {
       if (item.type === 'header') {
         return <Text style={styles.dateHeader}>{item.label}</Text>;
       }
-      const categoryName = categoriesData?.find(c => c.id === item.data.category_id)?.name;
+      const category = categoriesData?.find(c => c.id === item.data.category_id);
       return (
         <View style={styles.txCard}>
           <TransactionCard
             transaction={item.data}
-            categoryName={categoryName}
+            category={category}
             onPress={() => router.push({ pathname: `/(app)/finance/${item.data.id}`, params: { from: 'activity' } })}
           />
         </View>
@@ -168,6 +178,19 @@ export default function AktivitasScreen() {
           <SlidersHorizontal size={18} color={colors.text.muted} strokeWidth={2} />
         </View>
       </View>
+
+      {activeCategoryId && (
+        <View style={styles.filterChipRow}>
+          <View style={styles.filterChip}>
+            <Text style={styles.filterChipText}>
+              {categoriesData?.find((c) => c.id === activeCategoryId)?.name ?? 'Kategori'}
+            </Text>
+            <Pressable hitSlop={8} onPress={() => setActiveCategoryId(null)}>
+              <Text style={styles.filterChipClear}>✕</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       <View style={styles.rangeRow}>
         <Pressable style={styles.monthNav} hitSlop={8} onPress={goBack}>
@@ -317,4 +340,31 @@ const styles = StyleSheet.create({
   list: { flex: 1 },
   listContent: { paddingBottom: 100 },
 
+  filterChipRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.xl,
+    marginBottom: 8,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.accent.subtle,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.accent.border,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  filterChipText: {
+    ...StyleSheet.flatten(textStyles.caption),
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.accent.text,
+  },
+  filterChipClear: {
+    fontSize: 11,
+    color: colors.accent.text,
+    fontWeight: '600',
+  },
 });

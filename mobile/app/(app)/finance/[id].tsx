@@ -1,12 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
-import { HeaderButton } from "@/components/ui/HeaderButton";
 import Input from "@/components/ui/Input";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
@@ -91,12 +89,10 @@ export default function TransactionDetailScreen() {
     ]);
   }, [deleteTransaction, id, handleBack, showToast]);
 
-  const backButton = <HeaderButton icon={ChevronLeft} onPress={handleBack} />;
-
   if (isLoading) {
     return (
       <Screen>
-        <Header title="Detail Transaksi" left={backButton} />
+        <Header title="Detail Transaksi" onBack={handleBack} />
         <View style={styles.skeletonWrap}>
           <SkeletonCard height={180} />
           <SkeletonCard height={120} />
@@ -108,7 +104,7 @@ export default function TransactionDetailScreen() {
   if (!transaction) {
     return (
       <Screen>
-        <Header title="Detail Transaksi" left={backButton} />
+        <Header title="Detail Transaksi" onBack={handleBack} />
         <View style={styles.centered}>
           <Text style={styles.notFound}>Transaksi tidak ditemukan</Text>
         </View>
@@ -123,7 +119,7 @@ export default function TransactionDetailScreen() {
 
   return (
     <Screen>
-      <Header title="Detail Transaksi" left={backButton} />
+      <Header title="Detail Transaksi" onBack={handleBack} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <View style={styles.amountHero}>

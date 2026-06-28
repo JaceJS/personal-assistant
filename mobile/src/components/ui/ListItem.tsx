@@ -8,24 +8,25 @@ interface ListItemProps {
   title: string;
   subtitle?: string;
   icon?: LucideIcon;
+  leftElement?: React.ReactNode;
   value?: string;
   valueColor?: string;
   rightElement?: React.ReactNode;
   onPress?: () => void;
 }
 
-function ListItem({ title, subtitle, icon: Icon, value, valueColor, rightElement, onPress }: ListItemProps) {
+function ListItem({ title, subtitle, icon: Icon, leftElement, value, valueColor, rightElement, onPress }: ListItemProps) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}
     >
       <View style={styles.row}>
-        {Icon && (
+        {leftElement ?? (Icon ? (
           <View style={styles.iconBox}>
             <Icon size={20} color={colors.text.muted} strokeWidth={1.5} />
           </View>
-        )}
+        ) : null)}
         <View style={styles.info}>
           <Text style={styles.title} numberOfLines={1}>
             {title}

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -109,18 +108,7 @@ export default function NewTransactionScreen() {
 
   return (
     <Screen>
-      <Header
-        title="Transaksi Baru"
-        left={
-          <Pressable
-            onPress={handleBack}
-            hitSlop={8}
-            style={({ pressed }) => pressed && { opacity: 0.6 }}
-          >
-            <ChevronLeft size={22} color={colors.text.secondary} strokeWidth={2} />
-          </Pressable>
-        }
-      />
+      <Header title="Transaksi Baru" onBack={handleBack} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {noAccounts ? (

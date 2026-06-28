@@ -65,7 +65,7 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <Header title="Settings" />
+      <Header title="Profil" />
 
       <ScrollView
         style={styles.scroll}

@@ -1,13 +1,12 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { ChevronLeft, Plus, Wallet } from 'lucide-react-native';
+import { Plus, Wallet } from 'lucide-react-native';
 import IconButton from '@/components/ui/IconButton';
 import { useRouter } from 'expo-router';
 import { computeUnallocated } from '@/features/finance/utils/budgetBucketUtils';
@@ -141,18 +140,12 @@ export default function BudgetScreen() {
     await Promise.all([refetchBudget(), refetchTx()]);
   }, [refetchBudget, refetchTx]);
 
-  const backButton = (
-    <Pressable
-      onPress={() => router.canGoBack() ? router.back() : router.replace('/(app)/settings')}
-      style={({ pressed }) => pressed && { opacity: 0.6 }}
-    >
-      <ChevronLeft size={22} color={colors.text.muted} />
-    </Pressable>
-  );
-
   return (
     <Screen>
-      <Header title="Budget" left={backButton} />
+      <Header
+        title="Budget"
+        onBack={() => router.canGoBack() ? router.back() : router.replace('/(app)/settings')}
+      />
 
       <ScrollView
         style={styles.scroll}

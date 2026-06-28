@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import type { LucideIcon } from "lucide-react-native";
-import { colors, radius } from "@/theme";
+import { colors, radius, spacing } from "@/theme";
 
 type HeaderButtonVariant = "primary" | "danger" | "warning";
 
@@ -48,6 +48,14 @@ export function HeaderButton({
         </View>
       )}
     </Pressable>
+  );
+}
+
+export function HeaderActions({ children }: { children: React.ReactNode }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+      {children}
+    </View>
   );
 }
 

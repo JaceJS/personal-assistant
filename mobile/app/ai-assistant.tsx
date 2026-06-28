@@ -1,6 +1,6 @@
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { Camera, Mic, SendHorizontal, Square, X } from "lucide-react-native";
+import { Camera, Mic, SendHorizontal, Square } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -349,15 +349,7 @@ export default function AIAssistantScreen() {
     <SafeAreaView style={styles.screen} edges={["top", "left", "right", "bottom"]}>
       <Header
         title="AI Assistant"
-        left={
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={8}
-            style={({ pressed }) => pressed && { opacity: 0.6 }}
-          >
-            <X size={22} color={colors.text.muted} strokeWidth={2} />
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       {/* Guest gate */}

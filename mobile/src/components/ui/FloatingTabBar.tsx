@@ -1,6 +1,6 @@
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
-import { Bot, Clock, Home, Settings, Target } from "lucide-react-native";
+import { Bot, Clock, Home, Target, User } from "lucide-react-native";
 import { useCallback } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -19,14 +19,14 @@ const TAB_ICONS: Record<string, typeof Home> = {
   "(home)": Home,
   history: Clock,
   goals: Target,
-  settings: Settings,
+  settings: User,
 };
 
 const TAB_LABELS: Record<string, string> = {
   "(home)": "Home",
   history: "Aktivitas",
   goals: "Goal",
-  settings: "Settings",
+  settings: "Profil",
 };
 
 export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {

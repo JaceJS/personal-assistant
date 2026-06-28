@@ -10,6 +10,7 @@ import AccountBalanceCard from "@/features/finance/components/AccountBalanceCard
 import DailySpendCard from "@/features/finance/components/DailySpendCard";
 import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
 import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
+import TopCategoriesCard from "@/features/finance/components/TopCategoriesCard";
 import { AIInsightCard } from "@/features/ai/components/AIInsightCard";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { useAuthStore } from "@/stores/auth";
@@ -56,8 +57,6 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <Header title="Overview" />
-
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -71,7 +70,8 @@ export default function HomeScreen() {
         }
       >
         <Text style={styles.greeting}>
-          {getGreeting()}{firstName ? `, ${firstName}` : ''}!
+          {getGreeting()}
+          {firstName ? `, ${firstName}` : ""}!
         </Text>
 
         <AccountBalanceCard />
@@ -79,6 +79,8 @@ export default function HomeScreen() {
         <DailySpendCard />
 
         <MonthlyBudgetCard totalExpense={totalExpense} />
+
+        <TopCategoriesCard />
 
         <ProjectedEndOfMonthCard />
 
@@ -102,6 +104,6 @@ const styles = StyleSheet.create({
     fontSize: 26,
     letterSpacing: -0.5,
     paddingHorizontal: spacing["2xl"],
-    marginBottom: 20,
+    marginVertical: 20,
   },
 });

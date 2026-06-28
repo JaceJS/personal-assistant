@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
-import { FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronLeft, Plus, Wallet, X } from "lucide-react-native";
+import { Plus, Wallet } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,6 +13,7 @@ import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import RupiahInput from "@/components/ui/RupiahInput";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import AccountCard from "@/features/finance/components/AccountCard";
 import { ACCOUNT_TYPES } from "@/features/finance/constants";
@@ -74,15 +75,6 @@ export default function AccountsScreen() {
     [router]
   );
 
-  const backButton = (
-    <HeaderButton
-      icon={ChevronLeft}
-      onPress={() => (router.canGoBack() ? router.back() : router.replace("/(app)/settings"))}
-      color={colors.text.muted}
-      iconSize={22}
-    />
-  );
-
   const addButton = (
     <HeaderButton
       icon={Plus}
@@ -93,7 +85,11 @@ export default function AccountsScreen() {
 
   return (
     <Screen>
-      <Header title="Akun" left={backButton} right={addButton} />
+      <Header
+        title="Akun"
+        onBack={() => router.replace("/(app)/settings")}
+        right={addButton}
+      />
 
       {isLoading ? (
         <View style={styles.listPad}>
@@ -124,20 +120,11 @@ export default function AccountsScreen() {
         />
       )}
 
-      <Modal visible={showModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHeader}>
-              <Text style={[textStyles.h2, styles.modalTitle]}>Akun Baru</Text>
-              <Pressable
-                onPress={handleCloseModal}
-                style={({ pressed }) => pressed && { opacity: 0.6 }}
-              >
-                <X size={22} color={colors.text.muted} />
-              </Pressable>
-            </View>
+      <BottomSheet isVisible={showModal} onDismiss={handleCloseModal}>
+        <View style={styles.sheetContent}>
+          <Text style={[textStyles.h2, styles.sheetTitle]}>Akun Baru</Text>
 
-            <View style={styles.modalForm}>
+          <View style={styles.modalForm}>
               <Controller
                 control={control}
                 name="name"
@@ -210,10 +197,9 @@ export default function AccountsScreen() {
                 loading={createAccount.isPending}
                 fullWidth
               />
-            </View>
           </View>
         </View>
-      </Modal>
+      </BottomSheet>
     </Screen>
   );
 }
@@ -233,24 +219,13 @@ const styles = StyleSheet.create({
     paddingBottom: 160,
   },
 
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.6)",
+  sheetContent: {
+    paddingHorizontal: spacing["2xl"],
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    gap: spacing.xl,
   },
-  modalSheet: {
-    backgroundColor: colors.bg.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: spacing["2xl"],
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.xl,
-  },
-  modalTitle: {
+  sheetTitle: {
     fontSize: 17,
   },
   modalForm: {

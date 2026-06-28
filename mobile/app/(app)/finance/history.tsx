@@ -127,12 +127,12 @@ export default function HistoryScreen() {
       if (item.type === "header") {
         return <Text style={styles.dateHeader}>{item.label}</Text>;
       }
-      const categoryName = categoriesData?.find(c => c.id === item.data.category_id)?.name;
+      const category = categoriesData?.find(c => c.id === item.data.category_id);
       return (
         <View style={styles.txCard}>
           <TransactionCard
             transaction={item.data}
-            categoryName={categoryName}
+            category={category}
             showId
             onPress={() => router.push({ pathname: `/(app)/finance/${item.data.id}`, params: { from: 'finance-history' } })}
           />

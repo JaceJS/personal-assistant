@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronLeft, Plus, Tag } from "lucide-react-native";
+import { Plus, Tag } from "lucide-react-native";
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
 import { HeaderButton } from "@/components/ui/HeaderButton";
@@ -18,9 +18,9 @@ import { colors, radius, spacing } from "@/theme";
 const GRID_COLS = 4;
 
 const TYPE_FILTER_OPTIONS: { value: CategoryType | "all"; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "expense", label: "Expense" },
-  { value: "income", label: "Income" },
+  { value: "all", label: "Semua" },
+  { value: "expense", label: "Pengeluaran" },
+  { value: "income", label: "Pemasukan" },
 ];
 
 export default function CategoriesScreen() {
@@ -67,19 +67,19 @@ export default function CategoriesScreen() {
   const handleDelete = useCallback(
     (category: Category) => {
       Alert.alert(
-        "Delete Category",
-        `Delete "${category.name}"? Existing transactions are kept.`,
+        "Hapus Kategori",
+        `Yakin mau hapus "${category.name}"?`,
         [
-          { text: "Cancel", style: "cancel" },
+          { text: "Batal", style: "cancel" },
           {
-            text: "Delete",
+            text: "Hapus",
             style: "destructive",
             onPress: async () => {
               try {
                 await archiveCategory.mutateAsync(category.id);
-                showToast("Category deleted", "info");
+                showToast("Kategori dihapus", "info");
               } catch {
-                showToast("Failed to delete category", "error");
+                showToast("Gagal hapus kategori", "error");
               }
             },
           },
@@ -87,15 +87,6 @@ export default function CategoriesScreen() {
       );
     },
     [archiveCategory, showToast]
-  );
-
-  const backButton = (
-    <HeaderButton
-      icon={ChevronLeft}
-      onPress={() => (router.canGoBack() ? router.back() : router.replace("/(app)/settings"))}
-      color={colors.text.muted}
-      iconSize={22}
-    />
   );
 
   const addButton = (
@@ -108,7 +99,11 @@ export default function CategoriesScreen() {
 
   return (
     <Screen>
-      <Header title="Categories" left={backButton} right={addButton} />
+      <Header
+        title="Kategori"
+        onBack={() => router.canGoBack() ? router.back() : router.replace("/(app)/settings")}
+        right={addButton}
+      />
 
       <View style={styles.filters}>
         {TYPE_FILTER_OPTIONS.map((opt) => (
@@ -134,15 +129,15 @@ export default function CategoriesScreen() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Tag}
-          title="No categories"
+          title="Belum ada kategori"
           subtitle={
             activeFilter === "all"
-              ? "Add categories to organize your transactions"
-              : `No ${activeFilter} categories yet`
+              ? "Yuk mulai kategoriin transaksimu"
+              : `Belum ada kategori ${activeFilter === "expense" ? "pengeluaran" : "pemasukan"}`
           }
           action={
             activeFilter === "all"
-              ? { label: "Add Category", onPress: handleOpenCreate }
+              ? { label: "Tambah Kategori", onPress: handleOpenCreate }
               : undefined
           }
         />
