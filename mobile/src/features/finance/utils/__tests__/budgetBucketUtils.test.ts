@@ -1,4 +1,5 @@
 import { computeBucketStatus, computeUnallocated, getBucketBarWidth } from '../budgetBucketUtils';
+import type { Category } from '../../types';
 
 describe('computeBucketStatus', () => {
   it('returns no-limit when limit is null', () => {
@@ -31,7 +32,7 @@ describe('computeUnallocated', () => {
       { budget_limit: null },
       { budget_limit: null },
     ];
-    expect(computeUnallocated(10_000_000, cats as any)).toBe(10_000_000);
+    expect(computeUnallocated(10_000_000, cats as Pick<Category, 'budget_limit'>[])).toBe(10_000_000);
   });
 
   it('subtracts sum of non-null limits from total', () => {
@@ -40,12 +41,12 @@ describe('computeUnallocated', () => {
       { budget_limit: 2_000_000 },
       { budget_limit: null },
     ];
-    expect(computeUnallocated(10_000_000, cats as any)).toBe(5_000_000);
+    expect(computeUnallocated(10_000_000, cats as Pick<Category, 'budget_limit'>[])).toBe(5_000_000);
   });
 
   it('returns negative when limits exceed total (over-allocated)', () => {
     const cats = [{ budget_limit: 8_000_000 }, { budget_limit: 5_000_000 }];
-    expect(computeUnallocated(10_000_000, cats as any)).toBe(-3_000_000);
+    expect(computeUnallocated(10_000_000, cats as Pick<Category, 'budget_limit'>[])).toBe(-3_000_000);
   });
 
   it('includes fixed expense budget_limit in unallocated calculation', () => {
@@ -54,7 +55,7 @@ describe('computeUnallocated', () => {
       { budget_limit: 500_000 },   // variable (food)
       { budget_limit: null },       // variable (no limit)
     ];
-    expect(computeUnallocated(5_000_000, cats as any)).toBe(1_500_000);
+    expect(computeUnallocated(5_000_000, cats as Pick<Category, 'budget_limit'>[])).toBe(1_500_000);
   });
 });
 

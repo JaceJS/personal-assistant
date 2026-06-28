@@ -26,7 +26,7 @@ export function buildDailyBuckets(items: Transaction[], now: Date): ChartPoint[]
   });
 }
 
-export function buildWeeklyBuckets(items: Transaction[], now: Date): ChartPoint[] {
+export function buildWeeklyBuckets(items: Transaction[], _now: Date): ChartPoint[] {
   return [0, 1, 2, 3].map((week) => ({
     x: week + 1,
     label: `W${week + 1}`,

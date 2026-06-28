@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Header } from "@/components/layout/Header";
-import Button from "@/components/ui/Button";
 import GuestGate from "@/components/ui/GuestGate";
 import { ConfirmCard } from "@/components/voice/ConfirmCard";
 import type { ConfirmPayload } from "@/components/voice/ConfirmCard";
