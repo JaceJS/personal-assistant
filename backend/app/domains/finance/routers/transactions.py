@@ -31,7 +31,7 @@ async def list_transactions(
         account_id=account_id, date_from=date_from, date_to=date_to,
         search=search, status=status, limit=limit, offset=offset,
     )
-    return paginated(items, total=total, limit=limit, offset=offset)
+    return paginated(items, total=total, limit=limit, offset=offset)  # type: ignore[arg-type]
 
 
 @router.post("/transactions", response_model=ApiResponse[TransactionRead], status_code=201)
@@ -39,7 +39,7 @@ async def create_transaction(
     user_id: CurrentUser, session: DbSession, data: TransactionCreate
 ) -> ApiResponse[TransactionRead]:
     item = await service.create_transaction(session, user_id, data)
-    return ok(item, message="created")
+    return ok(item, message="created")  # type: ignore[arg-type]
 
 
 @router.get("/transactions/{transaction_id}", response_model=ApiResponse[TransactionRead])
@@ -47,7 +47,7 @@ async def get_transaction(
     transaction_id: uuid.UUID, user_id: CurrentUser, session: DbSession
 ) -> ApiResponse[TransactionRead]:
     tx = await service.get_transaction_or_404(session, transaction_id, user_id)
-    return ok(tx)
+    return ok(tx)  # type: ignore[arg-type]
 
 
 @router.patch("/transactions/{transaction_id}", response_model=ApiResponse[TransactionRead])
@@ -55,7 +55,7 @@ async def update_transaction(
     transaction_id: uuid.UUID, user_id: CurrentUser, session: DbSession, data: TransactionUpdate
 ) -> ApiResponse[TransactionRead]:
     item = await service.update_transaction(session, user_id, transaction_id, data)
-    return ok(item)
+    return ok(item)  # type: ignore[arg-type]
 
 
 @router.delete("/transactions/{transaction_id}", status_code=204)

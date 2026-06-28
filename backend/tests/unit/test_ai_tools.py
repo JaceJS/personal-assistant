@@ -9,7 +9,6 @@ import pytest
 
 from app.domains.ai.tools import _get_accounts
 
-
 _USER_ID = uuid.uuid4()
 
 

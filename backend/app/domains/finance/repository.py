@@ -38,14 +38,18 @@ async def get_savings_goal(session: AsyncSession, goal_id: uuid.UUID) -> Savings
     return await session.get(SavingsGoal, goal_id)
 
 
-async def create_savings_goal(session: AsyncSession, user_id: uuid.UUID, **kwargs: Any) -> SavingsGoal:
+async def create_savings_goal(
+    session: AsyncSession, user_id: uuid.UUID, **kwargs: Any
+) -> SavingsGoal:
     goal = SavingsGoal(user_id=user_id, **kwargs)
     session.add(goal)
     await session.flush()
     return goal
 
 
-async def update_savings_goal(session: AsyncSession, goal: SavingsGoal, **kwargs: Any) -> SavingsGoal:
+async def update_savings_goal(
+    session: AsyncSession, goal: SavingsGoal, **kwargs: Any
+) -> SavingsGoal:
     for key, value in kwargs.items():
         setattr(goal, key, value)
     await session.flush()

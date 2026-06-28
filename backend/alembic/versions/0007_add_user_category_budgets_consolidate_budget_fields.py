@@ -12,7 +12,6 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-
 revision: str = '48778fbb0b0d'
 down_revision: str | None = '0006_add_is_fixed_to_categories'
 branch_labels: str | Sequence[str] | None = None

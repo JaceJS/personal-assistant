@@ -21,12 +21,12 @@ class ApiResponse(BaseModel, Generic[T]):  # noqa: UP046
     meta: Meta | None = None
 
 
-def ok(data: T, message: str = "success") -> ApiResponse[T]:
+def ok(data: T, message: str = "success") -> ApiResponse[T]:  # noqa: UP047
     """Wrap a single item in the standard response envelope."""
     return ApiResponse(message=message, data=data, meta=None)
 
 
-def paginated(
+def paginated(  # noqa: UP047
     items: list[T],
     *,
     total: int,

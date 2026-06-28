@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 # `app.domains.finance.models` is imported for its side effect: importing the
 # module registers its tables on Base.metadata so that migrations and
 # `alembic revision --autogenerate` can see the full schema.
-import app.domains.ai.models  # noqa: F401
+import app.domains.ai.models
 import app.domains.finance.models  # noqa: F401
 from app.core.config import get_settings
 from app.shared.models import Base

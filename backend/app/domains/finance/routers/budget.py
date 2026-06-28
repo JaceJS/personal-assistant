@@ -12,7 +12,7 @@ router = APIRouter(tags=["Budget"])
 @router.get("/budget", response_model=ApiResponse[BudgetRead | None])
 async def get_budget(user_id: CurrentUser, session: DbSession) -> ApiResponse[BudgetRead | None]:
     budget = await service.get_budget(session, user_id)
-    return ok(budget)
+    return ok(budget)  # type: ignore[arg-type]
 
 
 @router.put("/budget", response_model=ApiResponse[BudgetRead])
@@ -20,4 +20,4 @@ async def upsert_budget(
     user_id: CurrentUser, session: DbSession, data: BudgetUpsert
 ) -> ApiResponse[BudgetRead]:
     budget = await service.upsert_budget(session, user_id, data)
-    return ok(budget)
+    return ok(budget)  # type: ignore[arg-type]

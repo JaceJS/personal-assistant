@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 from arq.connections import ArqRedis
 from fastapi import UploadFile
@@ -86,7 +87,9 @@ async def update_savings_goal(
     session: AsyncSession, goal_id: uuid.UUID, user_id: uuid.UUID, data: SavingsGoalUpdate
 ) -> SavingsGoal:
     goal = await get_savings_goal(session, goal_id, user_id)
-    updates: dict = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+    updates: dict[str, Any] = {
+        k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None
+    }
     if "target_amount" in updates and updates["target_amount"] <= 0:
         raise BadRequestError("target_amount must be greater than 0")
     return await repo.update_savings_goal(session, goal, **updates)

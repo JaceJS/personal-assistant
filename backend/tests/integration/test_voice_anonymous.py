@@ -5,10 +5,9 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import sqlalchemy as sa
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-
-import sqlalchemy as sa
 
 from app.domains.finance.models import VoiceLog
 
@@ -79,7 +78,8 @@ async def test_process_anonymous_returns_extracted_transaction(
 async def test_process_anonymous_rejects_non_audio_file(client: AsyncClient) -> None:
     redis = _mock_redis()
 
-    with patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)):
+    mock_pool = AsyncMock(return_value=redis)
+    with patch("app.domains.finance.routers.voice.create_redis_pool", mock_pool):
         response = await client.post(
             "/api/v1/voice/process-anonymous",
             files={"file": _TEXT_FILE},
@@ -128,9 +128,10 @@ async def test_process_anonymous_does_not_save_voice_log(
 
 
 async def test_process_anonymous_no_auth_required() -> None:
-    from app.main import app as fastapi_app
+    from httpx import ASGITransport
+    from httpx import AsyncClient as RawClient
 
-    from httpx import ASGITransport, AsyncClient as RawClient
+    from app.main import app as fastapi_app
 
     stt = _mock_stt()
     llm = _mock_llm()
@@ -141,7 +142,9 @@ async def test_process_anonymous_no_auth_required() -> None:
         patch("app.domains.finance.routers.voice.OpenRouterLLM", return_value=llm),
         patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
     ):
-        async with RawClient(transport=ASGITransport(app=fastapi_app), base_url="http://test") as ac:
+        async with RawClient(
+            transport=ASGITransport(app=fastapi_app), base_url="http://test"
+        ) as ac:
             response = await ac.post(
                 "/api/v1/voice/process-anonymous",
                 files={"file": _AUDIO_FILE},

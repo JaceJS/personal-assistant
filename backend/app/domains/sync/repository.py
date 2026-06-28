@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any, cast
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.finance.models import (
@@ -48,7 +50,7 @@ async def import_accounts(
     )
     result = await session.execute(stmt)
     await session.flush()
-    return result.rowcount
+    return cast("CursorResult[Any]", result).rowcount
 
 
 async def import_categories(
@@ -75,7 +77,7 @@ async def import_categories(
     )
     result = await session.execute(stmt)
     await session.flush()
-    return result.rowcount
+    return cast("CursorResult[Any]", result).rowcount
 
 
 async def import_transactions(
@@ -107,7 +109,7 @@ async def import_transactions(
     )
     result = await session.execute(stmt)
     await session.flush()
-    return result.rowcount
+    return cast("CursorResult[Any]", result).rowcount
 
 
 async def import_budget(
@@ -154,4 +156,4 @@ async def import_savings_goals(
     )
     result = await session.execute(stmt)
     await session.flush()
-    return result.rowcount
+    return cast("CursorResult[Any]", result).rowcount

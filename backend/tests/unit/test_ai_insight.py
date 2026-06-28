@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.domains.ai.schemas import DailyInsight
 from app.domains.ai import service as insight_service
-
+from app.domains.ai.schemas import DailyInsight
 
 _USER_ID = uuid.uuid4()
 
@@ -35,7 +33,10 @@ def _make_session() -> AsyncMock:
 @pytest.fixture
 def dummy_context() -> dict:
     return {
-        "summary": {"total_balance_formatted": "Rp 1,000,000", "month_expense_formatted": "Rp 200,000"},
+        "summary": {
+            "total_balance_formatted": "Rp 1,000,000",
+            "month_expense_formatted": "Rp 200,000",
+        },
         "budget": {"has_budget": True, "usage_pct": 40.0, "remaining_formatted": "Rp 600,000"},
         "categories": {"categories": [{"name": "Food", "amount_formatted": "Rp 100,000"}]},
     }
@@ -46,7 +47,8 @@ async def test_get_insight_generates_on_cache_miss(dummy_context: dict) -> None:
     llm = _make_llm("You spent Rp 200,000 this month. Great job!")
     session = _make_session()
 
-    with patch.object(insight_service, "_fetch_financial_context", AsyncMock(return_value=dummy_context)):
+    mock_ctx = AsyncMock(return_value=dummy_context)
+    with patch.object(insight_service, "_fetch_financial_context", mock_ctx):
         result = await insight_service.get_daily_insight(_USER_ID, session, redis, llm)
 
     assert isinstance(result, DailyInsight)
@@ -88,7 +90,8 @@ async def test_get_insight_returns_fallback_on_llm_failure(dummy_context: dict) 
     llm.chat_with_tools = AsyncMock(side_effect=RuntimeError("LLM timeout"))
     session = _make_session()
 
-    with patch.object(insight_service, "_fetch_financial_context", AsyncMock(return_value=dummy_context)):
+    mock_ctx = AsyncMock(return_value=dummy_context)
+    with patch.object(insight_service, "_fetch_financial_context", mock_ctx):
         result = await insight_service.get_daily_insight(_USER_ID, session, redis, llm)
 
     assert isinstance(result, DailyInsight)
@@ -111,7 +114,8 @@ async def test_get_insight_no_transactions_returns_gracefully() -> None:
     llm = _make_llm("No transactions yet — start tracking your expenses!")
     session = _make_session()
 
-    with patch.object(insight_service, "_fetch_financial_context", AsyncMock(return_value=empty_context)):
+    mock_ctx = AsyncMock(return_value=empty_context)
+    with patch.object(insight_service, "_fetch_financial_context", mock_ctx):
         result = await insight_service.get_daily_insight(_USER_ID, session, redis, llm)
 
     assert isinstance(result, DailyInsight)

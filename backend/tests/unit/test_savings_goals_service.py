@@ -3,18 +3,17 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, UTC
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.core.exceptions import ForbiddenError, NotFoundError, BadRequestError
+from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
 from app.domains.finance import service as finance_service
 from app.domains.finance.models import SavingsGoal
 from app.domains.finance.schemas import (
-    SavingsGoalCreate,
     SavingsGoalContribute,
-    SavingsGoalUpdate,
+    SavingsGoalCreate,
 )
 
 _USER_ID = uuid.uuid4()
@@ -190,8 +189,9 @@ async def test_contribute_raises_forbidden_for_wrong_owner() -> None:
 
 
 async def test_contribute_raises_bad_request_for_zero_amount() -> None:
-    session = _make_session()
-    with pytest.raises(Exception):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
         SavingsGoalContribute(amount=0)
 
 
