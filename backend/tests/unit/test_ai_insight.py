@@ -111,7 +111,7 @@ async def test_get_insight_no_transactions_returns_gracefully() -> None:
         "categories": {"categories": []},
     }
     redis = _make_redis(cached_value=None)
-    llm = _make_llm("No transactions yet — start tracking your expenses!")
+    llm = _make_llm("No transactions yet, start tracking your expenses!")
     session = _make_session()
 
     mock_ctx = AsyncMock(return_value=empty_context)

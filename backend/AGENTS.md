@@ -1,4 +1,4 @@
-# Backend — Claude Code Guide
+# Backend - Developer Guide
 
 > See root `AGENTS.md` for monorepo overview and cross-cutting security rules.
 
@@ -10,13 +10,13 @@ uv run alembic upgrade head                   # apply DB migrations
 uv run alembic revision --autogenerate -m "describe change"  # new migration
 uv run pytest tests/unit/                     # unit tests (no DB/Redis needed)
 uv run pytest                                 # full suite (needs docker compose up -d)
-uv run ruff check . && uv run mypy app        # lint + types — run before every commit
+uv run ruff check . && uv run mypy app        # lint + types (run before every commit)
 uv run ruff format .                          # auto-format
 ```
 
 ---
 
-## Architecture Pattern — Enforce Strictly
+## Architecture Pattern (Enforce Strictly)
 
 ```
 Router → Service → Repository → Model (ORM)
@@ -52,9 +52,9 @@ return paginated(items, total=len(items), limit=len(items), offset=0)  # non-pag
 ### HTTP Status Codes
 | Code | When |
 |------|------|
-| 200  | GET, PATCH — success |
-| 201  | POST — resource created |
-| 204  | DELETE — no body |
+| 200  | GET, PATCH (success) |
+| 201  | POST (resource created) |
+| 204  | DELETE (no body) |
 | 400  | Validation error |
 | 401  | Unauthenticated |
 | 403  | Forbidden (wrong owner) |
@@ -95,7 +95,7 @@ raise ConflictError("Name already taken")       # → 409
 ## Ownership Pattern
 
 ```python
-# Service layer — always check after loading
+# Service layer (always check ownership after loading)
 async def get_account_or_404(session, account_id, user_id):
     account = await repo.get_account(session, account_id)
     if account is None:
@@ -124,8 +124,8 @@ uv run alembic upgrade head
 ### Database Conventions
 - Primary keys: `UUID` (DB default)
 - Timestamps: `created_at`, `updated_at` on every table (from `TimestampedBase`)
-- Money: **BigInt** (integer rupiah/cents) — never float
-- Soft delete: `is_archived: bool` — never hard-delete
+- Money: **BigInt** (integer rupiah/cents), never float
+- Soft delete: `is_archived: bool` (never hard-delete)
 - User scope: every table has `user_id: UUID`
 
 ---
@@ -133,30 +133,30 @@ uv run alembic upgrade head
 ## AI Knowledge & Guardrails
 
 Prompts live co-located with their extractor, not in routers or workers:
-- Chat: `app/domains/ai/router.py` — scope-restricted to finance only; refuses off-topic questions
+- Chat: `app/domains/ai/router.py` (scope-restricted to finance only, refuses off-topic questions)
 - Voice extraction: `app/domains/finance/extractor.py`
 - Receipt extraction: `app/domains/finance/receipt_extractor.py`
 
 Rules for every new AI feature:
-- Set `max_tokens` on `OpenRouterLLM(settings, max_tokens=N)` — never leave unbounded
+- Set `max_tokens` on `OpenRouterLLM(settings, max_tokens=N)` (never leave unbounded)
 - Validate input length at the schema layer (`Field(..., max_length=N)`)
 - Extraction must raise `BadRequestError` if `confidence < CONFIDENCE_THRESHOLD` (0.4)
 - Prompts must name scope explicitly: what the AI WILL and WON'T do
 
 ---
 
-## AI Providers — Use Abstractions
+## AI Providers (Use Abstractions)
 
 ```python
 # GOOD
 from app.ai.llm.base import LLMProvider
 from app.ai.stt.base import STTProvider
 
-# BAD — never import AI SDKs directly in domain code
+# BAD: never import AI SDKs directly in domain code
 import openai               # ❌
 ```
-- STT and LLM models are configured via `STT_MODEL` and `LLM_MODEL` env vars — never hardcode model names.
-- Structured extraction via `instructor` only — never parse raw LLM text.
+- STT and LLM models are configured via `STT_MODEL` and `LLM_MODEL` env vars (never hardcode model names).
+- Structured extraction via `instructor` only (never parse raw LLM text).
 
 ---
 
@@ -178,6 +178,6 @@ import openai               # ❌
 - **NEVER** hardcode model names, API keys, or URLs
 - **NEVER** use `float` for money
 - **NEVER** skip `CurrentUser` on any route
-- **NEVER** return 200 for errors — use the exception classes
+- **NEVER** return 200 for errors (use the exception classes)
 - **NEVER** add tables without an Alembic migration
-- **NEVER** use `HTTPException` — use `AppError` subclasses
+- **NEVER** use `HTTPException` (use `AppError` subclasses)

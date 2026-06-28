@@ -177,7 +177,7 @@ export default function SettingsScreen() {
           />
         </GroupedList>
 
-        {/* Sign out — authenticated only */}
+        {/* Sign out (authenticated only) */}
         {!isGuest && (
           <Pressable onPress={handleSignOut} style={({ pressed }) => pressed && { opacity: 0.7 }}>
             <View style={styles.signOutButton}>

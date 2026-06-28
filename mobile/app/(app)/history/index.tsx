@@ -24,6 +24,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import Fab from '@/components/ui/Fab';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import TransactionCard from '@/features/finance/components/TransactionCard';
+import { useCategories } from '@/features/finance/hooks/useCategories';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import type { Transaction } from '@/features/finance/types';
 import { formatRupiah } from '@/lib/utils';
@@ -51,12 +52,12 @@ type ListRow =
 function formatDateLabel(dateStr: string): string {
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-  if (dateStr === today) return 'Hari ini';
-  if (dateStr === yesterday) return 'Kemarin';
-  return new Date(dateStr).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
+  const fullDate = new Date(dateStr).toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'long', year: 'numeric',
   });
+  if (dateStr === today) return `Hari ini - ${fullDate}`;
+  if (dateStr === yesterday) return `Kemarin - ${fullDate}`;
+  return fullDate;
 }
 
 export default function AktivitasScreen() {
@@ -97,13 +98,16 @@ export default function AktivitasScreen() {
     limit: 200,
   });
   const allItems = useMemo(() => data?.items ?? [], [data]);
+  const { data: categoriesData } = useCategories();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return allItems;
-    return allItems.filter(
-      (t) => t.merchant?.toLowerCase().includes(q) || t.note?.toLowerCase().includes(q),
-    );
+    const items = q
+      ? allItems.filter(
+          (t) => t.merchant?.toLowerCase().includes(q) || t.note?.toLowerCase().includes(q),
+        )
+      : allItems;
+    return [...items].sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
   }, [allItems, query]);
 
   const periodTotal = useMemo(() => filtered.reduce((s, t) => s + t.amount, 0), [filtered]);
@@ -127,17 +131,18 @@ export default function AktivitasScreen() {
       if (item.type === 'header') {
         return <Text style={styles.dateHeader}>{item.label}</Text>;
       }
+      const categoryName = categoriesData?.find(c => c.id === item.data.category_id)?.name;
       return (
         <View style={styles.txCard}>
           <TransactionCard
             transaction={item.data}
-            showId
-            onPress={() => router.push(`/(app)/finance/${item.data.id}`)}
+            categoryName={categoryName}
+            onPress={() => router.push({ pathname: `/(app)/finance/${item.data.id}`, params: { from: 'activity' } })}
           />
         </View>
       );
     },
-    [router],
+    [router, categoriesData],
   );
 
   const totalIsNegative = periodTotal < 0;

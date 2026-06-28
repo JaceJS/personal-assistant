@@ -1,4 +1,4 @@
-"""AI domain repository — chat session and message persistence."""
+"""AI domain repository for chat session and message persistence."""
 
 from __future__ import annotations
 

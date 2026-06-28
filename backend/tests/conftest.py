@@ -20,7 +20,7 @@ from app.shared.models import Base
 _settings = get_settings()
 
 # Enum DDL needed before create_all because models use create_type=False.
-# PostgreSQL does not support CREATE TYPE IF NOT EXISTS — drop first, then create.
+# PostgreSQL does not support CREATE TYPE IF NOT EXISTS. Drop first, then create.
 _ENUM_DROP = [
     "DROP TYPE IF EXISTS voice_processing_status",
     "DROP TYPE IF EXISTS transaction_status",

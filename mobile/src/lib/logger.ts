@@ -25,7 +25,7 @@ export const logger = {
       });
   },
 
-  // User identity for error context — userId only, no PII (email, name, etc.)
+  // User identity for error context (userId only, no PII like email, name, etc.)
   identifyUser: (userId: string) => {
     Sentry.setUser({ id: userId });
   },

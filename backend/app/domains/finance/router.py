@@ -1,4 +1,4 @@
-"""Finance domain HTTP router — aggregates sub-routers by resource."""
+"""Finance domain HTTP router, aggregating sub-routers by resource."""
 
 from fastapi import APIRouter
 

@@ -1,8 +1,8 @@
 """ARQ background workers: voice transcription, voice extraction, and receipt scanning.
 
 Voice pipeline (two stages):
-  Stage 1 — process_voice: download audio → STT → save transcript → status=transcribed
-  Stage 2 — extract_voice: LLM extraction → draft transaction → status=completed
+  Stage 1 (process_voice): download audio → STT → save transcript → status=transcribed
+  Stage 2 (extract_voice): LLM extraction → draft transaction → status=completed
   (Stage 2 is triggered by the user after reviewing the transcript via the API.)
 
 Receipt pipeline (one stage):

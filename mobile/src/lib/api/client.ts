@@ -14,7 +14,7 @@ class ApiError extends Error {
 }
 
 async function getAuthHeader(): Promise<Record<string, string>> {
-  // Prefer the store session — set synchronously by onAuthStateChange, never stale.
+  // Prefer the store session. Set synchronously by onAuthStateChange, never stale.
   // Fall back to getSession() for cold starts before onAuthStateChange fires.
   const storeToken = useAuthStore.getState().session?.access_token;
   const token =

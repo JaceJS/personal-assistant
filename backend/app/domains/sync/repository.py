@@ -1,4 +1,4 @@
-"""Sync domain repository — idempotent bulk inserts via ON CONFLICT DO NOTHING."""
+"""Sync domain repository for idempotent bulk inserts via ON CONFLICT DO NOTHING."""
 
 from __future__ import annotations
 

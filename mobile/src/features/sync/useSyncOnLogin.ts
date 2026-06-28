@@ -14,7 +14,7 @@ export function useSyncOnLogin() {
         logger.info("Guest data synced to server", result.imported as unknown as Record<string, unknown>);
       }
     } catch (err) {
-      logger.error("Sync on login failed — local data retained", err);
+      logger.error("Sync on login failed: local data retained", err);
     }
   }, []);
 }

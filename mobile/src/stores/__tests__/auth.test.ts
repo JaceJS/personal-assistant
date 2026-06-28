@@ -11,7 +11,7 @@ import { useAuthStore } from "../auth";
 const reset = () =>
   useAuthStore.setState({ mode: "authenticated", session: null, user: null, initialized: false });
 
-describe("auth store — guest mode", () => {
+describe("auth store: guest mode", () => {
   beforeEach(reset);
 
   it("defaults to authenticated mode", () => {

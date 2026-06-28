@@ -117,7 +117,7 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
             <View style={styles.switchRow}>
               <View style={styles.switchInfo}>
                 <Text style={styles.switchLabel}>Pengeluaran tetap</Text>
-                <Text style={styles.switchDesc}>Biaya tetap — sewa, langganan, tagihan rutin</Text>
+                <Text style={styles.switchDesc}>Biaya tetap: sewa, langganan, tagihan rutin</Text>
               </View>
               <Switch
                 value={isFixed}

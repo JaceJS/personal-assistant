@@ -31,7 +31,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_budgets_user", "budgets", ["user_id"])
 
-    # RLS uses auth.uid() which only exists in Supabase — skip on plain PostgreSQL
+    # RLS uses auth.uid() which only exists in Supabase, skipped on plain PostgreSQL
     op.execute(
         """
         DO $$

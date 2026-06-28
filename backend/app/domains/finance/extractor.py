@@ -29,7 +29,7 @@ _SLANG_EXAMPLES = "\n".join(f"  - {k} = {v:,}" for k, v in SLANG_MAP.items())
 _SYSTEM_PROMPT = f"""You are a financial transaction extractor.
 
 Language: Input is in Indonesian or English only. Handle both. Do not invent or guess
-amounts — extract only what is explicitly stated in the transcript.
+amounts (extract only what is explicitly stated in the transcript).
 
 Extract a single transaction from the voice transcript.
 

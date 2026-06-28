@@ -52,7 +52,7 @@ export function useVoiceRecorder() {
     try {
       await audioRecorder.stop();
     } catch {
-      // ignore — we're discarding the recording anyway
+      // ignore, we're discarding the recording anyway
     }
     reset();
   }, [audioRecorder, phase, reset]);

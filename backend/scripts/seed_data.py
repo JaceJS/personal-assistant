@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from app.core.config import get_settings
 from app.domains.finance.models import Category, CategoryType
 
-# 20 system categories — emoji icons, consistent palette
+# 20 system categories: emoji icons, consistent palette
 _DEFAULT_CATEGORIES: list[dict[str, object]] = [
     # ── Expense (13) ──────────────────────────────────────────────────────────
     {

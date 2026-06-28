@@ -1,4 +1,4 @@
-"""Sync domain service — orchestrates bulk import in dependency order."""
+"""Sync domain service, orchestrating bulk import in dependency order."""
 
 from __future__ import annotations
 

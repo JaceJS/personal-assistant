@@ -105,7 +105,7 @@ TOOLS: list[dict[str, Any]] = [
                     "amount": {
                         "type": "integer",
                         "description": (
-                            "Amount in rupiah — negative for expense, positive for income"
+                            "Amount in rupiah (negative for expense, positive for income)"
                         ),
                     },
                     "merchant": {
@@ -314,7 +314,7 @@ async def _create_transaction(
     try:
         account_id = uuid.UUID(str(args["account_id"]))
     except (KeyError, ValueError):
-        return {"error": "Invalid or missing account_id — must be a valid UUID"}
+        return {"error": "Invalid or missing account_id (must be a valid UUID)"}
 
     amount = args.get("amount")
     if not isinstance(amount, int):

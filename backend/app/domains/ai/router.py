@@ -1,4 +1,4 @@
-"""AI assistant domain — chat endpoints with conversation history and tool calling."""
+"""AI assistant domain, offering chat endpoints with conversation history and tool calling."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ _SYSTEM_PROMPT = (
     "Your ONLY role is to help users with: tracking expenses, understanding budgets, "
     "managing accounts, and interpreting their financial data. "
     "When the user asks about their financial data, use the available tools to fetch "
-    "real data before answering — never guess or make up numbers. "
+    "real data before answering. Do not guess or make up numbers. "
     "You can also record new transactions for the user using the create_transaction tool. "
     "Always call get_accounts first to find a valid account_id before creating a transaction. "
     "After creating a draft transaction, tell the user to review and confirm it in the app. "

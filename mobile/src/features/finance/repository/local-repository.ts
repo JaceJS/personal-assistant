@@ -104,7 +104,7 @@ function toSavingsGoal(row: typeof savingsGoals.$inferSelect): SavingsGoal {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class LocalRepository implements FinanceRepository {
-  // Accepts any drizzle-sqlite compatible db — allows injection in tests
+  // Accepts any drizzle-sqlite compatible db to allow injection in tests
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(private db: any = defaultDb) {}
 

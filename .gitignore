@@ -17,7 +17,7 @@ Thumbs.db
 .claude/
 .agents/
 
-# graphify knowledge graph (generated — regenerate with /graphify)
+# graphify knowledge graph (generated, regenerate with /graphify)
 graphify-out/graph.html
 graphify-out/graph.json
 graphify-out/manifest.json

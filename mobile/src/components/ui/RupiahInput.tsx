@@ -12,7 +12,7 @@ interface RupiahInputProps {
 
 function formatDisplay(n: number): string {
   if (n === 0) return '';
-  // Manual dot separator — avoids Node.js Intl/ICU locale dependency
+  // Manual dot separator to avoid Node.js Intl/ICU locale dependency
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 

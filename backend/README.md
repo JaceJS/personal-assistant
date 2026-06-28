@@ -33,7 +33,7 @@ placeholders for later.
 ## Prerequisites
 
 - Python 3.12
-- [uv](https://docs.astral.sh/uv/) — install per-user, no admin required:
+- [uv](https://docs.astral.sh/uv/) (install per-user, no admin required):
   `python -m pip install --user uv`
 - Docker + Docker Compose (for local Postgres and Redis)
 
@@ -125,5 +125,5 @@ scripts/     seed data, db init
 - `users` are owned by Supabase Auth; this backend only stores `user_id` (UUID).
 - Row-Level Security policies are applied via the initial migration but only on
   databases that have Supabase's `auth` schema (a no-op on plain local Postgres).
-- AI providers are always used through the `ai/` interfaces — never import a
+- AI providers are always used through the `ai/` interfaces (never import a
   provider SDK directly from domain code.

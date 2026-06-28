@@ -1,6 +1,6 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-// Mirrors backend finance models. user_id is nullable — null = guest mode (no account yet).
+// Mirrors backend finance models. user_id is nullable (null = guest mode, no account yet).
 
 export const accounts = sqliteTable("accounts", {
   id: text("id").primaryKey(),

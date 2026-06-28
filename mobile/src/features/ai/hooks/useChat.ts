@@ -46,7 +46,7 @@ export function useChat() {
           ),
         );
       } catch {
-        // history not critical — start fresh
+        // history not critical, start fresh
       } finally {
         if (!cancelled) setIsLoadingHistory(false);
       }

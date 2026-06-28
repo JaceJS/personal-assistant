@@ -25,7 +25,7 @@ _JWT_AUDIENCE = "authenticated"
 _bearer_scheme = HTTPBearer(auto_error=False)
 _logger = structlog.get_logger(__name__)
 
-# Cached per process — PyJWKClient handles key rotation internally.
+# Cached per process; PyJWKClient handles key rotation internally.
 _jwks_client = PyJWKClient(f"{get_settings().supabase_url}/auth/v1/.well-known/jwks.json")
 
 

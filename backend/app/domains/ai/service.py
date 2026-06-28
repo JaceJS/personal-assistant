@@ -1,4 +1,4 @@
-"""AI domain service — daily insight generation with Redis caching."""
+"""AI domain service for daily insight generation with Redis caching."""
 
 from __future__ import annotations
 
