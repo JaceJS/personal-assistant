@@ -83,7 +83,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
-      
+
       <Pressable
         onPress={() => {
           setCurrentMonth(new Date(value));
@@ -110,10 +110,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
               style={({ pressed }) => [{ flex: 1 }, pressed && { opacity: 0.8 }]}
             >
               <View
-                style={[
-                  styles.presetBtn,
-                  isSameDay(value, new Date()) && styles.presetBtnActive,
-                ]}
+                style={[styles.presetBtn, isSameDay(value, new Date()) && styles.presetBtnActive]}
               >
                 <Text
                   style={[
@@ -177,7 +174,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
                 <ChevronLeft size={20} color={colors.text.primary} />
               </View>
             </Pressable>
-            
+
             <Text style={styles.monthLabel}>
               {format(currentMonth, "MMMM yyyy", { locale: localeID })}
             </Text>
@@ -216,7 +213,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
                         onPress={() => handleSelectDate(day)}
                         style={({ pressed }) => [
                           { width: "100%", height: "100%" },
-                          pressed && { opacity: 0.7 }
+                          pressed && { opacity: 0.7 },
                         ]}
                       >
                         <View
@@ -306,6 +303,7 @@ const styles = StyleSheet.create({
   presetBtn: {
     width: "100%",
     height: 38,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.md,
     backgroundColor: colors.bg.canvas,
     borderWidth: 1,

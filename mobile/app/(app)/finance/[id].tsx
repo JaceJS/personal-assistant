@@ -293,14 +293,19 @@ export default function TransactionDetailScreen() {
           )}
         </View>
 
-        {isEditing && (
-          <View style={styles.actions}>
+      </ScrollView>
+
+      {isEditing ? (
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 140 }]}>
+          <View style={styles.buttonWrapper}>
             <Button
               label="Simpan"
               onPress={handleSave}
               loading={updateTransaction.isPending}
               fullWidth
             />
+          </View>
+          <View style={styles.buttonWrapper}>
             <Button
               label="Batal"
               onPress={() => setIsEditing(false)}
@@ -308,10 +313,8 @@ export default function TransactionDetailScreen() {
               fullWidth
             />
           </View>
-        )}
-      </ScrollView>
-
-      {!isEditing && (
+        </View>
+      ) : (
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 140 }]}>
           <View style={styles.buttonWrapper}>
             <Button label="Edit" variant="warning" onPress={handleStartEdit} fullWidth />
