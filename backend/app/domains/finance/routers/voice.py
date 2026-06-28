@@ -7,6 +7,8 @@ from app.ai.llm.openrouter import OpenRouterLLM
 from app.ai.stt.factory import get_stt_provider
 from app.core.auth import CurrentUser
 from app.core.config import get_settings
+from app.core.rate_limit import per_user_rate_limit
+from app.core.request_utils import get_client_ip
 from app.core.response import ApiResponse, ok
 from app.domains.finance import service
 from app.domains.finance.routers.deps import DbSession
@@ -22,11 +24,14 @@ from app.shared.storage import R2Storage
 
 router = APIRouter(tags=["Voice"])
 
+_VOICE_LIMIT = per_user_rate_limit(60, 3600)
+
 
 @router.post(
     "/voice/upload",
     response_model=ApiResponse[VoiceUploadResponse],
     status_code=201,
+    dependencies=[_VOICE_LIMIT],
 )
 async def upload_voice(
     user_id: CurrentUser,
@@ -92,7 +97,7 @@ async def process_voice_anonymous(
     stt = get_stt_provider(settings)
     llm = OpenRouterLLM(settings)
     redis = await create_redis_pool(settings)
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request, get_settings().trusted_proxy_list)
     try:
         result = await service.process_anonymous_voice(file, stt, llm, redis, client_ip)
     finally:

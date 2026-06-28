@@ -9,6 +9,7 @@ from fastapi import APIRouter, File, Form, UploadFile
 
 from app.core.auth import CurrentUser
 from app.core.config import get_settings
+from app.core.rate_limit import per_user_rate_limit
 from app.core.response import ApiResponse, ok
 from app.domains.finance import service
 from app.domains.finance.routers.deps import DbSession
@@ -18,11 +19,14 @@ from app.shared.storage import R2Storage
 
 router = APIRouter(tags=["Receipt"])
 
+_RECEIPT_LIMIT = per_user_rate_limit(60, 3600)
+
 
 @router.post(
     "/receipt/upload",
     response_model=ApiResponse[ReceiptUploadResponse],
     status_code=201,
+    dependencies=[_RECEIPT_LIMIT],
 )
 async def upload_receipt(
     user_id: CurrentUser,

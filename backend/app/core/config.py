@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     # HTTP: comma-separated list of allowed CORS origins.
     cors_origins: str = "http://localhost:3000,http://localhost:19006"
 
+    # Trusted reverse-proxy CIDRs (comma-separated). Only peers matching these
+    # ranges are allowed to set X-Forwarded-For. Leave empty in dev.
+    trusted_proxy_ips: str = ""
+
     # Logging
     log_level: str = "INFO"
 
@@ -70,6 +74,11 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         """The CORS origins parsed into a list."""
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def trusted_proxy_list(self) -> list[str]:
+        """Trusted proxy CIDRs parsed into a list."""
+        return [s.strip() for s in self.trusted_proxy_ips.split(",") if s.strip()]
 
     @property
     def r2_endpoint_url(self) -> str:

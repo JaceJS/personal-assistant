@@ -88,6 +88,15 @@ async def client(
     def _get_current_user() -> uuid.UUID:
         return test_user_id
 
+    from unittest.mock import AsyncMock, MagicMock
+    mock_redis = AsyncMock()
+    mock_pipe = MagicMock()
+    mock_pipe.set = MagicMock()
+    mock_pipe.incr = MagicMock()
+    mock_pipe.execute = AsyncMock(return_value=[None, 1])
+    mock_redis.pipeline = MagicMock(return_value=mock_pipe)
+    app.state.redis = mock_redis
+
     app.dependency_overrides[get_session] = _get_session
     app.dependency_overrides[get_current_user] = _get_current_user
 

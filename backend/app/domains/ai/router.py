@@ -15,6 +15,7 @@ from app.ai.llm.openrouter import OpenRouterLLM
 from app.core.auth import CurrentUser
 from app.core.config import get_settings
 from app.core.database import get_session
+from app.core.rate_limit import per_user_rate_limit
 from app.core.response import ApiResponse, ok
 from app.domains.ai import repository as repo
 from app.domains.ai import service
@@ -29,6 +30,9 @@ from app.domains.ai.schemas import (
 from app.domains.ai.tools import TOOLS, execute_tool
 
 router = APIRouter(prefix="/ai", tags=["AI"])
+
+_AI_CHAT_LIMIT = per_user_rate_limit(60, 3600)
+_AI_INSIGHT_LIMIT = per_user_rate_limit(30, 3600)
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
@@ -65,7 +69,7 @@ async def get_session_messages(
     )
 
 
-@router.get("/insight", response_model=ApiResponse[DailyInsight])
+@router.get("/insight", response_model=ApiResponse[DailyInsight], dependencies=[_AI_INSIGHT_LIMIT])
 async def get_daily_insight(
     request: Request, user_id: CurrentUser, session: DbSession
 ) -> ApiResponse[DailyInsight]:
@@ -74,12 +78,12 @@ async def get_daily_insight(
     return ok(result)
 
 
-@router.post("/chat", response_model=ApiResponse[ChatReply])
+@router.post("/chat", response_model=ApiResponse[ChatReply], dependencies=[_AI_CHAT_LIMIT])
 async def chat(
     body: ChatRequest, user_id: CurrentUser, session: DbSession
 ) -> ApiResponse[ChatReply]:
     settings = get_settings()
-    llm = OpenRouterLLM(settings)
+    llm = OpenRouterLLM(settings, max_tokens=1000)
 
     chat_session = await repo.get_or_create_session(session, user_id, body.session_id)
 
@@ -140,10 +144,10 @@ async def _sse_tokens(token_stream: AsyncIterator[str]) -> AsyncIterator[str]:
     yield "data: [DONE]\n\n"
 
 
-@router.post("/chat/stream")
+@router.post("/chat/stream", dependencies=[_AI_CHAT_LIMIT])
 async def chat_stream(body: ChatRequest, _user_id: CurrentUser) -> StreamingResponse:
     settings = get_settings()
-    llm = OpenRouterLLM(settings)
+    llm = OpenRouterLLM(settings, max_tokens=1000)
     return StreamingResponse(
         _sse_tokens(llm.stream_chat(_SYSTEM_PROMPT, body.message)),
         media_type="text/event-stream",
