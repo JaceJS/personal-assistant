@@ -20,31 +20,29 @@ function CategoryActionSheet({
   onEdit,
   onDelete,
 }: CategoryActionSheetProps) {
-  if (!category) return null;
-
-  const tint = category.color ? `${category.color}28` : `${colors.accent.primary}28`;
+  const tint = category?.color ? `${category.color}28` : `${colors.accent.primary}28`;
 
   return (
     <BottomSheet isVisible={visible} onDismiss={onDismiss}>
       <View style={styles.content}>
         <View style={styles.preview}>
           <View style={[styles.iconCircle, { backgroundColor: tint }]}>
-            <Text style={styles.emoji}>{category.icon ?? '🏷️'}</Text>
+            <Text style={styles.emoji}>{category?.icon ?? '🏷️'}</Text>
           </View>
           <View style={styles.previewMeta}>
             <Text style={styles.name} numberOfLines={1}>
-              {category.name}
+              {category?.name ?? ''}
             </Text>
           </View>
         </View>
 
         <View style={styles.actions}>
-          <Button label="Ubah" variant="secondary" fullWidth onPress={() => onEdit(category)} />
+          <Button label="Ubah" variant="secondary" fullWidth onPress={() => category && onEdit(category)} />
           <Button
             label="Hapus"
             variant="danger"
             fullWidth
-            onPress={() => onDelete(category)}
+            onPress={() => category && onDelete(category)}
           />
         </View>
       </View>

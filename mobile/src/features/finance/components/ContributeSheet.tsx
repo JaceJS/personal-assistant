@@ -87,26 +87,36 @@ function ContributeSheet({
 
           <View style={styles.content}>
             <View style={styles.modeRow}>
-              <Pressable
-                style={({ pressed }) => [{ flex: 1 }, pressed && { opacity: 0.8 }]}
-                onPress={() => setMode('add')}
-              >
-                <View style={[styles.modeBtn, mode === 'add' && styles.modeBtnActive]}>
-                  <Text style={[styles.modeBtnText, mode === 'add' && styles.modeBtnTextActive]}>
-                    + Tabung
-                  </Text>
-                </View>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [{ flex: 1 }, pressed && { opacity: 0.8 }]}
-                onPress={() => setMode('withdraw')}
-              >
-                <View style={[styles.modeBtn, mode === 'withdraw' && styles.modeBtnWithdrawActive]}>
-                  <Text style={[styles.modeBtnText, mode === 'withdraw' && styles.modeBtnTextActive]}>
-                    − Tarik
-                  </Text>
-                </View>
-              </Pressable>
+              <View style={styles.modeBtnWrapper}>
+                <Pressable
+                  onPress={() => setMode('add')}
+                  style={({ pressed }) => [
+                    styles.modeBtnPressable,
+                    pressed && { opacity: 0.8 }
+                  ]}
+                >
+                  <View style={[styles.modeBtn, mode === 'add' && styles.modeBtnActive]}>
+                    <Text style={[styles.modeBtnText, mode === 'add' && styles.modeBtnTextActive]}>
+                      + Tabung
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+              <View style={styles.modeBtnWrapper}>
+                <Pressable
+                  onPress={() => setMode('withdraw')}
+                  style={({ pressed }) => [
+                    styles.modeBtnPressable,
+                    pressed && { opacity: 0.8 }
+                  ]}
+                >
+                  <View style={[styles.modeBtn, mode === 'withdraw' && styles.modeBtnWithdrawActive]}>
+                    <Text style={[styles.modeBtnText, mode === 'withdraw' && styles.modeBtnTextActive]}>
+                      − Tarik
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
             </View>
 
             <View style={styles.quickRow}>
@@ -199,10 +209,18 @@ const styles = StyleSheet.create({
     padding: 4,
     gap: 4,
   },
+  modeBtnWrapper: {
+    flex: 1,
+  },
+  modeBtnPressable: {
+    width: '100%',
+  },
   modeBtn: {
+    width: '100%',
     paddingVertical: spacing.sm,
     borderRadius: radius.sm,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   modeBtnActive: { backgroundColor: colors.accent.primary },
   modeBtnWithdrawActive: { backgroundColor: colors.danger.text },
