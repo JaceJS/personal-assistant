@@ -85,21 +85,20 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
       {label && <Text style={styles.label}>{label}</Text>}
       
       <View style={styles.trigger}>
+        <CalendarIcon size={18} color={colors.text.secondary} style={styles.triggerIcon} />
+        <Text style={styles.triggerText}>
+          {format(value, "eeee, d MMMM yyyy", { locale: localeID })}
+        </Text>
         <Pressable
           onPress={() => {
             setCurrentMonth(new Date(value));
             setIsOpen(true);
           }}
           style={({ pressed }) => [
-            styles.triggerPressable,
-            pressed && { opacity: 0.8 }
+            StyleSheet.absoluteFillObject,
+            pressed && { backgroundColor: "rgba(255, 255, 255, 0.05)" }
           ]}
-        >
-          <CalendarIcon size={18} color={colors.text.secondary} style={styles.triggerIcon} />
-          <Text style={styles.triggerText}>
-            {format(value, "eeee, d MMMM yyyy", { locale: localeID })}
-          </Text>
-        </Pressable>
+        />
       </View>
 
       <BottomSheet isVisible={isOpen} onDismiss={() => setIsOpen(false)}>
@@ -114,22 +113,21 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
                 isSameDay(value, new Date()) && styles.presetBtnActive,
               ]}
             >
+              <Text
+                style={[
+                  styles.presetText,
+                  isSameDay(value, new Date()) && styles.presetTextActive,
+                ]}
+              >
+                Hari Ini
+              </Text>
               <Pressable
                 onPress={() => selectPreset(0)}
                 style={({ pressed }) => [
-                  styles.presetPressable,
-                  pressed && { opacity: 0.8 },
+                  StyleSheet.absoluteFillObject,
+                  pressed && { backgroundColor: "rgba(255, 255, 255, 0.05)" }
                 ]}
-              >
-                <Text
-                  style={[
-                    styles.presetText,
-                    isSameDay(value, new Date()) && styles.presetTextActive,
-                  ]}
-                >
-                  Hari Ini
-                </Text>
-              </Pressable>
+              />
             </View>
             <View
               style={[
@@ -137,22 +135,21 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
                 isSameDay(value, subDays(new Date(), 1)) && styles.presetBtnActive,
               ]}
             >
+              <Text
+                style={[
+                  styles.presetText,
+                  isSameDay(value, subDays(new Date(), 1)) && styles.presetTextActive,
+                ]}
+              >
+                Kemarin
+              </Text>
               <Pressable
                 onPress={() => selectPreset(1)}
                 style={({ pressed }) => [
-                  styles.presetPressable,
-                  pressed && { opacity: 0.8 },
+                  StyleSheet.absoluteFillObject,
+                  pressed && { backgroundColor: "rgba(255, 255, 255, 0.05)" }
                 ]}
-              >
-                <Text
-                  style={[
-                    styles.presetText,
-                    isSameDay(value, subDays(new Date(), 1)) && styles.presetTextActive,
-                  ]}
-                >
-                  Kemarin
-                </Text>
-              </Pressable>
+              />
             </View>
             <View
               style={[
@@ -160,37 +157,35 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
                 isSameDay(value, subDays(new Date(), 2)) && styles.presetBtnActive,
               ]}
             >
+              <Text
+                style={[
+                  styles.presetText,
+                  isSameDay(value, subDays(new Date(), 2)) && styles.presetTextActive,
+                ]}
+              >
+                2 Hari Lalu
+              </Text>
               <Pressable
                 onPress={() => selectPreset(2)}
                 style={({ pressed }) => [
-                  styles.presetPressable,
-                  pressed && { opacity: 0.8 },
+                  StyleSheet.absoluteFillObject,
+                  pressed && { backgroundColor: "rgba(255, 255, 255, 0.05)" }
                 ]}
-              >
-                <Text
-                  style={[
-                    styles.presetText,
-                    isSameDay(value, subDays(new Date(), 2)) && styles.presetTextActive,
-                  ]}
-                >
-                  2 Hari Lalu
-                </Text>
-              </Pressable>
+              />
             </View>
           </View>
 
           {/* Calendar Month Selector Header */}
           <View style={styles.monthHeader}>
             <View style={styles.navBtn}>
+              <ChevronLeft size={20} color={colors.text.primary} />
               <Pressable
                 onPress={handlePrevMonth}
                 style={({ pressed }) => [
-                  styles.navBtnPressable,
-                  pressed && { opacity: 0.7 },
+                  StyleSheet.absoluteFillObject,
+                  pressed && { backgroundColor: "rgba(255, 255, 255, 0.05)" }
                 ]}
-              >
-                <ChevronLeft size={20} color={colors.text.primary} />
-              </Pressable>
+              />
             </View>
             
             <Text style={styles.monthLabel}>
@@ -198,15 +193,14 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
             </Text>
 
             <View style={styles.navBtn}>
+              <ChevronRight size={20} color={colors.text.primary} />
               <Pressable
                 onPress={handleNextMonth}
                 style={({ pressed }) => [
-                  styles.navBtnPressable,
-                  pressed && { opacity: 0.7 },
+                  StyleSheet.absoluteFillObject,
+                  pressed && { backgroundColor: "rgba(255, 255, 255, 0.05)" }
                 ]}
-              >
-                <ChevronRight size={20} color={colors.text.primary} />
-              </Pressable>
+              />
             </View>
           </View>
 
@@ -284,20 +278,17 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
   },
   trigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.bg.elevated,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border.default,
     height: 48,
-    overflow: "hidden",
-  },
-  triggerPressable: {
-    width: "100%",
-    height: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
     paddingHorizontal: spacing.lg,
+    position: "relative",
+    overflow: "hidden",
   },
   triggerIcon: {
     marginRight: spacing.sm,
@@ -332,17 +323,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.canvas,
     borderWidth: 1,
     borderColor: colors.border.default,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
     overflow: "hidden",
   },
   presetBtnActive: {
     backgroundColor: colors.accent.primary,
     borderColor: colors.accent.primary,
-  },
-  presetPressable: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
   },
   presetText: {
     ...StyleSheet.flatten(textStyles.caption),
@@ -368,13 +356,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.canvas,
     borderWidth: 1,
     borderColor: colors.border.default,
-    overflow: "hidden",
-  },
-  navBtnPressable: {
-    width: "100%",
-    height: "100%",
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
+    overflow: "hidden",
   },
   monthLabel: {
     ...StyleSheet.flatten(textStyles.h3),
