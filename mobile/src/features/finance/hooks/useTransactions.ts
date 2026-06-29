@@ -1,6 +1,7 @@
 import * as ExpoCrypto from "expo-crypto";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFinanceRepository } from "@/features/finance/repository";
+import { useAuthStore } from "@/stores/auth";
 import type { ListTransactionsParams } from "@/features/finance/api/transactions";
 import type { TransactionCreate, TransactionUpdate } from "@/features/finance/types";
 
@@ -8,6 +9,7 @@ const QUERY_KEY = "transactions";
 
 export function useTransactions(params?: ListTransactionsParams) {
   const repo = useFinanceRepository();
+  const initialized = useAuthStore((s) => s.initialized);
   const resolvedParams: ListTransactionsParams = { status: "confirmed", ...params };
   return useQuery({
     queryKey: [QUERY_KEY, resolvedParams],
@@ -19,15 +21,17 @@ export function useTransactions(params?: ListTransactionsParams) {
         dateFrom: resolvedParams.dateFrom,
         dateTo: resolvedParams.dateTo,
       }),
+    enabled: initialized,
   });
 }
 
 export function useTransaction(id: string) {
   const repo = useFinanceRepository();
+  const initialized = useAuthStore((s) => s.initialized);
   return useQuery({
     queryKey: [QUERY_KEY, id],
     queryFn: () => repo.getTransaction(id),
-    enabled: !!id,
+    enabled: initialized && !!id,
   });
 }
 

@@ -1,24 +1,28 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ExpoCrypto from "expo-crypto";
 import { useFinanceRepository } from "@/features/finance/repository";
+import { useAuthStore } from "@/stores/auth";
 import type { AccountCreate, AccountUpdate } from "@/features/finance/types";
 
 const QUERY_KEY = "accounts";
 
 export function useAccounts() {
   const repo = useFinanceRepository();
+  const initialized = useAuthStore((s) => s.initialized);
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: () => repo.listAccounts(),
+    enabled: initialized,
   });
 }
 
 export function useAccount(id: string) {
   const repo = useFinanceRepository();
+  const initialized = useAuthStore((s) => s.initialized);
   return useQuery({
     queryKey: [QUERY_KEY, id],
     queryFn: () => repo.getAccount(id),
-    enabled: !!id,
+    enabled: initialized && !!id,
   });
 }
 

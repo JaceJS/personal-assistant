@@ -1,24 +1,28 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ExpoCrypto from "expo-crypto";
 import { useFinanceRepository } from "@/features/finance/repository";
+import { useAuthStore } from "@/stores/auth";
 import type { SavingsGoalContribute, SavingsGoalCreate, SavingsGoalUpdate } from "@/features/finance/types";
 
 const QUERY_KEY = "savings-goals";
 
 export function useSavingsGoals() {
   const repo = useFinanceRepository();
+  const initialized = useAuthStore((s) => s.initialized);
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: () => repo.listSavingsGoals(),
+    enabled: initialized,
   });
 }
 
 export function useSavingsGoal(id: string) {
   const repo = useFinanceRepository();
+  const initialized = useAuthStore((s) => s.initialized);
   return useQuery({
     queryKey: [QUERY_KEY, id],
     queryFn: () => repo.getSavingsGoal(id),
-    enabled: !!id,
+    enabled: initialized && !!id,
   });
 }
 
