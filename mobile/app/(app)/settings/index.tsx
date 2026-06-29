@@ -1,7 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import Constants from "expo-constants";
 import {
   Building2,
   ChevronRight,
@@ -9,10 +10,12 @@ import {
   ExternalLink,
   FileText,
   LogOut,
+  MessageCircle,
   Pencil,
   PiggyBank,
   Shield,
   Tag,
+  Trash2,
   User,
 } from "lucide-react-native";
 
@@ -20,14 +23,17 @@ import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
+import { useDeleteAccount } from "@/features/account/hooks/useDeleteAccount";
 import { getDisplayName } from "@/lib/getDisplayName";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
+import { SUPPORT_WHATSAPP } from "@/constants/config";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, isGuest, signOut } = useAuthStore();
   const { showToast } = useToastStore();
+  const { mutate: deleteAccount, isPending: deleting } = useDeleteAccount();
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [backupLoading, setBackupLoading] = useState(false);
 
@@ -37,6 +43,28 @@ export default function SettingsScreen() {
       { text: "Keluar", style: "destructive", onPress: () => void signOut() },
     ]);
   }, [signOut]);
+
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      "Hapus Akun",
+      "Semua datamu (akun, transaksi, budget, goal) akan dihapus permanen dan tidak bisa dikembalikan. Lanjutkan?",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Hapus Permanen",
+          style: "destructive",
+          onPress: () =>
+            deleteAccount(undefined, {
+              onSuccess: () => {
+                showToast("Akunmu sudah dihapus", "success");
+                void signOut();
+              },
+              onError: () => showToast("Gagal menghapus akun, coba lagi ya", "error"),
+            }),
+        },
+      ]
+    );
+  }, [deleteAccount, showToast, signOut]);
 
   const pickImage = useCallback(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -62,6 +90,16 @@ export default function SettingsScreen() {
 
   const displayName = getDisplayName(user);
   const initial = displayName[0]?.toUpperCase() ?? "U";
+
+  const whatsappUrl = useMemo(() => {
+    const number = SUPPORT_WHATSAPP.replace(/[^0-9]/g, "");
+    if (!number) return null;
+    const version = Constants.expoConfig?.version ?? "";
+    const text = encodeURIComponent(
+      `Halo, saya pakai Personal Assistant${version ? ` v${version}` : ""}. Mau kasih masukan:`
+    );
+    return `https://wa.me/${number}?text=${text}`;
+  }, []);
 
   return (
     <Screen>
@@ -177,14 +215,45 @@ export default function SettingsScreen() {
           />
         </GroupedList>
 
-        {/* Sign out (authenticated only) */}
+        {/* Help & feedback */}
+        {whatsappUrl && (
+          <>
+            <SectionLabel label="Bantuan" />
+            <GroupedList>
+              <ExternalMenuItem
+                icon={<MessageCircle size={16} color={colors.accent.primary} />}
+                label="Chat dengan kami"
+                url={whatsappUrl}
+              />
+            </GroupedList>
+          </>
+        )}
+
+        {/* Sign out + delete account (authenticated only) */}
         {!isGuest && (
-          <Pressable onPress={handleSignOut} style={({ pressed }) => pressed && { opacity: 0.7 }}>
-            <View style={styles.signOutButton}>
-              <LogOut size={18} color={colors.danger.text} />
-              <Text style={styles.signOutLabel}>Keluar</Text>
-            </View>
-          </Pressable>
+          <>
+            <Pressable onPress={handleSignOut} style={({ pressed }) => pressed && { opacity: 0.7 }}>
+              <View style={styles.signOutButton}>
+                <LogOut size={18} color={colors.danger.text} />
+                <Text style={styles.signOutLabel}>Keluar</Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={handleDeleteAccount}
+              disabled={deleting}
+              style={({ pressed }) => [
+                styles.deleteAccountButton,
+                pressed && !deleting && { opacity: 0.6 },
+                deleting && { opacity: 0.5 },
+              ]}
+            >
+              <Trash2 size={15} color={colors.text.muted} />
+              <Text style={styles.deleteAccountLabel}>
+                {deleting ? "Menghapus..." : "Hapus Akun"}
+              </Text>
+            </Pressable>
+          </>
         )}
       </ScrollView>
     </Screen>
@@ -405,5 +474,18 @@ const styles = StyleSheet.create({
     ...StyleSheet.flatten(textStyles.h2),
     fontSize: 16,
     color: colors.danger.text,
+  },
+  deleteAccountButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  deleteAccountLabel: {
+    ...StyleSheet.flatten(textStyles.body),
+    fontSize: 14,
+    color: colors.text.muted,
   },
 });

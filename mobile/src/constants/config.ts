@@ -3,3 +3,4 @@ export const API_TIMEOUT_MS = 15_000;
 export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 export const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? "";
+export const SUPPORT_WHATSAPP = process.env.EXPO_PUBLIC_SUPPORT_WHATSAPP ?? "";
