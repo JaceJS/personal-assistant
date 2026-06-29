@@ -11,6 +11,10 @@ export type ChatMessage = {
   extractedData?: ExtractedTransaction;
   transactionId?: string;
   errorMessage?: string;
+  // Local audio/image URI + account, kept so a failed upload can be retried
+  // without re-recording.
+  localUri?: string;
+  accountId?: string;
   createdAt: Date;
 };
 
@@ -31,20 +35,49 @@ export type AIMessage = {
 
 export type Message = ChatMessage | UserTextMessage | AIMessage;
 
-export function createVoiceMessage(voiceLogId: string): ChatMessage {
+export function createVoiceMessage(
+  voiceLogId: string,
+  localUri?: string,
+  accountId?: string,
+): ChatMessage {
   return {
     id: voiceLogId,
     type: 'voice',
     status: 'pending',
+    localUri,
+    accountId,
     createdAt: new Date(),
   };
 }
 
-export function createReceiptMessage(receiptLogId: string): ChatMessage {
+export function createReceiptMessage(
+  receiptLogId: string,
+  localUri?: string,
+  accountId?: string,
+): ChatMessage {
   return {
     id: receiptLogId,
     type: 'receipt',
     status: 'pending',
+    localUri,
+    accountId,
+    createdAt: new Date(),
+  };
+}
+
+export function createFailedUploadMessage(
+  type: 'voice' | 'receipt',
+  localUri: string,
+  accountId: string,
+  errorMessage: string,
+): ChatMessage {
+  return {
+    id: generateId(),
+    type,
+    status: 'failed',
+    localUri,
+    accountId,
+    errorMessage,
     createdAt: new Date(),
   };
 }

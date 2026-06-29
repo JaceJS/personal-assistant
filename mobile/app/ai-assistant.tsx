@@ -39,6 +39,7 @@ import {
 import {
   applyReceiptStatus,
   applyVoiceStatus,
+  createFailedUploadMessage,
   createReceiptMessage,
   createVoiceMessage,
 } from "@/features/finance/utils/chatMessageUtils";
@@ -122,12 +123,12 @@ export default function AIAssistantScreen() {
         setVoiceConfirmVisible(true);
       } else {
         setVoiceLogId(null);
-        showToast("No draft transaction was created.", "error");
+        showToast("Tidak ada draf transaksi yang dibuat.", "error");
       }
     } else if (voiceStatus.data.status === "failed") {
       resetRecorder();
       setVoiceLogId(null);
-      showToast(voiceStatus.data.error_message ?? "Voice processing failed.", "error");
+      showToast(voiceStatus.data.error_message ?? "Pemrosesan suara gagal.", "error");
     }
   }, [resetRecorder, setMessages, showToast, voiceLogId, voiceStatus.data]);
 
@@ -144,11 +145,11 @@ export default function AIAssistantScreen() {
         setReceiptConfirmVisible(true);
       } else {
         setReceiptLogId(null);
-        showToast("Could not extract transaction from receipt.", "error");
+        showToast("Tidak bisa membaca transaksi dari struk.", "error");
       }
     } else if (receiptStatus.data.status === "failed") {
       setReceiptLogId(null);
-      showToast(receiptStatus.data.error_message ?? "Receipt processing failed.", "error");
+      showToast(receiptStatus.data.error_message ?? "Pemrosesan struk gagal.", "error");
     }
   }, [setMessages, showToast, receiptLogId, receiptStatus.data]);
 
@@ -163,7 +164,7 @@ export default function AIAssistantScreen() {
             ? {
                 ...(m as ChatMessage),
                 status: "failed",
-                errorMessage: "Processing timed out. Please try again.",
+                errorMessage: "Pemrosesan kelamaan. Coba lagi ya.",
               }
             : m
         )
@@ -171,7 +172,7 @@ export default function AIAssistantScreen() {
       setVoiceLogId(null);
       setTranscriptVisible(false);
       resetRecorder();
-      showToast("Voice processing timed out.", "error");
+      showToast("Pemrosesan suara kelamaan.", "error");
     }, PROCESSING_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [voiceLogId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -187,13 +188,13 @@ export default function AIAssistantScreen() {
             ? {
                 ...(m as ChatMessage),
                 status: "failed",
-                errorMessage: "Processing timed out. Please try again.",
+                errorMessage: "Pemrosesan kelamaan. Coba lagi ya.",
               }
             : m
         )
       );
       setReceiptLogId(null);
-      showToast("Receipt processing timed out.", "error");
+      showToast("Pemrosesan struk kelamaan.", "error");
     }, PROCESSING_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [receiptLogId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -205,10 +206,61 @@ export default function AIAssistantScreen() {
     void sendMessage(text);
   }, [inputText, sendMessage]);
 
+  const uploadVoiceFlow = useCallback(
+    async (audioUri: string, accountId: string) => {
+      try {
+        const response = await uploadAudio.mutateAsync({ audioUri, accountId });
+        setMessages((prev) => [
+          ...prev,
+          createVoiceMessage(response.voice_log_id, audioUri, accountId),
+        ]);
+        setVoiceLogId(response.voice_log_id);
+      } catch {
+        resetRecorder();
+        setMessages((prev) => [
+          ...prev,
+          createFailedUploadMessage("voice", audioUri, accountId, "Gagal mengunggah rekaman suara."),
+        ]);
+        showToast("Gagal mengunggah rekaman suara. Coba lagi ya.", "error");
+      }
+    },
+    [resetRecorder, setMessages, showToast, uploadAudio]
+  );
+
+  const uploadReceiptFlow = useCallback(
+    async (imageUri: string, accountId: string) => {
+      try {
+        const response = await uploadReceipt.mutateAsync({ imageUri, accountId });
+        setMessages((prev) => [
+          ...prev,
+          createReceiptMessage(response.receipt_log_id, imageUri, accountId),
+        ]);
+        setReceiptLogId(response.receipt_log_id);
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          createFailedUploadMessage("receipt", imageUri, accountId, "Gagal mengunggah struk."),
+        ]);
+        showToast("Gagal mengunggah struk. Coba lagi ya.", "error");
+      }
+    },
+    [setMessages, showToast, uploadReceipt]
+  );
+
+  const handleRetry = useCallback(
+    (message: ChatMessage) => {
+      if (!message.localUri || !message.accountId) return;
+      setMessages((prev) => prev.filter((m) => m.id !== message.id));
+      if (message.type === "voice") void uploadVoiceFlow(message.localUri, message.accountId);
+      else void uploadReceiptFlow(message.localUri, message.accountId);
+    },
+    [setMessages, uploadReceiptFlow, uploadVoiceFlow]
+  );
+
   const handleMicPressIn = useCallback(() => {
     if (isMicBusy || isRecording) return;
     if (!defaultAccount) {
-      showToast("Create an account before recording a transaction.", "error");
+      showToast("Buat akun dulu sebelum mencatat transaksi.", "error");
       return;
     }
     void startRecording();
@@ -219,32 +271,13 @@ export default function AIAssistantScreen() {
     void (async () => {
       const audioUri = await stopRecording();
       if (!audioUri) return;
-      try {
-        const response = await uploadAudio.mutateAsync({
-          audioUri,
-          accountId: defaultAccount.id,
-        });
-        const msg = createVoiceMessage(response.voice_log_id);
-        setMessages((prev) => [...prev, msg]);
-        setVoiceLogId(response.voice_log_id);
-      } catch {
-        resetRecorder();
-        showToast("Could not upload voice recording.", "error");
-      }
+      await uploadVoiceFlow(audioUri, defaultAccount.id);
     })();
-  }, [
-    defaultAccount,
-    isRecording,
-    resetRecorder,
-    setMessages,
-    showToast,
-    stopRecording,
-    uploadAudio,
-  ]);
+  }, [defaultAccount, isRecording, stopRecording, uploadVoiceFlow]);
 
   const handleCameraPress = useCallback(async () => {
     if (!defaultAccount) {
-      showToast("Create an account before scanning a receipt.", "error");
+      showToast("Buat akun dulu sebelum scan struk.", "error");
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -253,19 +286,8 @@ export default function AIAssistantScreen() {
       allowsEditing: false,
     });
     if (result.canceled || !result.assets[0]) return;
-    const imageUri = result.assets[0].uri;
-    try {
-      const response = await uploadReceipt.mutateAsync({
-        imageUri,
-        accountId: defaultAccount.id,
-      });
-      const msg = createReceiptMessage(response.receipt_log_id);
-      setMessages((prev) => [...prev, msg]);
-      setReceiptLogId(response.receipt_log_id);
-    } catch {
-      showToast("Could not upload receipt.", "error");
-    }
-  }, [defaultAccount, setMessages, showToast, uploadReceipt]);
+    await uploadReceiptFlow(result.assets[0].uri, defaultAccount.id);
+  }, [defaultAccount, showToast, uploadReceiptFlow]);
 
   const handleTranscriptProcess = useCallback(
     (transcript: string) => {
@@ -273,7 +295,7 @@ export default function AIAssistantScreen() {
       setTranscriptVisible(false);
       void extractVoice
         .mutateAsync({ voiceLogId, transcript })
-        .catch(() => showToast("Could not start extraction.", "error"));
+        .catch(() => showToast("Gagal memproses transkrip.", "error"));
     },
     [extractVoice, showToast, voiceLogId]
   );
@@ -292,10 +314,10 @@ export default function AIAssistantScreen() {
       setVoiceConfirmVisible(false);
       setVoiceLogId(null);
       resetRecorder();
-      showToast("Transaction saved.", "success");
+      showToast("Transaksi tersimpan.", "success");
       void confirmVoiceTransaction
         .mutateAsync({ transactionId, ...payload })
-        .catch(() => showToast("Could not save transaction.", "error"));
+        .catch(() => showToast("Gagal menyimpan transaksi.", "error"));
     },
     [confirmVoiceTransaction, resetRecorder, showToast, voiceStatus.data?.transaction_id]
   );
@@ -312,10 +334,10 @@ export default function AIAssistantScreen() {
       if (!transactionId) return;
       setReceiptConfirmVisible(false);
       setReceiptLogId(null);
-      showToast("Transaction saved.", "success");
+      showToast("Transaksi tersimpan.", "success");
       void confirmReceiptTransaction
         .mutateAsync({ transactionId, ...payload })
-        .catch(() => showToast("Could not save transaction.", "error"));
+        .catch(() => showToast("Gagal menyimpan transaksi.", "error"));
     },
     [confirmReceiptTransaction, showToast, receiptStatus.data?.transaction_id]
   );
@@ -329,19 +351,22 @@ export default function AIAssistantScreen() {
     (payload: ConfirmPayload) => {
       if (!pendingDraft) return;
       dismissDraft();
-      showToast("Transaction saved.", "success");
+      showToast("Transaksi tersimpan.", "success");
       void confirmAiDraftMutation
         .mutateAsync({ transactionId: pendingDraft.transaction_id, payload })
-        .catch(() => showToast("Could not save transaction.", "error"));
+        .catch(() => showToast("Gagal menyimpan transaksi.", "error"));
     },
     [confirmAiDraftMutation, dismissDraft, pendingDraft, showToast]
   );
 
-  const renderMessage = useCallback(({ item }: { item: Message }) => {
-    if (item.type === "user") return <UserBubble message={item} />;
-    if (item.type === "ai") return <AIBubble message={item as AIMessage} />;
-    return <ChatBubble message={item as ChatMessage} />;
-  }, []);
+  const renderMessage = useCallback(
+    ({ item }: { item: Message }) => {
+      if (item.type === "user") return <UserBubble message={item} />;
+      if (item.type === "ai") return <AIBubble message={item as AIMessage} />;
+      return <ChatBubble message={item as ChatMessage} onRetry={handleRetry} />;
+    },
+    [handleRetry]
+  );
 
   const isSendMode = inputText.length > 0;
 

@@ -1,21 +1,28 @@
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { Camera, Mic } from "lucide-react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { Camera, Mic, RotateCcw } from "lucide-react-native";
 
 import { colors, radius, spacing, textStyles } from "@/theme";
 import type { ChatMessage } from "@/features/finance/utils/chatMessageUtils";
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: "Uploading...",
-  transcribing: "Transcribing...",
-  transcribed: "Reviewing transcript",
-  extracting: "Extracting transaction...",
-  completed: "Done",
-  failed: "Failed",
+  pending: "Mengunggah...",
+  transcribing: "Mengubah suara jadi teks...",
+  transcribed: "Cek transkrip",
+  extracting: "Membaca transaksi...",
+  completed: "Selesai",
+  failed: "Gagal",
 };
 
-export function ChatBubble({ message }: { message: ChatMessage }) {
+export function ChatBubble({
+  message,
+  onRetry,
+}: {
+  message: ChatMessage;
+  onRetry?: (message: ChatMessage) => void;
+}) {
   const isProcessing = message.status !== "completed" && message.status !== "failed";
   const isVoice = message.type === "voice";
+  const canRetry = message.status === "failed" && !!message.localUri && !!onRetry;
 
   return (
     <View style={styles.wrap}>
@@ -47,13 +54,23 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
             style={styles.spinner}
           />
         )}
+        {canRetry && (
+          <Pressable
+            onPress={() => onRetry!(message)}
+            style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.7 }]}
+            hitSlop={6}
+          >
+            <RotateCcw size={13} color={colors.accent.primary} strokeWidth={2} />
+            <Text style={styles.retryLabel}>Coba lagi</Text>
+          </Pressable>
+        )}
         <View style={styles.typeFooter}>
           {isVoice ? (
             <Mic size={12} color={colors.text.muted} strokeWidth={1.8} />
           ) : (
             <Camera size={12} color={colors.text.muted} strokeWidth={1.8} />
           )}
-          <Text style={styles.typeLabel}>{isVoice ? "Voice" : "Receipt"}</Text>
+          <Text style={styles.typeLabel}>{isVoice ? "Suara" : "Struk"}</Text>
         </View>
       </View>
     </View>
@@ -100,6 +117,23 @@ const styles = StyleSheet.create({
   spinner: {
     alignSelf: "flex-start",
     marginTop: spacing.xs,
+  },
+  retryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    marginTop: spacing.xs,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: `${colors.accent.primary}40`,
+    backgroundColor: colors.bg.surface,
+  },
+  retryLabel: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.accent.primary,
   },
   typeFooter: {
     flexDirection: "row",

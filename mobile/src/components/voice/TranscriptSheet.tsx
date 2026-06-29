@@ -27,20 +27,20 @@ export function TranscriptSheet({ transcript, isVisible, onProcess, onDismiss }:
   return (
     <BottomSheet isVisible={isVisible} onDismiss={onDismiss}>
       <View style={styles.container}>
-        <Text style={styles.label}>What did you say?</Text>
-        <Text style={styles.hint}>Edit if anything was misheard, then tap Process.</Text>
+        <Text style={styles.label}>Tadi ngomong apa?</Text>
+        <Text style={styles.hint}>Betulkan kalau ada yang salah dengar, lalu tap Proses.</Text>
         <TextInput
           style={styles.input}
           value={text}
           onChangeText={setText}
           multiline
           autoFocus
-          placeholder="Transcription appears here…"
+          placeholder="Hasil transkrip muncul di sini…"
           placeholderTextColor={colors.text.muted}
         />
         <View style={styles.actions}>
-          <Button label="Process Transaction" onPress={handleProcess} fullWidth />
-          <Button label="Cancel" onPress={onDismiss} variant="secondary" fullWidth />
+          <Button label="Proses" onPress={handleProcess} fullWidth />
+          <Button label="Batal" onPress={onDismiss} variant="secondary" fullWidth />
         </View>
       </View>
     </BottomSheet>
