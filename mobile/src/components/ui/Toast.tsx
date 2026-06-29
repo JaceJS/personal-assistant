@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CheckCircle, Info, XCircle } from "lucide-react-native";
+import { AlertTriangle, CheckCircle, Info, XCircle } from "lucide-react-native";
 import { useToastStore } from "@/stores/toast";
 import type { ToastType } from "@/stores/toast";
 
@@ -14,6 +14,7 @@ const CONFIG: Record<ToastType, { bg: string; icon: React.ReactNode }> = {
   success: { bg: "#7DB87A", icon: <CheckCircle size={18} color="#fff" /> },
   error: { bg: "#C97060", icon: <XCircle size={18} color="#fff" /> },
   info: { bg: "#D4A853", icon: <Info size={18} color="#0F0F0F" /> },
+  warning: { bg: "#D4A84B", icon: <AlertTriangle size={18} color="#0F0F0F" /> },
 };
 
 export function Toast() {

@@ -30,7 +30,7 @@ import type { Account, Category, Transaction, Budget } from "../../types";
 
 const mockAccount: Account = {
   id: "acc-1", user_id: "u1", name: "Wallet", type: "cash",
-  currency: "IDR", balance: 0, is_archived: false,
+  currency: "IDR", initial_balance: 0, balance: 0, is_archived: false,
   created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z",
 };
 const mockCategory: Category = {

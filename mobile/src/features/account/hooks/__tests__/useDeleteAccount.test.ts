@@ -26,7 +26,7 @@ describe('useDeleteAccount', () => {
   it('calls the delete-account API', async () => {
     mockDelete.mockResolvedValueOnce(undefined);
 
-    const { result } = renderHook(() => useDeleteAccount(), { wrapper: makeWrapper() });
+    const { result } = await renderHook(() => useDeleteAccount(), { wrapper: makeWrapper() });
 
     await act(async () => {
       await result.current.mutateAsync();
@@ -38,7 +38,7 @@ describe('useDeleteAccount', () => {
   it('exposes error state when deletion fails', async () => {
     mockDelete.mockRejectedValueOnce(new Error('boom'));
 
-    const { result } = renderHook(() => useDeleteAccount(), { wrapper: makeWrapper() });
+    const { result } = await renderHook(() => useDeleteAccount(), { wrapper: makeWrapper() });
 
     await act(async () => {
       await result.current.mutateAsync().catch(() => undefined);

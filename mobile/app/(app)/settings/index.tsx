@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import NotificationTimeSheet from "@/features/settings/components/NotificationTimeSheet";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import Constants from "expo-constants";
 import {
+  Bell,
   Building2,
   ChevronRight,
   CloudUpload,
@@ -26,6 +28,12 @@ import { useToastStore } from "@/stores/toast";
 import { useDeleteAccount } from "@/features/account/hooks/useDeleteAccount";
 import { getDisplayName } from "@/lib/getDisplayName";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
+import {
+  requestNotificationPermission,
+  scheduleDailyReminder,
+  cancelDailyReminder,
+} from "@/lib/notifications";
+import { useNotificationStore } from "@/stores/notifications";
 import { SUPPORT_WHATSAPP } from "@/constants/config";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
@@ -36,6 +44,13 @@ export default function SettingsScreen() {
   const { mutate: deleteAccount, isPending: deleting } = useDeleteAccount();
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [backupLoading, setBackupLoading] = useState(false);
+  const [timePickerOpen, setTimePickerOpen] = useState(false);
+  const {
+    dailyReminderEnabled,
+    dailyReminderHour,
+    dailyReminderMinute,
+    setDailyReminder,
+  } = useNotificationStore();
 
   const handleSignOut = useCallback(() => {
     Alert.alert("Keluar", "Yakin mau keluar?", [
@@ -87,6 +102,31 @@ export default function SettingsScreen() {
       setBackupLoading(false);
     }
   }, [showToast]);
+
+  const handleReminderToggle = useCallback(async (value: boolean) => {
+    if (value) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        showToast("Izin notifikasi ditolak. Aktifkan di pengaturan perangkat.", "error");
+        return;
+      }
+      setDailyReminder(true, dailyReminderHour, dailyReminderMinute);
+      await scheduleDailyReminder(dailyReminderHour, dailyReminderMinute);
+    } else {
+      setDailyReminder(false);
+      await cancelDailyReminder();
+    }
+  }, [dailyReminderHour, dailyReminderMinute, setDailyReminder, showToast]);
+
+  const handleReminderTimeChange = useCallback(() => {
+    setTimePickerOpen(true);
+  }, []);
+
+  const handleTimeSelect = useCallback((hour: number) => {
+    setTimePickerOpen(false);
+    setDailyReminder(dailyReminderEnabled, hour, 0);
+    if (dailyReminderEnabled) void scheduleDailyReminder(hour, 0);
+  }, [dailyReminderEnabled, setDailyReminder]);
 
   const displayName = getDisplayName(user);
   const initial = displayName[0]?.toUpperCase() ?? "U";
@@ -199,6 +239,50 @@ export default function SettingsScreen() {
           <MenuDivider />
         </GroupedList>
 
+        {/* Notification section */}
+        <SectionLabel label="Notifikasi" />
+        <GroupedList>
+          <View style={styles.menuItem}>
+            <View style={styles.iconBox}>
+              <Bell size={16} color={colors.accent.primary} />
+            </View>
+            <View style={styles.reminderTextCol}>
+              <Text style={styles.menuLabel}>Notifikasi Harian</Text>
+              <Text style={styles.reminderSubtitle}>
+                {dailyReminderEnabled
+                  ? `Aktif · ${String(dailyReminderHour).padStart(2, "0")}:${String(dailyReminderMinute).padStart(2, "0")}`
+                  : "Nonaktif"}
+              </Text>
+            </View>
+            <Switch
+              value={dailyReminderEnabled}
+              onValueChange={(v) => void handleReminderToggle(v)}
+              trackColor={{ false: colors.bg.elevated, true: colors.accent.primary }}
+              thumbColor="#fff"
+            />
+          </View>
+          {dailyReminderEnabled && (
+            <>
+              <MenuDivider />
+              <Pressable
+                onPress={handleReminderTimeChange}
+                style={({ pressed }) => pressed && { opacity: 0.7 }}
+              >
+                <View style={styles.menuItem}>
+                  <View style={styles.iconBox} />
+                  <Text style={[styles.menuLabel, { color: colors.accent.text }]}>
+                    Ubah Jam Pengingat
+                  </Text>
+                  <Text style={styles.valueText}>
+                    {`${String(dailyReminderHour).padStart(2, "0")}:${String(dailyReminderMinute).padStart(2, "0")}`}
+                  </Text>
+                  <ChevronRight size={14} color={colors.text.muted} />
+                </View>
+              </Pressable>
+            </>
+          )}
+        </GroupedList>
+
         {/* Legal section */}
         <SectionLabel label="Legal" />
         <GroupedList>
@@ -256,6 +340,13 @@ export default function SettingsScreen() {
           </>
         )}
       </ScrollView>
+
+      <NotificationTimeSheet
+        isVisible={timePickerOpen}
+        selectedHour={dailyReminderHour}
+        onSelect={handleTimeSelect}
+        onDismiss={() => setTimePickerOpen(false)}
+      />
     </Screen>
   );
 }
@@ -441,6 +532,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   backupSubtitle: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
+  },
+  reminderTextCol: {
+    flex: 1,
+    gap: 2,
+  },
+  reminderSubtitle: {
     ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
   },

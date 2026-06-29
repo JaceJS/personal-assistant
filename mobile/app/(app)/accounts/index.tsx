@@ -25,10 +25,10 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 const schema = z.object({
   name: z.string().min(1, "Nama akun wajib diisi"),
   type: z.enum(["cash", "bank", "ewallet", "credit"]),
-  initial_balance: z.number().optional().default(0),
+  initial_balance: z.number().default(0),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.input<typeof schema>;
 
 export default function AccountsScreen() {
   const router = useRouter();
@@ -146,7 +146,7 @@ export default function AccountsScreen() {
                   <RupiahInput
                     label="Saldo Awal"
                     placeholder="0"
-                    value={value}
+                    value={value ?? 0}
                     onChange={onChange}
                     error={errors.initial_balance?.message}
                   />

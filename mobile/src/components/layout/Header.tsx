@@ -7,10 +7,11 @@ interface HeaderProps {
   title: string;
   subtitle?: string;
   onBack?: () => void;
+  left?: React.ReactNode;
   right?: React.ReactNode;
 }
 
-export function Header({ title, subtitle, onBack, right }: HeaderProps) {
+export function Header({ title, subtitle, onBack, left, right }: HeaderProps) {
   if (onBack) {
     return (
       <View style={styles.appBar}>
@@ -32,6 +33,7 @@ export function Header({ title, subtitle, onBack, right }: HeaderProps) {
 
   return (
     <View style={styles.container}>
+      {left ? <View style={styles.leftSlot}>{left}</View> : null}
       <View style={styles.textWrap}>
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -82,6 +84,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
   },
+  leftSlot: { marginRight: spacing.md },
   textWrap: { flex: 1 },
   title: {
     fontSize: 24,

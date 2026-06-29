@@ -125,7 +125,7 @@ export class LocalRepository implements FinanceRepository {
           )
         )
         .all();
-      const sum = txRows.reduce((accSum, t) => accSum + t.amount, 0);
+      const sum = txRows.reduce((accSum: number, t: { amount: number }) => accSum + t.amount, 0);
       acc.balance = acc.initial_balance + sum;
     }
     return accountsList;
@@ -145,7 +145,7 @@ export class LocalRepository implements FinanceRepository {
         )
       )
       .all();
-    const sum = txRows.reduce((accSum, t) => accSum + t.amount, 0);
+    const sum = txRows.reduce((accSum: number, t: { amount: number }) => accSum + t.amount, 0);
     acc.balance = acc.initial_balance + sum;
     return acc;
   }

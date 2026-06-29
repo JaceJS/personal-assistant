@@ -18,8 +18,8 @@ function FixedExpenseItem({ category, spent }: FixedExpenseItemProps) {
   const limit = category.budget_limit ?? 0;
 
   let badgeText = 'Belum Dibayar';
-  let badgeStyle = styles.badgePending;
-  let badgeTextStyle = { color: colors.text.secondary };
+  let badgeStyle: { backgroundColor: string } = styles.badgePending;
+  let badgeTextStyle: { color: string } = { color: colors.text.secondary };
 
   if (limit > 0) {
     if (spent === 0) {

@@ -14,19 +14,29 @@ import RupiahInput from "@/components/ui/RupiahInput";
 import { SearchableDropdown } from "@/components/ui/SearchableDropdown";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCategories } from "@/features/finance/hooks/useCategories";
-import { useCreateTransaction } from "@/features/finance/hooks/useTransactions";
+import { useCreateTransaction, useTransactions } from "@/features/finance/hooks/useTransactions";
+import { useBudget } from "@/features/finance/hooks/useBudget";
+import { computeBudgetAlert } from "@/features/finance/utils/budgetAlert";
+import { formatRupiah } from "@/lib/utils";
+import {
+  hasRequestedPermission,
+  markPermissionRequested,
+  requestNotificationPermission,
+  scheduleDailyReminder,
+} from "@/lib/notifications";
 import { useToastStore } from "@/stores/toast";
+import { useNotificationStore } from "@/stores/notifications";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const schema = z.object({
   account_id: z.string().min(1, "Pilih akun"),
   category_id: z.string().nullable().optional(),
   amount: z
-    .number({ invalid_type_error: "Masukkan jumlah" })
+    .number({ error: "Masukkan jumlah" })
     .min(1, "Masukkan jumlah"),
   merchant: z.string().optional(),
   note: z.string().optional(),
-  occurred_at: z.date({ required_error: "Pilih tanggal" }),
+  occurred_at: z.date({ error: "Pilih tanggal" }),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -38,6 +48,26 @@ export default function NewTransactionScreen() {
   const { data: categoriesData } = useCategories();
   const createTransaction = useCreateTransaction();
   const { showToast } = useToastStore();
+  const { data: budget } = useBudget();
+  const { dailyReminderHour, dailyReminderMinute, setDailyReminder } = useNotificationStore();
+
+  const monthRange = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+    return { dateFrom: `${y}-${m}-01`, dateTo: `${y}-${m}-${String(lastDay).padStart(2, "0")}` };
+  }, []);
+
+  const { data: monthTxData } = useTransactions({ ...monthRange, limit: 200 });
+
+  const currentMonthExpense = useMemo(
+    () =>
+      (monthTxData?.items ?? [])
+        .filter((t) => t.amount < 0)
+        .reduce((s, t) => s + Math.abs(t.amount), 0),
+    [monthTxData],
+  );
 
   const [txType, setTxType] = useState<"expense" | "income">("expense");
   const [showMore, setShowMore] = useState(false);
@@ -104,13 +134,61 @@ export default function NewTransactionScreen() {
           note: values.note || null,
           occurred_at: values.occurred_at.toISOString(),
         });
-        showToast("Transaksi tersimpan", "success");
+
+        if (txType === "expense") {
+          const cat = categoriesData?.find((c) => c.id === values.category_id);
+          const catSpend = cat?.budget_limit
+            ? (monthTxData?.items ?? [])
+                .filter((t) => t.amount < 0 && t.category_id === values.category_id)
+                .reduce((s, t) => s + Math.abs(t.amount), 0)
+            : 0;
+          const catAlert = cat?.budget_limit
+            ? computeBudgetAlert(cat.budget_limit, catSpend, values.amount)
+            : null;
+          const monthAlert = budget?.monthly_limit
+            ? computeBudgetAlert(budget.monthly_limit, currentMonthExpense, values.amount)
+            : null;
+
+          if (catAlert) {
+            const sisa = formatRupiah(catAlert.remaining);
+            if (catAlert.level === "critical") {
+              showToast(`Budget ${cat!.name} habis! Sisa ${sisa}`, "error");
+            } else {
+              showToast(`Budget ${cat!.name} hampir habis. Sisa ${sisa}`, "warning");
+            }
+          } else if (monthAlert) {
+            const sisa = formatRupiah(monthAlert.remaining);
+            if (monthAlert.level === "critical") {
+              showToast(`Budget bulanan habis! Sisa ${sisa}`, "error");
+            } else {
+              showToast(`Budget bulanan hampir habis. Sisa ${sisa}`, "warning");
+            }
+          } else {
+            showToast("Transaksi tersimpan", "success");
+          }
+        } else {
+          showToast("Transaksi tersimpan", "success");
+        }
+
         handleBack();
+
+        // First-transaction flow: ask notification permission once
+        void (async () => {
+          const alreadyAsked = await hasRequestedPermission();
+          if (!alreadyAsked) {
+            await markPermissionRequested();
+            const granted = await requestNotificationPermission();
+            if (granted) {
+              setDailyReminder(true, dailyReminderHour, dailyReminderMinute);
+              await scheduleDailyReminder(dailyReminderHour, dailyReminderMinute);
+            }
+          }
+        })();
       } catch {
         showToast("Gagal menyimpan transaksi. Coba lagi.", "error");
       }
     },
-    [createTransaction, handleBack, showToast, txType],
+    [createTransaction, handleBack, showToast, txType, budget, currentMonthExpense, monthTxData, categoriesData, dailyReminderHour, dailyReminderMinute, setDailyReminder],
   );
 
   const noAccounts = !accountsLoading && (accountsData?.length ?? 0) === 0;
@@ -197,7 +275,7 @@ export default function NewTransactionScreen() {
                     name: c.name,
                     icon: c.icon ?? undefined,
                   }))}
-                  selectedId={value}
+                  selectedId={value ?? null}
                   onSelect={onChange}
                   error={errors.category_id?.message}
                 />

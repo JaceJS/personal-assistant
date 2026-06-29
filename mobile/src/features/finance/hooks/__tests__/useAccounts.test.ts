@@ -31,10 +31,10 @@ describe('useAccounts auth guard', () => {
     mockInitialized = true;
   });
 
-  it('does not fetch before auth is initialized (cold-start race)', () => {
+  it('does not fetch before auth is initialized (cold-start race)', async () => {
     mockInitialized = false;
 
-    const { result } = renderHook(() => useAccounts(), { wrapper: makeWrapper() });
+    const { result } = await renderHook(() => useAccounts(), { wrapper: makeWrapper() });
 
     expect(result.current.fetchStatus).toBe('idle');
     expect(mockListAccounts).not.toHaveBeenCalled();
@@ -44,7 +44,7 @@ describe('useAccounts auth guard', () => {
     mockInitialized = true;
     mockListAccounts.mockResolvedValueOnce([{ id: 'a1', name: 'Cash' }]);
 
-    const { result } = renderHook(() => useAccounts(), { wrapper: makeWrapper() });
+    const { result } = await renderHook(() => useAccounts(), { wrapper: makeWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 

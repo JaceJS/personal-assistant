@@ -10,6 +10,7 @@ import DailySpendCard from "@/features/finance/components/DailySpendCard";
 import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
 import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
 import TopCategoriesCard from "@/features/finance/components/TopCategoriesCard";
+import WeeklySummaryCard from "@/features/finance/components/WeeklySummaryCard";
 import { AIInsightCard } from "@/features/ai/components/AIInsightCard";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
@@ -95,6 +96,8 @@ export default function HomeScreen() {
         <AccountBalanceCard />
 
         <DailySpendCard />
+
+        <WeeklySummaryCard />
 
         <MonthlyBudgetCard totalExpense={totalExpense} from="home" />
 
