@@ -10,7 +10,6 @@ import { textStyles } from "@/theme/typography";
 import { spacing } from "@/theme/spacing";
 import { radius } from "@/theme/radius";
 import { useAuthStore } from "@/stores/auth";
-import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 
@@ -35,7 +34,6 @@ const FEATURES = [
 export default function WelcomeScreen() {
   const router = useRouter();
   const { isGuest, initialized } = useAuthStore();
-  const { complete } = useOnboardingStore();
   const { showToast } = useToastStore();
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -65,12 +63,12 @@ export default function WelcomeScreen() {
     ]).start();
   }, [fadeAnim, slideAnim, scaleAnim]);
 
-  // Kalau user baru saja login via Google dari layar ini, selesaikan onboarding
+  // Google login successful: route through profile onboarding (don't skip steps)
   useEffect(() => {
     if (initialized && !isGuest) {
-      complete().then(() => router.replace("/(app)"));
+      router.replace("/onboarding/profile");
     }
-  }, [isGuest, initialized, complete, router]);
+  }, [isGuest, initialized, router]);
 
   const handleSkipAsGuest = useCallback(async () => {
     await complete();

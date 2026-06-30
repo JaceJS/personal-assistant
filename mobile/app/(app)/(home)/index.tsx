@@ -12,9 +12,12 @@ import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndO
 import TopCategoriesCard from "@/features/finance/components/TopCategoriesCard";
 import WeeklySummaryCard from "@/features/finance/components/WeeklySummaryCard";
 import { AIInsightCard } from "@/features/ai/components/AIInsightCard";
+import HomeFirstRunChecklist from "@/features/finance/components/HomeFirstRunChecklist";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
+import { useFirstRun } from "@/features/finance/hooks/useFirstRun";
 import { useAuthStore } from "@/stores/auth";
+import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
 import { getDisplayName } from "@/lib/getDisplayName";
 import { colors, spacing, textStyles } from "@/theme";
@@ -31,6 +34,8 @@ export default function HomeScreen() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const { showToast } = useToastStore();
+  const { isFirstRun, ...firstRunState } = useFirstRun();
+  const dismissFirstRun = useOnboardingStore((s) => s.dismissFirstRun);
 
   const now = new Date();
   const dateFrom = [
@@ -93,19 +98,22 @@ export default function HomeScreen() {
           {firstName ? `, ${firstName}` : ""}!
         </Text>
 
-        <AccountBalanceCard />
-
-        <DailySpendCard />
-
-        <WeeklySummaryCard />
-
-        <MonthlyBudgetCard totalExpense={totalExpense} from="home" />
-
-        <TopCategoriesCard />
-
-        <ProjectedEndOfMonthCard />
-
-        <AIInsightCard />
+        {isFirstRun ? (
+          <>
+            <HomeFirstRunChecklist state={firstRunState} onDismiss={dismissFirstRun} />
+            <AccountBalanceCard />
+          </>
+        ) : (
+          <>
+            <AccountBalanceCard />
+            <DailySpendCard />
+            <WeeklySummaryCard />
+            <MonthlyBudgetCard totalExpense={totalExpense} from="home" />
+            <TopCategoriesCard />
+            <ProjectedEndOfMonthCard />
+            <AIInsightCard />
+          </>
+        )}
       </ScrollView>
 
       <Fab

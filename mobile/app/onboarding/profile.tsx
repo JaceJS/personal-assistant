@@ -10,6 +10,7 @@ import { User } from "lucide-react-native";
 import { OnboardingHeader } from "@/components/layout/OnboardingHeader";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { useAuthStore } from "@/stores/auth";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
@@ -23,6 +24,8 @@ type FormValues = z.infer<typeof schema>;
 
 export default function ProfileOnboardingScreen() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const googleName = (user?.user_metadata?.full_name as string | undefined) ?? "";
 
   const {
     control,
@@ -30,7 +33,7 @@ export default function ProfileOnboardingScreen() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { displayName: "" },
+    defaultValues: { displayName: googleName },
   });
 
   const onSubmit = useCallback(
