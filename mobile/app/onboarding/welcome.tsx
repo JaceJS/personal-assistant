@@ -10,6 +10,7 @@ import { textStyles } from "@/theme/typography";
 import { spacing } from "@/theme/spacing";
 import { radius } from "@/theme/radius";
 import { useAuthStore } from "@/stores/auth";
+import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 
@@ -34,6 +35,7 @@ const FEATURES = [
 export default function WelcomeScreen() {
   const router = useRouter();
   const { isGuest, initialized } = useAuthStore();
+  const complete = useOnboardingStore((s) => s.complete);
   const { showToast } = useToastStore();
   const [loginLoading, setLoginLoading] = useState(false);
 
