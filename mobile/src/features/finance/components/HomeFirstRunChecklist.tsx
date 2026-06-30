@@ -29,8 +29,10 @@ export default function HomeFirstRunChecklist({ state, onDismiss }: Props) {
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Yuk setup akunmu 🚀</Text>
-        <Pressable onPress={onDismiss} hitSlop={12} style={({ pressed }) => pressed && styles.pressed}>
-          <Text style={styles.dismiss}>Lewati</Text>
+        <Pressable onPress={onDismiss} hitSlop={12}>
+          {({ pressed }) => (
+            <Text style={[styles.dismiss, pressed && styles.pressed]}>Lewati</Text>
+          )}
         </Pressable>
       </View>
 
@@ -43,20 +45,20 @@ export default function HomeFirstRunChecklist({ state, onDismiss }: Props) {
         {STEPS.map(({ key, label, route }, i) => {
           const done = doneFlags[i];
           return (
-            <Pressable
-              key={key}
-              onPress={() => router.push(route)}
-              style={({ pressed }) => [styles.stepRow, pressed && styles.pressed]}
-            >
-              <View style={styles.stepIcon}>
-                {done ? (
-                  <CheckCircle size={20} color={colors.success.text} />
-                ) : (
-                  <Circle size={20} color={colors.text.muted} />
-                )}
-              </View>
-              <Text style={[styles.stepLabel, done && styles.stepLabelDone]}>{label}</Text>
-              {!done && <ChevronRight size={16} color={colors.text.muted} />}
+            <Pressable key={key} onPress={() => router.push(route)}>
+              {({ pressed }) => (
+                <View style={[styles.stepRow, pressed && styles.pressed]}>
+                  <View style={styles.stepIcon}>
+                    {done ? (
+                      <CheckCircle size={20} color={colors.success.text} />
+                    ) : (
+                      <Circle size={20} color={colors.text.muted} />
+                    )}
+                  </View>
+                  <Text style={[styles.stepLabel, done && styles.stepLabelDone]}>{label}</Text>
+                  {!done && <ChevronRight size={16} color={colors.text.muted} />}
+                </View>
+              )}
             </Pressable>
           );
         })}

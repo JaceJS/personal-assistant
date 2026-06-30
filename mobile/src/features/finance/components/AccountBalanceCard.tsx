@@ -32,14 +32,13 @@ export default function AccountBalanceCard() {
     return (
       <View style={styles.card}>
         <View style={styles.glow} />
-        <Pressable
-          onPress={() => router.push("/(app)/accounts")}
-          style={({ pressed }) => pressed && styles.pressed}
-        >
-          <View style={styles.promptRow}>
-            <Text style={styles.promptText}>Tambah akun pertama</Text>
-            <Text style={styles.promptArrow}>→</Text>
-          </View>
+        <Pressable onPress={() => router.push("/(app)/accounts")}>
+          {({ pressed }) => (
+            <View style={[styles.promptRow, pressed && styles.pressed]}>
+              <Text style={styles.promptText}>Tambah akun pertama</Text>
+              <Text style={styles.promptArrow}>→</Text>
+            </View>
+          )}
         </Pressable>
       </View>
     );
