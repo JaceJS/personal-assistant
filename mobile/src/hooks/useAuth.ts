@@ -6,7 +6,9 @@ import { logger } from "@/lib/logger";
 import { useSyncOnLogin } from "@/features/sync/useSyncOnLogin";
 
 export function useAuth() {
-  const { setSession, markInitialized, enterGuestMode } = useAuthStore();
+  const setSession = useAuthStore((s) => s.setSession);
+  const markInitialized = useAuthStore((s) => s.markInitialized);
+  const enterGuestMode = useAuthStore((s) => s.enterGuestMode);
   const syncOnLogin = useSyncOnLogin();
 
   useEffect(() => {

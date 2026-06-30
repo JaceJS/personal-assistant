@@ -13,7 +13,7 @@ import TopCategoriesCard from "@/features/finance/components/TopCategoriesCard";
 import WeeklySummaryCard from "@/features/finance/components/WeeklySummaryCard";
 import { AIInsightCard } from "@/features/ai/components/AIInsightCard";
 import HomeFirstRunChecklist from "@/features/finance/components/HomeFirstRunChecklist";
-import { useQueryClient } from "@tanstack/react-query";
+import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { useFirstRun } from "@/features/finance/hooks/useFirstRun";
 import { useAuthStore } from "@/stores/auth";
@@ -32,30 +32,24 @@ function getGreeting() {
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
-  const { showToast } = useToastStore();
+  const user = useAuthStore((s) => s.user);
+  const showToast = useToastStore((s) => s.showToast);
   const { isFirstRun, ...firstRunState } = useFirstRun();
   const dismissFirstRun = useOnboardingStore((s) => s.dismissFirstRun);
 
-  const now = new Date();
-  const dateFrom = [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, '0'),
-    '01',
-  ].join('-');
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const dateTo = [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, '0'),
-    String(lastDay).padStart(2, '0'),
-  ].join('-');
+  const { dateFrom, dateTo } = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return {
+      dateFrom: `${y}-${m}-01`,
+      dateTo: `${y}-${m}-${String(lastDay).padStart(2, '0')}`,
+    };
+  }, []);
 
-  const {
-    data: monthTxData,
-    isRefetching,
-    refetch,
-    error: txError,
-  } = useTransactions({ dateFrom, dateTo, limit: 200 });
+  const { data: monthTxData, error: txError } = useTransactions({ dateFrom, dateTo, limit: 200 });
+  const isFetching = useIsFetching({ queryKey: ["transactions"] });
 
   useEffect(() => {
     if (txError) showToast("Gagal memuat transaksi", "error");
@@ -71,11 +65,11 @@ export default function HomeScreen() {
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([
-      refetch(),
       queryClient.invalidateQueries({ queryKey: ["transactions"] }),
       queryClient.invalidateQueries({ queryKey: ["budget"] }),
+      queryClient.invalidateQueries({ queryKey: ["accounts"] }),
     ]);
-  }, [refetch, queryClient]);
+  }, [queryClient]);
 
   const firstName = getDisplayName(user);
 
@@ -87,7 +81,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
+            refreshing={isFetching > 0}
             onRefresh={handleRefresh}
             tintColor={colors.accent.primary}
           />

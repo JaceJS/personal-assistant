@@ -47,7 +47,7 @@ function RootLayoutInner() {
   const [dbReady, setDbReady] = useState(false);
 
   useAuth();
-  const { initialize } = useOnboardingStore();
+  const initialize = useOnboardingStore((s) => s.initialize);
 
   useEffect(() => {
     async function setup() {
