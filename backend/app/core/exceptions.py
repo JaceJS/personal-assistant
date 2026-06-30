@@ -7,8 +7,11 @@ HTTP concerns out of the business logic.
 
 from __future__ import annotations
 
+import structlog
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+
+_logger = structlog.get_logger(__name__)
 
 
 class AppError(Exception):
@@ -59,15 +62,35 @@ class TooManyRequestsError(AppError):
 
 async def _app_error_handler(_request: Request, exc: Exception) -> JSONResponse:
     """Translate an `AppError` into a JSON error response."""
-    # This handler is only registered for AppError; narrow for the type checker.
     if not isinstance(exc, AppError):
         raise exc
+    log = _logger.warning if exc.status_code < 500 else _logger.error
+    log(
+        "app_error",
+        error_type=type(exc).__name__,
+        status=exc.status_code,
+        path=_request.url.path,
+    )
     return JSONResponse(
         status_code=exc.status_code,
         content={"message": exc.message, "data": None, "meta": None},
     )
 
 
+async def _unhandled_error_handler(_request: Request, exc: Exception) -> JSONResponse:
+    _logger.error(
+        "unhandled_exception",
+        error_type=type(exc).__name__,
+        path=_request.url.path,
+        exc_info=True,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"message": "Internal server error", "data": None, "meta": None},
+    )
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Register the application's exception handlers on the FastAPI app."""
     app.add_exception_handler(AppError, _app_error_handler)
+    app.add_exception_handler(Exception, _unhandled_error_handler)

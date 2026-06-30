@@ -25,3 +25,5 @@ graphify-out/cost.json
 graphify-out/.graphify_python
 graphify-out/.graphify_*.json
 graphify-out/cache/
+
+oauth*

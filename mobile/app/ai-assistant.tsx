@@ -1,8 +1,9 @@
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { Camera, Mic, SendHorizontal, Square } from "lucide-react-native";
+import { Camera, Mic, SendHorizontal, Square, Trash2 } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   ActivityIndicator,
   FlatList,
   Pressable,
@@ -16,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Header } from "@/components/layout/Header";
 import GuestGate from "@/components/ui/GuestGate";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ConfirmCard } from "@/components/voice/ConfirmCard";
 import type { ConfirmPayload } from "@/components/voice/ConfirmCard";
 import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
@@ -52,10 +54,10 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 const PROCESSING_TIMEOUT_MS = 60_000;
 
 const QUICK_CHIPS: { label: string; action: "send" | "camera"; text?: string }[] = [
-  { label: "💰 Berapa saldo saya?", action: "send", text: "Berapa saldo saya?" },
   { label: "📝 Catat pengeluaran", action: "send", text: "Catat pengeluaran" },
-  { label: "📊 Lihat budget", action: "send", text: "Lihat budget bulanan saya" },
   { label: "📷 Scan struk", action: "camera" },
+  { label: "💰 Catat pemasukan", action: "send", text: "Catat pemasukan" },
+  { label: "💡 Analisa keuanganku", action: "send", text: "Analisa pengeluaran dan keuanganku bulan ini" },
 ];
 
 export default function AIAssistantScreen() {
@@ -63,7 +65,7 @@ export default function AIAssistantScreen() {
   const { isGuest } = useAuthStore();
   const showToast = useToastStore((s) => s.showToast);
   const { data: accounts } = useAccounts();
-  const { messages, setMessages, sendMessage, pendingDraft, dismissDraft, isLoadingHistory } = useChat();
+  const { messages, setMessages, sendMessage, pendingDraft, dismissDraft, isLoadingHistory, clearChat } = useChat();
   const confirmAiDraftMutation = useConfirmAiDraft();
 
   // Voice hooks
@@ -205,6 +207,17 @@ export default function AIAssistantScreen() {
     setInputText("");
     void sendMessage(text);
   }, [inputText, sendMessage]);
+
+  const handleClearChat = useCallback(() => {
+    Alert.alert(
+      "Hapus Percakapan",
+      "Seluruh riwayat chat akan dihapus dari perangkat ini.",
+      [
+        { text: "Batal", style: "cancel" },
+        { text: "Hapus", style: "destructive", onPress: () => void clearChat() },
+      ]
+    );
+  }, [clearChat]);
 
   const uploadVoiceFlow = useCallback(
     async (audioUri: string, accountId: string) => {
@@ -375,6 +388,18 @@ export default function AIAssistantScreen() {
       <Header
         title="AI Assistant"
         onBack={() => router.back()}
+        right={
+          <OverflowMenu
+            items={[
+              {
+                label: "Hapus Percakapan",
+                icon: <Trash2 size={15} color={colors.danger.text} />,
+                destructive: true,
+                onPress: handleClearChat,
+              },
+            ]}
+          />
+        }
       />
 
       {/* Guest gate */}
@@ -398,6 +423,7 @@ export default function AIAssistantScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={styles.chipsRow}
             contentContainerStyle={styles.quickChips}
           >
             {QUICK_CHIPS.map((chip) => (
@@ -432,6 +458,7 @@ export default function AIAssistantScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.chipsRow}
           contentContainerStyle={styles.quickChips}
         >
           {QUICK_CHIPS.map((chip) => (
@@ -638,6 +665,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.danger.bg,
     borderWidth: 1,
     borderColor: `${colors.danger.text}80`,
+  },
+  chipsRow: {
+    flexShrink: 0,
   },
   quickChips: {
     flexDirection: "row",

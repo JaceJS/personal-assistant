@@ -69,6 +69,7 @@ function RootLayoutInner() {
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="ai-assistant" options={{ presentation: "modal" }} />
+        <Stack.Screen name="delete-account" />
       </Stack>
       <Toast />
     </SafeAreaProvider>

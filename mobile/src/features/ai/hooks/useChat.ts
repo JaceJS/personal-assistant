@@ -86,5 +86,12 @@ export function useChat() {
 
   const dismissDraft = useCallback(() => setPendingDraft(null), []);
 
-  return { messages, setMessages, sendMessage, pendingDraft, dismissDraft, isLoadingHistory };
+  const clearChat = useCallback(async () => {
+    setMessages([]);
+    setPendingDraft(null);
+    setSessionId(undefined);
+    await AsyncStorage.removeItem(CHAT_SESSION_KEY);
+  }, []);
+
+  return { messages, setMessages, sendMessage, pendingDraft, dismissDraft, isLoadingHistory, clearChat };
 }

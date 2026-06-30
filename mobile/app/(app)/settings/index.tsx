@@ -25,7 +25,6 @@ import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
-import { useDeleteAccount } from "@/features/account/hooks/useDeleteAccount";
 import { getDisplayName } from "@/lib/getDisplayName";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 import {
@@ -41,7 +40,6 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { user, isGuest, signOut } = useAuthStore();
   const { showToast } = useToastStore();
-  const { mutate: deleteAccount, isPending: deleting } = useDeleteAccount();
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [backupLoading, setBackupLoading] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
@@ -58,28 +56,6 @@ export default function SettingsScreen() {
       { text: "Keluar", style: "destructive", onPress: () => void signOut() },
     ]);
   }, [signOut]);
-
-  const handleDeleteAccount = useCallback(() => {
-    Alert.alert(
-      "Hapus Akun",
-      "Semua datamu (akun, transaksi, budget, goal) akan dihapus permanen dan tidak bisa dikembalikan. Lanjutkan?",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Hapus Permanen",
-          style: "destructive",
-          onPress: () =>
-            deleteAccount(undefined, {
-              onSuccess: () => {
-                showToast("Akunmu sudah dihapus", "success");
-                void signOut();
-              },
-              onError: () => showToast("Gagal menghapus akun, coba lagi ya", "error"),
-            }),
-        },
-      ]
-    );
-  }, [deleteAccount, showToast, signOut]);
 
   const pickImage = useCallback(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -323,20 +299,16 @@ export default function SettingsScreen() {
               </View>
             </Pressable>
 
-            <Pressable
-              onPress={handleDeleteAccount}
-              disabled={deleting}
-              style={({ pressed }) => [
-                styles.deleteAccountButton,
-                pressed && !deleting && { opacity: 0.6 },
-                deleting && { opacity: 0.5 },
-              ]}
-            >
-              <Trash2 size={15} color={colors.text.muted} />
-              <Text style={styles.deleteAccountLabel}>
-                {deleting ? "Menghapus..." : "Hapus Akun"}
-              </Text>
-            </Pressable>
+            <View style={styles.sectionSeparator} />
+
+            <GroupedList>
+              <MenuItem
+                icon={<Trash2 size={16} color={colors.danger.text} />}
+                label="Hapus Akun"
+                labelStyle={{ color: colors.danger.text }}
+                onPress={() => router.push("/delete-account")}
+              />
+            </GroupedList>
           </>
         )}
       </ScrollView>
@@ -378,11 +350,13 @@ const MenuDivider = () => {
 const MenuItem = ({
   icon,
   label,
+  labelStyle,
   onPress,
   disabled = false,
 }: {
   icon: React.ReactNode;
   label: string;
+  labelStyle?: object;
   onPress: () => void;
   disabled?: boolean;
 }) => {
@@ -397,7 +371,7 @@ const MenuItem = ({
     >
       <View style={styles.menuItem}>
         <View style={styles.iconBox}>{icon}</View>
-        <Text style={styles.menuLabel}>{label}</Text>
+        <Text style={[styles.menuLabel, labelStyle]}>{label}</Text>
         <ChevronRight size={14} color={colors.text.muted} />
       </View>
     </Pressable>
@@ -559,6 +533,12 @@ const styles = StyleSheet.create({
     marginLeft: 60,
   },
 
+  sectionSeparator: {
+    height: 1,
+    backgroundColor: colors.border.subtle,
+    marginTop: spacing["2xl"],
+    marginBottom: spacing.lg,
+  },
   signOutButton: {
     flexDirection: "row",
     justifyContent: "center",
@@ -573,18 +553,5 @@ const styles = StyleSheet.create({
     ...StyleSheet.flatten(textStyles.h2),
     fontSize: 16,
     color: colors.danger.text,
-  },
-  deleteAccountButton: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 14,
-    marginTop: 4,
-  },
-  deleteAccountLabel: {
-    ...StyleSheet.flatten(textStyles.body),
-    fontSize: 14,
-    color: colors.text.muted,
   },
 });
