@@ -5,7 +5,8 @@ import { useAuthStore } from '@/stores/auth';
 const AI_INSIGHT_STALE_TIME = 1000 * 60 * 60; // 1 hour
 
 export function useAIInsight() {
-  const { initialized, isGuest } = useAuthStore();
+  const initialized = useAuthStore((s) => s.initialized);
+  const isGuest = useAuthStore((s) => s.isGuest);
   // Guard: don't fetch before auth resolves (cold-start race) or in guest mode.
   const enabled = initialized && !isGuest;
 

@@ -9,20 +9,22 @@ const QUERY_KEY = "accounts";
 export function useAccounts() {
   const repo = useFinanceRepository();
   const initialized = useAuthStore((s) => s.initialized);
+  const isGuest = useAuthStore((s) => s.isGuest);
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: () => repo.listAccounts(),
-    enabled: initialized,
+    enabled: initialized && !isGuest,
   });
 }
 
 export function useAccount(id: string) {
   const repo = useFinanceRepository();
   const initialized = useAuthStore((s) => s.initialized);
+  const isGuest = useAuthStore((s) => s.isGuest);
   return useQuery({
     queryKey: [QUERY_KEY, id],
     queryFn: () => repo.getAccount(id),
-    enabled: initialized && !!id,
+    enabled: initialized && !isGuest && !!id,
   });
 }
 

@@ -9,11 +9,12 @@ const QUERY_KEY = "categories";
 export function useCategories() {
   const repo = useFinanceRepository();
   const initialized = useAuthStore((s) => s.initialized);
+  const isGuest = useAuthStore((s) => s.isGuest);
   return useQuery<Category[]>({
     queryKey: [QUERY_KEY],
     queryFn: () => repo.listCategories(),
     staleTime: Infinity,
-    enabled: initialized,
+    enabled: initialized && !isGuest,
   });
 }
 
