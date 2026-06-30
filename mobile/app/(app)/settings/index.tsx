@@ -53,9 +53,16 @@ export default function SettingsScreen() {
   const handleSignOut = useCallback(() => {
     Alert.alert("Keluar", "Yakin mau keluar?", [
       { text: "Batal", style: "cancel" },
-      { text: "Keluar", style: "destructive", onPress: () => void signOut() },
+      {
+        text: "Keluar",
+        style: "destructive",
+        onPress: async () => {
+          await signOut();
+          router.replace("/login");
+        },
+      },
     ]);
-  }, [signOut]);
+  }, [signOut, router]);
 
   const pickImage = useCallback(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
