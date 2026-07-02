@@ -27,12 +27,12 @@ describe('getDisplayName', () => {
     expect(getDisplayName(user)).toBe('johndoe123');
   });
 
-  it('returns "there" when user is null', () => {
-    expect(getDisplayName(null)).toBe('there');
+  it('returns empty string when user is null', () => {
+    expect(getDisplayName(null)).toBe('');
   });
 
-  it('returns "there" when no email and no full_name', () => {
+  it('returns empty string when no email and no full_name', () => {
     const user = makeUser({ email: undefined, user_metadata: {} });
-    expect(getDisplayName(user)).toBe('there');
+    expect(getDisplayName(user)).toBe('');
   });
 });

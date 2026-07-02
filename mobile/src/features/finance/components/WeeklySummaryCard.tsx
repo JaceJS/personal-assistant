@@ -6,7 +6,7 @@ import { formatRupiah } from "@/lib/utils";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function WeeklySummaryCard() {
-  const { income, expense, net, isLoading, dateFrom, dateTo } = useWeeklySummary();
+  const { income, expense, net, hasTransactions, isLoading, dateFrom, dateTo } = useWeeklySummary();
 
   const formattedRange = (() => {
     const [, fromM, fromD] = dateFrom.split("-");
@@ -29,6 +29,8 @@ export default function WeeklySummaryCard() {
           <SkeletonText width={100} height={18} />
           <SkeletonText width={100} height={18} />
         </View>
+      ) : !hasTransactions ? (
+        <Text style={styles.emptyText}>Belum ada transaksi minggu ini</Text>
       ) : (
         <>
           <View style={styles.row}>
@@ -114,6 +116,10 @@ const styles = StyleSheet.create({
   skeletonRow: {
     flexDirection: "row",
     gap: spacing.lg,
+  },
+  emptyText: {
+    ...StyleSheet.flatten(textStyles.body),
+    color: colors.text.muted,
   },
   row: {
     flexDirection: "row",

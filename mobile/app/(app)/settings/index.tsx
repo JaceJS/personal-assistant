@@ -25,7 +25,7 @@ import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
-import { getDisplayName } from "@/lib/getDisplayName";
+import { useDisplayName } from "@/hooks/useDisplayName";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 import {
   requestNotificationPermission,
@@ -111,7 +111,7 @@ export default function SettingsScreen() {
     if (dailyReminderEnabled) void scheduleDailyReminder(hour, 0);
   }, [dailyReminderEnabled, setDailyReminder]);
 
-  const displayName = getDisplayName(user);
+  const displayName = useDisplayName();
   const initial = displayName[0]?.toUpperCase() ?? "U";
 
   const whatsappUrl = useMemo(() => {
@@ -134,7 +134,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {isGuest ? (
-          <GuestProfileHero />
+          <GuestProfileHero name={displayName} />
         ) : (
           <Pressable
             onPress={() => router.push("/(app)/settings/profile")}
@@ -330,14 +330,14 @@ export default function SettingsScreen() {
   );
 }
 
-const GuestProfileHero = () => (
+const GuestProfileHero = ({ name }: { name: string }) => (
   <View style={styles.profileHero}>
     <View style={styles.avatarWrapper}>
       <View style={[styles.avatar, styles.guestAvatar]}>
         <User size={36} color={colors.accent.primary} />
       </View>
     </View>
-    <Text style={styles.profileName}>Guest</Text>
+    <Text style={styles.profileName}>{name || "Guest"}</Text>
     <Text style={styles.profileEmail}>Data tersimpan di perangkat ini</Text>
   </View>
 );

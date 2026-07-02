@@ -10,7 +10,6 @@ const QUERY_KEY = "transactions";
 export function useTransactions(params?: ListTransactionsParams) {
   const repo = useFinanceRepository();
   const initialized = useAuthStore((s) => s.initialized);
-  const isGuest = useAuthStore((s) => s.isGuest);
   const resolvedParams: ListTransactionsParams = { status: "confirmed", ...params };
   return useQuery({
     queryKey: [QUERY_KEY, resolvedParams],
@@ -22,18 +21,17 @@ export function useTransactions(params?: ListTransactionsParams) {
         dateFrom: resolvedParams.dateFrom,
         dateTo: resolvedParams.dateTo,
       }),
-    enabled: initialized && !isGuest,
+    enabled: initialized,
   });
 }
 
 export function useTransaction(id: string) {
   const repo = useFinanceRepository();
   const initialized = useAuthStore((s) => s.initialized);
-  const isGuest = useAuthStore((s) => s.isGuest);
   return useQuery({
     queryKey: [QUERY_KEY, id],
     queryFn: () => repo.getTransaction(id),
-    enabled: initialized && !isGuest && !!id,
+    enabled: initialized && !!id,
   });
 }
 

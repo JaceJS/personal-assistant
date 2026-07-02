@@ -16,6 +16,7 @@ function reset() {
     isComplete: false,
     initialized: false,
     dismissedFirstRun: false,
+    guestName: "",
   });
 }
 
@@ -73,5 +74,45 @@ describe("onboarding store: dismissedFirstRun", () => {
     expect(mockRemoveItem).toHaveBeenCalledWith("onboarding_v1_first_run_dismissed");
     expect(useOnboardingStore.getState().isComplete).toBe(false);
     expect(useOnboardingStore.getState().dismissedFirstRun).toBe(false);
+  });
+});
+
+describe("onboarding store: guestName", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    reset();
+  });
+
+  it("defaults guestName to empty string", () => {
+    expect(useOnboardingStore.getState().guestName).toBe("");
+  });
+
+  it("initialize loads guestName from storage", async () => {
+    mockGetItem.mockImplementation((key: string) => {
+      if (key === "onboarding_v1_guest_name") return Promise.resolve("Jace");
+      return Promise.resolve(null);
+    });
+
+    await useOnboardingStore.getState().initialize();
+
+    expect(mockGetItem).toHaveBeenCalledWith("onboarding_v1_guest_name");
+    expect(useOnboardingStore.getState().guestName).toBe("Jace");
+  });
+
+  it("null storage value treated as empty string", async () => {
+    mockGetItem.mockResolvedValue(null);
+
+    await useOnboardingStore.getState().initialize();
+
+    expect(useOnboardingStore.getState().guestName).toBe("");
+  });
+
+  it("setGuestName persists name to storage and updates state", async () => {
+    mockSetItem.mockResolvedValue(undefined);
+
+    await useOnboardingStore.getState().setGuestName("Budi");
+
+    expect(mockSetItem).toHaveBeenCalledWith("onboarding_v1_guest_name", "Budi");
+    expect(useOnboardingStore.getState().guestName).toBe("Budi");
   });
 });

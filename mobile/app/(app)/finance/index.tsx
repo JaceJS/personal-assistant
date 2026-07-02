@@ -14,8 +14,7 @@ import TransactionCard from "@/features/finance/components/TransactionCard";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
-import { useAuthStore } from "@/stores/auth";
-import { getDisplayName } from "@/lib/getDisplayName";
+import { useDisplayName } from "@/hooks/useDisplayName";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const RECENT_COUNT = 3;
@@ -37,8 +36,8 @@ const MONTH_NAMES = [
 
 export default function FinanceDashboard() {
   const router = useRouter();
-  const { user } = useAuthStore();
-  const initial = (getDisplayName(user)[0] ?? "U").toUpperCase();
+  const displayName = useDisplayName();
+  const initial = (displayName[0] ?? "U").toUpperCase();
   const now = new Date();
   const dateFrom = [
     now.getFullYear(),

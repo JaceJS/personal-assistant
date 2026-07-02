@@ -16,7 +16,6 @@ export interface FirstRunState {
 
 export function useFirstRun(): FirstRunState {
   const initialized = useAuthStore((s) => s.initialized);
-  const isGuest = useAuthStore((s) => s.isGuest);
   const dismissedFirstRun = useOnboardingStore((s) => s.dismissedFirstRun);
 
   const { data: accountsData, isLoading: accountsLoading } = useAccounts();
@@ -33,7 +32,6 @@ export function useFirstRun(): FirstRunState {
     const setupStep: 1 | 2 | 3 = hasFirstTransaction ? 3 : hasAccount ? 2 : 1;
 
     const isFirstRun =
-      !isGuest &&
       !dismissedFirstRun &&
       initialized &&
       !isLoading &&
@@ -41,5 +39,5 @@ export function useFirstRun(): FirstRunState {
       !hasFirstTransaction;
 
     return { isFirstRun, isLoading, hasAccount, hasFirstTransaction, hasBudget, setupStep };
-  }, [accountsData, txData, budget, accountsLoading, txLoading, budgetLoading, isGuest, dismissedFirstRun, initialized]);
+  }, [accountsData, txData, budget, accountsLoading, txLoading, budgetLoading, dismissedFirstRun, initialized]);
 }

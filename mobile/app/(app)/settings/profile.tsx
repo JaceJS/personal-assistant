@@ -10,7 +10,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
-import { getDisplayName } from "@/lib/getDisplayName";
+import { useDisplayName } from "@/hooks/useDisplayName";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function ProfileScreen() {
@@ -18,7 +18,7 @@ export default function ProfileScreen() {
   const { user } = useAuthStore();
   const { showToast } = useToastStore();
 
-  const displayName = getDisplayName(user);
+  const displayName = useDisplayName();
   const [name, setName] = useState(displayName);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
 

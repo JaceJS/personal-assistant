@@ -32,7 +32,7 @@ export default function FirstAccountOnboardingScreen() {
   const router = useRouter();
   const { displayName } = useLocalSearchParams<{ displayName: string }>();
   const createAccount = useCreateAccount();
-  const { complete } = useOnboardingStore();
+  const { complete, setGuestName } = useOnboardingStore();
   const { showToast } = useToastStore();
 
   const {
@@ -52,6 +52,8 @@ export default function FirstAccountOnboardingScreen() {
         } = await supabase.auth.getSession();
         if (session && displayName) {
           await supabase.auth.updateUser({ data: { full_name: displayName } });
+        } else if (displayName) {
+          await setGuestName(displayName);
         }
         await createAccount.mutateAsync({ name: values.name, type: values.type });
         await complete();
@@ -62,7 +64,7 @@ export default function FirstAccountOnboardingScreen() {
         showToast("Gagal bikin akun. Coba lagi ya.", "error");
       }
     },
-    [displayName, createAccount, complete, showToast, router]
+    [displayName, createAccount, complete, setGuestName, showToast, router]
   );
 
   return (

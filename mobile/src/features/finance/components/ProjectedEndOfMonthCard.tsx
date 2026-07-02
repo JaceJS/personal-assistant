@@ -44,6 +44,16 @@ export default function ProjectedEndOfMonthCard() {
   const TrendIcon = isHigher ? TrendingUp : TrendingDown;
   const trendColor = isHigher ? colors.success.text : colors.danger.text;
 
+  if (currItems.length === 0) {
+    return (
+      <View style={styles.card}>
+        <View style={styles.glow} />
+        <Text style={styles.overline}>NET BULAN INI</Text>
+        <Text style={styles.emptyText}>Belum ada transaksi bulan ini</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.card}>
       <View style={styles.glow} />
@@ -109,6 +119,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.5,
     marginBottom: 14,
+  },
+  emptyText: {
+    ...StyleSheet.flatten(textStyles.body),
+    color: colors.text.muted,
   },
   statsRow: {
     flexDirection: 'row',

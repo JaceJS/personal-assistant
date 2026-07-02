@@ -9,11 +9,10 @@ const QUERY_KEY = "budget";
 export function useBudget() {
   const repo = useFinanceRepository();
   const initialized = useAuthStore((s) => s.initialized);
-  const isGuest = useAuthStore((s) => s.isGuest);
   return useQuery<Budget | null>({
     queryKey: [QUERY_KEY],
     queryFn: () => repo.getBudget(),
-    enabled: initialized && !isGuest,
+    enabled: initialized,
   });
 }
 

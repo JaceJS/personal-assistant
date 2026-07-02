@@ -21,8 +21,13 @@ function makeTx(amount: number, occurred_at: string): Transaction {
 }
 
 describe("computeWeeklySummary", () => {
-  it("returns zero values for empty list", () => {
-    expect(computeWeeklySummary([])).toEqual({ income: 0, expense: 0, net: 0 });
+  it("returns zero values and hasTransactions=false for empty list", () => {
+    expect(computeWeeklySummary([])).toEqual({ income: 0, expense: 0, net: 0, hasTransactions: false });
+  });
+
+  it("hasTransactions=true when there is at least one transaction", () => {
+    const txs = [makeTx(100_000, "2025-01-01")];
+    expect(computeWeeklySummary(txs).hasTransactions).toBe(true);
   });
 
   it("sums income (positive amounts)", () => {

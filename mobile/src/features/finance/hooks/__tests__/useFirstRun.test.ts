@@ -86,8 +86,17 @@ describe("useFirstRun", () => {
     expect(result.current.isFirstRun).toBe(true);
   });
 
-  it("guest user is never in first-run state", async () => {
+  it("guest user with no local accounts/transactions is in first-run state (sees setup checklist too)", async () => {
     mockIsGuest = true;
+
+    const { result } = await renderHook(() => useFirstRun());
+
+    expect(result.current.isFirstRun).toBe(true);
+  });
+
+  it("guest user is no longer first-run once they have a local account", async () => {
+    mockIsGuest = true;
+    mockAccountsData = [{ id: "local-a1", is_archived: false, balance: 0 }];
 
     const { result } = await renderHook(() => useFirstRun());
 

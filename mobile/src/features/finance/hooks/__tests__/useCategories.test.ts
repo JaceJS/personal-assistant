@@ -2,10 +2,10 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 
-const mockListAccounts = jest.fn();
+const mockListCategories = jest.fn();
 
 jest.mock('@/features/finance/repository', () => ({
-  useFinanceRepository: () => ({ listAccounts: mockListAccounts }),
+  useFinanceRepository: () => ({ listCategories: mockListCategories }),
 }));
 
 let mockInitialized = true;
@@ -15,7 +15,7 @@ jest.mock('@/stores/auth', () => ({
     selector({ initialized: mockInitialized, isGuest: mockIsGuest }),
 }));
 
-import { useAccounts } from '@/features/finance/hooks/useAccounts';
+import { useCategories } from '@/features/finance/hooks/useCategories';
 
 function makeWrapper() {
   const queryClient = new QueryClient({
@@ -26,7 +26,7 @@ function makeWrapper() {
   };
 }
 
-describe('useAccounts auth guard', () => {
+describe('useCategories auth guard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockInitialized = true;
@@ -36,33 +36,31 @@ describe('useAccounts auth guard', () => {
   it('does not fetch before auth is initialized (cold-start race)', async () => {
     mockInitialized = false;
 
-    const { result } = await renderHook(() => useAccounts(), { wrapper: makeWrapper() });
+    const { result } = await renderHook(() => useCategories(), { wrapper: makeWrapper() });
 
     expect(result.current.fetchStatus).toBe('idle');
-    expect(mockListAccounts).not.toHaveBeenCalled();
+    expect(mockListCategories).not.toHaveBeenCalled();
   });
 
-  it('fetches accounts once auth is initialized', async () => {
-    mockInitialized = true;
-    mockListAccounts.mockResolvedValueOnce([{ id: 'a1', name: 'Cash' }]);
+  it('fetches categories once auth is initialized', async () => {
+    mockListCategories.mockResolvedValueOnce([{ id: 'c1', name: 'Makanan' }]);
 
-    const { result } = await renderHook(() => useAccounts(), { wrapper: makeWrapper() });
+    const { result } = await renderHook(() => useCategories(), { wrapper: makeWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockListAccounts).toHaveBeenCalledTimes(1);
-    expect(result.current.data).toEqual([{ id: 'a1', name: 'Cash' }]);
+    expect(mockListCategories).toHaveBeenCalledTimes(1);
   });
 
-  it('fetches accounts for guest user (local repo, no network involved)', async () => {
+  it('fetches categories for guest user (local repo, no network involved)', async () => {
     mockIsGuest = true;
-    mockListAccounts.mockResolvedValueOnce([{ id: 'local-1', name: 'Dompet' }]);
+    mockListCategories.mockResolvedValueOnce([{ id: 'local-c1', name: 'Makanan' }]);
 
-    const { result } = await renderHook(() => useAccounts(), { wrapper: makeWrapper() });
+    const { result } = await renderHook(() => useCategories(), { wrapper: makeWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockListAccounts).toHaveBeenCalledTimes(1);
-    expect(result.current.data).toEqual([{ id: 'local-1', name: 'Dompet' }]);
+    expect(mockListCategories).toHaveBeenCalledTimes(1);
+    expect(result.current.data).toEqual([{ id: 'local-c1', name: 'Makanan' }]);
   });
 });

@@ -201,10 +201,10 @@ Cover: pure utility functions, navigation handlers, data aggregation. Skip: Styl
 
 All routes under `app/(app)/` require an authenticated session. Guest users (`isGuest: true`) can land here if they previously completed onboarding but signed out, since the route group has no hard redirect guard.
 
-**Rule: any TanStack Query hook that calls a protected API endpoint MUST include `enabled: initialized && !isGuest`** to prevent cold-start race conditions and unnecessary 401s.
+**Rule: any TanStack Query hook that calls `apiFetch()` directly (no offline/local fallback) MUST include `enabled: initialized && !isGuest`** to prevent cold-start race conditions and unnecessary 401s.
 
 ```typescript
-// Pattern for every auth-gated query hook
+// Pattern for hooks with NO local repository fallback
 const { initialized, isGuest } = useAuthStore();
 return useQuery({
   ...
@@ -212,14 +212,16 @@ return useQuery({
 });
 ```
 
+**Exception — finance-domain hooks routed through `useFinanceRepository()`** (`useAccounts`, `useTransactions`, `useCategories`, `useBudget`, etc.): these swap to `LocalRepository` (offline SQLite, no JWT) when `isGuest` is true, so there is no 401 risk for guests. Gate these with `enabled: initialized` only — do NOT add `&& !isGuest`, or guest reads will be permanently disabled even though local writes succeed (this was a real bug: guest could create accounts/transactions/budget locally but the dashboard never showed them back).
+
 | Feature | Endpoint | Requires auth |
 |---------|----------|--------------|
 | AI Insight card (home) | `GET /ai/insight` | ✅ Yes: reads financial summary |
 | AI Chat | `POST /ai/chat` | ✅ Yes: reads + writes financial data |
 | Chat history | `GET /ai/sessions/{id}/messages` | ✅ Yes: reads personal chat history |
-| Accounts list | `GET /accounts` | ✅ Yes |
-| Transactions | `GET /transactions` | ✅ Yes |
-| Budget | `GET /budgets` | ✅ Yes |
+| Accounts list | `GET /accounts` (guest: local SQLite) | Guest OK via local repo |
+| Transactions | `GET /transactions` (guest: local SQLite) | Guest OK via local repo |
+| Budget | `GET /budgets` (guest: local SQLite) | Guest OK via local repo |
 | Voice upload | `POST /voice/upload` | ✅ Yes |
 
 No endpoint in this app is public. Every route on the backend uses `CurrentUser` dependency.

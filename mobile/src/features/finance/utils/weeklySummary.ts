@@ -4,6 +4,7 @@ export interface WeeklySummary {
   income: number;
   expense: number;
   net: number;
+  hasTransactions: boolean;
 }
 
 export interface WeekRange {
@@ -18,7 +19,7 @@ export function computeWeeklySummary(transactions: Transaction[]): WeeklySummary
     if (t.amount > 0) income += t.amount;
     else expense += Math.abs(t.amount);
   }
-  return { income, expense, net: income - expense };
+  return { income, expense, net: income - expense, hasTransactions: transactions.length > 0 };
 }
 
 function pad(n: number): string {

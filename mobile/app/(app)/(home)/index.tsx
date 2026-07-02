@@ -7,6 +7,7 @@ import { Screen } from "@/components/layout/Screen";
 import Fab from "@/components/ui/Fab";
 import AccountBalanceCard from "@/features/finance/components/AccountBalanceCard";
 import DailySpendCard from "@/features/finance/components/DailySpendCard";
+import GuestModeBanner from "@/features/finance/components/GuestModeBanner";
 import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
 import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
 import TopCategoriesCard from "@/features/finance/components/TopCategoriesCard";
@@ -19,7 +20,7 @@ import { useFirstRun } from "@/features/finance/hooks/useFirstRun";
 import { useAuthStore } from "@/stores/auth";
 import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
-import { getDisplayName } from "@/lib/getDisplayName";
+import { useDisplayName } from "@/hooks/useDisplayName";
 import { colors, spacing, textStyles } from "@/theme";
 
 function getGreeting() {
@@ -32,7 +33,7 @@ function getGreeting() {
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
+  const isGuest = useAuthStore((s) => s.isGuest);
   const showToast = useToastStore((s) => s.showToast);
   const { isFirstRun, ...firstRunState } = useFirstRun();
   const dismissFirstRun = useOnboardingStore((s) => s.dismissFirstRun);
@@ -71,7 +72,7 @@ export default function HomeScreen() {
     ]);
   }, [queryClient]);
 
-  const firstName = getDisplayName(user);
+  const firstName = useDisplayName();
 
   return (
     <Screen>
@@ -91,6 +92,8 @@ export default function HomeScreen() {
           {getGreeting()}
           {firstName ? `, ${firstName}` : ""}!
         </Text>
+
+        {isGuest && <GuestModeBanner />}
 
         {isFirstRun ? (
           <>
