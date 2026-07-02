@@ -10,7 +10,6 @@ import { textStyles } from "@/theme/typography";
 import { spacing } from "@/theme/spacing";
 import { radius } from "@/theme/radius";
 import { useAuthStore } from "@/stores/auth";
-import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 
@@ -35,7 +34,6 @@ const FEATURES = [
 export default function WelcomeScreen() {
   const router = useRouter();
   const { isGuest, initialized } = useAuthStore();
-  const complete = useOnboardingStore((s) => s.complete);
   const { showToast } = useToastStore();
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -72,12 +70,6 @@ export default function WelcomeScreen() {
     }
   }, [isGuest, initialized, router]);
 
-  const handleSkipAsGuest = useCallback(async () => {
-    await complete();
-    showToast("Siap! Datamu aman di HP ini 💾", "success");
-    router.replace("/(app)");
-  }, [complete, showToast, router]);
-
   const handleGoogleLogin = useCallback(async () => {
     setLoginLoading(true);
     try {
@@ -97,7 +89,7 @@ export default function WelcomeScreen() {
       <View style={styles.ringTopRightInner} />
       <View style={styles.ringBottomLeft} />
 
-      <OnboardingHeader currentStep={1} totalSteps={3} />
+      <OnboardingHeader currentStep={1} totalSteps={2} />
 
       <Animated.View
         style={[
@@ -163,13 +155,6 @@ export default function WelcomeScreen() {
             <Text style={styles.loginLink}>
               {loginLoading ? "Membuka Google..." : "Udah punya akun? Masuk aja"}
             </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={handleSkipAsGuest}
-            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-          >
-            <Text style={styles.skipText}>Coba dulu ah →</Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -326,10 +311,5 @@ const styles = StyleSheet.create({
     color: colors.accent.primary,
     paddingVertical: 8,
     textAlign: "center",
-  },
-  skipText: {
-    ...textStyles.caption,
-    color: colors.text.muted,
-    paddingVertical: 4,
   },
 });
