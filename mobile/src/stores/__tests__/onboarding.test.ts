@@ -17,6 +17,7 @@ function reset() {
     initialized: false,
     dismissedFirstRun: false,
     guestName: "",
+    dismissedBotCoachmark: false,
   });
 }
 
@@ -114,5 +115,37 @@ describe("onboarding store: guestName", () => {
 
     expect(mockSetItem).toHaveBeenCalledWith("onboarding_v1_guest_name", "Budi");
     expect(useOnboardingStore.getState().guestName).toBe("Budi");
+  });
+});
+
+describe("onboarding store: dismissedBotCoachmark", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    reset();
+  });
+
+  it("defaults dismissedBotCoachmark to false", () => {
+    expect(useOnboardingStore.getState().dismissedBotCoachmark).toBe(false);
+  });
+
+  it("initialize loads dismissedBotCoachmark from storage", async () => {
+    mockGetItem.mockImplementation((key: string) => {
+      if (key === "onboarding_v1_bot_coachmark_dismissed") return Promise.resolve("true");
+      return Promise.resolve(null);
+    });
+
+    await useOnboardingStore.getState().initialize();
+
+    expect(mockGetItem).toHaveBeenCalledWith("onboarding_v1_bot_coachmark_dismissed");
+    expect(useOnboardingStore.getState().dismissedBotCoachmark).toBe(true);
+  });
+
+  it("dismissBotCoachmark persists flag to storage and updates state", async () => {
+    mockSetItem.mockResolvedValue(undefined);
+
+    await useOnboardingStore.getState().dismissBotCoachmark();
+
+    expect(mockSetItem).toHaveBeenCalledWith("onboarding_v1_bot_coachmark_dismissed", "true");
+    expect(useOnboardingStore.getState().dismissedBotCoachmark).toBe(true);
   });
 });

@@ -13,6 +13,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, radius, textStyles } from "@/theme";
+import { useOnboardingStore } from "@/stores/onboarding";
 import { handleTabPress } from "./tabPressUtils";
 
 const TAB_ICONS: Record<string, typeof Home> = {
@@ -32,6 +33,8 @@ const TAB_LABELS: Record<string, string> = {
 export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const dismissedBotCoachmark = useOnboardingStore((s) => s.dismissedBotCoachmark);
+  const dismissBotCoachmark = useOnboardingStore((s) => s.dismissBotCoachmark);
 
   const fabScale = useSharedValue(1);
   const animatedFabStyle = useAnimatedStyle(() => ({
@@ -42,8 +45,9 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
       withTiming(0.88, { duration: 80 }),
       withSpring(1, { damping: 8, stiffness: 300 })
     );
+    void dismissBotCoachmark();
     router.push("/ai-assistant");
-  }, [fabScale, router]);
+  }, [fabScale, router, dismissBotCoachmark]);
 
   const visibleRoutes = state.routes.filter((r) => TAB_ICONS[r.name]);
   const left = visibleRoutes.slice(0, 2);
@@ -84,6 +88,14 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   return (
     <View style={[styles.outer, { paddingBottom: insets.bottom + 8 }]}>
       <View style={styles.fabWrap} pointerEvents="box-none">
+        {!dismissedBotCoachmark && (
+          <Pressable onPress={() => void dismissBotCoachmark()} style={styles.coachmark}>
+            <Text style={styles.coachmarkText}>
+              Coba chat, ucapin, atau foto struk di sini ✨
+            </Text>
+            <View style={styles.coachmarkArrow} />
+          </Pressable>
+        )}
         <Pressable onPress={handleBotPress} style={styles.fabPressable} hitSlop={10}>
           <Animated.View style={[styles.fab, animatedFabStyle]}>
             <Bot size={26} color={colors.accent.primary} strokeWidth={2} />
@@ -114,6 +126,42 @@ const styles = StyleSheet.create({
     top: -32,
     alignSelf: "center",
     zIndex: 10,
+  },
+  coachmark: {
+    position: "absolute",
+    bottom: 80,
+    left: "50%",
+    transform: [{ translateX: -110 }],
+    width: 220,
+    backgroundColor: colors.accent.primary,
+    borderRadius: radius.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    shadowColor: colors.accent.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  coachmarkText: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: "#fff",
+    textAlign: "center",
+    lineHeight: 16,
+  },
+  coachmarkArrow: {
+    position: "absolute",
+    bottom: -6,
+    left: "50%",
+    transform: [{ translateX: -6 }],
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 6,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: colors.accent.primary,
   },
   fabPressable: {
     width: 64,
