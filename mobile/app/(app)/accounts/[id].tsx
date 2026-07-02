@@ -8,6 +8,7 @@ import { Header } from "@/components/layout/Header";
 import { HeaderActions, HeaderButton } from "@/components/ui/HeaderButton";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import RupiahInput from "@/components/ui/RupiahInput";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import { ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
 import type { AccountType } from "@/features/finance/types";
@@ -44,44 +45,46 @@ export default function AccountDetailScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
+  const [initialBalance, setInitialBalance] = useState(0);
 
   const handleStartEdit = useCallback(() => {
     if (!account) return;
     setName(account.name);
+    setInitialBalance(account.initial_balance);
     setIsEditing(true);
   }, [account]);
 
   const handleSaveEdit = useCallback(async () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      showToast("Account name cannot be empty", "error");
+      showToast("Nama akun tidak boleh kosong", "error");
       return;
     }
     try {
-      await updateAccount.mutateAsync({ name: trimmed });
+      await updateAccount.mutateAsync({ name: trimmed, initial_balance: initialBalance });
       setIsEditing(false);
-      showToast("Account name updated", "success");
+      showToast("Akun berhasil diperbarui", "success");
     } catch {
-      showToast("Failed to update account.", "error");
+      showToast("Gagal memperbarui akun.", "error");
     }
-  }, [updateAccount, name, showToast]);
+  }, [updateAccount, name, initialBalance, showToast]);
 
   const handleDelete = useCallback(() => {
     Alert.alert(
-      "Delete Account",
-      `"${account?.name}" will be permanently deleted. This action cannot be undone.`,
+      "Hapus Akun",
+      `"${account?.name}" akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "Batal", style: "cancel" },
         {
-          text: "Delete",
+          text: "Hapus",
           style: "destructive",
           onPress: async () => {
             try {
               await archiveAccount.mutateAsync(id);
-              showToast("Account deleted", "info");
+              showToast("Akun berhasil dihapus", "info");
               router.replace("/(app)/accounts");
             } catch {
-              showToast("Failed to delete account.", "error");
+              showToast("Gagal menghapus akun.", "error");
             }
           },
         },
@@ -151,14 +154,23 @@ export default function AccountDetailScreen() {
         {/* Actions / Edit */}
         {isEditing && (
           <View style={styles.editCard}>
-            <Input label="Account Name" value={name} onChangeText={setName} autoFocus />
+            <Input label="Nama Akun" value={name} onChangeText={setName} autoFocus />
+            <RupiahInput
+              label="Saldo Awal"
+              placeholder="0"
+              value={initialBalance}
+              onChange={setInitialBalance}
+            />
+            <Text style={styles.editHint}>
+              Ubah saldo awal kalau ada koreksi — transaksi yang udah tercatat gak kepengaruh.
+            </Text>
             <Button
-              label="Save Changes"
+              label="Simpan Perubahan"
               onPress={handleSaveEdit}
               loading={updateAccount.isPending}
               fullWidth
             />
-            <Button label="Cancel" onPress={() => setIsEditing(false)} variant="ghost" fullWidth />
+            <Button label="Batal" onPress={() => setIsEditing(false)} variant="ghost" fullWidth />
           </View>
         )}
       </ScrollView>
@@ -207,6 +219,11 @@ const styles = StyleSheet.create({
   currency: { ...StyleSheet.flatten(textStyles.caption), color: colors.text.muted, marginTop: 2 },
 
   actionsSection: { gap: spacing.md },
+  editHint: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
+    marginTop: -spacing.sm,
+  },
   editCard: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,

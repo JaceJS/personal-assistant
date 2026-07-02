@@ -117,6 +117,7 @@ export interface AccountCreate {
 
 export interface AccountUpdate {
   name?: string;
+  initial_balance?: number;
   is_archived?: boolean;
 }
 

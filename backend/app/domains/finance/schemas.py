@@ -127,6 +127,7 @@ class AccountCreate(BaseModel):
 
 class AccountUpdate(BaseModel):
     name: str | None = None
+    initial_balance: int | None = None
     is_archived: bool | None = None
 
     @field_validator("name")
