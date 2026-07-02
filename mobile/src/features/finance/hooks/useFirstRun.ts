@@ -35,8 +35,7 @@ export function useFirstRun(): FirstRunState {
       !dismissedFirstRun &&
       initialized &&
       !isLoading &&
-      !hasAccount &&
-      !hasFirstTransaction;
+      !(hasAccount && hasFirstTransaction && hasBudget);
 
     return { isFirstRun, isLoading, hasAccount, hasFirstTransaction, hasBudget, setupStep };
   }, [accountsData, txData, budget, accountsLoading, txLoading, budgetLoading, dismissedFirstRun, initialized]);

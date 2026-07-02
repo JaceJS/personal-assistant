@@ -95,22 +95,17 @@ export default function HomeScreen() {
 
         {isGuest && <GuestModeBanner />}
 
-        {isFirstRun ? (
-          <>
-            <HomeFirstRunChecklist state={firstRunState} onDismiss={dismissFirstRun} />
-            <AccountBalanceCard />
-          </>
-        ) : (
-          <>
-            <AccountBalanceCard />
-            <DailySpendCard />
-            <WeeklySummaryCard />
-            <MonthlyBudgetCard totalExpense={totalExpense} from="home" />
-            <TopCategoriesCard />
-            <ProjectedEndOfMonthCard />
-            <AIInsightCard />
-          </>
+        {isFirstRun && (
+          <HomeFirstRunChecklist state={firstRunState} onDismiss={dismissFirstRun} />
         )}
+
+        <AccountBalanceCard />
+        <DailySpendCard />
+        <WeeklySummaryCard />
+        <MonthlyBudgetCard totalExpense={totalExpense} from="home" />
+        <TopCategoriesCard />
+        <ProjectedEndOfMonthCard />
+        <AIInsightCard />
       </ScrollView>
 
       <Fab

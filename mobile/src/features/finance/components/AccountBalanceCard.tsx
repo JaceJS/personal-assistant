@@ -3,14 +3,17 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-nativ
 import { useRouter } from "expo-router";
 
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
+import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { formatRupiah } from "@/lib/utils";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function AccountBalanceCard() {
   const router = useRouter();
   const { data } = useAccounts();
+  const { data: txData } = useTransactions({ limit: 1 });
   const accounts = (data ?? []).filter((a) => !a.is_archived);
   const totalBalance = accounts.reduce((sum, a: { balance: number }) => sum + a.balance, 0);
+  const hasFirstTransaction = (txData?.items ?? []).length > 0;
 
   const [displayBalance, setDisplayBalance] = useState(0);
   const animatedBalance = useRef(new Animated.Value(0)).current;
@@ -28,14 +31,31 @@ export default function AccountBalanceCard() {
     return () => animatedBalance.removeListener(listener);
   }, [totalBalance, animatedBalance]);
 
-  if (accounts.length === 0) {
+  // Zero balance + no activity yet: nudge toward the next action instead of
+  // showing a bare "Rp 0" — an account always exists (auto-created during
+  // onboarding), but a real balance genuinely at Rp 0 (post-transaction) is
+  // shown plainly below, not treated as empty.
+  const isEmpty = accounts.length === 0 || (totalBalance === 0 && !hasFirstTransaction);
+
+  if (isEmpty) {
+    const hasAccounts = accounts.length > 0;
     return (
       <View style={styles.card}>
         <View style={styles.glow} />
-        <Pressable onPress={() => router.push("/(app)/accounts")}>
+        <Pressable
+          onPress={() =>
+            router.push(
+              hasAccounts
+                ? { pathname: "/(app)/finance/new", params: { from: "home" } }
+                : "/(app)/accounts"
+            )
+          }
+        >
           {({ pressed }) => (
             <View style={[styles.promptRow, pressed && styles.pressed]}>
-              <Text style={styles.promptText}>Tambah akun pertama</Text>
+              <Text style={styles.promptText}>
+                {hasAccounts ? "Catat transaksi pertama" : "Tambah akun pertama"}
+              </Text>
               <Text style={styles.promptArrow}>→</Text>
             </View>
           )}

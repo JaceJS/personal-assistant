@@ -56,25 +56,35 @@ describe("useFirstRun", () => {
     expect(result.current.setupStep).toBe(1);
   });
 
-  it("isFirstRun=false when account exists; setupStep=2", async () => {
+  it("isFirstRun stays true when account exists but transaction/budget still missing; setupStep=2", async () => {
     mockAccountsData = [{ id: "a1", is_archived: false, balance: 0 }];
 
     const { result } = await renderHook(() => useFirstRun());
 
-    expect(result.current.isFirstRun).toBe(false);
+    expect(result.current.isFirstRun).toBe(true);
     expect(result.current.hasAccount).toBe(true);
     expect(result.current.setupStep).toBe(2);
   });
 
-  it("isFirstRun=false when transaction exists; setupStep=3", async () => {
+  it("isFirstRun stays true when transaction exists but budget still missing; setupStep=3", async () => {
     mockAccountsData = [{ id: "a1", is_archived: false, balance: 0 }];
     mockTxData = { items: [{ id: "t1" }] };
 
     const { result } = await renderHook(() => useFirstRun());
 
-    expect(result.current.isFirstRun).toBe(false);
+    expect(result.current.isFirstRun).toBe(true);
     expect(result.current.hasFirstTransaction).toBe(true);
     expect(result.current.setupStep).toBe(3);
+  });
+
+  it("isFirstRun=false once account, transaction, and budget are all done", async () => {
+    mockAccountsData = [{ id: "a1", is_archived: false, balance: 0 }];
+    mockTxData = { items: [{ id: "t1" }] };
+    mockBudget = { id: "b1" };
+
+    const { result } = await renderHook(() => useFirstRun());
+
+    expect(result.current.isFirstRun).toBe(false);
   });
 
   it("archived accounts do not count toward hasAccount", async () => {
@@ -94,13 +104,13 @@ describe("useFirstRun", () => {
     expect(result.current.isFirstRun).toBe(true);
   });
 
-  it("guest user is no longer first-run once they have a local account", async () => {
+  it("guest user still sees setup checklist after adding a local account (transaction/budget pending)", async () => {
     mockIsGuest = true;
     mockAccountsData = [{ id: "local-a1", is_archived: false, balance: 0 }];
 
     const { result } = await renderHook(() => useFirstRun());
 
-    expect(result.current.isFirstRun).toBe(false);
+    expect(result.current.isFirstRun).toBe(true);
   });
 
   it("dismissed user is never in first-run state", async () => {
