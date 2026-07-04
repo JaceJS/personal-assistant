@@ -89,7 +89,7 @@ export default function WelcomeScreen() {
       <View style={styles.ringTopRightInner} />
       <View style={styles.ringBottomLeft} />
 
-      <OnboardingHeader currentStep={1} totalSteps={2} />
+      <OnboardingHeader currentStep={1} totalSteps={3} />
 
       <Animated.View
         style={[
