@@ -42,6 +42,7 @@ export default function AccountBalanceCard() {
     return (
       <View style={styles.card}>
         <View style={styles.glow} />
+        {hasAccounts && <Text style={styles.sub}>{accounts.length} akun</Text>}
         <Pressable
           onPress={() =>
             router.push(
@@ -113,6 +114,7 @@ const styles = StyleSheet.create({
   sub: {
     ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
+    marginBottom: 4,
   },
   promptRow: {
     flexDirection: "row",
