@@ -162,7 +162,7 @@ export default function AccountDetailScreen() {
               onChange={setInitialBalance}
             />
             <Text style={styles.editHint}>
-              Ubah saldo awal kalau ada koreksi — transaksi yang udah tercatat gak kepengaruh.
+              Ubah saldo awal kalau ada koreksi, transaksi yang udah tercatat gak kepengaruh.
             </Text>
             <Button
               label="Simpan Perubahan"

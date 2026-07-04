@@ -32,7 +32,7 @@ export default function AccountBalanceCard() {
   }, [totalBalance, animatedBalance]);
 
   // Zero balance + no activity yet: nudge toward the next action instead of
-  // showing a bare "Rp 0" — an account always exists (auto-created during
+  // showing a bare "Rp 0". An account always exists (auto-created during
   // onboarding), but a real balance genuinely at Rp 0 (post-transaction) is
   // shown plainly below, not treated as empty.
   const isEmpty = accounts.length === 0 || (totalBalance === 0 && !hasFirstTransaction);

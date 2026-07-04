@@ -90,7 +90,7 @@ async def test_update_account_name_only_does_not_touch_balance() -> None:
 
 async def test_update_account_initial_balance_shifts_balance_by_delta() -> None:
     """Correcting the starting balance must preserve every transaction already
-    applied on top of it — shift `balance` by the same delta, not overwrite it."""
+    applied on top of it: shift `balance` by the same delta, not overwrite it."""
     session = _make_session()
     # Account started at 0, then 3 confirmed transactions brought balance to 50_000.
     account = _make_account(initial_balance=0, balance=50_000)

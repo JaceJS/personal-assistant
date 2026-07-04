@@ -212,7 +212,7 @@ return useQuery({
 });
 ```
 
-**Exception — finance-domain hooks routed through `useFinanceRepository()`** (`useAccounts`, `useTransactions`, `useCategories`, `useBudget`, etc.): these swap to `LocalRepository` (offline SQLite, no JWT) when `isGuest` is true, so there is no 401 risk for guests. Gate these with `enabled: initialized` only — do NOT add `&& !isGuest`, or guest reads will be permanently disabled even though local writes succeed (this was a real bug: guest could create accounts/transactions/budget locally but the dashboard never showed them back).
+**Exception: finance-domain hooks routed through `useFinanceRepository()`** (`useAccounts`, `useTransactions`, `useCategories`, `useBudget`, etc.): these swap to `LocalRepository` (offline SQLite, no JWT) when `isGuest` is true, so there is no 401 risk for guests. Gate these with `enabled: initialized` only; do NOT add `&& !isGuest`, or guest reads will be permanently disabled even though local writes succeed (this was a real bug: guest could create accounts/transactions/budget locally but the dashboard never showed them back).
 
 | Feature | Endpoint | Requires auth |
 |---------|----------|--------------|

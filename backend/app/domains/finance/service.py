@@ -182,7 +182,7 @@ async def update_account(
     update_data = data.model_dump(exclude_unset=True)
     if "initial_balance" in update_data:
         # Correcting the starting balance must preserve every transaction
-        # already applied on top of it — shift `balance` by the same delta.
+        # already applied on top of it: shift `balance` by the same delta.
         delta = update_data["initial_balance"] - account.initial_balance
         update_data["balance"] = account.balance + delta
     return await repo.update_account(session, account, **update_data)
