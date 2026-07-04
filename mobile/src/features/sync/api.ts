@@ -11,7 +11,7 @@ interface BulkImportPayload {
   accounts: Account[];
   categories: Category[];
   transactions: Transaction[];
-  budgets: Budget[];
+  budget: Budget | null;
   savings_goals: SavingsGoal[];
 }
 

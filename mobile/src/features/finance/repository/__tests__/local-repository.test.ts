@@ -1,4 +1,7 @@
 jest.mock("@/lib/db/client", () => ({ db: null }));
+jest.mock("expo-crypto", () => ({
+  randomUUID: () => jest.requireActual<typeof import("crypto")>("crypto").randomUUID(),
+}));
 
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
@@ -200,6 +203,54 @@ describe("LocalRepository", () => {
       await repo.createCategory({ id: "cat-1", name: "Makan", type: "expense" });
       const updated = await repo.updateCategory("cat-1", { budget_limit: 500_000 });
       expect(updated.budget_limit).toBe(500_000);
+    });
+  });
+
+  describe("migrateNonUuidCategoryIds", () => {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const NEW_ID = "11111111-1111-4111-8111-111111111111";
+    const EXISTING_UUID = "22222222-2222-4222-8222-222222222222";
+
+    it("rewrites non-UUID category ids and updates transaction references", async () => {
+      await repo.createAccount(BASE_ACCOUNT);
+      await repo.createCategory({ id: "default-cat-food", name: "Makan & Minum", type: "expense" });
+      await repo.createTransaction({ ...BASE_TX, category_id: "default-cat-food" });
+
+      await repo.migrateNonUuidCategoryIds(() => NEW_ID);
+
+      const cats = await repo.listCategories();
+      expect(cats).toHaveLength(1);
+      expect(cats[0].id).toBe(NEW_ID);
+      expect(cats[0].name).toBe("Makan & Minum");
+
+      const { items } = await repo.listTransactions();
+      expect(items[0].category_id).toBe(NEW_ID);
+    });
+
+    it("leaves UUID category ids and their transactions untouched", async () => {
+      await repo.createAccount(BASE_ACCOUNT);
+      await repo.createCategory({ id: EXISTING_UUID, name: "Custom", type: "expense" });
+      await repo.createTransaction({ ...BASE_TX, category_id: EXISTING_UUID });
+
+      const generateId = jest.fn(() => NEW_ID);
+      await repo.migrateNonUuidCategoryIds(generateId);
+
+      expect(generateId).not.toHaveBeenCalled();
+      const cats = await repo.listCategories();
+      expect(cats[0].id).toBe(EXISTING_UUID);
+      const { items } = await repo.listTransactions();
+      expect(items[0].category_id).toBe(EXISTING_UUID);
+    });
+
+    it("migrates every seeded default category with the default generator", async () => {
+      await repo.listCategories(); // seeds DEFAULT_CATEGORIES with "default-cat-*" ids
+
+      await repo.migrateNonUuidCategoryIds();
+
+      const cats = await repo.listCategories();
+      expect(cats.length).toBeGreaterThan(0);
+      expect(cats.every((c) => UUID_RE.test(c.id))).toBe(true);
+      expect(new Set(cats.map((c) => c.id)).size).toBe(cats.length);
     });
   });
 

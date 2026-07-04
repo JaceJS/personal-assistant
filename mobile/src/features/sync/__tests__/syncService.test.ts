@@ -1,6 +1,7 @@
 import { syncLocalData } from "../syncService";
 
 const makeRepo = (overrides: Record<string, jest.Mock> = {}) => ({
+  migrateNonUuidCategoryIds: jest.fn().mockResolvedValue(undefined),
   listAccounts: jest.fn().mockResolvedValue([]),
   listCategories: jest.fn().mockResolvedValue([]),
   listTransactions: jest.fn().mockResolvedValue({ items: [], total: 0 }),
@@ -39,6 +40,26 @@ describe("syncLocalData", () => {
     expect(syncApi).not.toHaveBeenCalled();
   });
 
+  it("migrates non-UUID category ids before reading local data", async () => {
+    const callOrder: string[] = [];
+    const repo = makeRepo({
+      migrateNonUuidCategoryIds: jest.fn(async () => {
+        callOrder.push("migrate");
+      }),
+      listCategories: jest.fn(async () => {
+        callOrder.push("list");
+        return [CATEGORY];
+      }),
+      listAccounts: jest.fn().mockResolvedValue([ACCOUNT]),
+    });
+    const syncApi = jest.fn().mockResolvedValue(IMPORTED);
+
+    await syncLocalData(repo, syncApi);
+
+    expect(repo.migrateNonUuidCategoryIds).toHaveBeenCalledTimes(1);
+    expect(callOrder[0]).toBe("migrate");
+  });
+
   it("sends all local data to sync API when accounts exist", async () => {
     const repo = makeRepo({
       listAccounts: jest.fn().mockResolvedValue([ACCOUNT]),
@@ -55,7 +76,7 @@ describe("syncLocalData", () => {
       accounts: [ACCOUNT],
       categories: [CATEGORY],
       transactions: [TRANSACTION],
-      budgets: [BUDGET],
+      budget: BUDGET,
       savings_goals: [GOAL],
     });
     expect(result).toEqual({ skipped: false, imported: IMPORTED });
@@ -85,7 +106,7 @@ describe("syncLocalData", () => {
     expect(syncApi).toHaveBeenCalled();
   });
 
-  it("wraps budget in array for API payload", async () => {
+  it("sends budget as a single object, matching the backend schema", async () => {
     const repo = makeRepo({
       getBudget: jest.fn().mockResolvedValue(BUDGET),
     });
@@ -94,11 +115,11 @@ describe("syncLocalData", () => {
     await syncLocalData(repo, syncApi);
 
     expect(syncApi).toHaveBeenCalledWith(
-      expect.objectContaining({ budgets: [BUDGET] })
+      expect.objectContaining({ budget: BUDGET })
     );
   });
 
-  it("sends empty budgets array when budget is null", async () => {
+  it("sends null budget when none exists locally", async () => {
     const repo = makeRepo({
       listAccounts: jest.fn().mockResolvedValue([ACCOUNT]),
     });
@@ -107,7 +128,7 @@ describe("syncLocalData", () => {
     await syncLocalData(repo, syncApi);
 
     expect(syncApi).toHaveBeenCalledWith(
-      expect.objectContaining({ budgets: [] })
+      expect.objectContaining({ budget: null })
     );
   });
 

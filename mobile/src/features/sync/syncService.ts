@@ -14,6 +14,7 @@ export interface SyncResult {
 }
 
 interface SyncableRepo {
+  migrateNonUuidCategoryIds(): Promise<void>;
   listAccounts(): Promise<Account[]>;
   listCategories(): Promise<Category[]>;
   listTransactions(params?: Record<string, unknown>): Promise<{ items: Transaction[]; total: number }>;
@@ -25,7 +26,7 @@ type SyncApiFn = (payload: {
   accounts: Account[];
   categories: Category[];
   transactions: Transaction[];
-  budgets: Budget[];
+  budget: Budget | null;
   savings_goals: SavingsGoal[];
 }) => Promise<ImportCounts>;
 
@@ -42,6 +43,9 @@ export async function syncLocalData(
   localRepo: SyncableRepo,
   syncApiFn: SyncApiFn
 ): Promise<SyncResult> {
+  // Legacy seeded categories used non-UUID slug ids the backend rejects.
+  await localRepo.migrateNonUuidCategoryIds();
+
   const [accounts, categories, { items: transactions }, budget, savingsGoals] = await Promise.all([
     localRepo.listAccounts(),
     localRepo.listCategories(),
@@ -58,7 +62,7 @@ export async function syncLocalData(
     accounts,
     categories,
     transactions,
-    budgets: budget ? [budget] : [],
+    budget,
     savings_goals: savingsGoals,
   });
 

@@ -1,4 +1,5 @@
 import { eq, and, count, gte, lte } from "drizzle-orm";
+import * as ExpoCrypto from "expo-crypto";
 import { db as defaultDb } from "@/lib/db/client";
 import { accounts, categories, transactions, budgets, savingsGoals } from "@/lib/db/schema";
 import type {
@@ -24,6 +25,8 @@ import { DEFAULT_CATEGORIES } from "../constants/defaultCategories";
 function now(): string {
   return new Date().toISOString();
 }
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Converts a raw SQLite row to the Account API shape
 function toAccount(row: typeof accounts.$inferSelect): Account {
@@ -226,6 +229,25 @@ export class LocalRepository implements FinanceRepository {
       .run();
     const row = this.db.select().from(categories).where(eq(categories.id, id)).get();
     return toCategory(row);
+  }
+
+  // Legacy seeded categories used slug ids ("default-cat-food") which the
+  // backend sync endpoint rejects (it validates ids as UUID). Rewrite them
+  // to real UUIDs, keeping transaction references intact.
+  async migrateNonUuidCategoryIds(
+    generateId: () => string = ExpoCrypto.randomUUID
+  ): Promise<void> {
+    const rows = this.db.select().from(categories).all();
+    for (const row of rows) {
+      if (UUID_PATTERN.test(row.id)) continue;
+      const newId = generateId();
+      this.db.update(categories).set({ id: newId }).where(eq(categories.id, row.id)).run();
+      this.db
+        .update(transactions)
+        .set({ category_id: newId })
+        .where(eq(transactions.category_id, row.id))
+        .run();
+    }
   }
 
   async archiveCategory(id: string): Promise<void> {
