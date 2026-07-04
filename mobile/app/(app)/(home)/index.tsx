@@ -18,7 +18,6 @@ import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { useFirstRun } from "@/features/finance/hooks/useFirstRun";
 import { useAuthStore } from "@/stores/auth";
-import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { colors, spacing, textStyles } from "@/theme";
@@ -36,7 +35,6 @@ export default function HomeScreen() {
   const isGuest = useAuthStore((s) => s.isGuest);
   const showToast = useToastStore((s) => s.showToast);
   const { isFirstRun, ...firstRunState } = useFirstRun();
-  const dismissFirstRun = useOnboardingStore((s) => s.dismissFirstRun);
 
   const { dateFrom, dateTo } = useMemo(() => {
     const now = new Date();
@@ -95,9 +93,7 @@ export default function HomeScreen() {
 
         {isGuest && <GuestModeBanner />}
 
-        {isFirstRun && (
-          <HomeFirstRunChecklist state={firstRunState} onDismiss={dismissFirstRun} />
-        )}
+        {isFirstRun && <HomeFirstRunChecklist state={firstRunState} />}
 
         <AccountBalanceCard />
         <DailySpendCard />

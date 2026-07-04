@@ -15,66 +15,47 @@ function reset() {
   useOnboardingStore.setState({
     isComplete: false,
     initialized: false,
-    dismissedFirstRun: false,
     guestName: "",
     dismissedBotCoachmark: false,
+    dismissedGoalCoachmark: false,
   });
 }
 
-describe("onboarding store: dismissedFirstRun", () => {
+describe("onboarding store: isComplete", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     reset();
   });
 
-  it("defaults dismissedFirstRun to false", () => {
-    expect(useOnboardingStore.getState().dismissedFirstRun).toBe(false);
-  });
-
-  it("initialize reads both storage keys in parallel", async () => {
+  it("initialize reads storage key", async () => {
     mockGetItem.mockImplementation((key: string) => {
       if (key === "onboarding_v1_complete") return Promise.resolve("true");
-      if (key === "onboarding_v1_first_run_dismissed") return Promise.resolve("true");
       return Promise.resolve(null);
     });
 
     await useOnboardingStore.getState().initialize();
 
     expect(mockGetItem).toHaveBeenCalledWith("onboarding_v1_complete");
-    expect(mockGetItem).toHaveBeenCalledWith("onboarding_v1_first_run_dismissed");
     expect(useOnboardingStore.getState().isComplete).toBe(true);
-    expect(useOnboardingStore.getState().dismissedFirstRun).toBe(true);
     expect(useOnboardingStore.getState().initialized).toBe(true);
   });
 
-  it("null storage values treated as false", async () => {
+  it("null storage value treated as false", async () => {
     mockGetItem.mockResolvedValue(null);
 
     await useOnboardingStore.getState().initialize();
 
     expect(useOnboardingStore.getState().isComplete).toBe(false);
-    expect(useOnboardingStore.getState().dismissedFirstRun).toBe(false);
   });
 
-  it("dismissFirstRun persists flag to storage and updates state", async () => {
-    mockSetItem.mockResolvedValue(undefined);
-
-    await useOnboardingStore.getState().dismissFirstRun();
-
-    expect(mockSetItem).toHaveBeenCalledWith("onboarding_v1_first_run_dismissed", "true");
-    expect(useOnboardingStore.getState().dismissedFirstRun).toBe(true);
-  });
-
-  it("reset clears both storage keys and resets both flags", async () => {
+  it("reset clears storage key and resets flag", async () => {
     mockRemoveItem.mockResolvedValue(undefined);
-    useOnboardingStore.setState({ isComplete: true, dismissedFirstRun: true });
+    useOnboardingStore.setState({ isComplete: true });
 
     await useOnboardingStore.getState().reset();
 
     expect(mockRemoveItem).toHaveBeenCalledWith("onboarding_v1_complete");
-    expect(mockRemoveItem).toHaveBeenCalledWith("onboarding_v1_first_run_dismissed");
     expect(useOnboardingStore.getState().isComplete).toBe(false);
-    expect(useOnboardingStore.getState().dismissedFirstRun).toBe(false);
   });
 });
 
@@ -147,5 +128,37 @@ describe("onboarding store: dismissedBotCoachmark", () => {
 
     expect(mockSetItem).toHaveBeenCalledWith("onboarding_v1_bot_coachmark_dismissed", "true");
     expect(useOnboardingStore.getState().dismissedBotCoachmark).toBe(true);
+  });
+});
+
+describe("onboarding store: dismissedGoalCoachmark", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    reset();
+  });
+
+  it("defaults dismissedGoalCoachmark to false", () => {
+    expect(useOnboardingStore.getState().dismissedGoalCoachmark).toBe(false);
+  });
+
+  it("initialize loads dismissedGoalCoachmark from storage", async () => {
+    mockGetItem.mockImplementation((key: string) => {
+      if (key === "onboarding_v1_goal_coachmark_dismissed") return Promise.resolve("true");
+      return Promise.resolve(null);
+    });
+
+    await useOnboardingStore.getState().initialize();
+
+    expect(mockGetItem).toHaveBeenCalledWith("onboarding_v1_goal_coachmark_dismissed");
+    expect(useOnboardingStore.getState().dismissedGoalCoachmark).toBe(true);
+  });
+
+  it("dismissGoalCoachmark persists flag to storage and updates state", async () => {
+    mockSetItem.mockResolvedValue(undefined);
+
+    await useOnboardingStore.getState().dismissGoalCoachmark();
+
+    expect(mockSetItem).toHaveBeenCalledWith("onboarding_v1_goal_coachmark_dismissed", "true");
+    expect(useOnboardingStore.getState().dismissedGoalCoachmark).toBe(true);
   });
 });

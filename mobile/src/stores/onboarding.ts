@@ -2,52 +2,52 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
 const STORAGE_KEY = "onboarding_v1_complete";
-const FIRST_RUN_KEY = "onboarding_v1_first_run_dismissed";
 const GUEST_NAME_KEY = "onboarding_v1_guest_name";
 const BOT_COACHMARK_KEY = "onboarding_v1_bot_coachmark_dismissed";
+const GOAL_COACHMARK_KEY = "onboarding_v1_goal_coachmark_dismissed";
 
 interface OnboardingState {
   isComplete: boolean;
   initialized: boolean;
-  dismissedFirstRun: boolean;
   guestName: string;
   dismissedBotCoachmark: boolean;
+  dismissedGoalCoachmark: boolean;
   initialize: () => Promise<void>;
   complete: () => Promise<void>;
   reset: () => Promise<void>;
-  dismissFirstRun: () => Promise<void>;
   setGuestName: (name: string) => Promise<void>;
   dismissBotCoachmark: () => Promise<void>;
+  dismissGoalCoachmark: () => Promise<void>;
 }
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
   isComplete: false,
   initialized: false,
-  dismissedFirstRun: false,
   guestName: "",
   dismissedBotCoachmark: false,
+  dismissedGoalCoachmark: false,
 
   initialize: async () => {
     try {
-      const [complete, dismissed, guestName, botCoachmarkDismissed] = await Promise.all([
+      const [complete, guestName, botCoachmarkDismissed, goalCoachmarkDismissed] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEY),
-        AsyncStorage.getItem(FIRST_RUN_KEY),
         AsyncStorage.getItem(GUEST_NAME_KEY),
         AsyncStorage.getItem(BOT_COACHMARK_KEY),
+        AsyncStorage.getItem(GOAL_COACHMARK_KEY),
       ]);
       set({
         isComplete: complete === "true",
-        dismissedFirstRun: dismissed === "true",
         guestName: guestName ?? "",
         dismissedBotCoachmark: botCoachmarkDismissed === "true",
+        dismissedGoalCoachmark: goalCoachmarkDismissed === "true",
         initialized: true,
       });
     } catch {
       set({
         isComplete: false,
-        dismissedFirstRun: false,
         guestName: "",
         dismissedBotCoachmark: false,
+        dismissedGoalCoachmark: false,
         initialized: true,
       });
     }
@@ -59,16 +59,8 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   },
 
   reset: async () => {
-    await Promise.all([
-      AsyncStorage.removeItem(STORAGE_KEY),
-      AsyncStorage.removeItem(FIRST_RUN_KEY),
-    ]);
-    set({ isComplete: false, dismissedFirstRun: false });
-  },
-
-  dismissFirstRun: async () => {
-    await AsyncStorage.setItem(FIRST_RUN_KEY, "true");
-    set({ dismissedFirstRun: true });
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    set({ isComplete: false });
   },
 
   setGuestName: async (name: string) => {
@@ -79,5 +71,10 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   dismissBotCoachmark: async () => {
     await AsyncStorage.setItem(BOT_COACHMARK_KEY, "true");
     set({ dismissedBotCoachmark: true });
+  },
+
+  dismissGoalCoachmark: async () => {
+    await AsyncStorage.setItem(GOAL_COACHMARK_KEY, "true");
+    set({ dismissedGoalCoachmark: true });
   },
 }));

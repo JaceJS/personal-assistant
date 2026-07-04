@@ -1,7 +1,7 @@
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
 import { Bot, Clock, Home, Target, User } from "lucide-react-native";
-import { useCallback } from "react";
+import { Fragment, useCallback } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -35,6 +35,9 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const router = useRouter();
   const dismissedBotCoachmark = useOnboardingStore((s) => s.dismissedBotCoachmark);
   const dismissBotCoachmark = useOnboardingStore((s) => s.dismissBotCoachmark);
+  const dismissedGoalCoachmark = useOnboardingStore((s) => s.dismissedGoalCoachmark);
+  const dismissGoalCoachmark = useOnboardingStore((s) => s.dismissGoalCoachmark);
+  const activeCoachmark = !dismissedBotCoachmark ? "bot" : !dismissedGoalCoachmark ? "goal" : null;
 
   const fabScale = useSharedValue(1);
   const animatedFabStyle = useAnimatedStyle(() => ({
@@ -57,62 +60,89 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
     const focused = state.index === state.routes.indexOf(route);
     const Icon = TAB_ICONS[route.name];
     const label = TAB_LABELS[route.name];
+    const isGoalTab = route.name === "goals";
 
     return (
-      <Pressable
-        key={route.key}
-        onPress={() =>
-          handleTabPress({
-            focused,
-            routeName: route.name,
-            routeState: route.state as { key?: string; index?: number } | undefined,
-            navigate: (name) => navigation.navigate(name),
-            dispatch: (action) => navigation.dispatch(action),
-          })
-        }
-        style={styles.tab}
-        hitSlop={8}
-      >
-        <Icon
-          size={22}
-          color={focused ? colors.accent.primary : colors.text.muted}
-          strokeWidth={focused ? 2.2 : 1.5}
-        />
-        <Text style={[styles.label, focused ? styles.labelActive : styles.labelInactive]}>
-          {label}
-        </Text>
-      </Pressable>
+      <View key={route.key} style={styles.tabWrap}>
+        {isGoalTab && activeCoachmark === "goal" && (
+          <Pressable onPress={() => void dismissGoalCoachmark()} style={styles.goalCoachmark}>
+            <Text style={styles.coachmarkText}>Atur target nabung di sini 🎯</Text>
+            <View style={styles.goalCoachmarkArrow} />
+          </Pressable>
+        )}
+        <Pressable
+          onPress={() => {
+            if (isGoalTab) void dismissGoalCoachmark();
+            handleTabPress({
+              focused,
+              routeName: route.name,
+              routeState: route.state as { key?: string; index?: number } | undefined,
+              navigate: (name) => navigation.navigate(name),
+              dispatch: (action) => navigation.dispatch(action),
+            });
+          }}
+          style={styles.tab}
+          hitSlop={8}
+        >
+          <Icon
+            size={22}
+            color={focused ? colors.accent.primary : colors.text.muted}
+            strokeWidth={focused ? 2.2 : 1.5}
+          />
+          <Text style={[styles.label, focused ? styles.labelActive : styles.labelInactive]}>
+            {label}
+          </Text>
+        </Pressable>
+      </View>
     );
   };
 
   return (
-    <View style={[styles.outer, { paddingBottom: insets.bottom + 8 }]}>
-      <View style={styles.fabWrap} pointerEvents="box-none">
-        {!dismissedBotCoachmark && (
-          <Pressable onPress={() => void dismissBotCoachmark()} style={styles.coachmark}>
-            <Text style={styles.coachmarkText}>
-              Coba chat, ucapin, atau foto struk di sini ✨
-            </Text>
-            <View style={styles.coachmarkArrow} />
+    <Fragment>
+      {activeCoachmark && (
+        <Pressable
+          style={styles.dimOverlay}
+          onPress={() =>
+            void (activeCoachmark === "bot" ? dismissBotCoachmark() : dismissGoalCoachmark())
+          }
+        />
+      )}
+      <View style={[styles.outer, { paddingBottom: insets.bottom + 8 }]}>
+        <View style={styles.fabWrap} pointerEvents="box-none">
+          {activeCoachmark === "bot" && (
+            <Pressable onPress={() => void dismissBotCoachmark()} style={styles.coachmark}>
+              <Text style={styles.coachmarkText}>
+                Coba chat, ucapin, atau foto struk di sini ✨
+              </Text>
+              <View style={styles.coachmarkArrow} />
+            </Pressable>
+          )}
+          <Pressable onPress={handleBotPress} style={styles.fabPressable} hitSlop={10}>
+            <Animated.View style={[styles.fab, animatedFabStyle]}>
+              <Bot size={26} color={colors.accent.primary} strokeWidth={2} />
+            </Animated.View>
           </Pressable>
-        )}
-        <Pressable onPress={handleBotPress} style={styles.fabPressable} hitSlop={10}>
-          <Animated.View style={[styles.fab, animatedFabStyle]}>
-            <Bot size={26} color={colors.accent.primary} strokeWidth={2} />
-          </Animated.View>
-        </Pressable>
-      </View>
+        </View>
 
-      <View style={styles.pill}>
-        <View style={styles.side}>{left.map(renderTab)}</View>
-        <View style={styles.gap} />
-        <View style={styles.side}>{right.map(renderTab)}</View>
+        <View style={styles.pill}>
+          <View style={styles.side}>{left.map(renderTab)}</View>
+          <View style={styles.gap} />
+          <View style={styles.side}>{right.map(renderTab)}</View>
+        </View>
       </View>
-    </View>
+    </Fragment>
   );
 }
 
 const styles = StyleSheet.create({
+  dimOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
   outer: {
     position: "absolute",
     bottom: 0,
@@ -202,6 +232,40 @@ const styles = StyleSheet.create({
   },
   gap: {
     width: 64,
+  },
+  tabWrap: {
+    position: "relative",
+  },
+  goalCoachmark: {
+    position: "absolute",
+    bottom: "100%",
+    marginBottom: 10,
+    left: "50%",
+    transform: [{ translateX: -45 }],
+    width: 170,
+    backgroundColor: colors.accent.primary,
+    borderRadius: radius.lg,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    shadowColor: colors.accent.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  goalCoachmarkArrow: {
+    position: "absolute",
+    bottom: -6,
+    left: "50%",
+    transform: [{ translateX: -46 }],
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 6,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: colors.accent.primary,
   },
   tab: {
     alignItems: "center",

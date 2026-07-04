@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useAuthStore } from "@/stores/auth";
-import { useOnboardingStore } from "@/stores/onboarding";
 import { useAccounts } from "./useAccounts";
 import { useTransactions } from "./useTransactions";
 import { useBudget } from "./useBudget";
@@ -16,7 +15,6 @@ export interface FirstRunState {
 
 export function useFirstRun(): FirstRunState {
   const initialized = useAuthStore((s) => s.initialized);
-  const dismissedFirstRun = useOnboardingStore((s) => s.dismissedFirstRun);
 
   const { data: accountsData, isLoading: accountsLoading } = useAccounts();
   const { data: txData, isLoading: txLoading } = useTransactions({ limit: 1 });
@@ -32,11 +30,8 @@ export function useFirstRun(): FirstRunState {
     const setupStep: 1 | 2 | 3 = hasFirstTransaction ? 3 : hasAccount ? 2 : 1;
 
     const isFirstRun =
-      !dismissedFirstRun &&
-      initialized &&
-      !isLoading &&
-      !(hasAccount && hasFirstTransaction && hasBudget);
+      initialized && !isLoading && !(hasAccount && hasFirstTransaction && hasBudget);
 
     return { isFirstRun, isLoading, hasAccount, hasFirstTransaction, hasBudget, setupStep };
-  }, [accountsData, txData, budget, accountsLoading, txLoading, budgetLoading, dismissedFirstRun, initialized]);
+  }, [accountsData, txData, budget, accountsLoading, txLoading, budgetLoading, initialized]);
 }

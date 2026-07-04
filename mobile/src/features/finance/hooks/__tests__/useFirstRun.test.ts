@@ -1,6 +1,5 @@
 let mockInitialized = true;
 let mockIsGuest = false;
-let mockDismissedFirstRun = false;
 
 let mockAccountsData: { id: string; is_archived: boolean; balance: number }[] = [];
 let mockAccountsLoading = false;
@@ -12,11 +11,6 @@ let mockBudgetLoading = false;
 jest.mock("@/stores/auth", () => ({
   useAuthStore: (selector: (s: { initialized: boolean; isGuest: boolean }) => unknown) =>
     selector({ initialized: mockInitialized, isGuest: mockIsGuest }),
-}));
-
-jest.mock("@/stores/onboarding", () => ({
-  useOnboardingStore: (selector: (s: { dismissedFirstRun: boolean }) => unknown) =>
-    selector({ dismissedFirstRun: mockDismissedFirstRun }),
 }));
 
 jest.mock("@/features/finance/hooks/useAccounts", () => ({
@@ -38,7 +32,6 @@ describe("useFirstRun", () => {
   beforeEach(() => {
     mockInitialized = true;
     mockIsGuest = false;
-    mockDismissedFirstRun = false;
     mockAccountsData = [];
     mockAccountsLoading = false;
     mockTxData = { items: [] };
@@ -111,14 +104,6 @@ describe("useFirstRun", () => {
     const { result } = await renderHook(() => useFirstRun());
 
     expect(result.current.isFirstRun).toBe(true);
-  });
-
-  it("dismissed user is never in first-run state", async () => {
-    mockDismissedFirstRun = true;
-
-    const { result } = await renderHook(() => useFirstRun());
-
-    expect(result.current.isFirstRun).toBe(false);
   });
 
   it("hasBudget=true when budget returned", async () => {

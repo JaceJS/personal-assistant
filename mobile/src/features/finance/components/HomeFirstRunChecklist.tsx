@@ -7,7 +7,6 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 
 interface Props {
   state: Pick<FirstRunState, "hasAccount" | "hasFirstTransaction" | "hasBudget" | "setupStep">;
-  onDismiss: () => void;
 }
 
 const STEPS = [
@@ -16,7 +15,7 @@ const STEPS = [
   { key: "budget", label: "Atur budget bulanan", route: "/(app)/finance/budget" as const },
 ] as const;
 
-export default function HomeFirstRunChecklist({ state, onDismiss }: Props) {
+export default function HomeFirstRunChecklist({ state }: Props) {
   const router = useRouter();
   const { hasAccount, hasFirstTransaction, hasBudget } = state;
 
@@ -27,14 +26,7 @@ export default function HomeFirstRunChecklist({ state, onDismiss }: Props) {
 
   return (
     <View style={styles.card}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Yuk setup akunmu 🚀</Text>
-        <Pressable onPress={onDismiss} hitSlop={12}>
-          {({ pressed }) => (
-            <Text style={[styles.dismiss, pressed && styles.pressed]}>Lewati</Text>
-          )}
-        </Pressable>
-      </View>
+      <Text style={styles.title}>Yuk setup akunmu 🚀</Text>
 
       <View style={styles.barTrack}>
         <View style={[styles.barFill, { width: `${Math.round(progressPct * 100)}%` as `${number}%` }]} />
@@ -77,19 +69,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     padding: spacing.xl,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
   title: {
     ...StyleSheet.flatten(textStyles.h3),
     color: colors.text.primary,
-  },
-  dismiss: {
-    ...StyleSheet.flatten(textStyles.caption),
-    color: colors.text.muted,
+    marginBottom: 14,
   },
   barTrack: {
     height: 6,
