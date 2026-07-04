@@ -60,6 +60,12 @@ class TooManyRequestsError(AppError):
     status_code = 429
 
 
+class BadGatewayError(AppError):
+    """An upstream dependency failed or is misconfigured (HTTP 502)."""
+
+    status_code = 502
+
+
 async def _app_error_handler(_request: Request, exc: Exception) -> JSONResponse:
     """Translate an `AppError` into a JSON error response."""
     if not isinstance(exc, AppError):

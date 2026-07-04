@@ -30,16 +30,17 @@ export default function DeleteAccountScreen() {
           style: "destructive",
           onPress: () =>
             deleteAccount(undefined, {
-              onSuccess: () => {
+              onSuccess: async () => {
                 showToast("Akunmu sudah dihapus", "success");
-                void signOut();
+                await signOut();
+                router.replace("/login");
               },
               onError: () => showToast("Gagal menghapus akun, coba lagi ya", "error"),
             }),
         },
       ]
     );
-  }, [deleteAccount, showToast, signOut]);
+  }, [deleteAccount, showToast, signOut, router]);
 
   return (
     <Screen>
