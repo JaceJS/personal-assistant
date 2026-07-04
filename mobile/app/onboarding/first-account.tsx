@@ -23,10 +23,8 @@ import { spacing } from "@/theme/spacing";
 import { textStyles } from "@/theme/typography";
 import type { AccountType } from "@/features/finance/types";
 
-export const DEFAULT_ACCOUNT_NAME = "Akun Utama";
-
 const schema = z.object({
-  accountName: z.string(),
+  accountName: z.string().min(1, "Nama akun wajib diisi"),
   accountType: z.enum(["cash", "bank", "ewallet", "credit"]),
   initialBalance: z.number(),
 });
@@ -40,7 +38,11 @@ export default function FirstAccountOnboardingScreen() {
   const { complete, setGuestName } = useOnboardingStore();
   const { showToast } = useToastStore();
 
-  const { control, handleSubmit } = useForm<FormValues>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       accountName: "",
@@ -61,7 +63,7 @@ export default function FirstAccountOnboardingScreen() {
           await setGuestName(displayName);
         }
         await createAccount.mutateAsync({
-          name: values.accountName.trim() || DEFAULT_ACCOUNT_NAME,
+          name: values.accountName.trim(),
           type: values.accountType,
           initial_balance: values.initialBalance,
         });
@@ -88,7 +90,7 @@ export default function FirstAccountOnboardingScreen() {
           <OnboardingStepHeader
             icon={Wallet}
             title="Akun pertama"
-            subtitle={`Tempat transaksimu kecatat. Kosongin aja kalau belum yakin, kepake "${DEFAULT_ACCOUNT_NAME}" dulu.`}
+            subtitle="Tempat transaksimu kecatat. Kasih nama biar gampang dikenali, misal 'BCA' atau 'Dompet Tunai'."
           />
 
           <View style={styles.form}>
@@ -100,7 +102,8 @@ export default function FirstAccountOnboardingScreen() {
                   label="Nama Akun"
                   value={value}
                   onChangeText={onChange}
-                  placeholder={DEFAULT_ACCOUNT_NAME}
+                  placeholder="misal: BCA, Dana, Tunai"
+                  error={errors.accountName?.message}
                   autoFocus
                 />
               )}
