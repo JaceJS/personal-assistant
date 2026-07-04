@@ -117,7 +117,13 @@ async def test_import_handles_empty_payload(client: AsyncClient) -> None:
 
     assert response.status_code == 200
     data = response.json()["data"]["imported"]
-    assert data == {"accounts": 0, "categories": 0, "transactions": 0, "budgets": 0, "savings_goals": 0}
+    assert data == {
+        "accounts": 0,
+        "categories": 0,
+        "transactions": 0,
+        "budgets": 0,
+        "savings_goals": 0,
+    }
 
 
 async def test_import_requires_auth() -> None:
@@ -130,6 +136,119 @@ async def test_import_requires_auth() -> None:
         )
 
     assert response.status_code == 401
+
+
+async def test_import_account_stores_initial_balance(client: AsyncClient) -> None:
+    account_id = uuid.uuid4()
+    payload = {
+        "accounts": [
+            {"id": str(account_id), "name": "BCA", "type": "bank", "initial_balance": 500_000}
+        ],
+        "categories": [],
+        "transactions": [],
+        "budget": None,
+    }
+
+    response = await client.post("/api/v1/sync/import", json=payload)
+    assert response.status_code == 200
+
+    detail = await client.get(f"/api/v1/accounts/{account_id}")
+    assert detail.status_code == 200
+    data = detail.json()["data"]
+    assert data["initial_balance"] == 500_000
+    assert data["balance"] == 500_000
+
+
+async def test_import_applies_transactions_to_account_balance(client: AsyncClient) -> None:
+    account_id = uuid.uuid4()
+    payload = {
+        "accounts": [
+            {"id": str(account_id), "name": "Dompet", "type": "cash", "initial_balance": 100_000}
+        ],
+        "categories": [],
+        "transactions": [
+            {
+                "id": str(uuid.uuid4()),
+                "account_id": str(account_id),
+                "amount": -30_000,
+                "occurred_at": datetime(2024, 3, 1, 12, 0, 0, tzinfo=UTC).isoformat(),
+                "source": "manual",
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "account_id": str(account_id),
+                "amount": 50_000,
+                "occurred_at": datetime(2024, 3, 2, 9, 0, 0, tzinfo=UTC).isoformat(),
+                "source": "manual",
+            },
+        ],
+        "budget": None,
+    }
+
+    response = await client.post("/api/v1/sync/import", json=payload)
+    assert response.status_code == 200
+
+    detail = await client.get(f"/api/v1/accounts/{account_id}")
+    assert detail.json()["data"]["balance"] == 120_000
+
+
+async def test_reimport_does_not_double_apply_balance(client: AsyncClient) -> None:
+    account_id = uuid.uuid4()
+    payload = {
+        "accounts": [
+            {"id": str(account_id), "name": "Dompet", "type": "cash", "initial_balance": 100_000}
+        ],
+        "categories": [],
+        "transactions": [
+            {
+                "id": str(uuid.uuid4()),
+                "account_id": str(account_id),
+                "amount": -30_000,
+                "occurred_at": datetime(2024, 3, 1, 12, 0, 0, tzinfo=UTC).isoformat(),
+                "source": "manual",
+            }
+        ],
+        "budget": None,
+    }
+
+    await client.post("/api/v1/sync/import", json=payload)
+    response = await client.post("/api/v1/sync/import", json=payload)
+    assert response.status_code == 200
+
+    detail = await client.get(f"/api/v1/accounts/{account_id}")
+    assert detail.json()["data"]["balance"] == 70_000
+
+
+async def test_import_does_not_touch_other_users_account_balance(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    other_user_id = uuid.uuid4()
+    other_account = await repo.create_account(
+        db_session, other_user_id, name="Milik Orang Lain", type=AccountType.cash, currency="IDR"
+    )
+    await db_session.commit()
+
+    payload = {
+        "accounts": [],
+        "categories": [],
+        "transactions": [
+            {
+                "id": str(uuid.uuid4()),
+                "account_id": str(other_account.id),
+                "amount": 999_999,
+                "occurred_at": datetime(2024, 3, 1, 12, 0, 0, tzinfo=UTC).isoformat(),
+                "source": "manual",
+            }
+        ],
+        "budget": None,
+    }
+
+    await client.post("/api/v1/sync/import", json=payload)
+
+    refreshed = await repo.get_account(db_session, other_account.id)
+    assert refreshed is not None
+    assert refreshed.balance == 0
 
 
 async def test_import_accounts_and_transactions_together(client: AsyncClient) -> None:

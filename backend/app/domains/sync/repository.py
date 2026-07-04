@@ -42,6 +42,10 @@ async def import_accounts(
                     "name": a.name,
                     "type": a.type,
                     "currency": a.currency,
+                    "initial_balance": a.initial_balance,
+                    # Transaction deltas are applied by the service after
+                    # import_transactions, on top of this starting point.
+                    "balance": a.initial_balance,
                 }
                 for a in accounts
             ]
@@ -82,9 +86,14 @@ async def import_categories(
 
 async def import_transactions(
     session: AsyncSession, user_id: uuid.UUID, transactions: list[TransactionImport]
-) -> int:
+) -> list[tuple[uuid.UUID, int]]:
+    """Insert transactions; return (account_id, amount) for rows actually inserted.
+
+    RETURNING only yields newly inserted rows (conflicts are skipped), so the
+    caller can apply balance deltas without double-counting on re-import.
+    """
     if not transactions:
-        return 0
+        return []
     stmt = (
         pg_insert(Transaction)
         .values(
@@ -106,10 +115,11 @@ async def import_transactions(
             ]
         )
         .on_conflict_do_nothing(index_elements=["id"])
+        .returning(Transaction.account_id, Transaction.amount)
     )
     result = await session.execute(stmt)
     await session.flush()
-    return cast("CursorResult[Any]", result).rowcount
+    return [(row.account_id, row.amount) for row in result]
 
 
 async def import_budget(

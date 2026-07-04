@@ -15,6 +15,7 @@ class AccountImport(BaseModel):
     name: str
     type: AccountType
     currency: str = "IDR"
+    initial_balance: int = 0
 
 
 class CategoryImport(BaseModel):
