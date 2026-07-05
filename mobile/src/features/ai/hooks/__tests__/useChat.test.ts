@@ -1,11 +1,17 @@
 import { renderHook, act } from '@testing-library/react-native';
 
+jest.mock('@react-native-async-storage/async-storage', () =>
+  jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 jest.mock('@/features/ai/api/chat', () => ({
   postChatMessage: jest.fn(),
+  getChatSessionMessages: jest.fn(),
 }));
 
 import { postChatMessage } from '@/features/ai/api/chat';
 import { useChat } from '@/features/ai/hooks/useChat';
+import type { DraftMessage } from '@/features/finance/utils/chatMessageUtils';
 
 const mockPostChatMessage = postChatMessage as jest.MockedFunction<typeof postChatMessage>;
 
@@ -15,7 +21,11 @@ describe('useChat', () => {
   });
 
   it('sends first message without session_id and stores returned session', async () => {
-    mockPostChatMessage.mockResolvedValueOnce({ reply: 'Hello!', session_id: 'session-abc' });
+    mockPostChatMessage.mockResolvedValueOnce({
+      reply: 'Hello!',
+      session_id: 'session-abc',
+      draft_transactions: [],
+    });
 
     const { result } = await renderHook(() => useChat());
 
@@ -31,8 +41,16 @@ describe('useChat', () => {
 
   it('sends subsequent messages with session_id from previous response', async () => {
     mockPostChatMessage
-      .mockResolvedValueOnce({ reply: 'First reply', session_id: 'session-abc' })
-      .mockResolvedValueOnce({ reply: 'Second reply', session_id: 'session-abc' });
+      .mockResolvedValueOnce({
+        reply: 'First reply',
+        session_id: 'session-abc',
+        draft_transactions: [],
+      })
+      .mockResolvedValueOnce({
+        reply: 'Second reply',
+        session_id: 'session-abc',
+        draft_transactions: [],
+      });
 
     const { result } = await renderHook(() => useChat());
 
@@ -62,55 +80,62 @@ describe('useChat', () => {
     );
   });
 
-  it('sets pendingDraft when reply contains draft_transaction', async () => {
+  it('appends one draft message per draft transaction after the AI reply', async () => {
     mockPostChatMessage.mockResolvedValueOnce({
-      reply: 'Draft created',
+      reply: 'Draft dibuat, cek card di bawah.',
       session_id: 'session-abc',
-      draft_transaction: {
-        transaction_id: 'tx-123',
-        amount: -50000,
-        currency: 'IDR',
-        merchant: 'Warteg',
-        category_name: null,
-        note: null,
-        account_id: 'acct-456',
-      },
+      draft_transactions: [
+        {
+          transaction_id: 'tx-123',
+          amount: -20000,
+          currency: 'IDR',
+          merchant: 'Sate',
+          category_name: 'Makan',
+          note: null,
+          account_id: 'acct-456',
+        },
+        {
+          transaction_id: 'tx-124',
+          amount: -5000,
+          currency: 'IDR',
+          merchant: 'Es Teh',
+          category_name: 'Makan',
+          note: null,
+          account_id: 'acct-456',
+        },
+      ],
     });
 
     const { result } = await renderHook(() => useChat());
 
     await act(async () => {
-      await result.current.sendMessage('catat pengeluaran');
+      await result.current.sendMessage('sate 20.000 es teh 5.000');
     });
 
-    expect(result.current.pendingDraft?.transaction_id).toBe('tx-123');
+    const drafts = result.current.messages.filter(
+      (m): m is DraftMessage => m.type === 'draft',
+    );
+    expect(drafts).toHaveLength(2);
+    expect(drafts.map((d) => d.id)).toEqual(['tx-123', 'tx-124']);
+    expect(drafts[0].state).toBe('pending');
+    // Draft cards come after the AI reply bubble
+    const types = result.current.messages.map((m) => m.type);
+    expect(types.indexOf('draft')).toBeGreaterThan(types.indexOf('ai'));
   });
 
-  it('clears pendingDraft when dismissDraft called', async () => {
+  it('appends no draft messages when reply has none', async () => {
     mockPostChatMessage.mockResolvedValueOnce({
-      reply: 'Draft created',
+      reply: 'Halo!',
       session_id: 'session-abc',
-      draft_transaction: {
-        transaction_id: 'tx-123',
-        amount: -50000,
-        currency: 'IDR',
-        merchant: null,
-        category_name: null,
-        note: null,
-        account_id: 'acct-456',
-      },
+      draft_transactions: [],
     });
 
     const { result } = await renderHook(() => useChat());
 
     await act(async () => {
-      await result.current.sendMessage('catat');
+      await result.current.sendMessage('halo');
     });
 
-    await act(async () => {
-      result.current.dismissDraft();
-    });
-
-    expect(result.current.pendingDraft).toBeNull();
+    expect(result.current.messages.some((m) => m.type === 'draft')).toBe(false);
   });
 });

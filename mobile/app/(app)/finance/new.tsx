@@ -203,7 +203,13 @@ export default function NewTransactionScreen() {
             <Text style={styles.emptyText}>Buat akun dulu sebelum mencatat transaksi.</Text>
             <Button
               label="Buat Akun"
-              onPress={() => router.replace("/(app)/accounts")}
+              onPress={() =>
+                router.replace(
+                  from
+                    ? { pathname: "/(app)/accounts", params: { from } }
+                    : "/(app)/accounts"
+                )
+              }
               variant="secondary"
             />
           </View>

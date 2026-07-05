@@ -37,7 +37,10 @@ export default function HomeFirstRunChecklist({ state }: Props) {
         {STEPS.map(({ key, label, route }, i) => {
           const done = doneFlags[i];
           return (
-            <Pressable key={key} onPress={() => router.push(route)}>
+            <Pressable
+              key={key}
+              onPress={() => router.push({ pathname: route, params: { from: "home" } })}
+            >
               {({ pressed }) => (
                 <View style={[styles.stepRow, pressed && styles.pressed]}>
                   <View style={styles.stepIcon}>

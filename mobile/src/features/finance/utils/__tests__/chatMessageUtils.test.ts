@@ -7,9 +7,77 @@ import {
   createAITypingMessage,
   resolveAIMessage,
   rejectAIMessage,
+  createDraftMessages,
+  setDraftState,
 } from '../chatMessageUtils';
+import type { DraftMessage } from '../chatMessageUtils';
 import type { VoiceStatusResponse } from '@/features/finance/api/voice';
 import type { ReceiptStatusResponse } from '@/features/finance/api/receipt';
+import type { DraftTransaction } from '@/features/ai/api/chat';
+
+const makeDraft = (overrides: Partial<DraftTransaction> = {}): DraftTransaction => ({
+  transaction_id: 'tx-1',
+  amount: -20000,
+  currency: 'IDR',
+  merchant: 'Sate',
+  category_name: 'Makan',
+  note: null,
+  account_id: 'acc-1',
+  ...overrides,
+});
+
+describe('createDraftMessages', () => {
+  it('creates one pending draft message per draft transaction', () => {
+    const msgs = createDraftMessages([
+      makeDraft({ transaction_id: 'tx-1', merchant: 'Sate' }),
+      makeDraft({ transaction_id: 'tx-2', merchant: 'Es Teh', amount: -5000 }),
+    ]);
+    expect(msgs).toHaveLength(2);
+    expect(msgs[0].type).toBe('draft');
+    expect(msgs[0].state).toBe('pending');
+    expect(msgs[0].draft.merchant).toBe('Sate');
+    expect(msgs[1].draft.merchant).toBe('Es Teh');
+  });
+
+  it('uses transaction_id as the message id so drafts stay unique', () => {
+    const msgs = createDraftMessages([makeDraft({ transaction_id: 'tx-9' })]);
+    expect(msgs[0].id).toBe('tx-9');
+  });
+
+  it('returns empty array for empty input', () => {
+    expect(createDraftMessages([])).toEqual([]);
+  });
+
+  it('sets createdAt to a Date', () => {
+    const msgs = createDraftMessages([makeDraft()]);
+    expect(msgs[0].createdAt).toBeInstanceOf(Date);
+  });
+});
+
+describe('setDraftState', () => {
+  const base = (): DraftMessage => createDraftMessages([makeDraft()])[0];
+
+  it('transitions pending → saving → saved', () => {
+    const saving = setDraftState(base(), 'saving');
+    expect(saving.state).toBe('saving');
+    const saved = setDraftState(saving, 'saved');
+    expect(saved.state).toBe('saved');
+  });
+
+  it('transitions to cancelled without touching draft data', () => {
+    const msg = base();
+    const cancelled = setDraftState(msg, 'cancelled');
+    expect(cancelled.state).toBe('cancelled');
+    expect(cancelled.draft).toEqual(msg.draft);
+    expect(cancelled.id).toBe(msg.id);
+  });
+
+  it('does not mutate the original message', () => {
+    const msg = base();
+    setDraftState(msg, 'saved');
+    expect(msg.state).toBe('pending');
+  });
+});
 
 describe('createVoiceMessage', () => {
   it('creates message with correct id, type, and pending status', () => {

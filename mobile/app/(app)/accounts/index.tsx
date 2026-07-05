@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Plus, Wallet } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +32,7 @@ type FormValues = z.input<typeof schema>;
 
 export default function AccountsScreen() {
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const { data, isLoading, isRefetching, refetch } = useAccounts();
   const createAccount = useCreateAccount();
   const { showToast } = useToastStore();
@@ -48,6 +49,12 @@ export default function AccountsScreen() {
   });
 
   const accounts = data ?? [];
+
+  const handleBack = useCallback(() => {
+    if (from === "home") router.replace("/(app)/(home)");
+    else if (from === "finance") router.replace("/(app)/finance");
+    else router.replace("/(app)/settings");
+  }, [from, router]);
 
   const handleOpenModal = useCallback(() => setShowModal(true), []);
   const handleCloseModal = useCallback(() => {
@@ -87,7 +94,7 @@ export default function AccountsScreen() {
     <Screen>
       <Header
         title="Akun"
-        onBack={() => router.replace("/(app)/settings")}
+        onBack={handleBack}
         right={addButton}
       />
 

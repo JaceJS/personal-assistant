@@ -11,11 +11,17 @@ export interface DraftTransaction {
   account_id: string;
 }
 
+export interface ChatReply {
+  reply: string;
+  session_id: string;
+  draft_transactions: DraftTransaction[];
+}
+
 export async function postChatMessage(
   message: string,
   sessionId?: string,
-): Promise<{ reply: string; session_id: string; draft_transaction?: DraftTransaction }> {
-  return apiFetch<ApiResponse<{ reply: string; session_id: string; draft_transaction?: DraftTransaction }>>(
+): Promise<ChatReply> {
+  return apiFetch<ApiResponse<ChatReply>>(
     '/api/v1/ai/chat',
     {
       method: 'POST',

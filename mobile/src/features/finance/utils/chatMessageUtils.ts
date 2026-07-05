@@ -2,6 +2,7 @@ import { generateId } from '@/lib/utils';
 
 import type { ExtractedTransaction, VoiceProcessingStatus, VoiceStatusResponse } from '@/features/finance/api/voice';
 import type { ReceiptStatusResponse } from '@/features/finance/api/receipt';
+import type { DraftTransaction } from '@/features/ai/api/chat';
 
 export type ChatMessage = {
   id: string;
@@ -33,7 +34,17 @@ export type AIMessage = {
   createdAt: Date;
 };
 
-export type Message = ChatMessage | UserTextMessage | AIMessage;
+export type DraftMessageState = 'pending' | 'saving' | 'saved' | 'cancelled';
+
+export type DraftMessage = {
+  id: string;
+  type: 'draft';
+  draft: DraftTransaction;
+  state: DraftMessageState;
+  createdAt: Date;
+};
+
+export type Message = ChatMessage | UserTextMessage | AIMessage | DraftMessage;
 
 export function createVoiceMessage(
   voiceLogId: string,
@@ -117,4 +128,18 @@ export function resolveAIMessage(msg: AIMessage, content: string): AIMessage {
 
 export function rejectAIMessage(msg: AIMessage, errorText: string): AIMessage {
   return { ...msg, content: errorText, isTyping: false };
+}
+
+export function createDraftMessages(drafts: DraftTransaction[]): DraftMessage[] {
+  return drafts.map((draft) => ({
+    id: draft.transaction_id,
+    type: 'draft' as const,
+    draft,
+    state: 'pending' as const,
+    createdAt: new Date(),
+  }));
+}
+
+export function setDraftState(msg: DraftMessage, state: DraftMessageState): DraftMessage {
+  return { ...msg, state };
 }

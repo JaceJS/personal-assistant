@@ -3,19 +3,19 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
   createAITypingMessage,
+  createDraftMessages,
   createUserTextMessage,
   rejectAIMessage,
   resolveAIMessage,
 } from '@/features/finance/utils/chatMessageUtils';
 import type { AIMessage, Message } from '@/features/finance/utils/chatMessageUtils';
-import { getChatSessionMessages, postChatMessage, type DraftTransaction } from '@/features/ai/api/chat';
+import { getChatSessionMessages, postChatMessage } from '@/features/ai/api/chat';
 
 const CHAT_SESSION_KEY = 'chat_session_id';
 
 export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
-  const [pendingDraft, setPendingDraft] = useState<DraftTransaction | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   useEffect(() => {
@@ -62,15 +62,13 @@ export function useChat() {
       const aiMsg = createAITypingMessage();
       setMessages((prev) => [...prev, userMsg, aiMsg]);
       try {
-        const { reply, session_id, draft_transaction } = await postChatMessage(text, sessionId);
+        const { reply, session_id, draft_transactions } = await postChatMessage(text, sessionId);
         setSessionId(session_id);
         await AsyncStorage.setItem(CHAT_SESSION_KEY, session_id);
-        setMessages((prev) =>
-          prev.map((m) => (m.id === aiMsg.id ? resolveAIMessage(m as AIMessage, reply) : m))
-        );
-        if (draft_transaction) {
-          setPendingDraft(draft_transaction);
-        }
+        setMessages((prev) => [
+          ...prev.map((m) => (m.id === aiMsg.id ? resolveAIMessage(m as AIMessage, reply) : m)),
+          ...createDraftMessages(draft_transactions ?? []),
+        ]);
       } catch {
         setMessages((prev) =>
           prev.map((m) =>
@@ -84,14 +82,11 @@ export function useChat() {
     [sessionId],
   );
 
-  const dismissDraft = useCallback(() => setPendingDraft(null), []);
-
   const clearChat = useCallback(async () => {
     setMessages([]);
-    setPendingDraft(null);
     setSessionId(undefined);
     await AsyncStorage.removeItem(CHAT_SESSION_KEY);
   }, []);
 
-  return { messages, setMessages, sendMessage, pendingDraft, dismissDraft, isLoadingHistory, clearChat };
+  return { messages, setMessages, sendMessage, isLoadingHistory, clearChat };
 }

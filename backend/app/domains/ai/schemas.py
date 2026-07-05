@@ -26,7 +26,7 @@ class DraftTransaction(BaseModel):
 class ChatReply(BaseModel):
     reply: str
     session_id: uuid.UUID
-    draft_transaction: DraftTransaction | None = None
+    draft_transactions: list[DraftTransaction] = Field(default_factory=list)
 
 
 class DailyInsight(BaseModel):

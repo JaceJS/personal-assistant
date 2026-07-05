@@ -48,7 +48,7 @@ export default function AccountBalanceCard() {
             router.push(
               hasAccounts
                 ? { pathname: "/(app)/finance/new", params: { from: "home" } }
-                : "/(app)/accounts"
+                : { pathname: "/(app)/accounts", params: { from: "home" } }
             )
           }
         >

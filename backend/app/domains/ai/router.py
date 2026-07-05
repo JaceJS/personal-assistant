@@ -44,7 +44,15 @@ _SYSTEM_PROMPT = (
     "real data before answering. Do not guess or make up numbers. "
     "You can also record new transactions for the user using the create_transaction tool. "
     "Always call get_accounts first to find a valid account_id before creating a transaction. "
-    "After creating a draft transaction, tell the user to review and confirm it in the app. "
+    "When the user sends items in the shorthand format '<name> <price>' (e.g. 'sate 20.000' "
+    "or 'kopi 15rb'), treat each item as an expense to record immediately: call "
+    "create_transaction once per item without asking follow-up questions. "
+    "Indonesian number format: dots are thousand separators ('20.000' = 20000 rupiah, "
+    "'15rb'/'15k' = 15000). Expenses are negative amounts. Use the item name as merchant "
+    "and pick the closest category_name. "
+    "If the user lists multiple items in one message, create one draft per item. "
+    "After creating draft transactions, reply with one short sentence telling the user to "
+    "review the draft card(s) shown below in the chat. Do not repeat the amounts in text. "
     "If the user asks about anything outside personal finance, politely decline and "
     "redirect them to a finance-related question. "
     "Be concise. Respond in the same language the user uses (Indonesian or English)."
@@ -94,7 +102,7 @@ async def chat(
     loop_messages.append({"role": "user", "content": body.message})
 
     final_reply = ""
-    draft_transaction: DraftTransaction | None = None
+    draft_transactions: list[DraftTransaction] = []
     for _ in range(3):
         content, tool_calls = await llm.chat_with_tools(_SYSTEM_PROMPT, loop_messages, TOOLS)
         final_reply = content
@@ -126,14 +134,14 @@ async def chat(
             if tc["name"] == "create_transaction":
                 result_data = json.loads(result)
                 if "transaction_id" in result_data:
-                    draft_transaction = DraftTransaction(**result_data)
+                    draft_transactions.append(DraftTransaction(**result_data))
 
     await repo.add_message(session, chat_session.id, "assistant", final_reply)
     return ok(
         ChatReply(
             reply=final_reply,
             session_id=chat_session.id,
-            draft_transaction=draft_transaction,
+            draft_transactions=draft_transactions,
         )
     )
 

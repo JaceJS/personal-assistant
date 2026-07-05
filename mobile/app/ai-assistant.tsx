@@ -23,10 +23,13 @@ import type { ConfirmPayload } from "@/components/voice/ConfirmCard";
 import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
 import { AIBubble } from "@/features/ai/components/AIBubble";
 import { ChatBubble } from "@/features/ai/components/ChatBubble";
+import { DraftTransactionCard } from "@/features/ai/components/DraftTransactionCard";
 import { UserBubble } from "@/features/ai/components/UserBubble";
+import { useCancelAiDraft } from "@/features/ai/hooks/useCancelAiDraft";
 import { useChat } from "@/features/ai/hooks/useChat";
 import { useConfirmAiDraft } from "@/features/ai/hooks/useConfirmAiDraft";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
+import { useCategories } from "@/features/finance/hooks/useCategories";
 import {
   useConfirmReceiptTransaction,
   useReceiptStatus,
@@ -44,8 +47,15 @@ import {
   createFailedUploadMessage,
   createReceiptMessage,
   createVoiceMessage,
+  setDraftState,
 } from "@/features/finance/utils/chatMessageUtils";
-import type { AIMessage, ChatMessage, Message } from "@/features/finance/utils/chatMessageUtils";
+import type {
+  AIMessage,
+  ChatMessage,
+  DraftMessage,
+  DraftMessageState,
+  Message,
+} from "@/features/finance/utils/chatMessageUtils";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
@@ -65,8 +75,10 @@ export default function AIAssistantScreen() {
   const { isGuest } = useAuthStore();
   const showToast = useToastStore((s) => s.showToast);
   const { data: accounts } = useAccounts();
-  const { messages, setMessages, sendMessage, pendingDraft, dismissDraft, isLoadingHistory, clearChat } = useChat();
+  const { data: categories } = useCategories();
+  const { messages, setMessages, sendMessage, isLoadingHistory, clearChat } = useChat();
   const confirmAiDraftMutation = useConfirmAiDraft();
+  const cancelAiDraftMutation = useCancelAiDraft();
 
   // Voice hooks
   const uploadAudio = useUploadAudio();
@@ -91,6 +103,7 @@ export default function AIAssistantScreen() {
   const [voiceConfirmVisible, setVoiceConfirmVisible] = useState(false);
   const [receiptLogId, setReceiptLogId] = useState<string | null>(null);
   const [receiptConfirmVisible, setReceiptConfirmVisible] = useState(false);
+  const [editingDraft, setEditingDraft] = useState<DraftMessage | null>(null);
 
   const [inputText, setInputText] = useState("");
   const listRef = useRef<FlatList<Message>>(null);
@@ -360,25 +373,100 @@ export default function AIAssistantScreen() {
     setReceiptLogId(null);
   }, []);
 
-  const handleAiConfirm = useCallback(
-    (payload: ConfirmPayload) => {
-      if (!pendingDraft) return;
-      dismissDraft();
-      showToast("Transaksi tersimpan.", "success");
-      void confirmAiDraftMutation
-        .mutateAsync({ transactionId: pendingDraft.transaction_id, payload })
-        .catch(() => showToast("Gagal menyimpan transaksi.", "error"));
+  const updateDraftMessage = useCallback(
+    (id: string, state: DraftMessageState) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id && m.type === "draft" ? setDraftState(m, state) : m))
+      );
     },
-    [confirmAiDraftMutation, dismissDraft, pendingDraft, showToast]
+    [setMessages]
+  );
+
+  const handleDraftSave = useCallback(
+    (msg: DraftMessage) => {
+      const { draft } = msg;
+      const categoryId =
+        categories?.find(
+          (c) => c.name.toLowerCase() === (draft.category_name ?? "").toLowerCase()
+        )?.id ?? null;
+      updateDraftMessage(msg.id, "saving");
+      void confirmAiDraftMutation
+        .mutateAsync({
+          transactionId: draft.transaction_id,
+          payload: {
+            amount: draft.amount,
+            accountId: draft.account_id,
+            categoryId,
+            merchant: draft.merchant,
+            note: draft.note,
+          },
+        })
+        .then(() => {
+          updateDraftMessage(msg.id, "saved");
+          showToast("Transaksi tersimpan.", "success");
+        })
+        .catch(() => {
+          updateDraftMessage(msg.id, "pending");
+          showToast("Gagal menyimpan transaksi.", "error");
+        });
+    },
+    [categories, confirmAiDraftMutation, showToast, updateDraftMessage]
+  );
+
+  const handleDraftCancel = useCallback(
+    (msg: DraftMessage) => {
+      updateDraftMessage(msg.id, "saving");
+      void cancelAiDraftMutation
+        .mutateAsync(msg.draft.transaction_id)
+        .then(() => updateDraftMessage(msg.id, "cancelled"))
+        .catch(() => {
+          updateDraftMessage(msg.id, "pending");
+          showToast("Gagal membatalkan draft.", "error");
+        });
+    },
+    [cancelAiDraftMutation, showToast, updateDraftMessage]
+  );
+
+  const handleDraftEdit = useCallback((msg: DraftMessage) => {
+    setEditingDraft(msg);
+  }, []);
+
+  const handleEditingDraftSave = useCallback(
+    (payload: ConfirmPayload) => {
+      if (!editingDraft) return;
+      const id = editingDraft.id;
+      setEditingDraft(null);
+      updateDraftMessage(id, "saving");
+      void confirmAiDraftMutation
+        .mutateAsync({ transactionId: editingDraft.draft.transaction_id, payload })
+        .then(() => {
+          updateDraftMessage(id, "saved");
+          showToast("Transaksi tersimpan.", "success");
+        })
+        .catch(() => {
+          updateDraftMessage(id, "pending");
+          showToast("Gagal menyimpan transaksi.", "error");
+        });
+    },
+    [confirmAiDraftMutation, editingDraft, showToast, updateDraftMessage]
   );
 
   const renderMessage = useCallback(
     ({ item }: { item: Message }) => {
       if (item.type === "user") return <UserBubble message={item} />;
       if (item.type === "ai") return <AIBubble message={item as AIMessage} />;
+      if (item.type === "draft")
+        return (
+          <DraftTransactionCard
+            message={item}
+            onSave={handleDraftSave}
+            onEdit={handleDraftEdit}
+            onCancel={handleDraftCancel}
+          />
+        );
       return <ChatBubble message={item as ChatMessage} onRetry={handleRetry} />;
     },
-    [handleRetry]
+    [handleDraftCancel, handleDraftEdit, handleDraftSave, handleRetry]
   );
 
   const isSendMode = inputText.length > 0;
@@ -555,23 +643,23 @@ export default function AIAssistantScreen() {
 
       <ConfirmCard
         data={
-          pendingDraft
+          editingDraft
             ? {
-                amount: pendingDraft.amount,
-                currency: pendingDraft.currency,
-                merchant: pendingDraft.merchant,
-                category_name: pendingDraft.category_name,
-                note: pendingDraft.note,
+                amount: editingDraft.draft.amount,
+                currency: editingDraft.draft.currency,
+                merchant: editingDraft.draft.merchant,
+                category_name: editingDraft.draft.category_name,
+                note: editingDraft.draft.note,
                 confidence: 1.0,
               }
             : null
         }
         accounts={activeAccounts}
-        defaultAccountId={pendingDraft?.account_id ?? defaultAccount?.id ?? null}
-        isVisible={pendingDraft !== null}
+        defaultAccountId={editingDraft?.draft.account_id ?? defaultAccount?.id ?? null}
+        isVisible={editingDraft !== null}
         isSaving={confirmAiDraftMutation.isPending}
-        onSave={handleAiConfirm}
-        onDismiss={dismissDraft}
+        onSave={handleEditingDraftSave}
+        onDismiss={() => setEditingDraft(null)}
       />
       </>
       )}
