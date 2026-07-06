@@ -1,1 +1,1 @@
-export { default } from '../finance/history';
+export { default } from '../../finance/history';

@@ -17,6 +17,7 @@ import {
   useArchiveAccount,
   useUpdateAccount,
 } from "@/features/finance/hooks/useAccounts";
+import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { useToastStore } from "@/stores/toast";
 import { formatRupiah } from "@/lib/utils";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -37,6 +38,7 @@ function TypeIcon({ type }: { type: AccountType }) {
 
 export default function AccountDetailScreen() {
   const router = useRouter();
+  const handleBack = useBackNavigation("/(app)/accounts");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: account, isLoading } = useAccount(id);
   const updateAccount = useUpdateAccount(id);
@@ -102,7 +104,7 @@ export default function AccountDetailScreen() {
   if (isLoading) {
     return (
       <Screen>
-        <Header title="Detail Akun" onBack={() => router.replace("/(app)/accounts")} />
+        <Header title="Detail Akun" onBack={handleBack} />
         <View style={styles.content}>
           <SkeletonList count={1} />
         </View>
@@ -113,7 +115,7 @@ export default function AccountDetailScreen() {
   if (!account) {
     return (
       <Screen>
-        <Header title="Detail Akun" onBack={() => router.replace("/(app)/accounts")} />
+        <Header title="Detail Akun" onBack={handleBack} />
         <View style={styles.centered}>
           <Text style={styles.notFound}>Akun tidak ditemukan</Text>
         </View>
@@ -126,7 +128,7 @@ export default function AccountDetailScreen() {
 
   return (
     <Screen>
-      <Header title="Detail Akun" onBack={() => router.replace("/(app)/accounts")} right={headerRight} />
+      <Header title="Detail Akun" onBack={handleBack} right={headerRight} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero Card */}
         <View style={styles.heroCard}>

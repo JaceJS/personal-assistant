@@ -1,1 +1,1 @@
-export { default } from '../settings/budget';
+export { default } from '../(tabs)/settings/budget';

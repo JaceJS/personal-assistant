@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { useRouter } from "expo-router";
 import { Plus, Tag } from "lucide-react-native";
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
@@ -11,6 +10,7 @@ import CategoryActionSheet from "@/features/finance/components/CategoryActionShe
 import CategoryCard from "@/features/finance/components/CategoryCard";
 import CategoryFormSheet from "@/features/finance/components/CategoryFormSheet";
 import { useArchiveCategory, useCategories } from "@/features/finance/hooks/useCategories";
+import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { useToastStore } from "@/stores/toast";
 import type { Category, CategoryType } from "@/features/finance/types";
 import { colors, radius, spacing } from "@/theme";
@@ -24,7 +24,7 @@ const TYPE_FILTER_OPTIONS: { value: CategoryType | "all"; label: string }[] = [
 ];
 
 export default function CategoriesScreen() {
-  const router = useRouter();
+  const handleBack = useBackNavigation();
 
   const { data, isLoading, isRefetching, refetch } = useCategories();
   const archiveCategory = useArchiveCategory();
@@ -101,7 +101,7 @@ export default function CategoriesScreen() {
     <Screen>
       <Header
         title="Kategori"
-        onBack={() => router.canGoBack() ? router.back() : router.replace("/(app)/settings")}
+        onBack={handleBack}
         right={addButton}
       />
 

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Header } from "@/components/layout/Header";
@@ -14,6 +14,7 @@ import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useDeleteTransaction, useTransaction, useUpdateTransaction } from "@/features/finance/hooks/useTransactions";
+import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { useToastStore } from "@/stores/toast";
 import { formatDate, formatRupiah } from "@/lib/utils";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -26,9 +27,8 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 export default function TransactionDetailScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { data: transaction, isLoading } = useTransaction(id);
   const updateTransaction = useUpdateTransaction(id);
   const deleteTransaction = useDeleteTransaction();
@@ -55,13 +55,7 @@ export default function TransactionDetailScreen() {
     [categoriesData, transaction]
   );
 
-  const handleBack = useCallback(() => {
-    if (from === 'activity') router.replace('/(app)/history');
-    else if (from === 'finance') router.replace('/(app)/finance');
-    else if (from === 'finance-history') router.replace('/(app)/finance/history');
-    else if (router.canGoBack()) router.back();
-    else router.replace('/(app)/(home)');
-  }, [from, router]);
+  const handleBack = useBackNavigation();
 
   const handleStartEdit = useCallback(() => {
     if (!transaction) return;

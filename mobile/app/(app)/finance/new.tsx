@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,6 +17,7 @@ import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useCreateTransaction, useTransactions } from "@/features/finance/hooks/useTransactions";
 import { useBudget } from "@/features/finance/hooks/useBudget";
 import { computeBudgetAlert } from "@/features/finance/utils/budgetAlert";
+import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { formatRupiah } from "@/lib/utils";
 import {
   hasRequestedPermission,
@@ -43,7 +44,6 @@ type FormValues = z.infer<typeof schema>;
 
 export default function NewTransactionScreen() {
   const router = useRouter();
-  const { from } = useLocalSearchParams<{ from?: string }>();
   const { data: accountsData, isLoading: accountsLoading } = useAccounts();
   const { data: categoriesData } = useCategories();
   const createTransaction = useCreateTransaction();
@@ -72,21 +72,7 @@ export default function NewTransactionScreen() {
   const [txType, setTxType] = useState<"expense" | "income">("expense");
   const [showMore, setShowMore] = useState(false);
 
-  const handleBack = useCallback(() => {
-    if (from === "home") {
-      router.replace("/(app)/(home)");
-    } else if (from === "finance") {
-      router.replace("/(app)/finance");
-    } else if (from === "history") {
-      router.replace("/(app)/finance/history");
-    } else if (from === "activity") {
-      router.replace("/(app)/history");
-    } else if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(app)/(home)");
-    }
-  }, [from, router]);
+  const handleBack = useBackNavigation();
 
   const {
     control,
@@ -203,13 +189,7 @@ export default function NewTransactionScreen() {
             <Text style={styles.emptyText}>Buat akun dulu sebelum mencatat transaksi.</Text>
             <Button
               label="Buat Akun"
-              onPress={() =>
-                router.replace(
-                  from
-                    ? { pathname: "/(app)/accounts", params: { from } }
-                    : "/(app)/accounts"
-                )
-              }
+              onPress={() => router.replace("/(app)/accounts")}
               variant="secondary"
             />
           </View>

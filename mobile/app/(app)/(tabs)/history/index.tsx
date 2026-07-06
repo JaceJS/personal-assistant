@@ -231,7 +231,7 @@ export default function AktivitasScreen() {
           <TransactionCard
             transaction={item.data}
             category={category}
-            onPress={() => router.push({ pathname: `/(app)/finance/${item.data.id}`, params: { from: 'activity' } })}
+            onPress={() => router.push(`/(app)/finance/${item.data.id}`)}
           />
         </View>
       );
@@ -346,7 +346,7 @@ export default function AktivitasScreen() {
       />
 
       <Fab
-        onPress={() => router.push({ pathname: "/(app)/finance/new", params: { from: "activity" } })}
+        onPress={() => router.push("/(app)/finance/new")}
         icon={Plus}
         accessibilityLabel="Add transaction"
       />

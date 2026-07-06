@@ -14,14 +14,13 @@ function getBudgetColor(pct: number): string {
 
 interface MonthlyBudgetCardProps {
   totalExpense: number;
-  from?: 'home' | 'finance';
 }
 
-export default function MonthlyBudgetCard({ totalExpense, from }: MonthlyBudgetCardProps) {
+export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardProps) {
   const router = useRouter();
   const { data: budget, isLoading } = useBudget();
 
-  const budgetPath = from ? `/(app)/finance/budget?from=${from}` : `/(app)/finance/budget`;
+  const budgetPath = '/(app)/finance/budget';
 
   if (isLoading) {
     return <View style={styles.card}><SkeletonCard height={80} /></View>;

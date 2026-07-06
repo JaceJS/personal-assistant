@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Plus, Wallet } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,7 @@ import { SkeletonList } from "@/components/ui/Skeleton";
 import AccountCard from "@/features/finance/components/AccountCard";
 import { ACCOUNT_TYPES } from "@/features/finance/constants";
 import { useAccounts, useCreateAccount } from "@/features/finance/hooks/useAccounts";
+import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { useToastStore } from "@/stores/toast";
 import type { Account } from "@/features/finance/types";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -32,7 +33,6 @@ type FormValues = z.input<typeof schema>;
 
 export default function AccountsScreen() {
   const router = useRouter();
-  const { from } = useLocalSearchParams<{ from?: string }>();
   const { data, isLoading, isRefetching, refetch } = useAccounts();
   const createAccount = useCreateAccount();
   const { showToast } = useToastStore();
@@ -50,11 +50,7 @@ export default function AccountsScreen() {
 
   const accounts = data ?? [];
 
-  const handleBack = useCallback(() => {
-    if (from === "home") router.replace("/(app)/(home)");
-    else if (from === "finance") router.replace("/(app)/finance");
-    else router.replace("/(app)/settings");
-  }, [from, router]);
+  const handleBack = useBackNavigation();
 
   const handleOpenModal = useCallback(() => setShowModal(true), []);
   const handleCloseModal = useCallback(() => {

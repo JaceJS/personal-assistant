@@ -45,11 +45,7 @@ export default function AccountBalanceCard() {
         {hasAccounts && <Text style={styles.sub}>{accounts.length} akun</Text>}
         <Pressable
           onPress={() =>
-            router.push(
-              hasAccounts
-                ? { pathname: "/(app)/finance/new", params: { from: "home" } }
-                : { pathname: "/(app)/accounts", params: { from: "home" } }
-            )
+            router.push(hasAccounts ? "/(app)/finance/new" : "/(app)/accounts")
           }
         >
           {({ pressed }) => (

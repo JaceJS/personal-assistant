@@ -1,1 +1,1 @@
-export { default } from '../finance/[id]';
+export { default } from '../../finance/[id]';

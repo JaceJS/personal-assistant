@@ -156,7 +156,7 @@ export default function HistoryScreen() {
             transaction={item.data}
             category={category}
             showId
-            onPress={() => router.push({ pathname: `/(app)/finance/${item.data.id}`, params: { from: 'finance-history' } })}
+            onPress={() => router.push(`/(app)/finance/${item.data.id}`)}
           />
         </View>
       );
@@ -236,7 +236,7 @@ export default function HistoryScreen() {
       />
 
       <Fab
-        onPress={() => router.push({ pathname: "/(app)/finance/new", params: { from: "history" } })}
+        onPress={() => router.push("/(app)/finance/new")}
         icon={Plus}
         accessibilityLabel="Add transaction"
       />

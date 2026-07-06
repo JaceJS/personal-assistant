@@ -74,7 +74,7 @@ export default function FinanceDashboard() {
 
   const recentItems = useMemo(() => items.slice(0, RECENT_COUNT), [items]);
 
-  const handleAdd = useCallback(() => router.push({ pathname: "/(app)/finance/new", params: { from: "finance" } }), [router]);
+  const handleAdd = useCallback(() => router.push("/(app)/finance/new"), [router]);
   const handleSeeAll = useCallback(() => router.push("/(app)/finance/history"), [router]);
   const handleGoToSavings = useCallback(() => router.push("/(app)/goals"), [router]);
 
@@ -127,7 +127,7 @@ export default function FinanceDashboard() {
         <ProjectedEndOfMonthCard />
 
         <SectionHeader title="Anggaran Bulanan" />
-        <MonthlyBudgetCard totalExpense={totalExpense} from="finance" />
+        <MonthlyBudgetCard totalExpense={totalExpense} />
 
         <SectionHeader
           title="Tabungan Tujuan"
@@ -174,7 +174,7 @@ export default function FinanceDashboard() {
                   <TransactionCard
                     transaction={tx}
                     category={category}
-                    onPress={() => router.push({ pathname: `/(app)/finance/${tx.id}`, params: { from: 'finance' } })}
+                    onPress={() => router.push(`/(app)/finance/${tx.id}`)}
                   />
                 </View>
               );

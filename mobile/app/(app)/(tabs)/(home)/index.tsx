@@ -98,14 +98,14 @@ export default function HomeScreen() {
         <AccountBalanceCard />
         <DailySpendCard />
         <WeeklySummaryCard />
-        <MonthlyBudgetCard totalExpense={totalExpense} from="home" />
+        <MonthlyBudgetCard totalExpense={totalExpense} />
         <TopCategoriesCard />
         <ProjectedEndOfMonthCard />
         <AIInsightCard />
       </ScrollView>
 
       <Fab
-        onPress={() => router.push({ pathname: "/(app)/finance/new", params: { from: "home" } })}
+        onPress={() => router.push("/(app)/finance/new")}
         icon={Plus}
         accessibilityLabel="Add transaction"
       />

@@ -1,15 +1,15 @@
-import { Tabs } from "expo-router";
-import { FloatingTabBar } from "@/components/ui/FloatingTabBar";
+import { Stack } from "expo-router";
+
+// Anchor keeps (tabs) beneath finance/accounts on direct entry (cold start,
+// future deep links) so back() always has somewhere real to pop to.
+export const unstable_settings = { anchor: "(tabs)" };
 
 export default function AppLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <FloatingTabBar {...props} />}>
-      <Tabs.Screen name="(home)" />
-      <Tabs.Screen name="history" />
-      <Tabs.Screen name="goals" />
-      <Tabs.Screen name="settings" />
-      <Tabs.Screen name="finance" options={{ href: null }} />
-      <Tabs.Screen name="accounts" options={{ href: null }} />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="finance" />
+      <Stack.Screen name="accounts" />
+    </Stack>
   );
 }
