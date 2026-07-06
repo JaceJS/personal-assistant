@@ -76,6 +76,14 @@ async def get_resource(id: uuid.UUID, user_id: CurrentUser, session: DbSession):
 - `CurrentUser` verifies the Supabase JWT via JWKS (RS256) and returns the `user_id` UUID.
 - Backend connects as `postgres` role → **RLS is bypassed**. Service-layer ownership checks are the only protection.
 
+**Accepted risk: post-deletion token validity window.** JWTs are verified statelessly via JWKS,
+so a token issued before `DELETE /users/me` still passes `CurrentUser` until its own expiry
+(~1h, Supabase default) even though the user no longer exists in Supabase or the DB. In that
+window, writes (e.g. `POST /accounts`) succeed with a `user_id` that matches no user. This is a
+standard stateless-JWT tradeoff, accepted as-is. If it ever needs closing: check `user_id` still
+exists at the write boundary (extra query per write), or blocklist the token/user in Redis on
+delete and check it in `CurrentUser`.
+
 ---
 
 ## Exception Handling

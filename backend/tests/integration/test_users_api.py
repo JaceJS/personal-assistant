@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import sqlalchemy as sa
@@ -97,14 +97,21 @@ async def test_delete_account_removes_all_user_data_and_auth_user(
     await db_session.commit()
 
     fake_admin = AsyncMock()
+    fake_storage = AsyncMock()
     from app.main import app
 
     app.dependency_overrides[get_supabase_admin] = lambda: fake_admin
 
-    response = await client.delete("/api/v1/users/me")
+    with patch("app.domains.users.router.R2Storage", return_value=fake_storage):
+        response = await client.delete("/api/v1/users/me")
 
     assert response.status_code == 204
     fake_admin.delete_user.assert_awaited_once_with(test_user_id)
+
+    # Both the voice recording and the receipt photo get cleaned up from R2.
+    assert fake_storage.delete.await_count == 2
+    fake_storage.delete.assert_any_await(f"{test_user_id}/audio.webm")
+    fake_storage.delete.assert_any_await(f"{test_user_id}/r.jpg")
 
     await db_session.rollback()  # fresh snapshot to read the request's commit
 

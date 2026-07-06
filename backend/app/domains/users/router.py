@@ -7,8 +7,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from app.core.auth import CurrentUser
+from app.core.config import get_settings
 from app.domains.finance.routers.deps import DbSession
 from app.domains.users import service
+from app.shared.storage import R2Storage
 from app.shared.supabase_admin import SupabaseAdmin, get_supabase_admin
 
 router = APIRouter(prefix="/users", tags=["Account"])
@@ -22,4 +24,5 @@ async def delete_my_account(
     session: DbSession,
     supabase_admin: SupabaseAdminDep,
 ) -> None:
-    await service.delete_account(session, user_id, supabase_admin)
+    storage = R2Storage(get_settings())
+    await service.delete_account(session, user_id, supabase_admin, storage)
