@@ -235,6 +235,25 @@ async def _get_budget_status(user_id: uuid.UUID, session: AsyncSession) -> dict[
     }
 
 
+_DEFAULT_RECENT_TRANSACTIONS_LIMIT = 10
+_MAX_RECENT_TRANSACTIONS_LIMIT = 20
+
+
+def _parse_limit(raw: Any, default: int = _DEFAULT_RECENT_TRANSACTIONS_LIMIT) -> int:
+    """Coerce an LLM-supplied `limit` arg into a safe, bounded int.
+
+    The LLM's tool-call args are untrusted free-form JSON: a non-numeric
+    string must fall back to `default` (not crash the chat turn), and any
+    numeric value must be clamped so it can't reach the DB as a 0/negative
+    SQL LIMIT or an unbounded one.
+    """
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return max(1, min(value, _MAX_RECENT_TRANSACTIONS_LIMIT))
+
+
 async def _get_recent_transactions(
     user_id: uuid.UUID,
     session: AsyncSession,
@@ -395,7 +414,7 @@ async def execute_tool(
         result = await _get_recent_transactions(
             user_id,
             session,
-            limit=int(args.get("limit", 10)),
+            limit=_parse_limit(args.get("limit")),
             category_name=args.get("category_name"),
         )
     elif name == "get_spending_by_category":
