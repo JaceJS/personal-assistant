@@ -84,6 +84,34 @@ async def import_categories(
     return cast("CursorResult[Any]", result).rowcount
 
 
+async def get_owned_account_ids(
+    session: AsyncSession, user_id: uuid.UUID, account_ids: set[uuid.UUID]
+) -> set[uuid.UUID]:
+    """Return the subset of `account_ids` that belong to `user_id`."""
+    if not account_ids:
+        return set()
+    stmt = sa.select(Account.id).where(Account.user_id == user_id, Account.id.in_(account_ids))
+    result = await session.execute(stmt)
+    return set(result.scalars().all())
+
+
+async def get_owned_category_ids(
+    session: AsyncSession, user_id: uuid.UUID, category_ids: set[uuid.UUID]
+) -> set[uuid.UUID]:
+    """Return the subset of `category_ids` visible to `user_id`.
+
+    Visible = owned by the user, or a system-default category (user_id IS NULL).
+    """
+    if not category_ids:
+        return set()
+    stmt = sa.select(Category.id).where(
+        sa.or_(Category.user_id == user_id, Category.user_id.is_(None)),
+        Category.id.in_(category_ids),
+    )
+    result = await session.execute(stmt)
+    return set(result.scalars().all())
+
+
 async def import_transactions(
     session: AsyncSession, user_id: uuid.UUID, transactions: list[TransactionImport]
 ) -> list[tuple[uuid.UUID, int]]:

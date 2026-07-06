@@ -5,9 +5,11 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.domains.finance.models import AccountType, CategoryType, TransactionSource
+
+MAX_IMPORT_ITEMS = 5000
 
 
 class AccountImport(BaseModel):
@@ -53,11 +55,13 @@ class SavingsGoalImport(BaseModel):
 
 
 class BulkImportPayload(BaseModel):
-    accounts: list[AccountImport] = []
-    categories: list[CategoryImport] = []
-    transactions: list[TransactionImport] = []
+    accounts: list[AccountImport] = Field(default_factory=list, max_length=MAX_IMPORT_ITEMS)
+    categories: list[CategoryImport] = Field(default_factory=list, max_length=MAX_IMPORT_ITEMS)
+    transactions: list[TransactionImport] = Field(default_factory=list, max_length=MAX_IMPORT_ITEMS)
     budget: BudgetImport | None = None
-    savings_goals: list[SavingsGoalImport] = []
+    savings_goals: list[SavingsGoalImport] = Field(
+        default_factory=list, max_length=MAX_IMPORT_ITEMS
+    )
 
 
 class ImportCounts(BaseModel):

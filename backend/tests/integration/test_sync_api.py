@@ -10,7 +10,8 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.finance import repository as repo
-from app.domains.finance.models import AccountType
+from app.domains.finance.models import AccountType, CategoryType
+from app.main import app as fastapi_app
 
 pytestmark = pytest.mark.integration
 
@@ -244,11 +245,130 @@ async def test_import_does_not_touch_other_users_account_balance(
         "budget": None,
     }
 
-    await client.post("/api/v1/sync/import", json=payload)
+    response = await client.post("/api/v1/sync/import", json=payload)
 
+    assert response.json()["data"]["imported"]["transactions"] == 0
     refreshed = await repo.get_account(db_session, other_account.id)
     assert refreshed is not None
     assert refreshed.balance == 0
+
+
+async def test_import_skips_transaction_with_nonexistent_account(client: AsyncClient) -> None:
+    payload = {
+        "accounts": [],
+        "categories": [],
+        "transactions": [
+            {
+                "id": str(uuid.uuid4()),
+                "account_id": str(uuid.uuid4()),  # never imported, never exists
+                "amount": -10_000,
+                "occurred_at": datetime(2024, 3, 1, 12, 0, 0, tzinfo=UTC).isoformat(),
+                "source": "manual",
+            }
+        ],
+        "budget": None,
+    }
+
+    response = await client.post("/api/v1/sync/import", json=payload)
+
+    # Must not 500 (FK violation) and must not insert the row.
+    assert response.status_code == 200
+    assert response.json()["data"]["imported"]["transactions"] == 0
+
+
+async def test_import_skips_transaction_referencing_other_users_category(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Dompet", type=AccountType.cash, currency="IDR"
+    )
+    other_user_id = uuid.uuid4()
+    other_category = await repo.create_category(
+        db_session, other_user_id, name="Rahasia", type=CategoryType.expense
+    )
+    await db_session.commit()
+
+    payload = {
+        "accounts": [],
+        "categories": [],
+        "transactions": [
+            {
+                "id": str(uuid.uuid4()),
+                "account_id": str(account.id),
+                "category_id": str(other_category.id),
+                "amount": -10_000,
+                "occurred_at": datetime(2024, 3, 1, 12, 0, 0, tzinfo=UTC).isoformat(),
+                "source": "manual",
+            }
+        ],
+        "budget": None,
+    }
+
+    response = await client.post("/api/v1/sync/import", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["data"]["imported"]["transactions"] == 0
+
+
+async def test_import_allows_transaction_referencing_system_category(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Dompet", type=AccountType.cash, currency="IDR"
+    )
+    system_category = await repo.create_category(
+        db_session, None, name="Makanan", type=CategoryType.expense
+    )
+    await db_session.commit()
+
+    payload = {
+        "accounts": [],
+        "categories": [],
+        "transactions": [
+            {
+                "id": str(uuid.uuid4()),
+                "account_id": str(account.id),
+                "category_id": str(system_category.id),
+                "amount": -10_000,
+                "occurred_at": datetime(2024, 3, 1, 12, 0, 0, tzinfo=UTC).isoformat(),
+                "source": "manual",
+            }
+        ],
+        "budget": None,
+    }
+
+    response = await client.post("/api/v1/sync/import", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["data"]["imported"]["transactions"] == 1
+
+
+async def test_import_rejects_payload_over_max_items(client: AsyncClient) -> None:
+    payload = {
+        "accounts": [
+            {"id": str(uuid.uuid4()), "name": f"Acc {i}", "type": "cash"} for i in range(5001)
+        ],
+        "categories": [],
+        "transactions": [],
+        "budget": None,
+    }
+
+    response = await client.post("/api/v1/sync/import", json=payload)
+
+    assert response.status_code == 422
+
+
+async def test_import_rate_limited_after_10_requests(client: AsyncClient) -> None:
+    fastapi_app.state.redis.pipeline.return_value.execute.return_value = [None, 11]
+
+    payload = {"accounts": [], "categories": [], "transactions": [], "budget": None}
+    response = await client.post("/api/v1/sync/import", json=payload)
+
+    assert response.status_code == 429
 
 
 async def test_import_accounts_and_transactions_together(client: AsyncClient) -> None:
