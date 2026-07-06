@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useState } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   createAITypingMessage,
@@ -7,18 +7,26 @@ import {
   createUserTextMessage,
   rejectAIMessage,
   resolveAIMessage,
-} from '@/features/finance/utils/chatMessageUtils';
-import type { AIMessage, Message } from '@/features/finance/utils/chatMessageUtils';
-import { getChatSessionMessages, postChatMessage } from '@/features/ai/api/chat';
+} from "@/features/finance/utils/chatMessageUtils";
+import type { AIMessage, Message } from "@/features/finance/utils/chatMessageUtils";
+import { getChatSessionMessages, postChatMessage } from "@/features/ai/api/chat";
+import { useAuthStore } from "@/stores/auth";
 
-const CHAT_SESSION_KEY = 'chat_session_id';
+const CHAT_SESSION_KEY = "chat_session_id";
 
 export function useChat() {
+  const isGuest = useAuthStore((s) => s.isGuest);
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   useEffect(() => {
+    if (isGuest) {
+      setIsLoadingHistory(false);
+      void AsyncStorage.removeItem(CHAT_SESSION_KEY);
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       try {
@@ -29,21 +37,21 @@ export function useChat() {
         if (cancelled) return;
         setMessages(
           history.map((m) =>
-            m.role === 'user'
-              ? ({
+            m.role === "user"
+              ? {
                   id: m.id,
-                  type: 'user' as const,
+                  type: "user" as const,
                   content: m.content,
                   createdAt: new Date(m.created_at),
-                })
-              : ({
+                }
+              : {
                   id: m.id,
-                  type: 'ai' as const,
+                  type: "ai" as const,
                   content: m.content,
                   isTyping: false,
                   createdAt: new Date(m.created_at),
-                }),
-          ),
+                }
+          )
         );
       } catch {
         // history not critical, start fresh
@@ -54,7 +62,7 @@ export function useChat() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isGuest]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -73,13 +81,13 @@ export function useChat() {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === aiMsg.id
-              ? rejectAIMessage(m as AIMessage, 'Could not get a response. Please try again.')
+              ? rejectAIMessage(m as AIMessage, "Could not get a response. Please try again.")
               : m
           )
         );
       }
     },
-    [sessionId],
+    [sessionId]
   );
 
   const clearChat = useCallback(async () => {

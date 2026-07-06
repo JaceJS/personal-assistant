@@ -9,15 +9,28 @@ jest.mock('@/features/ai/api/chat', () => ({
   getChatSessionMessages: jest.fn(),
 }));
 
-import { postChatMessage } from '@/features/ai/api/chat';
+let mockIsGuest = false;
+jest.mock('@/stores/auth', () => ({
+  useAuthStore: (selector: (s: { isGuest: boolean }) => unknown) =>
+    selector({ isGuest: mockIsGuest }),
+}));
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { getChatSessionMessages, postChatMessage } from '@/features/ai/api/chat';
 import { useChat } from '@/features/ai/hooks/useChat';
 import type { DraftMessage } from '@/features/finance/utils/chatMessageUtils';
 
 const mockPostChatMessage = postChatMessage as jest.MockedFunction<typeof postChatMessage>;
+const mockGetChatSessionMessages = getChatSessionMessages as jest.MockedFunction<
+  typeof getChatSessionMessages
+>;
+const CHAT_SESSION_KEY = 'chat_session_id';
 
 describe('useChat', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockIsGuest = false;
   });
 
   it('sends first message without session_id and stores returned session', async () => {
@@ -137,5 +150,24 @@ describe('useChat', () => {
     });
 
     expect(result.current.messages.some((m) => m.type === 'draft')).toBe(false);
+  });
+
+  it('does not fetch chat history when in guest mode', async () => {
+    await AsyncStorage.setItem(CHAT_SESSION_KEY, 'session-from-a-previous-account');
+    mockIsGuest = true;
+
+    const { result } = await renderHook(() => useChat());
+
+    expect(mockGetChatSessionMessages).not.toHaveBeenCalled();
+    expect(result.current.isLoadingHistory).toBe(false);
+  });
+
+  it('clears a stale session id left over from a previous account when entering guest mode', async () => {
+    await AsyncStorage.setItem(CHAT_SESSION_KEY, 'session-from-a-previous-account');
+    mockIsGuest = true;
+
+    await renderHook(() => useChat());
+
+    expect(await AsyncStorage.getItem(CHAT_SESSION_KEY)).toBeNull();
   });
 });
