@@ -72,7 +72,7 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 | `radius`     | `src/theme/radius.ts`     | `sm(6)` `md(10)` `lg(14)` `xl(20)` `full(999)`                             |
 | `textStyles` | `src/theme/typography.ts` | See Typography section below                                                |
 
-Key colors: `bg.canvas` `#0C0C0E` · `bg.surface` `#18181C` · `accent.primary` `#7B6FE8` · `text.primary` `#EEEDF5` · `text.muted` `#5E5C70`
+Key colors: `bg.canvas` `#FBF5EC` · `bg.surface` `#F3E9D8` · `accent.primary` `#E27A3F` · `text.primary` `#201810` · `text.muted` `#A79878`
 
 ---
 

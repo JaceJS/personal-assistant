@@ -25,7 +25,7 @@ const Fab: React.FC<FabProps> = ({ onPress, icon: Icon, accessibilityLabel }) =>
     >
       {({ pressed }) => (
         <View style={[styles.fab, { opacity: pressed ? 0.85 : 1 }]}>
-          <Icon size={24} color={colors.bg.elevated} strokeWidth={2.5} />
+          <Icon size={24} color={colors.text.primary} strokeWidth={2.5} />
         </View>
       )}
     </Pressable>
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
 
     shadowColor: colors.accent.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.22,
     shadowRadius: 16,
 
     elevation: 6,

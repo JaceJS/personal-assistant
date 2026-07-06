@@ -69,7 +69,7 @@ export default function DailySpendCard() {
         <Svg width={RING_SIZE} height={RING_SIZE}>
           <Circle
             cx={RING_CENTER} cy={RING_CENTER} r={RING_R}
-            stroke={colors.bg.elevated}
+            stroke={colors.border.subtle}
             strokeWidth={RING_STROKE}
             fill="none"
           />

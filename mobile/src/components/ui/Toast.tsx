@@ -11,10 +11,10 @@ import { useToastStore } from "@/stores/toast";
 import type { ToastType } from "@/stores/toast";
 
 const CONFIG: Record<ToastType, { bg: string; icon: React.ReactNode }> = {
-  success: { bg: "#7DB87A", icon: <CheckCircle size={18} color="#fff" /> },
-  error: { bg: "#C97060", icon: <XCircle size={18} color="#fff" /> },
-  info: { bg: "#D4A853", icon: <Info size={18} color="#0F0F0F" /> },
-  warning: { bg: "#D4A84B", icon: <AlertTriangle size={18} color="#0F0F0F" /> },
+  success: { bg: "#74BD73", icon: <CheckCircle size={18} color="#fff" /> },
+  error: { bg: "#C9694F", icon: <XCircle size={18} color="#fff" /> },
+  info: { bg: "#9DC3CE", icon: <Info size={18} color="#0F0F0F" /> },
+  warning: { bg: "#D9A94E", icon: <AlertTriangle size={18} color="#0F0F0F" /> },
 };
 
 export function Toast() {
@@ -53,7 +53,7 @@ export function Toast() {
           gap: 10,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.25,
+          shadowOpacity: 0.15,
           shadowRadius: 8,
           elevation: 8,
         },

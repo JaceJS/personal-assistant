@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: `${GLOW_COLOR}4D`,
-    backgroundColor: "#13112A",
+    backgroundColor: colors.accent.subtle,
     overflow: "hidden",
     shadowColor: GLOW_COLOR,
     shadowOffset: { width: 0, height: 6 },

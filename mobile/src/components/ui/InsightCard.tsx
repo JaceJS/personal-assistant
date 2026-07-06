@@ -12,10 +12,10 @@ export interface InsightCardProps {
 }
 
 const VARIANT_TOKENS: Record<InsightVariant, { glow: string; bg: string; border: string; text: string }> = {
-  accent:  { glow: colors.accent.primary, bg: '#13112A', border: `${colors.accent.primary}4D`, text: colors.accent.text },
-  success: { glow: colors.success.text,   bg: '#0A1A10', border: `${colors.success.text}4D`,   text: colors.success.text },
-  warning: { glow: colors.warning.text,   bg: '#1C1408', border: `${colors.warning.text}4D`,   text: colors.warning.text },
-  info:    { glow: colors.info.text,      bg: '#0A1420', border: `${colors.info.text}4D`,       text: colors.info.text },
+  accent:  { glow: colors.accent.primary, bg: colors.accent.subtle, border: `${colors.accent.primary}4D`, text: colors.accent.text },
+  success: { glow: colors.success.text,   bg: colors.success.bg,    border: `${colors.success.text}4D`,   text: colors.success.text },
+  warning: { glow: colors.warning.text,   bg: colors.warning.bg,    border: `${colors.warning.text}4D`,   text: colors.warning.text },
+  info:    { glow: colors.info.text,      bg: colors.info.bg,       border: `${colors.info.text}4D`,       text: colors.info.text },
   default: { glow: colors.border.strong,  bg: colors.bg.surface, border: colors.border.default, text: colors.text.secondary },
 };
 

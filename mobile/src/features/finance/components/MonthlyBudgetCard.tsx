@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  barTrack: { height: 10, borderRadius: radius.full, backgroundColor: colors.bg.elevated, marginBottom: 14, overflow: 'hidden' },
+  barTrack: { height: 10, borderRadius: radius.full, backgroundColor: colors.border.subtle, marginBottom: 14, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: radius.full },
 
   spentRow: { flexDirection: 'row', justifyContent: 'space-between' },

@@ -21,7 +21,7 @@ function IconButton({ icon: Icon, onPress, size = 32, accessibilityLabel, hitSlo
       hitSlop={hitSlop}
     >
       <View style={[styles.circle, { width: size, height: size }]}>
-        <Icon size={size * 0.55} color={colors.bg.elevated} strokeWidth={2.5} />
+        <Icon size={size * 0.55} color={colors.text.primary} strokeWidth={2.5} />
       </View>
     </Pressable>
   );
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: colors.accent.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.22,
     shadowRadius: 16,
     elevation: 6,
   },
