@@ -1,19 +1,15 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi import APIRouter, File, Form, UploadFile
 
-from app.ai.llm.openrouter import OpenRouterLLM
-from app.ai.stt.factory import get_stt_provider
 from app.core.auth import CurrentUser
 from app.core.config import get_settings
 from app.core.rate_limit import per_user_rate_limit
-from app.core.request_utils import get_client_ip
 from app.core.response import ApiResponse, ok
 from app.domains.finance import service
 from app.domains.finance.routers.deps import DbSession
 from app.domains.finance.schemas import (
-    AnonymousVoiceResult,
     VoiceExtractRequest,
     VoiceExtractResponse,
     VoiceStatusRead,
@@ -86,20 +82,3 @@ async def extract_voice(
     finally:
         await redis.close()
     return ok(item)
-
-
-@router.post("/voice/process-anonymous", response_model=ApiResponse[AnonymousVoiceResult])
-async def process_voice_anonymous(
-    request: Request,
-    file: Annotated[UploadFile, File()],
-) -> ApiResponse[AnonymousVoiceResult]:
-    settings = get_settings()
-    stt = get_stt_provider(settings)
-    llm = OpenRouterLLM(settings)
-    redis = await create_redis_pool(settings)
-    client_ip = get_client_ip(request, get_settings().trusted_proxy_list)
-    try:
-        result = await service.process_anonymous_voice(file, stt, llm, redis, client_ip)
-    finally:
-        await redis.close()
-    return ok(result)
