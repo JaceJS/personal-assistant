@@ -25,8 +25,6 @@ def per_user_rate_limit(limit: int, window_seconds: int) -> Any:
         count: int = results[1]
         if count > limit:
             hours = window_seconds // 3600
-            raise TooManyRequestsError(
-                f"Rate limit: max {limit} requests per {hours}h"
-            )
+            raise TooManyRequestsError(f"Rate limit: max {limit} requests per {hours}h")
 
     return Depends(_check)
