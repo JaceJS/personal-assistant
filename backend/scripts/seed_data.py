@@ -17,11 +17,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from app.core.config import get_settings
 from app.domains.finance.models import Category, CategoryType
 
-# 20 system categories: emoji icons, consistent palette
+# 35 system categories: emoji icons, consistent palette, mixed EN/ID naming
 _DEFAULT_CATEGORIES: list[dict[str, object]] = [
-    # ── Expense (13) ──────────────────────────────────────────────────────────
+    # ── Expense (27) ─────────────────────────────────────────────────────────
     {
-        "name": "Food & Dining",
+        "name": "Makan & Jajan",
         "type": CategoryType.expense,
         "icon": "🍔",
         "color": "#E17055",
@@ -33,10 +33,16 @@ _DEFAULT_CATEGORIES: list[dict[str, object]] = [
         "color": "#FDCB6E",
     },
     {
-        "name": "Transport",
+        "name": "Ojek & Transport",
         "type": CategoryType.expense,
-        "icon": "🚌",
+        "icon": "🛵",
         "color": "#00CEC9",
+    },
+    {
+        "name": "Bensin & Service",
+        "type": CategoryType.expense,
+        "icon": "⛽",
+        "color": "#E67E22",
     },
     {
         "name": "Shopping",
@@ -45,89 +51,185 @@ _DEFAULT_CATEGORIES: list[dict[str, object]] = [
         "color": "#6C5CE7",
     },
     {
-        "name": "Health & Medical",
+        "name": "Gadget & Elektronik",
+        "type": CategoryType.expense,
+        "icon": "📱",
+        "color": "#0984E3",
+    },
+    {
+        "name": "Kesehatan",
         "type": CategoryType.expense,
         "icon": "💊",
         "color": "#00B894",
     },
     {
-        "name": "Entertainment",
+        "name": "Skincare & Self Care",
         "type": CategoryType.expense,
-        "icon": "🎬",
-        "color": "#FFEAA7",
-    },
-    {
-        "name": "Bills & Utilities",
-        "type": CategoryType.expense,
-        "icon": "⚡",
-        "color": "#A29BFE",
-    },
-    {
-        "name": "Rent & Housing",
-        "type": CategoryType.expense,
-        "icon": "🏠",
-        "color": "#FD79A8",
-    },
-    {
-        "name": "Education",
-        "type": CategoryType.expense,
-        "icon": "📚",
-        "color": "#74B9FF",
-    },
-    {
-        "name": "Travel",
-        "type": CategoryType.expense,
-        "icon": "✈️",
-        "color": "#FF7675",
+        "icon": "🧴",
+        "color": "#81ECEC",
     },
     {
         "name": "Beauty & Wellness",
         "type": CategoryType.expense,
         "icon": "💆",
-        "color": "#FD79A8",
+        "color": "#FAB1A0",
     },
     {
-        "name": "Fitness & Sports",
+        "name": "Gym & Olahraga",
         "type": CategoryType.expense,
         "icon": "🏃",
         "color": "#55EFC4",
     },
     {
-        "name": "Subscriptions",
+        "name": "Hiburan",
+        "type": CategoryType.expense,
+        "icon": "🎬",
+        "color": "#FFEAA7",
+    },
+    {
+        "name": "Self Reward",
+        "type": CategoryType.expense,
+        "icon": "🎉",
+        "color": "#E84393",
+    },
+    {
+        "name": "Tagihan",
+        "type": CategoryType.expense,
+        "icon": "⚡",
+        "color": "#A29BFE",
+    },
+    {
+        "name": "Pulsa & Internet",
+        "type": CategoryType.expense,
+        "icon": "📶",
+        "color": "#45AAF2",
+    },
+    {
+        "name": "Kos & Rumah",
+        "type": CategoryType.expense,
+        "icon": "🏠",
+        "color": "#FD79A8",
+    },
+    {
+        "name": "Perlengkapan Rumah",
+        "type": CategoryType.expense,
+        "icon": "🧹",
+        "color": "#95AFC0",
+    },
+    {
+        "name": "Pendidikan",
+        "type": CategoryType.expense,
+        "icon": "📚",
+        "color": "#74B9FF",
+    },
+    {
+        "name": "Keluarga & Anak",
+        "type": CategoryType.expense,
+        "icon": "🧸",
+        "color": "#F8A5C2",
+    },
+    {
+        "name": "Pet Care",
+        "type": CategoryType.expense,
+        "icon": "🐾",
+        "color": "#C7ECEE",
+    },
+    {
+        "name": "Liburan & Travel",
+        "type": CategoryType.expense,
+        "icon": "✈️",
+        "color": "#FF7675",
+    },
+    {
+        "name": "Subscription",
         "type": CategoryType.expense,
         "icon": "📲",
         "color": "#636E72",
     },
-    # ── Income (5) ────────────────────────────────────────────────────────────
     {
-        "name": "Salary",
+        "name": "Asuransi",
+        "type": CategoryType.expense,
+        "icon": "🛡️",
+        "color": "#22A6B3",
+    },
+    {
+        "name": "Cicilan & Utang",
+        "type": CategoryType.expense,
+        "icon": "💳",
+        "color": "#EB2F06",
+    },
+    {
+        "name": "Pajak",
+        "type": CategoryType.expense,
+        "icon": "🧾",
+        "color": "#576574",
+    },
+    {
+        "name": "Hadiah & Donasi",
+        "type": CategoryType.expense,
+        "icon": "🎗️",
+        "color": "#F368E0",
+    },
+    {
+        "name": "Zakat & Charity",
+        "type": CategoryType.expense,
+        "icon": "🕌",
+        "color": "#10AC84",
+    },
+    {
+        "name": "Nabung & Savings",
+        "type": CategoryType.expense,
+        "icon": "🐷",
+        "color": "#786FA6",
+    },
+    # ── Income (8) ───────────────────────────────────────────────────────────
+    {
+        "name": "Gaji",
         "type": CategoryType.income,
         "icon": "💼",
-        "color": "#00B894",
+        "color": "#F6B93B",
     },
     {
         "name": "Freelance",
         "type": CategoryType.income,
         "icon": "💻",
-        "color": "#6C5CE7",
+        "color": "#4834D4",
     },
     {
-        "name": "Investment",
+        "name": "Investasi",
         "type": CategoryType.income,
         "icon": "📈",
         "color": "#F9CA24",
     },
     {
-        "name": "Business",
+        "name": "Bisnis",
         "type": CategoryType.income,
         "icon": "🏪",
         "color": "#F0932B",
     },
     {
-        "name": "Gift & Bonus",
+        "name": "Bonus & THR",
         "type": CategoryType.income,
         "icon": "🎁",
         "color": "#EB4D4B",
+    },
+    {
+        "name": "Rental Income",
+        "type": CategoryType.income,
+        "icon": "🏘️",
+        "color": "#6AB04C",
+    },
+    {
+        "name": "Refund & Reimburse",
+        "type": CategoryType.income,
+        "icon": "💵",
+        "color": "#2E86DE",
+    },
+    {
+        "name": "Other Income",
+        "type": CategoryType.income,
+        "icon": "💰",
+        "color": "#8E44AD",
     },
 ]
 
