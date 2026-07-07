@@ -13,7 +13,7 @@ export const colors = {
   text: {
     primary: '#201810',
     secondary: '#6E6147',
-    muted: '#A79878',
+    muted: '#746650',
     disabled: '#C9BCA0',
   },
   accent: {
