@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Lock, MessageCircle, Mic, ScanLine, Sparkles } from "lucide-react-native";
+import { MessageCircle, Mic, ScanLine, Sparkles } from "lucide-react-native";
 
 import { OnboardingHeader } from "@/components/layout/OnboardingHeader";
 import { colors } from "@/theme/colors";
@@ -117,10 +117,6 @@ export default function WelcomeScreen() {
             Catat via chat, suara, atau foto struk.{"\n"}
             Dapatkan insight yang benar-benar personal.
           </Text>
-          <View style={styles.trustBadge}>
-            <Lock size={12} color={colors.success.text} />
-            <Text style={styles.trustText}>Datamu aman, beneran 🔒</Text>
-          </View>
         </View>
 
         {/* Features */}
@@ -237,20 +233,6 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: "center",
     marginTop: 12,
-  },
-  trustBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    marginTop: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: radius.full,
-    backgroundColor: colors.success.bg,
-  },
-  trustText: {
-    ...textStyles.caption,
-    color: colors.success.text,
   },
   features: {
     flexDirection: "row",
