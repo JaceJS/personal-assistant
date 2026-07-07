@@ -1,4 +1,4 @@
-"""Integration tests: account deletion endpoint (DELETE /api/v1/users/me)."""
+"""Integration tests: account endpoints (DELETE /api/v1/users/me, PATCH /me/avatar)."""
 
 from __future__ import annotations
 
@@ -137,5 +137,77 @@ async def test_delete_account_requires_auth() -> None:
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.delete("/api/v1/users/me")
+
+    assert response.status_code == 401
+
+
+async def test_upload_avatar_success(
+    client: AsyncClient,
+    test_user_id: uuid.UUID,
+) -> None:
+    fake_storage = AsyncMock()
+
+    with (
+        patch("app.domains.users.router.R2Storage", return_value=fake_storage),
+        patch("app.core.upload_utils.filetype.guess") as mock_guess,
+    ):
+        mock_guess.return_value.mime = "image/png"
+        response = await client.patch(
+            "/api/v1/users/me/avatar",
+            files={"file": ("avatar.png", b"fake-png-bytes", "image/png")},
+        )
+
+    assert response.status_code == 200
+    url = response.json()["data"]["url"]
+    assert f"avatar/{test_user_id}.png" in url
+    assert "?v=" in url
+
+    fake_storage.upload.assert_awaited_once()
+    key, data, content_type = fake_storage.upload.await_args.args
+    assert key == f"avatar/{test_user_id}.png"
+    assert data == b"fake-png-bytes"
+    assert content_type == "image/png"
+
+
+async def test_upload_avatar_rejects_invalid_file_type(client: AsyncClient) -> None:
+    fake_storage = AsyncMock()
+
+    with (
+        patch("app.domains.users.router.R2Storage", return_value=fake_storage),
+        patch("app.core.upload_utils.filetype.guess", return_value=None),
+    ):
+        response = await client.patch(
+            "/api/v1/users/me/avatar",
+            files={"file": ("note.txt", b"not an image", "text/plain")},
+        )
+
+    assert response.status_code == 400
+    fake_storage.upload.assert_not_awaited()
+
+
+async def test_upload_avatar_rejects_oversized_file(client: AsyncClient) -> None:
+    from app.core import upload_utils
+
+    fake_storage = AsyncMock()
+    oversized = b"x" * (upload_utils.MAX_IMAGE_BYTES + 1)
+
+    with patch("app.domains.users.router.R2Storage", return_value=fake_storage):
+        response = await client.patch(
+            "/api/v1/users/me/avatar",
+            files={"file": ("avatar.png", oversized, "image/png")},
+        )
+
+    assert response.status_code == 400
+    fake_storage.upload.assert_not_awaited()
+
+
+async def test_upload_avatar_requires_auth() -> None:
+    from app.main import app
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.patch(
+            "/api/v1/users/me/avatar",
+            files={"file": ("avatar.png", b"data", "image/png")},
+        )
 
     assert response.status_code == 401

@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     r2_access_key_id: str = ""
     r2_secret_access_key: str = ""
     r2_bucket_name: str = "voice-recordings"
+    r2_public_url_base: str = ""
 
     # AI providers. STT and LLM both use OpenRouter so the backend needs one
     # AI provider key and model selection stays environment-driven.

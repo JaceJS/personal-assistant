@@ -1,8 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import NotificationTimeSheet from "@/features/settings/components/NotificationTimeSheet";
 import { useRouter } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
 import Constants from "expo-constants";
 import {
   Bell,
@@ -13,7 +12,6 @@ import {
   FileText,
   LogOut,
   MessageCircle,
-  Pencil,
   PiggyBank,
   Shield,
   Tag,
@@ -23,9 +21,11 @@ import {
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
+import ProfileAvatar from "@/features/settings/components/ProfileAvatar";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { useDisplayName } from "@/hooks/useDisplayName";
+import { useAvatarUrl } from "@/hooks/useAvatarUrl";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 import {
   requestNotificationPermission,
@@ -40,7 +40,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { user, isGuest, signOut } = useAuthStore();
   const { showToast } = useToastStore();
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const avatarUrl = useAvatarUrl();
   const [backupLoading, setBackupLoading] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const {
@@ -63,18 +63,6 @@ export default function SettingsScreen() {
       },
     ]);
   }, [signOut, router]);
-
-  const pickImage = useCallback(async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setAvatarUri(result.assets[0].uri);
-    }
-  }, []);
 
   const handleBackupSync = useCallback(async () => {
     setBackupLoading(true);
@@ -142,23 +130,7 @@ export default function SettingsScreen() {
           >
             <View style={styles.profileHero}>
               <View style={styles.avatarWrapper}>
-                <View style={styles.avatar}>
-                  {avatarUri ? (
-                    <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-                  ) : (
-                    <Text style={styles.avatarText}>{initial}</Text>
-                  )}
-                </View>
-                <Pressable
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    void pickImage();
-                  }}
-                  style={styles.editBadge}
-                  hitSlop={8}
-                >
-                  <Pencil size={12} color="#fff" />
-                </Pressable>
+                <ProfileAvatar uri={avatarUrl} initial={initial} size={88} />
               </View>
               <Text style={styles.profileName}>{displayName}</Text>
               <Text style={styles.profileEmail} numberOfLines={1}>
@@ -442,26 +414,6 @@ const styles = StyleSheet.create({
   },
   guestAvatar: {
     borderStyle: "dashed",
-  },
-  avatarImage: {
-    width: 88,
-    height: 88,
-    borderRadius: radius.full,
-  },
-  avatarText: {
-    ...StyleSheet.flatten(textStyles.display),
-    color: colors.accent.primary,
-  },
-  editBadge: {
-    position: "absolute",
-    bottom: -6,
-    right: -6,
-    width: 28,
-    height: 28,
-    borderRadius: radius.full,
-    backgroundColor: colors.accent.primary,
-    alignItems: "center",
-    justifyContent: "center",
   },
   profileName: {
     ...StyleSheet.flatten(textStyles.display),

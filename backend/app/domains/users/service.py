@@ -1,18 +1,53 @@
-"""User account service: permanent account deletion."""
+"""User account service: profile updates and permanent account deletion."""
 
 from __future__ import annotations
 
+import time
 import uuid
 
 import structlog
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings
 from app.core.exceptions import BadGatewayError
+from app.core.upload_utils import (
+    IMAGE_EXT_MAP,
+    IMAGE_MIME_ALLOWLIST,
+    MAX_IMAGE_BYTES,
+    read_and_validate_upload,
+)
 from app.domains.users import repository
+from app.domains.users.schemas import AvatarUploadResponse
 from app.shared.storage import R2Storage
 from app.shared.supabase_admin import SupabaseAdmin, SupabaseAdminError
 
 _logger = structlog.get_logger(__name__)
+
+
+async def upload_avatar(
+    user_id: uuid.UUID,
+    file: UploadFile,
+    storage: R2Storage,
+    settings: Settings,
+) -> AvatarUploadResponse:
+    """Validate and upload a profile photo, replacing any previous one.
+
+    Uses a fixed object key per user (not a UUID) so re-uploads overwrite the
+    same object instead of leaving old avatars orphaned in R2. The `?v=` query
+    param busts any client/CDN cache of the previous image at that key.
+    """
+    data, mime, ext = await read_and_validate_upload(
+        file,
+        max_bytes=MAX_IMAGE_BYTES,
+        mime_allowlist=IMAGE_MIME_ALLOWLIST,
+        ext_map=IMAGE_EXT_MAP,
+        default_ext=".jpg",
+    )
+    key = f"avatar/{user_id}{ext}"
+    await storage.upload(key, data, mime)
+    url = f"{settings.r2_public_url_base.rstrip('/')}/{key}?v={int(time.time())}"
+    return AvatarUploadResponse(url=url)
 
 
 async def delete_account(
