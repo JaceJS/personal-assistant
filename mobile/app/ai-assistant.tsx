@@ -340,9 +340,9 @@ export default function AIAssistantScreen() {
       setVoiceConfirmVisible(false);
       setVoiceLogId(null);
       resetRecorder();
-      showToast("Transaksi tersimpan.", "success");
       void confirmVoiceTransaction
         .mutateAsync({ transactionId, ...payload })
+        .then(() => showToast("Transaksi tersimpan.", "success"))
         .catch(() => showToast("Gagal menyimpan transaksi.", "error"));
     },
     [confirmVoiceTransaction, resetRecorder, showToast, voiceStatus.data?.transaction_id]
@@ -360,9 +360,9 @@ export default function AIAssistantScreen() {
       if (!transactionId) return;
       setReceiptConfirmVisible(false);
       setReceiptLogId(null);
-      showToast("Transaksi tersimpan.", "success");
       void confirmReceiptTransaction
         .mutateAsync({ transactionId, ...payload })
+        .then(() => showToast("Transaksi tersimpan.", "success"))
         .catch(() => showToast("Gagal menyimpan transaksi.", "error"));
     },
     [confirmReceiptTransaction, showToast, receiptStatus.data?.transaction_id]
@@ -590,6 +590,7 @@ export default function AIAssistantScreen() {
           returnKeyType="send"
           onSubmitEditing={handleSendText}
           blurOnSubmit={false}
+          maxLength={2000}
         />
 
         <Pressable
