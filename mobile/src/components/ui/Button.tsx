@@ -27,6 +27,9 @@ function Button({
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={({ pressed }) => [
         fullWidth && styles.fullWidth,
         isDisabled && styles.disabled,

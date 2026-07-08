@@ -15,6 +15,7 @@ function Input({ label, error, style, ...props }: InputProps) {
       <TextInput
         style={[styles.input, error ? styles.inputError : styles.inputDefault, style]}
         placeholderTextColor={colors.text.muted}
+        accessibilityLabel={label ?? props.placeholder}
         {...props}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}

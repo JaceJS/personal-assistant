@@ -65,7 +65,12 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
     return (
       <View key={route.key} style={styles.tabWrap}>
         {isGoalTab && activeCoachmark === "goal" && (
-          <Pressable onPress={() => void dismissGoalCoachmark()} style={styles.goalCoachmark}>
+          <Pressable
+            onPress={() => void dismissGoalCoachmark()}
+            style={styles.goalCoachmark}
+            accessibilityRole="button"
+            accessibilityLabel="Tutup tips: atur target nabung di sini"
+          >
             <Text style={styles.coachmarkText}>Atur target nabung di sini 🎯</Text>
             <View style={styles.goalCoachmarkArrow} />
           </Pressable>
@@ -83,6 +88,9 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
           }}
           style={styles.tab}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          accessibilityState={{ selected: focused }}
         >
           <Icon
             size={22}
@@ -110,14 +118,25 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
       <View style={[styles.outer, { paddingBottom: insets.bottom + 8 }]}>
         <View style={styles.fabWrap} pointerEvents="box-none">
           {activeCoachmark === "bot" && (
-            <Pressable onPress={() => void dismissBotCoachmark()} style={styles.coachmark}>
+            <Pressable
+              onPress={() => void dismissBotCoachmark()}
+              style={styles.coachmark}
+              accessibilityRole="button"
+              accessibilityLabel="Tutup tips: coba chat, ucapin, atau foto struk di sini"
+            >
               <Text style={styles.coachmarkText}>
                 Coba chat, ucapin, atau foto struk di sini ✨
               </Text>
               <View style={styles.coachmarkArrow} />
             </Pressable>
           )}
-          <Pressable onPress={handleBotPress} style={styles.fabPressable} hitSlop={10}>
+          <Pressable
+            onPress={handleBotPress}
+            style={styles.fabPressable}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Buka asisten AI"
+          >
             <Animated.View style={[styles.fab, animatedFabStyle]}>
               <Bot size={26} color={colors.accent.primary} strokeWidth={2} />
             </Animated.View>
