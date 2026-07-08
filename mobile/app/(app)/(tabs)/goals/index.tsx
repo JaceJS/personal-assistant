@@ -1,19 +1,19 @@
-import { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { useCallback, useState } from "react";
+import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Plus } from "lucide-react-native";
 
-import { Header } from '@/components/layout/Header';
-import { Screen } from '@/components/layout/Screen';
-import { HeaderButton } from '@/components/ui/HeaderButton';
-import Button from '@/components/ui/Button';
-import { SkeletonCard } from '@/components/ui/Skeleton';
-import SavingsGoalCard from '@/features/finance/components/SavingsGoalCard';
-import SavingsGoalFormSheet from '@/features/finance/components/SavingsGoalFormSheet';
-import { useCreateSavingsGoal, useSavingsGoals } from '@/features/finance/hooks/useSavingsGoals';
-import type { SavingsGoal, SavingsGoalCreate } from '@/features/finance/types';
-import { useToastStore } from '@/stores/toast';
-import { colors, radius, spacing, textStyles } from '@/theme';
+import { Header } from "@/components/layout/Header";
+import { Screen } from "@/components/layout/Screen";
+import { HeaderButton } from "@/components/ui/HeaderButton";
+import Button from "@/components/ui/Button";
+import { SkeletonCard } from "@/components/ui/Skeleton";
+import SavingsGoalCard from "@/features/finance/components/SavingsGoalCard";
+import SavingsGoalFormSheet from "@/features/finance/components/SavingsGoalFormSheet";
+import { useCreateSavingsGoal, useSavingsGoals } from "@/features/finance/hooks/useSavingsGoals";
+import type { SavingsGoal, SavingsGoalCreate } from "@/features/finance/types";
+import { useToastStore } from "@/stores/toast";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function GoalsScreen() {
   const router = useRouter();
@@ -27,19 +27,19 @@ export default function GoalsScreen() {
       try {
         await createGoal.mutateAsync(data);
         setShowForm(false);
-        showToast('Goal dibuat!', 'success');
+        showToast("Goal dibuat!", "success");
       } catch {
-        showToast('Gagal membuat goal. Coba lagi.', 'error');
+        showToast("Gagal membuat goal. Coba lagi.", "error");
       }
     },
-    [createGoal, showToast],
+    [createGoal, showToast]
   );
 
   const handleGoalPress = useCallback(
     (goal: SavingsGoal) => {
       router.push(`/(app)/goals/${goal.id}`);
     },
-    [router],
+    [router]
   );
 
   const active = goals?.filter((g) => !g.is_archived) ?? [];
@@ -47,11 +47,7 @@ export default function GoalsScreen() {
   const ongoing = active.filter((g) => !g.is_completed);
 
   const addButton = (
-    <HeaderButton
-      icon={Plus}
-      onPress={() => setShowForm(true)}
-      accessibilityLabel="Add goal"
-    />
+    <HeaderButton icon={Plus} onPress={() => setShowForm(true)} accessibilityLabel="Add goal" />
   );
 
   return (
@@ -68,14 +64,8 @@ export default function GoalsScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyEmoji}>🎯</Text>
           <Text style={styles.emptyTitle}>Belum ada goal</Text>
-          <Text style={styles.emptySubtitle}>
-            Mulai simpan untuk DP motor, liburan, atau dana darurat.
-          </Text>
-          <Button
-            label="Buat Goal Pertama"
-            onPress={() => setShowForm(true)}
-            variant="primary"
-          />
+          <Text style={styles.emptySubtitle}>Mulai simpan untuk liburan, atau dana darurat.</Text>
+          <Button label="Buat Goal Pertama" onPress={() => setShowForm(true)} variant="primary" />
         </View>
       ) : (
         <FlatList
@@ -119,11 +109,11 @@ export default function GoalsScreen() {
 
 const styles = StyleSheet.create({
   skeletonWrap: {
-    padding: spacing['2xl'],
+    padding: spacing["2xl"],
     gap: spacing.md,
   },
   list: {
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing["2xl"],
     paddingBottom: 80,
     paddingTop: spacing.sm,
   },
@@ -137,21 +127,21 @@ const styles = StyleSheet.create({
   completedLabel: { marginTop: spacing.xl },
   emptyWrap: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing['3xl'],
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing["3xl"],
     gap: spacing.md,
   },
   emptyEmoji: { fontSize: 48, marginBottom: spacing.sm },
   emptyTitle: {
     ...StyleSheet.flatten(textStyles.h2),
     color: colors.text.primary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptySubtitle: {
     ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing.sm,
   },
   addBtn: {
@@ -159,7 +149,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: radius.md,
     backgroundColor: colors.accent.subtle,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

@@ -1,10 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { StyleSheet, Text, View } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 
-import { useBudget } from '@/features/finance/hooks/useBudget';
-import { useTransactions } from '@/features/finance/hooks/useTransactions';
-import { formatRupiah } from '@/lib/utils';
-import { colors, radius, spacing, textStyles } from '@/theme';
+import { useBudget } from "@/features/finance/hooks/useBudget";
+import { useTransactions } from "@/features/finance/hooks/useTransactions";
+import { formatRupiah } from "@/lib/utils";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 const RING_R = 36;
 const RING_STROKE = 7;
@@ -16,17 +16,16 @@ export default function DailySpendCard() {
   const now = new Date();
   const today = [
     now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, '0'),
-    String(now.getDate()).padStart(2, '0'),
-  ].join('-');
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
 
   const { data: budget, isLoading: budgetLoading } = useBudget();
   const { data } = useTransactions({ dateFrom: today, dateTo: today, limit: 100 });
 
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const dailyLimit = budget?.monthly_limit != null
-    ? Math.round(budget.monthly_limit / daysInMonth)
-    : null;
+  const dailyLimit =
+    budget?.monthly_limit != null ? Math.round(budget.monthly_limit / daysInMonth) : null;
 
   const todaySpend = (data?.items ?? [])
     .filter((t) => t.amount < 0)
@@ -36,8 +35,7 @@ export default function DailySpendCard() {
     return (
       <View style={[styles.card, styles.cardEmpty]}>
         <Text style={styles.emptyTitle}>Batas Pengeluaran Harian</Text>
-        <Text style={styles.noLimit}>Belum ada anggaran</Text>
-        <Text style={styles.noLimitSub}>Atur anggaran bulanan untuk memantau pengeluaran harian</Text>
+        <Text style={styles.noLimitSub}>Atur budget bulanan untuk memantau pengeluaran harian</Text>
       </View>
     );
   }
@@ -48,9 +46,7 @@ export default function DailySpendCard() {
   const remaining = Math.max(limit - todaySpend, 0);
   const dashOffset = CIRCUMFERENCE * (1 - barPct);
   const ringColor =
-    barPct >= 1 ? colors.danger.text :
-    barPct >= 0.7 ? colors.warning.text :
-    colors.accent.primary;
+    barPct >= 1 ? colors.danger.text : barPct >= 0.7 ? colors.warning.text : colors.accent.primary;
 
   return (
     <View style={styles.card}>
@@ -58,7 +54,7 @@ export default function DailySpendCard() {
         <Text style={styles.overline}>PENGELUARAN HARI INI</Text>
         <Text style={[styles.spend, { color: ringColor }]}>{formatRupiah(todaySpend)}</Text>
         <Text style={styles.limitLabel}>dari {formatRupiah(limit)}</Text>
-        <View style={[styles.remainingChip, { borderColor: ringColor + '44' }]}>
+        <View style={[styles.remainingChip, { borderColor: ringColor + "44" }]}>
           <Text style={[styles.remainingText, { color: ringColor }]}>
             sisa {formatRupiah(remaining)}
           </Text>
@@ -68,13 +64,17 @@ export default function DailySpendCard() {
       <View style={styles.ringWrap}>
         <Svg width={RING_SIZE} height={RING_SIZE}>
           <Circle
-            cx={RING_CENTER} cy={RING_CENTER} r={RING_R}
+            cx={RING_CENTER}
+            cy={RING_CENTER}
+            r={RING_R}
             stroke={colors.border.subtle}
             strokeWidth={RING_STROKE}
             fill="none"
           />
           <Circle
-            cx={RING_CENTER} cy={RING_CENTER} r={RING_R}
+            cx={RING_CENTER}
+            cy={RING_CENTER}
+            r={RING_R}
             stroke={ringColor}
             strokeWidth={RING_STROKE}
             fill="none"
@@ -100,16 +100,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border.default,
-    marginHorizontal: spacing['2xl'],
+    marginHorizontal: spacing["2xl"],
     marginBottom: spacing.lg,
     padding: spacing.xl,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   cardEmpty: {
-    flexDirection: 'column',
-    alignItems: 'center',
+    flexDirection: "column",
+    alignItems: "center",
     paddingVertical: 32,
   },
   left: {
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   spend: {
     ...StyleSheet.flatten(textStyles.display),
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: -0.5,
   },
   limitLabel: {
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   remainingChip: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginTop: 8,
     borderWidth: 1,
     borderRadius: radius.full,
@@ -145,22 +145,22 @@ const styles = StyleSheet.create({
   remainingText: {
     ...StyleSheet.flatten(textStyles.caption),
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   ringWrap: {
     width: RING_SIZE,
     height: RING_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   ringCenter: {
-    position: 'absolute',
-    alignItems: 'center',
+    position: "absolute",
+    alignItems: "center",
   },
   pct: {
     ...StyleSheet.flatten(textStyles.caption),
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: -0.3,
   },
   usedLabel: {
@@ -173,16 +173,10 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: 6,
   },
-  noLimit: {
-    ...StyleSheet.flatten(textStyles.h3),
-    color: colors.text.secondary,
-    marginTop: 12,
-    marginBottom: 6,
-  },
   noLimitSub: {
     ...StyleSheet.flatten(textStyles.caption),
     fontSize: 13,
     color: colors.text.muted,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

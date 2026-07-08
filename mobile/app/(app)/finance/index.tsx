@@ -145,7 +145,7 @@ export default function FinanceDashboard() {
             <Text style={styles.savingsEntryEmoji}>🎯</Text>
             <View style={styles.savingsEntryText}>
               <Text style={styles.savingsEntryTitle}>Tabungan Tujuan</Text>
-              <Text style={styles.savingsEntrySubtitle}>DP motor, liburan, dana darurat…</Text>
+              <Text style={styles.savingsEntrySubtitle}>Tiket konser, liburan, dana darurat…</Text>
             </View>
             <Text style={styles.savingsEntryChevron}>›</Text>
           </View>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -8,23 +8,23 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { X } from 'lucide-react-native';
+} from "react-native";
+import { X } from "lucide-react-native";
 
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import RupiahInput from '@/components/ui/RupiahInput';
-import type { SavingsGoal, SavingsGoalCreate } from '@/features/finance/types';
-import { colors, radius, spacing, textStyles } from '@/theme';
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import RupiahInput from "@/components/ui/RupiahInput";
+import type { SavingsGoal, SavingsGoalCreate } from "@/features/finance/types";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
-const QUICK_ICONS = ['🎯', '🏍', '✈️', '🏠', '💍', '📱', '🛡️', '🎓', '🚗', '💰'];
+const QUICK_ICONS = ["🎯", "🎫", "✈️", "🏠", "💍", "📱", "🛡️", "🎓", "🚗", "💰"];
 
 interface SavingsGoalFormSheetProps {
   isVisible: boolean;
   onDismiss: () => void;
   onSave: (data: SavingsGoalCreate) => void;
   isPending?: boolean;
-  initialValues?: Pick<SavingsGoal, 'name' | 'icon' | 'target_amount' | 'target_date'>;
+  initialValues?: Pick<SavingsGoal, "name" | "icon" | "target_amount" | "target_date">;
 }
 
 function SavingsGoalFormSheet({
@@ -36,17 +36,17 @@ function SavingsGoalFormSheet({
 }: SavingsGoalFormSheetProps) {
   const isEdit = !!initialValues;
 
-  const [name, setName] = useState('');
-  const [icon, setIcon] = useState('🎯');
+  const [name, setName] = useState("");
+  const [icon, setIcon] = useState("🎯");
   const [targetAmount, setTargetAmount] = useState(0);
-  const [targetDate, setTargetDate] = useState('');
+  const [targetDate, setTargetDate] = useState("");
 
   useEffect(() => {
     if (isVisible) {
-      setName(initialValues?.name ?? '');
-      setIcon(initialValues?.icon ?? '🎯');
+      setName(initialValues?.name ?? "");
+      setIcon(initialValues?.icon ?? "🎯");
       setTargetAmount(initialValues?.target_amount ?? 0);
-      setTargetDate(initialValues?.target_date ?? '');
+      setTargetDate(initialValues?.target_date ?? "");
     }
   }, [isVisible, initialValues]);
 
@@ -64,15 +64,10 @@ function SavingsGoalFormSheet({
   }, [isValid, name, icon, targetAmount, targetDate, onSave]);
 
   return (
-    <Modal
-      visible={isVisible}
-      transparent
-      animationType="slide"
-      onRequestClose={onDismiss}
-    >
+    <Modal visible={isVisible} transparent animationType="slide" onRequestClose={onDismiss}>
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <Pressable style={StyleSheet.absoluteFillObject} onPress={onDismiss}>
           <View style={styles.backdrop} />
@@ -81,11 +76,8 @@ function SavingsGoalFormSheet({
           <View style={styles.handle} />
 
           <View style={styles.titleRow}>
-            <Text style={styles.title}>{isEdit ? 'Edit Goal' : 'Goal Baru'}</Text>
-            <Pressable
-              style={({ pressed }) => pressed && { opacity: 0.7 }}
-              onPress={onDismiss}
-            >
+            <Text style={styles.title}>{isEdit ? "Edit Goal" : "Goal Baru"}</Text>
+            <Pressable style={({ pressed }) => pressed && { opacity: 0.7 }} onPress={onDismiss}>
               <View style={styles.closeBtn}>
                 <X size={16} color={colors.text.secondary} strokeWidth={1.5} />
               </View>
@@ -121,7 +113,7 @@ function SavingsGoalFormSheet({
               label="Nama Goal"
               value={name}
               onChangeText={setName}
-              placeholder="DP motor, Liburan Bali…"
+              placeholder="Tiket konser, Liburan..."
               autoFocus={!isEdit}
             />
 
@@ -141,7 +133,7 @@ function SavingsGoalFormSheet({
             />
 
             <Button
-              label={isPending ? 'Menyimpan…' : isEdit ? 'Simpan Perubahan' : 'Buat Goal'}
+              label={isPending ? "Menyimpan…" : isEdit ? "Simpan Perubahan" : "Buat Goal"}
               onPress={handleSave}
               variant="primary"
               disabled={!isValid || isPending}
@@ -155,16 +147,16 @@ function SavingsGoalFormSheet({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
+  overlay: { flex: 1, justifyContent: "flex-end" },
+  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)" },
   sheet: {
     backgroundColor: colors.bg.elevated,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    maxHeight: '85%',
+    maxHeight: "85%",
   },
   handle: {
-    alignSelf: 'center',
+    alignSelf: "center",
     width: 40,
     height: 4,
     borderRadius: radius.full,
@@ -173,10 +165,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing['2xl'],
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing["2xl"],
     paddingVertical: spacing.md,
   },
   title: { ...StyleSheet.flatten(textStyles.h2), color: colors.text.primary },
@@ -185,12 +177,12 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: radius.full,
     backgroundColor: colors.bg.hover,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   scroll: { flexGrow: 0 },
   content: {
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing["2xl"],
     paddingBottom: 32,
     gap: spacing.md,
   },
@@ -208,8 +200,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.surface,
     borderWidth: 1,
     borderColor: colors.border.default,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   iconBtnActive: {
     borderColor: colors.accent.primary,
