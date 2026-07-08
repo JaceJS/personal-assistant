@@ -19,14 +19,9 @@ import { useBudget } from "@/features/finance/hooks/useBudget";
 import { computeBudgetAlert } from "@/features/finance/utils/budgetAlert";
 import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { formatRupiah } from "@/lib/utils";
-import {
-  hasRequestedPermission,
-  markPermissionRequested,
-  requestNotificationPermission,
-  scheduleDailyReminder,
-} from "@/lib/notifications";
+import { useNotificationPermissionGate } from "@/features/finance/hooks/useNotificationPermissionGate";
+import { NotificationPermissionSheet } from "@/features/finance/components/NotificationPermissionSheet";
 import { useToastStore } from "@/stores/toast";
-import { useNotificationStore } from "@/stores/notifications";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const schema = z.object({
@@ -49,7 +44,8 @@ export default function NewTransactionScreen() {
   const createTransaction = useCreateTransaction();
   const { showToast } = useToastStore();
   const { data: budget } = useBudget();
-  const { dailyReminderHour, dailyReminderMinute, setDailyReminder } = useNotificationStore();
+  const { sheetVisible, promptIfNeeded, acceptPermission, declinePermission } =
+    useNotificationPermissionGate();
 
   const monthRange = useMemo(() => {
     const now = new Date();
@@ -156,26 +152,22 @@ export default function NewTransactionScreen() {
           showToast("Transaksi tersimpan", "success");
         }
 
-        handleBack();
-
-        // First-transaction flow: ask notification permission once
-        void (async () => {
-          const alreadyAsked = await hasRequestedPermission();
-          if (!alreadyAsked) {
-            await markPermissionRequested();
-            const granted = await requestNotificationPermission();
-            if (granted) {
-              setDailyReminder(true, dailyReminderHour, dailyReminderMinute);
-              await scheduleDailyReminder(dailyReminderHour, dailyReminderMinute);
-            }
-          }
-        })();
+        const sheetShown = await promptIfNeeded();
+        if (!sheetShown) handleBack();
       } catch {
         showToast("Gagal menyimpan transaksi. Coba lagi.", "error");
       }
     },
-    [createTransaction, handleBack, showToast, txType, budget, currentMonthExpense, monthTxData, categoriesData, dailyReminderHour, dailyReminderMinute, setDailyReminder],
+    [createTransaction, handleBack, showToast, txType, budget, currentMonthExpense, monthTxData, categoriesData, promptIfNeeded],
   );
+
+  const handlePermissionSheetAccept = useCallback(() => {
+    void acceptPermission().then(handleBack);
+  }, [acceptPermission, handleBack]);
+
+  const handlePermissionSheetDecline = useCallback(() => {
+    void declinePermission().then(handleBack);
+  }, [declinePermission, handleBack]);
 
   const noAccounts = !accountsLoading && (accountsData?.length ?? 0) === 0;
 
@@ -372,6 +364,12 @@ export default function NewTransactionScreen() {
           </View>
         )}
       </ScrollView>
+
+      <NotificationPermissionSheet
+        isVisible={sheetVisible}
+        onAccept={handlePermissionSheetAccept}
+        onDecline={handlePermissionSheetDecline}
+      />
     </Screen>
   );
 }
