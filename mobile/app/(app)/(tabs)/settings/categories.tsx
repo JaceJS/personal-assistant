@@ -14,6 +14,7 @@ import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { useToastStore } from "@/stores/toast";
 import type { Category, CategoryType } from "@/features/finance/types";
 import { colors, radius, spacing } from "@/theme";
+import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
 
 const GRID_COLS = 4;
 
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
   gridContent: {
     paddingHorizontal: 11,
     paddingTop: 8,
-    paddingBottom: 40,
+    paddingBottom: TAB_BAR_CLEARANCE,
   },
   gridRow: {
     flexDirection: "row",

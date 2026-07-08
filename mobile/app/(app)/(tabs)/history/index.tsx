@@ -33,6 +33,7 @@ import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import type { Transaction } from '@/features/finance/types';
 import { formatRupiah, formatShortDate } from '@/lib/utils';
 import { colors, radius, spacing, textStyles } from '@/theme';
+import { TAB_BAR_CLEARANCE } from '@/components/ui/FloatingTabBar';
 
 const MONTH_NAMES = [
   'Januari',
@@ -623,7 +624,7 @@ const styles = StyleSheet.create({
 
   listPad: { paddingHorizontal: spacing.xl },
   list: { flex: 1 },
-  listContent: { paddingBottom: 100 },
+  listContent: { paddingBottom: TAB_BAR_CLEARANCE },
 
   filterChipRow: {
     flexDirection: 'row',

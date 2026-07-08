@@ -21,6 +21,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { colors, spacing, textStyles } from "@/theme";
+import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -115,7 +116,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 120, paddingTop: spacing.xs },
+  scrollContent: { paddingBottom: TAB_BAR_CLEARANCE, paddingTop: spacing.xs },
   greeting: {
     ...StyleSheet.flatten(textStyles.display),
     fontSize: 26,

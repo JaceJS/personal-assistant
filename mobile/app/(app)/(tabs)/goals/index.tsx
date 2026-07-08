@@ -14,6 +14,7 @@ import { useCreateSavingsGoal, useSavingsGoals } from "@/features/finance/hooks/
 import type { SavingsGoal, SavingsGoalCreate } from "@/features/finance/types";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
+import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
 
 export default function GoalsScreen() {
   const router = useRouter();
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: spacing["2xl"],
-    paddingBottom: 80,
+    paddingBottom: TAB_BAR_CLEARANCE,
     paddingTop: spacing.sm,
   },
   separator: { height: spacing.md },

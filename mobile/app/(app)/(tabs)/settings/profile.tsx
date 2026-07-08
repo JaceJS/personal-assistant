@@ -14,6 +14,7 @@ import { useToastStore } from "@/stores/toast";
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useAvatarUrl } from "@/hooks/useAvatarUrl";
 import { spacing, textStyles, colors } from "@/theme";
+import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing["2xl"],
     paddingTop: spacing["2xl"],
-    paddingBottom: 160,
+    paddingBottom: TAB_BAR_CLEARANCE,
     gap: spacing["2xl"],
   },
 

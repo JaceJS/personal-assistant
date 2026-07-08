@@ -35,6 +35,7 @@ import {
 import { useNotificationStore } from "@/stores/notifications";
 import { SUPPORT_WHATSAPP } from "@/constants/config";
 import { colors, radius, spacing, textStyles } from "@/theme";
+import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -384,7 +385,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: spacing["2xl"],
-    paddingBottom: 160,
+    paddingBottom: TAB_BAR_CLEARANCE,
     gap: 8,
   },
 

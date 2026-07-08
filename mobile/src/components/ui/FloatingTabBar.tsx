@@ -16,6 +16,10 @@ import { colors, radius, textStyles } from "@/theme";
 import { useOnboardingStore } from "@/stores/onboarding";
 import { handleTabPress } from "./tabPressUtils";
 
+// Scroll content on any screen under the (tabs) group must reserve this much
+// bottom space so it isn't hidden behind the floating pill + FAB.
+export const TAB_BAR_CLEARANCE = 160;
+
 const TAB_ICONS: Record<string, typeof Home> = {
   "(home)": Home,
   history: Clock,

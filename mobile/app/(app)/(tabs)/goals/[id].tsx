@@ -21,6 +21,7 @@ import { daysRemaining, requiredMonthlyContribution } from '@/features/finance/u
 import { formatRupiah } from '@/lib/utils';
 import { useToastStore } from '@/stores/toast';
 import { colors, radius, spacing, textStyles } from '@/theme';
+import { TAB_BAR_CLEARANCE } from '@/components/ui/FloatingTabBar';
 
 export default function GoalDetailScreen() {
   const router = useRouter();
@@ -255,7 +256,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: spacing['2xl'],
-    paddingBottom: 48,
+    paddingBottom: TAB_BAR_CLEARANCE,
     gap: spacing.lg,
   },
   hero: {

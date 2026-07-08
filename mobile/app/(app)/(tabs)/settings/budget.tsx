@@ -32,6 +32,7 @@ import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { formatRupiah } from '@/lib/utils';
 import { useToastStore } from '@/stores/toast';
 import { colors, radius, spacing, textStyles } from '@/theme';
+import { TAB_BAR_CLEARANCE } from '@/components/ui/FloatingTabBar';
 
 const CARD_STYLE = { padding: 0, overflow: 'hidden' as const, borderWidth: 1, borderColor: colors.border.default };
 
@@ -269,7 +270,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: spacing['2xl'],
-    paddingBottom: 160,
+    paddingBottom: TAB_BAR_CLEARANCE,
     gap: 8,
   },
   section: { marginTop: 24 },
