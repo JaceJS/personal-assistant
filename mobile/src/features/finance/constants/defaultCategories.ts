@@ -41,5 +41,5 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   { id: "default-cat-bonus",       name: "Bonus & THR",           type: "income",  icon: "🎁", color: "#EB4D4B" },
   { id: "default-cat-rentalincome", name: "Rental Income",        type: "income",  icon: "🏘️", color: "#6AB04C" },
   { id: "default-cat-refund",      name: "Refund & Reimburse",    type: "income",  icon: "💵", color: "#2E86DE" },
-  { id: "default-cat-otherincome", name: "Other Income",          type: "income",  icon: "💰", color: "#8E44AD" },
+  { id: "default-cat-otherincome", name: "Pemasukan Lain",        type: "income",  icon: "💰", color: "#8E44AD" },
 ];

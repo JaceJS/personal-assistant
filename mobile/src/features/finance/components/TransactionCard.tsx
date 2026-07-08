@@ -37,7 +37,7 @@ function getCardLabels(transaction: Transaction, categoryName?: string) {
   if (transaction.note) {
     return { title: transaction.note, subtitle: timeLine };
   }
-  return { title: 'Other', subtitle: timeStr };
+  return { title: 'Lainnya', subtitle: timeStr };
 }
 
 function TransactionCard({ transaction, category, showId, onPress }: TransactionCardProps) {

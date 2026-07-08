@@ -226,7 +226,7 @@ _DEFAULT_CATEGORIES: list[dict[str, object]] = [
         "color": "#2E86DE",
     },
     {
-        "name": "Other Income",
+        "name": "Pemasukan Lain",
         "type": CategoryType.income,
         "icon": "💰",
         "color": "#8E44AD",

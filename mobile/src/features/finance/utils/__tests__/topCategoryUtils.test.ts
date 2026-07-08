@@ -84,7 +84,7 @@ describe('buildTopCategories', () => {
     const result = buildTopCategories(txs, [], 5);
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0].categoryId).toBeNull();
-    expect(result.rows[0].name).toBe('Other');
+    expect(result.rows[0].name).toBe('Lainnya');
     expect(result.rows[0].total).toBe(100_000);
   });
 
@@ -157,7 +157,7 @@ describe('buildTopCategories', () => {
     const txs = [makeTx({ id: 'tx-1', amount: -100_000, category_id: 'unknown-id' })];
     const result = buildTopCategories(txs, [], 5);
     expect(result.rows[0].color).toBeNull();
-    expect(result.rows[0].name).toBe('Other');
+    expect(result.rows[0].name).toBe('Lainnya');
   });
 
   it('handles zero total (division guard)', () => {

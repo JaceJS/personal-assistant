@@ -43,7 +43,7 @@ export function buildTopCategories(
     const cat = categoryId != null ? catMap.get(categoryId) : undefined;
     return {
       categoryId,
-      name: cat?.name ?? 'Other',
+      name: cat?.name ?? 'Lainnya',
       color: cat?.color ?? null,
       icon: cat?.icon ?? null,
       total,
