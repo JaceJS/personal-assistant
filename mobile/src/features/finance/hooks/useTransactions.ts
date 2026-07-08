@@ -6,6 +6,7 @@ import type { ListTransactionsParams } from "@/features/finance/api/transactions
 import type { TransactionCreate, TransactionUpdate } from "@/features/finance/types";
 
 const QUERY_KEY = "transactions";
+const ACCOUNTS_QUERY_KEY = "accounts";
 
 export function useTransactions(params?: ListTransactionsParams) {
   const repo = useFinanceRepository();
@@ -41,7 +42,10 @@ export function useCreateTransaction() {
   return useMutation({
     mutationFn: (data: TransactionCreate) =>
       repo.createTransaction({ ...data, id: ExpoCrypto.randomUUID() }),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [ACCOUNTS_QUERY_KEY] });
+    },
   });
 }
 
@@ -50,7 +54,10 @@ export function useUpdateTransaction(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: TransactionUpdate) => repo.updateTransaction(id, data),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [ACCOUNTS_QUERY_KEY] });
+    },
   });
 }
 
@@ -59,6 +66,9 @@ export function useDeleteTransaction() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => repo.deleteTransaction(id),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [ACCOUNTS_QUERY_KEY] });
+    },
   });
 }
