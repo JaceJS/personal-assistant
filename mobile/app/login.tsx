@@ -104,11 +104,12 @@ export default function LoginScreen() {
             </View>
           </Pressable>
 
-          <Pressable
-            onPress={handleContinueAsGuest}
-            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-          >
-            <Text style={styles.guestLink}>Lanjut tanpa akun →</Text>
+          <Pressable onPress={handleContinueAsGuest}>
+            {({ pressed }) => (
+              <View style={[styles.guestLinkWrap, pressed && { opacity: 0.6 }]}>
+                <Text style={styles.guestLink}>Lanjut tanpa akun →</Text>
+              </View>
+            )}
           </Pressable>
         </View>
       </Animated.View>
@@ -213,9 +214,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.flatten(textStyles.h2),
     color: "#fff",
   },
+  guestLinkWrap: {
+    minHeight: 48,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   guestLink: {
     ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
-    paddingVertical: 4,
   },
 });

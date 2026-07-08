@@ -1,6 +1,7 @@
 import "../global.css";
 
 import * as Sentry from "@sentry/react-native";
+import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   PlusJakartaSans_400Regular,
@@ -18,6 +19,7 @@ import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-c
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/queryClient";
 import { runMigrations } from "@/lib/db/client";
+import { logger } from "@/lib/logger";
 import { Toast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingStore } from "@/stores/onboarding";
@@ -55,7 +57,7 @@ function RootLayoutInner() {
         await runMigrations();
         await initialize();
       } catch (e) {
-        console.error("[startup] setup failed:", e);
+        logger.error("[startup] setup failed", e);
       } finally {
         setDbReady(true);
       }
@@ -67,6 +69,7 @@ function RootLayoutInner() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="ai-assistant" options={{ presentation: "modal" }} />
         <Stack.Screen name="delete-account" />
