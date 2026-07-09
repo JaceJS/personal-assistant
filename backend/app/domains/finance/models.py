@@ -198,3 +198,8 @@ class Transaction(TimestampedBase):
         sa.ForeignKey("voice_logs.id", ondelete="SET NULL"),
         nullable=True,
     )
+    chat_session_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        sa.ForeignKey("chat_sessions.id", ondelete="SET NULL"),
+        nullable=True,
+    )

@@ -19,6 +19,7 @@ from app.core.rate_limit import per_user_rate_limit
 from app.core.response import ApiResponse, ok
 from app.domains.ai import repository as repo
 from app.domains.ai import service
+from app.domains.ai.prompts import CHAT_BEHAVIOR_RULES, TONE_RULES
 from app.domains.ai.schemas import (
     ChatMessageOut,
     ChatReply,
@@ -33,6 +34,9 @@ router = APIRouter(prefix="/ai", tags=["AI"])
 
 _AI_CHAT_LIMIT = per_user_rate_limit(60, 3600)
 _AI_INSIGHT_LIMIT = per_user_rate_limit(30, 3600)
+
+_MAX_TOOL_ITERATIONS = 3
+_FALLBACK_REPLY = "Maaf, aku belum bisa jawab itu sekarang. Coba tanya lagi dengan cara lain ya."
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
@@ -55,7 +59,7 @@ _SYSTEM_PROMPT = (
     "review the draft card(s) shown below in the chat. Do not repeat the amounts in text. "
     "If the user asks about anything outside personal finance, politely decline and "
     "redirect them to a finance-related question. "
-    "Be concise. Respond in the same language the user uses (Indonesian or English)."
+    f"{TONE_RULES} {CHAT_BEHAVIOR_RULES}"
 )
 
 
@@ -65,7 +69,7 @@ async def get_session_messages(
     user_id: CurrentUser,
     session: DbSession,
 ) -> ApiResponse[SessionHistoryResponse]:
-    msgs = await service.get_session_messages(user_id, session_id, session)
+    msgs, draft_transactions = await service.get_session_messages(user_id, session_id, session)
     return ok(
         SessionHistoryResponse(
             session_id=session_id,
@@ -73,6 +77,7 @@ async def get_session_messages(
                 ChatMessageOut(id=m.id, role=m.role, content=m.content, created_at=m.created_at)
                 for m in msgs
             ],
+            draft_transactions=draft_transactions,
         )
     )
 
@@ -103,7 +108,7 @@ async def chat(
 
     final_reply = ""
     draft_transactions: list[DraftTransaction] = []
-    for _ in range(3):
+    for _ in range(_MAX_TOOL_ITERATIONS):
         content, tool_calls = await llm.chat_with_tools(_SYSTEM_PROMPT, loop_messages, TOOLS)
         final_reply = content
 
@@ -129,12 +134,23 @@ async def chat(
             }
         )
         for tc in tool_calls:
-            result = await execute_tool(tc["name"], tc["arguments"], user_id, session)
+            result = await execute_tool(
+                tc["name"], tc["arguments"], user_id, session, chat_session_id=chat_session.id
+            )
             loop_messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
             if tc["name"] == "create_transaction":
                 result_data = json.loads(result)
                 if "transaction_id" in result_data:
                     draft_transactions.append(DraftTransaction(**result_data))
+
+    if not final_reply.strip():
+        # Either the tool loop was exhausted with tool_calls still pending, or
+        # the model returned truly empty content. Force one more completion
+        # with tool calling disabled so the user always gets a text reply.
+        final_reply, _ = await llm.chat_with_tools(
+            _SYSTEM_PROMPT, loop_messages, TOOLS, force_text=True
+        )
+    final_reply = final_reply.strip() or _FALLBACK_REPLY
 
     await repo.add_message(session, chat_session.id, "assistant", final_reply)
     return ok(

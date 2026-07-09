@@ -13,12 +13,15 @@ from app.ai.llm.openrouter import OpenRouterLLM
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.domains.ai import repository as repo
 from app.domains.ai.models import ChatMessage, ChatSession
-from app.domains.ai.schemas import DailyInsight
+from app.domains.ai.prompts import TONE_RULES
+from app.domains.ai.schemas import DailyInsight, DraftTransaction
 from app.domains.ai.tools import (
     _get_budget_status,
     _get_financial_summary,
     _get_spending_by_category,
 )
+from app.domains.finance import repository as finance_repo
+from app.domains.finance.models import Transaction
 
 _INSIGHT_CACHE_PREFIX = "ai_insight_v2"
 
@@ -28,9 +31,8 @@ _INSIGHT_SYSTEM = (
     "Kamu adalah asisten keuangan pribadi untuk aplikasi budgeting di Indonesia. "
     "Berdasarkan ringkasan keuangan pengguna hari ini, tulis satu insight yang singkat "
     "dan actionable (maksimal 1-2 kalimat). Fokus pada pola pengeluaran, kondisi budget, "
-    "atau tips menabung yang konkret. "
-    "Langsung dan encouraging. "
-    "Respond in Bahasa Indonesia, casual tapi profesional. Jangan sertakan salam atau penutup."
+    "atau tips menabung yang konkret. Langsung dan encouraging. Jangan sertakan salam "
+    f"atau penutup. {TONE_RULES}"
 )
 
 
@@ -76,17 +78,38 @@ def _build_insight_prompt(context: dict[str, Any]) -> str:
     )
 
 
+async def _to_draft_transaction(db: AsyncSession, tx: Transaction) -> DraftTransaction:
+    category_name = None
+    if tx.category_id is not None:
+        category = await finance_repo.get_category(db, tx.category_id)
+        category_name = category.name if category else None
+
+    return DraftTransaction(
+        transaction_id=tx.id,
+        amount=tx.amount,
+        currency=tx.currency,
+        merchant=tx.merchant,
+        category_name=category_name,
+        note=tx.note,
+        account_id=tx.account_id,
+    )
+
+
 async def get_session_messages(
     user_id: uuid.UUID,
     session_id: uuid.UUID,
     db: AsyncSession,
-) -> list[ChatMessage]:
+) -> tuple[list[ChatMessage], list[DraftTransaction]]:
     chat_session = await db.get(ChatSession, session_id)
     if chat_session is None:
         raise NotFoundError("Session not found")
     if chat_session.user_id != user_id:
         raise ForbiddenError("Access denied")
-    return await repo.get_recent_messages(db, session_id, limit=20)
+
+    messages = await repo.get_recent_messages(db, session_id, limit=20)
+    draft_rows = await finance_repo.get_pending_draft_transactions(db, session_id)
+    drafts = [await _to_draft_transaction(db, tx) for tx in draft_rows]
+    return messages, drafts
 
 
 async def get_daily_insight(

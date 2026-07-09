@@ -376,6 +376,7 @@ async def create_transaction(
         source=data.source,
         status=data.status,
         voice_log_id=data.voice_log_id,
+        chat_session_id=data.chat_session_id,
     )
     if data.status == TransactionStatus.confirmed:
         await repo.update_account(session, account, balance=account.balance + data.amount)

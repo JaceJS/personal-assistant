@@ -170,4 +170,57 @@ describe('useChat', () => {
 
     expect(await AsyncStorage.getItem(CHAT_SESSION_KEY)).toBeNull();
   });
+
+  it('rehydrates pending draft cards left over from a previous session', async () => {
+    await AsyncStorage.setItem(CHAT_SESSION_KEY, 'session-abc');
+    mockGetChatSessionMessages.mockResolvedValueOnce({
+      session_id: 'session-abc',
+      messages: [
+        { id: 'msg-1', role: 'user', content: 'sate 20.000', created_at: '2026-07-08T10:00:00Z' },
+        {
+          id: 'msg-2',
+          role: 'assistant',
+          content: 'Draft dibuat, cek card di bawah.',
+          created_at: '2026-07-08T10:00:01Z',
+        },
+      ],
+      draft_transactions: [
+        {
+          transaction_id: 'tx-123',
+          amount: -20000,
+          currency: 'IDR',
+          merchant: 'Sate',
+          category_name: 'Makan',
+          note: null,
+          account_id: 'acct-456',
+        },
+      ],
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {});
+
+    const drafts = result.current.messages.filter(
+      (m): m is DraftMessage => m.type === 'draft',
+    );
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].id).toBe('tx-123');
+    expect(drafts[0].state).toBe('pending');
+  });
+
+  it('rehydrates no draft cards when history has none pending', async () => {
+    await AsyncStorage.setItem(CHAT_SESSION_KEY, 'session-abc');
+    mockGetChatSessionMessages.mockResolvedValueOnce({
+      session_id: 'session-abc',
+      messages: [],
+      draft_transactions: [],
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {});
+
+    expect(result.current.messages.some((m) => m.type === 'draft')).toBe(false);
+  });
 });

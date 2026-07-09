@@ -115,3 +115,59 @@ async def test_chat_skips_failed_create_transaction_results() -> None:
         response = await chat(ChatRequest(message="sate 20.000"), _USER_ID, AsyncMock())
 
     assert response.data.draft_transactions == []
+
+
+@pytest.mark.asyncio
+async def test_chat_forces_text_reply_when_tool_loop_exhausts_without_content() -> None:
+    """If the model keeps calling tools for all 3 loop iterations, content is
+    always "" (per chat_with_tools contract). Without a fallback, the empty
+    reply gets shown to the user and persisted to history — this asserts the
+    router forces one more tool-free completion instead."""
+    llm = MagicMock()
+    llm.chat_with_tools = AsyncMock(
+        side_effect=[
+            ("", [_tool_call("get_accounts")]),
+            ("", [_tool_call("get_accounts")]),
+            ("", [_tool_call("get_accounts")]),
+            ("Kamu punya 1 akun dengan saldo Rp 1.000.000.", []),
+        ]
+    )
+    execute_tool = AsyncMock(return_value=json.dumps({"accounts": []}))
+    repo_mock = _mock_repo()
+
+    with (
+        patch("app.domains.ai.router.OpenRouterLLM", return_value=llm),
+        patch("app.domains.ai.router.get_settings", return_value=MagicMock()),
+        patch("app.domains.ai.router.repo", repo_mock),
+        patch("app.domains.ai.router.execute_tool", execute_tool),
+    ):
+        response = await chat(ChatRequest(message="saldo aku berapa?"), _USER_ID, AsyncMock())
+
+    assert response.data.reply == "Kamu punya 1 akun dengan saldo Rp 1.000.000."
+    assert llm.chat_with_tools.call_count == 4
+    forced_call_kwargs = llm.chat_with_tools.call_args_list[-1].kwargs
+    assert forced_call_kwargs.get("force_text") is True
+    persisted_content = repo_mock.add_message.call_args.args[-1]
+    assert persisted_content == response.data.reply
+
+
+@pytest.mark.asyncio
+async def test_chat_uses_fallback_reply_when_forced_completion_still_empty() -> None:
+    """Even the forced text-only completion can come back empty (upstream
+    hiccup). The user must never see a blank bubble, and an empty string must
+    never be persisted to chat history."""
+    llm = MagicMock()
+    llm.chat_with_tools = AsyncMock(side_effect=[("", []), ("", [])])
+    repo_mock = _mock_repo()
+
+    with (
+        patch("app.domains.ai.router.OpenRouterLLM", return_value=llm),
+        patch("app.domains.ai.router.get_settings", return_value=MagicMock()),
+        patch("app.domains.ai.router.repo", repo_mock),
+    ):
+        response = await chat(ChatRequest(message="halo"), _USER_ID, AsyncMock())
+
+    assert response.data.reply != ""
+    assert llm.chat_with_tools.call_count == 2
+    persisted_content = repo_mock.add_message.call_args.args[-1]
+    assert persisted_content == response.data.reply

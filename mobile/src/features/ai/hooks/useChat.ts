@@ -33,10 +33,10 @@ export function useChat() {
         const storedId = await AsyncStorage.getItem(CHAT_SESSION_KEY);
         if (!storedId || cancelled) return;
         setSessionId(storedId);
-        const { messages: history } = await getChatSessionMessages(storedId);
+        const { messages: history, draft_transactions } = await getChatSessionMessages(storedId);
         if (cancelled) return;
-        setMessages(
-          history.map((m) =>
+        setMessages([
+          ...history.map((m) =>
             m.role === "user"
               ? {
                   id: m.id,
@@ -51,8 +51,9 @@ export function useChat() {
                   isTyping: false,
                   createdAt: new Date(m.created_at),
                 }
-          )
-        );
+          ),
+          ...createDraftMessages(draft_transactions),
+        ]);
       } catch {
         // history not critical, start fresh
       } finally {

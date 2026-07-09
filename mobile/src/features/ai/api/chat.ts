@@ -37,10 +37,14 @@ export interface ChatMessageRecord {
   created_at: string;
 }
 
-export async function getChatSessionMessages(
-  sessionId: string,
-): Promise<{ session_id: string; messages: ChatMessageRecord[] }> {
-  return apiFetch<ApiResponse<{ session_id: string; messages: ChatMessageRecord[] }>>(
+export interface ChatSessionHistory {
+  session_id: string;
+  messages: ChatMessageRecord[];
+  draft_transactions: DraftTransaction[];
+}
+
+export async function getChatSessionMessages(sessionId: string): Promise<ChatSessionHistory> {
+  return apiFetch<ApiResponse<ChatSessionHistory>>(
     `/api/v1/ai/sessions/${sessionId}/messages`,
   ).then((r) => r.data);
 }

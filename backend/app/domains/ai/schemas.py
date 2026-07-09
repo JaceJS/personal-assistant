@@ -45,3 +45,4 @@ class ChatMessageOut(BaseModel):
 class SessionHistoryResponse(BaseModel):
     session_id: uuid.UUID
     messages: list[ChatMessageOut]
+    draft_transactions: list[DraftTransaction] = Field(default_factory=list)

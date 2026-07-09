@@ -223,6 +223,7 @@ class TransactionCreate(BaseModel):
     source: TransactionSource = TransactionSource.manual
     status: TransactionStatus = TransactionStatus.confirmed
     voice_log_id: uuid.UUID | None = None
+    chat_session_id: uuid.UUID | None = None
 
 
 class TransactionUpdate(BaseModel):
@@ -250,6 +251,7 @@ class TransactionRead(BaseModel):
     source: TransactionSource
     status: TransactionStatus
     voice_log_id: uuid.UUID | None
+    chat_session_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
 

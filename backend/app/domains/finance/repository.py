@@ -238,6 +238,20 @@ async def get_transaction_by_voice_log(
     return result.scalar_one_or_none()
 
 
+async def get_pending_draft_transactions(
+    session: AsyncSession, chat_session_id: uuid.UUID
+) -> list[Transaction]:
+    result = await session.execute(
+        sa.select(Transaction)
+        .where(
+            Transaction.chat_session_id == chat_session_id,
+            Transaction.status == TransactionStatus.draft,
+        )
+        .order_by(Transaction.created_at.asc())
+    )
+    return list(result.scalars())
+
+
 async def list_transactions(
     session: AsyncSession,
     user_id: uuid.UUID,
