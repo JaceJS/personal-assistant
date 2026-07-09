@@ -13,6 +13,7 @@ from datetime import UTC, date, datetime
 from typing import Any
 
 import sqlalchemy as sa
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ForbiddenError, NotFoundError
@@ -20,6 +21,8 @@ from app.domains.finance import repository as repo
 from app.domains.finance import service as finance_service
 from app.domains.finance.models import Category, Transaction, TransactionSource, TransactionStatus
 from app.domains.finance.schemas import TransactionCreate
+
+_logger = structlog.get_logger(__name__)
 
 # ── OpenAI-compatible tool schemas ────────────────────────────────────────────
 
@@ -59,7 +62,9 @@ TOOLS: list[dict[str, Any]] = [
         "function": {
             "name": "get_recent_transactions",
             "description": (
-                "Get recent confirmed transactions, optionally filtered by category name."
+                "Get recent confirmed transactions, optionally filtered by category name "
+                "and/or by type (income or expense). Use type='income' for questions about "
+                "money coming in (gaji, pemasukan) and type='expense' for spending."
             ),
             "parameters": {
                 "type": "object",
@@ -71,6 +76,14 @@ TOOLS: list[dict[str, Any]] = [
                     "category_name": {
                         "type": "string",
                         "description": "Filter by category name (partial, case-insensitive match)",
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": ["income", "expense"],
+                        "description": (
+                            "Filter by transaction type: income (positive amount) "
+                            "or expense (negative amount)"
+                        ),
                     },
                 },
                 "required": [],
@@ -140,7 +153,21 @@ TOOLS: list[dict[str, Any]] = [
 
 
 def _fmt(amount: int) -> str:
-    return f"Rp {amount:,}"
+    """Format rupiah with Indonesian thousand separators (dots, not commas)."""
+    return f"Rp {amount:,}".replace(",", ".")
+
+
+_INDONESIAN_MONTHS = (
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+)  # fmt: skip
+
+
+def _format_month_year(d: date) -> str:
+    """Format a date as "<Indonesian month> <year>", independent of the OS
+    locale (strftime('%B %Y') returns English month names in production —
+    the default C/UTF-8 locale has no Indonesian month names installed)."""
+    return f"{_INDONESIAN_MONTHS[d.month - 1]} {d.year}"
 
 
 # ── Executors ─────────────────────────────────────────────────────────────────
@@ -166,15 +193,19 @@ async def _get_financial_summary(user_id: uuid.UUID, session: AsyncSession) -> d
         sa.cast(sa.func.timezone("Asia/Jakarta", Transaction.occurred_at), sa.Date) >= first,
     )
     row = (await session.execute(q)).one()
+    # SUM() over a bigint column returns Decimal from the DB driver; cast to
+    # plain int so the result survives json.dumps() when handed back to the LLM.
+    month_income = int(row.income)
+    month_expense = abs(int(row.expense))
 
     return {
         "total_balance": total_balance,
         "total_balance_formatted": _fmt(total_balance),
-        "month": today.strftime("%B %Y"),
-        "month_income": row.income,
-        "month_income_formatted": _fmt(row.income),
-        "month_expense": abs(row.expense),
-        "month_expense_formatted": _fmt(abs(row.expense)),
+        "month": _format_month_year(today),
+        "month_income": month_income,
+        "month_income_formatted": _fmt(month_income),
+        "month_expense": month_expense,
+        "month_expense_formatted": _fmt(month_expense),
     }
 
 
@@ -210,12 +241,12 @@ async def _get_budget_status(user_id: uuid.UUID, session: AsyncSession) -> dict[
         Transaction.status == TransactionStatus.confirmed,
         sa.cast(sa.func.timezone("Asia/Jakarta", Transaction.occurred_at), sa.Date) >= first,
     )
-    spent = abs((await session.execute(q)).scalar_one())
+    spent = abs(int((await session.execute(q)).scalar_one()))
 
     if budget is None:
         return {
             "has_budget": False,
-            "message": "No monthly budget configured.",
+            "message": "Belum ada budget bulanan yang diatur.",
             "month_spent": spent,
             "month_spent_formatted": _fmt(spent),
         }
@@ -254,12 +285,22 @@ def _parse_limit(raw: Any, default: int = _DEFAULT_RECENT_TRANSACTIONS_LIMIT) ->
     return max(1, min(value, _MAX_RECENT_TRANSACTIONS_LIMIT))
 
 
+def _parse_tx_type(raw: Any) -> str | None:
+    """Coerce an LLM-supplied `type` arg into "income", "expense", or None.
+
+    Anything else (typos, non-English words, wrong type) falls back to no
+    filter rather than raising, so a malformed arg degrades gracefully.
+    """
+    return raw if raw in ("income", "expense") else None
+
+
 async def _get_recent_transactions(
     user_id: uuid.UUID,
     session: AsyncSession,
     *,
     limit: int = 10,
     category_name: str | None = None,
+    tx_type: str | None = None,
 ) -> dict[str, Any]:
     q = (
         sa.select(Transaction, Category.name.label("cat"))
@@ -271,6 +312,10 @@ async def _get_recent_transactions(
     )
     if category_name is not None:
         q = q.where(Category.name.ilike(f"%{category_name}%"))
+    if tx_type == "income":
+        q = q.where(Transaction.amount > 0)
+    elif tx_type == "expense":
+        q = q.where(Transaction.amount < 0)
     q = q.order_by(Transaction.occurred_at.desc()).limit(min(limit, 20))
 
     rows = (await session.execute(q)).all()
@@ -294,9 +339,15 @@ async def _get_spending_by_category(user_id: uuid.UUID, session: AsyncSession) -
     today = date.today()
     first = today.replace(day=1)
 
+    # Reuse the exact same expression object in SELECT and GROUP BY. Calling
+    # coalesce() twice creates two distinct bind parameters for the same
+    # "Uncategorized" literal, which Postgres then treats as two different
+    # expressions and rejects with GroupingError — this crashed every
+    # "spending by category" query in production, always, regardless of data.
+    category_name_expr = sa.func.coalesce(Category.name, "Tanpa Kategori")
     q = (
         sa.select(
-            sa.func.coalesce(Category.name, "Uncategorized").label("category"),
+            category_name_expr.label("category"),
             sa.func.sum(Transaction.amount).label("total"),
         )
         .outerjoin(Category, Transaction.category_id == Category.id)
@@ -306,19 +357,19 @@ async def _get_spending_by_category(user_id: uuid.UUID, session: AsyncSession) -
             Transaction.status == TransactionStatus.confirmed,
             sa.cast(sa.func.timezone("Asia/Jakarta", Transaction.occurred_at), sa.Date) >= first,
         )
-        .group_by(sa.func.coalesce(Category.name, "Uncategorized"))
+        .group_by(category_name_expr)
         .order_by(sa.func.sum(Transaction.amount).asc())
         .limit(10)
     )
     rows = (await session.execute(q)).all()
 
     return {
-        "month": today.strftime("%B %Y"),
+        "month": _format_month_year(today),
         "categories": [
             {
                 "name": row.category,
-                "amount": abs(row.total),
-                "amount_formatted": _fmt(abs(row.total)),
+                "amount": abs(int(row.total)),
+                "amount_formatted": _fmt(abs(int(row.total))),
             }
             for row in rows
         ],
@@ -329,6 +380,8 @@ async def _create_transaction(
     user_id: uuid.UUID,
     session: AsyncSession,
     args: dict[str, Any],
+    *,
+    chat_session_id: uuid.UUID | None = None,
 ) -> dict[str, Any]:
     try:
         account_id = uuid.UUID(str(args["account_id"]))
@@ -375,6 +428,7 @@ async def _create_transaction(
                 occurred_at=occurred_at,
                 source=TransactionSource.manual,
                 status=TransactionStatus.draft,
+                chat_session_id=chat_session_id,
             ),
         )
     except (NotFoundError, ForbiddenError) as exc:
@@ -402,26 +456,57 @@ async def execute_tool(
     args: dict[str, Any],
     user_id: uuid.UUID,
     session: AsyncSession,
+    *,
+    chat_session_id: uuid.UUID | None = None,
 ) -> str:
-    """Dispatch a tool call and return its result as a JSON string."""
+    """Dispatch a tool call and return its result as a JSON string.
+
+    Any unexpected exception (DB error, bad LLM-supplied args, etc.) is
+    caught here so a single failing tool call can never kill the whole chat
+    turn — the model gets a graceful {"error": ...} payload back instead and
+    can apologize or retry with different args.
+
+    `chat_session_id` comes from the server-side chat session, never from
+    model-supplied args, so create_transaction drafts can always be traced
+    back to (and rehydrated from) the chat that created them.
+    """
+    try:
+        result = await _dispatch_tool(name, args, user_id, session, chat_session_id)
+    except Exception as exc:
+        _logger.error(
+            "ai_tool_execution_failed",
+            tool_name=name,
+            error_type=type(exc).__name__,
+            detail=str(exc),
+        )
+        result = {"error": f"Tool '{name}' failed unexpectedly. Please try again."}
+
+    return json.dumps(result)
+
+
+async def _dispatch_tool(
+    name: str,
+    args: dict[str, Any],
+    user_id: uuid.UUID,
+    session: AsyncSession,
+    chat_session_id: uuid.UUID | None,
+) -> dict[str, Any]:
     if name == "get_financial_summary":
-        result = await _get_financial_summary(user_id, session)
-    elif name == "get_accounts":
-        result = await _get_accounts(user_id, session)
-    elif name == "get_budget_status":
-        result = await _get_budget_status(user_id, session)
-    elif name == "get_recent_transactions":
-        result = await _get_recent_transactions(
+        return await _get_financial_summary(user_id, session)
+    if name == "get_accounts":
+        return await _get_accounts(user_id, session)
+    if name == "get_budget_status":
+        return await _get_budget_status(user_id, session)
+    if name == "get_recent_transactions":
+        return await _get_recent_transactions(
             user_id,
             session,
             limit=_parse_limit(args.get("limit")),
             category_name=args.get("category_name"),
+            tx_type=_parse_tx_type(args.get("type")),
         )
-    elif name == "get_spending_by_category":
-        result = await _get_spending_by_category(user_id, session)
-    elif name == "create_transaction":
-        result = await _create_transaction(user_id, session, args)
-    else:
-        result = {"error": f"Unknown tool: {name}"}
-
-    return json.dumps(result)
+    if name == "get_spending_by_category":
+        return await _get_spending_by_category(user_id, session)
+    if name == "create_transaction":
+        return await _create_transaction(user_id, session, args, chat_session_id=chat_session_id)
+    return {"error": f"Unknown tool: {name}"}

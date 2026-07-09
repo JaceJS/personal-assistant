@@ -52,10 +52,16 @@ class LLMProvider(ABC):
         system_prompt: str,
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]],
+        *,
+        force_text: bool = False,
     ) -> tuple[str, list[dict[str, Any]]]:
         """Call LLM with conversation history and tool definitions.
 
         Returns (content, tool_calls). If tool_calls is non-empty, content is "".
         Each tool_call: {id, type, name, arguments (dict)}.
+
+        `force_text=True` disables tool calling for this call (tool_choice="none"),
+        guaranteeing a text reply. Used as a fallback when a normal call would
+        otherwise return empty content with no tool calls to act on.
         """
         ...

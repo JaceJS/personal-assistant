@@ -21,8 +21,27 @@ from app.core.config import Settings
 
 T = TypeVar("T", bound=BaseModel)
 
+
+def _parse_tool_arguments(raw: str) -> dict[str, Any]:
+    """Parse a tool call's JSON arguments, tolerating malformed model output.
+
+    Some models occasionally emit invalid JSON for tool arguments. Letting
+    that raise would kill the entire chat turn; instead the tool executor
+    receives an empty/marker dict and can respond with a normal tool-level
+    error the model can recover from.
+    """
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return {"_parse_error": "Model emitted malformed JSON arguments"}
+    return parsed if isinstance(parsed, dict) else {"_parse_error": "Arguments were not an object"}
+
 _OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 _APP_TITLE = "voice-finance-backend"
+
+# Low temperature keeps tool-calling and financial-figure reporting
+# deterministic; this is not a creative-writing use case.
+_CHAT_TEMPERATURE = 0.3
 
 
 class OpenRouterLLM(LLMProvider):
@@ -113,13 +132,16 @@ class OpenRouterLLM(LLMProvider):
         system_prompt: str,
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]],
+        *,
+        force_text: bool = False,
     ) -> tuple[str, list[dict[str, Any]]]:
         completion = await self._raw_client.chat.completions.create(  # type: ignore[call-overload]
             model=self._model,
             max_tokens=self._max_tokens,
+            temperature=_CHAT_TEMPERATURE,
             messages=[{"role": "system", "content": system_prompt}, *messages],
             tools=tools,
-            tool_choice="auto",
+            tool_choice="none" if force_text else "auto",
         )
         msg = completion.choices[0].message
         if msg.tool_calls:
@@ -128,7 +150,7 @@ class OpenRouterLLM(LLMProvider):
                     "id": tc.id,
                     "type": "function",
                     "name": tc.function.name,
-                    "arguments": json.loads(tc.function.arguments),
+                    "arguments": _parse_tool_arguments(tc.function.arguments),
                 }
                 for tc in msg.tool_calls
             ]
