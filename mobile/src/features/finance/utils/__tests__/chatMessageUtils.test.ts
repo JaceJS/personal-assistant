@@ -228,70 +228,94 @@ describe('createUserTextMessage', () => {
 
 describe('createAITypingMessage', () => {
   it('creates message with type ai and isTyping true', () => {
-    const msg = createAITypingMessage();
+    const msg = createAITypingMessage('halo');
     expect(msg.type).toBe('ai');
     expect(msg.isTyping).toBe(true);
   });
 
   it('starts with no content', () => {
-    const msg = createAITypingMessage();
+    const msg = createAITypingMessage('halo');
     expect(msg.content).toBeUndefined();
   });
 
   it('assigns a unique id', () => {
-    const a = createAITypingMessage();
-    const b = createAITypingMessage();
+    const a = createAITypingMessage('halo');
+    const b = createAITypingMessage('halo');
     expect(a.id).not.toBe(b.id);
   });
 
   it('sets createdAt to a Date', () => {
-    const msg = createAITypingMessage();
+    const msg = createAITypingMessage('halo');
     expect(msg.createdAt).toBeInstanceOf(Date);
+  });
+
+  it('stashes the original text for a later retry', () => {
+    const msg = createAITypingMessage('sate 20.000');
+    expect(msg.originalText).toBe('sate 20.000');
   });
 });
 
 describe('resolveAIMessage', () => {
   it('sets content and stops typing', () => {
-    const typing = createAITypingMessage();
+    const typing = createAITypingMessage('halo');
     const resolved = resolveAIMessage(typing, 'Hello there');
     expect(resolved.content).toBe('Hello there');
     expect(resolved.isTyping).toBe(false);
   });
 
   it('preserves id and type', () => {
-    const typing = createAITypingMessage();
+    const typing = createAITypingMessage('halo');
     const resolved = resolveAIMessage(typing, 'reply');
     expect(resolved.id).toBe(typing.id);
     expect(resolved.type).toBe('ai');
   });
 
   it('does not mutate the original message', () => {
-    const typing = createAITypingMessage();
+    const typing = createAITypingMessage('halo');
     resolveAIMessage(typing, 'reply');
     expect(typing.isTyping).toBe(true);
     expect(typing.content).toBeUndefined();
+  });
+
+  it('clears a previous failed state', () => {
+    const typing = createAITypingMessage('halo');
+    const rejected = rejectAIMessage(typing, 'error');
+    const resolved = resolveAIMessage(rejected, 'reply');
+    expect(resolved.failed).toBe(false);
   });
 });
 
 describe('rejectAIMessage', () => {
   it('sets content to error text and stops typing', () => {
-    const typing = createAITypingMessage();
+    const typing = createAITypingMessage('halo');
     const rejected = rejectAIMessage(typing, 'Something went wrong');
     expect(rejected.content).toBe('Something went wrong');
     expect(rejected.isTyping).toBe(false);
   });
 
   it('preserves id and type', () => {
-    const typing = createAITypingMessage();
+    const typing = createAITypingMessage('halo');
     const rejected = rejectAIMessage(typing, 'error');
     expect(rejected.id).toBe(typing.id);
     expect(rejected.type).toBe('ai');
   });
 
   it('does not mutate the original message', () => {
-    const typing = createAITypingMessage();
+    const typing = createAITypingMessage('halo');
     rejectAIMessage(typing, 'error');
     expect(typing.isTyping).toBe(true);
+  });
+
+  it('marks the message as failed so a retry affordance can render', () => {
+    const typing = createAITypingMessage('halo');
+    const rejected = rejectAIMessage(typing, 'error');
+    expect(rejected.failed).toBe(true);
+  });
+
+  it('preserves originalText so the same text can be resent', () => {
+    const typing = createAITypingMessage('sate 20.000');
+    const rejected = rejectAIMessage(typing, 'error');
+    expect(rejected.originalText).toBe('sate 20.000');
   });
 });
 

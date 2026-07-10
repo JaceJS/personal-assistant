@@ -19,7 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { getChatSessionMessages, postChatMessage } from '@/features/ai/api/chat';
 import { useChat } from '@/features/ai/hooks/useChat';
-import type { DraftMessage } from '@/features/finance/utils/chatMessageUtils';
+import type { AIMessage, DraftMessage } from '@/features/finance/utils/chatMessageUtils';
 
 const mockPostChatMessage = postChatMessage as jest.MockedFunction<typeof postChatMessage>;
 const mockGetChatSessionMessages = getChatSessionMessages as jest.MockedFunction<
@@ -28,9 +28,10 @@ const mockGetChatSessionMessages = getChatSessionMessages as jest.MockedFunction
 const CHAT_SESSION_KEY = 'chat_session_id';
 
 describe('useChat', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     mockIsGuest = false;
+    await AsyncStorage.clear();
   });
 
   it('sends first message without session_id and stores returned session', async () => {
@@ -50,6 +51,7 @@ describe('useChat', () => {
     const aiMsg = result.current.messages.find((m) => m.type === 'ai');
     expect(aiMsg).toBeDefined();
     expect((aiMsg as { content?: string }).content).toBe('Hello!');
+    expect((aiMsg as { skipTypewriter?: boolean }).skipTypewriter).not.toBe(true);
   });
 
   it('sends subsequent messages with session_id from previous response', async () => {
@@ -91,6 +93,60 @@ describe('useChat', () => {
     expect((aiMsg as { content?: string }).content).toBe(
       'Could not get a response. Please try again.',
     );
+    expect((aiMsg as { failed?: boolean }).failed).toBe(true);
+    expect((aiMsg as { originalText?: string }).originalText).toBe('Hi');
+  });
+
+  it('retryMessage resends the original text and resolves on success', async () => {
+    mockPostChatMessage
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({
+        reply: 'Hello (retried)!',
+        session_id: 'session-abc',
+        draft_transactions: [],
+      });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('Hi');
+    });
+    const failedMsg = result.current.messages.find(
+      (m): m is AIMessage => m.type === 'ai',
+    )!;
+
+    await act(async () => {
+      await result.current.retryMessage(failedMsg);
+    });
+
+    expect(mockPostChatMessage).toHaveBeenNthCalledWith(2, 'Hi', undefined);
+    const aiMessages = result.current.messages.filter((m) => m.type === 'ai');
+    expect(aiMessages).toHaveLength(1);
+    expect((aiMessages[0] as { content?: string }).content).toBe('Hello (retried)!');
+    expect((aiMessages[0] as { failed?: boolean }).failed).toBe(false);
+  });
+
+  it('retryMessage marks the message failed again if the retry also fails', async () => {
+    mockPostChatMessage
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockRejectedValueOnce(new Error('Still down'));
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('Hi');
+    });
+    const failedMsg = result.current.messages.find(
+      (m): m is AIMessage => m.type === 'ai',
+    )!;
+
+    await act(async () => {
+      await result.current.retryMessage(failedMsg);
+    });
+
+    const aiMessages = result.current.messages.filter((m) => m.type === 'ai');
+    expect(aiMessages).toHaveLength(1);
+    expect((aiMessages[0] as { failed?: boolean }).failed).toBe(true);
   });
 
   it('appends one draft message per draft transaction after the AI reply', async () => {
@@ -136,6 +192,33 @@ describe('useChat', () => {
     expect(types.indexOf('draft')).toBeGreaterThan(types.indexOf('ai'));
   });
 
+  it('does not add an AI text bubble when the reply is empty (draft card is the confirmation)', async () => {
+    mockPostChatMessage.mockResolvedValueOnce({
+      reply: '',
+      session_id: 'session-abc',
+      draft_transactions: [
+        {
+          transaction_id: 'tx-123',
+          amount: -20000,
+          currency: 'IDR',
+          merchant: 'Sate',
+          category_name: 'Makan',
+          note: null,
+          account_id: 'acct-456',
+        },
+      ],
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('sate 20.000');
+    });
+
+    expect(result.current.messages.some((m) => m.type === 'ai')).toBe(false);
+    expect(result.current.messages.some((m) => m.type === 'draft')).toBe(true);
+  });
+
   it('appends no draft messages when reply has none', async () => {
     mockPostChatMessage.mockResolvedValueOnce({
       reply: 'Halo!',
@@ -150,6 +233,28 @@ describe('useChat', () => {
     });
 
     expect(result.current.messages.some((m) => m.type === 'draft')).toBe(false);
+  });
+
+  it('clears in-memory messages and session when the signed-in user session ends', async () => {
+    mockPostChatMessage.mockResolvedValueOnce({
+      reply: 'Saldo kamu Rp 500.000',
+      session_id: 'session-abc',
+      draft_transactions: [],
+    });
+
+    const { result, rerender } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('saldo aku berapa?');
+    });
+    expect(result.current.messages.length).toBeGreaterThan(0);
+
+    mockIsGuest = true;
+    await act(async () => {
+      rerender(undefined);
+    });
+
+    expect(result.current.messages).toEqual([]);
   });
 
   it('does not fetch chat history when in guest mode', async () => {
@@ -207,6 +312,38 @@ describe('useChat', () => {
     expect(drafts).toHaveLength(1);
     expect(drafts[0].id).toBe('tx-123');
     expect(drafts[0].state).toBe('pending');
+
+    const aiMsg = result.current.messages.find((m) => m.type === 'ai');
+    expect((aiMsg as { skipTypewriter?: boolean }).skipTypewriter).toBe(true);
+  });
+
+  it('skips rehydrating an empty-content assistant turn as an AI bubble', async () => {
+    await AsyncStorage.setItem(CHAT_SESSION_KEY, 'session-abc');
+    mockGetChatSessionMessages.mockResolvedValueOnce({
+      session_id: 'session-abc',
+      messages: [
+        { id: 'msg-1', role: 'user', content: 'sate 20.000', created_at: '2026-07-08T10:00:00Z' },
+        { id: 'msg-2', role: 'assistant', content: '', created_at: '2026-07-08T10:00:01Z' },
+      ],
+      draft_transactions: [
+        {
+          transaction_id: 'tx-123',
+          amount: -20000,
+          currency: 'IDR',
+          merchant: 'Sate',
+          category_name: 'Makan',
+          note: null,
+          account_id: 'acct-456',
+        },
+      ],
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {});
+
+    expect(result.current.messages.some((m) => m.type === 'ai')).toBe(false);
+    expect(result.current.messages.some((m) => m.type === 'user')).toBe(true);
   });
 
   it('rehydrates no draft cards when history has none pending', async () => {

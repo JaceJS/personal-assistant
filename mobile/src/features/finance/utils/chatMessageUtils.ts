@@ -31,6 +31,13 @@ export type AIMessage = {
   type: 'ai';
   content?: string;
   isTyping: boolean;
+  failed?: boolean;
+  // The user message this reply is for, kept so a failed send can be retried
+  // without the user having to retype it.
+  originalText?: string;
+  // Set for messages rehydrated from history, so AIBubble renders the text
+  // instantly instead of replaying the typewriter animation.
+  skipTypewriter?: boolean;
   createdAt: Date;
 };
 
@@ -118,16 +125,16 @@ export function createUserTextMessage(content: string): UserTextMessage {
   return { id: generateId(), type: 'user', content, createdAt: new Date() };
 }
 
-export function createAITypingMessage(): AIMessage {
-  return { id: generateId(), type: 'ai', isTyping: true, createdAt: new Date() };
+export function createAITypingMessage(originalText: string): AIMessage {
+  return { id: generateId(), type: 'ai', isTyping: true, originalText, createdAt: new Date() };
 }
 
 export function resolveAIMessage(msg: AIMessage, content: string): AIMessage {
-  return { ...msg, content, isTyping: false };
+  return { ...msg, content, isTyping: false, failed: false };
 }
 
 export function rejectAIMessage(msg: AIMessage, errorText: string): AIMessage {
-  return { ...msg, content: errorText, isTyping: false };
+  return { ...msg, content: errorText, isTyping: false, failed: true };
 }
 
 export function createDraftMessages(drafts: DraftTransaction[]): DraftMessage[] {

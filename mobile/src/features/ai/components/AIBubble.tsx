@@ -1,19 +1,38 @@
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { RotateCcw } from "lucide-react-native";
 
-import { colors, radius, spacing } from "@/theme";
+import { colors, radius, spacing, textStyles } from "@/theme";
 import type { AIMessage } from "@/features/finance/utils/chatMessageUtils";
 
 import { TypingIndicator } from "./TypingIndicator";
 import { TypewriterText } from "./TypewriterText";
 
-export function AIBubble({ message }: { message: AIMessage }) {
+export function AIBubble({
+  message,
+  onRetry,
+}: {
+  message: AIMessage;
+  onRetry?: (message: AIMessage) => void;
+}) {
+  const canRetry = !!message.failed && !!onRetry;
+
   return (
     <View style={styles.wrap}>
       <View style={styles.bubble}>
         {message.isTyping && !message.content ? (
           <TypingIndicator />
         ) : (
-          <TypewriterText text={message.content ?? ""} />
+          <TypewriterText text={message.content ?? ""} animate={!message.skipTypewriter} />
+        )}
+        {canRetry && (
+          <Pressable
+            onPress={() => onRetry!(message)}
+            style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.7 }]}
+            hitSlop={6}
+          >
+            <RotateCcw size={13} color={colors.accent.primary} strokeWidth={2} />
+            <Text style={styles.retryLabel}>Coba lagi</Text>
+          </Pressable>
         )}
       </View>
     </View>
@@ -32,5 +51,23 @@ const styles = StyleSheet.create({
     borderColor: colors.border.default,
     padding: spacing.md,
     maxWidth: "80%",
+    gap: spacing.xs,
+  },
+  retryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    marginTop: spacing.xs,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: `${colors.accent.primary}40`,
+    backgroundColor: colors.bg.elevated,
+  },
+  retryLabel: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.accent.primary,
   },
 });

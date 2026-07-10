@@ -23,6 +23,8 @@ export function useChat() {
   useEffect(() => {
     if (isGuest) {
       setIsLoadingHistory(false);
+      setMessages([]);
+      setSessionId(undefined);
       void AsyncStorage.removeItem(CHAT_SESSION_KEY);
       return;
     }
@@ -36,22 +38,25 @@ export function useChat() {
         const { messages: history, draft_transactions } = await getChatSessionMessages(storedId);
         if (cancelled) return;
         setMessages([
-          ...history.map((m) =>
-            m.role === "user"
-              ? {
-                  id: m.id,
-                  type: "user" as const,
-                  content: m.content,
-                  createdAt: new Date(m.created_at),
-                }
-              : {
-                  id: m.id,
-                  type: "ai" as const,
-                  content: m.content,
-                  isTyping: false,
-                  createdAt: new Date(m.created_at),
-                }
-          ),
+          ...history
+            .filter((m) => m.role === "user" || m.content.length > 0)
+            .map((m) =>
+              m.role === "user"
+                ? {
+                    id: m.id,
+                    type: "user" as const,
+                    content: m.content,
+                    createdAt: new Date(m.created_at),
+                  }
+                : {
+                    id: m.id,
+                    type: "ai" as const,
+                    content: m.content,
+                    isTyping: false,
+                    skipTypewriter: true,
+                    createdAt: new Date(m.created_at),
+                  }
+            ),
           ...createDraftMessages(draft_transactions),
         ]);
       } catch {
@@ -65,17 +70,16 @@ export function useChat() {
     };
   }, [isGuest]);
 
-  const sendMessage = useCallback(
-    async (text: string) => {
-      const userMsg = createUserTextMessage(text);
-      const aiMsg = createAITypingMessage();
-      setMessages((prev) => [...prev, userMsg, aiMsg]);
+  const dispatch = useCallback(
+    async (text: string, aiMsg: AIMessage) => {
       try {
         const { reply, session_id, draft_transactions } = await postChatMessage(text, sessionId);
         setSessionId(session_id);
         await AsyncStorage.setItem(CHAT_SESSION_KEY, session_id);
         setMessages((prev) => [
-          ...prev.map((m) => (m.id === aiMsg.id ? resolveAIMessage(m as AIMessage, reply) : m)),
+          ...(reply
+            ? prev.map((m) => (m.id === aiMsg.id ? resolveAIMessage(m as AIMessage, reply) : m))
+            : prev.filter((m) => m.id !== aiMsg.id)),
           ...createDraftMessages(draft_transactions ?? []),
         ]);
       } catch {
@@ -91,11 +95,31 @@ export function useChat() {
     [sessionId]
   );
 
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const userMsg = createUserTextMessage(text);
+      const aiMsg = createAITypingMessage(text);
+      setMessages((prev) => [...prev, userMsg, aiMsg]);
+      await dispatch(text, aiMsg);
+    },
+    [dispatch]
+  );
+
+  const retryMessage = useCallback(
+    async (failedMsg: AIMessage) => {
+      if (!failedMsg.originalText) return;
+      const aiMsg = createAITypingMessage(failedMsg.originalText);
+      setMessages((prev) => prev.map((m) => (m.id === failedMsg.id ? aiMsg : m)));
+      await dispatch(failedMsg.originalText, aiMsg);
+    },
+    [dispatch]
+  );
+
   const clearChat = useCallback(async () => {
     setMessages([]);
     setSessionId(undefined);
     await AsyncStorage.removeItem(CHAT_SESSION_KEY);
   }, []);
 
-  return { messages, setMessages, sendMessage, isLoadingHistory, clearChat };
+  return { messages, setMessages, sendMessage, retryMessage, isLoadingHistory, clearChat };
 }

@@ -22,12 +22,10 @@ export function DraftTransactionCard({ message, onSave, onEdit, onCancel }: Prop
       <View style={[styles.card, isCancelled && styles.cardCancelled]}>
         <View style={styles.row}>
           <View style={styles.info}>
-            <Text style={styles.merchant} numberOfLines={1}>
-              {draft.merchant ?? "Transaksi"}
+            <Text style={styles.headline} numberOfLines={1}>
+              {draft.category_name ?? "Transaksi"}
             </Text>
-            {draft.category_name ? (
-              <Text style={styles.category}>{draft.category_name}</Text>
-            ) : null}
+            {draft.merchant ? <Text style={styles.subline}>{draft.merchant}</Text> : null}
             {draft.note ? (
               <Text style={styles.note} numberOfLines={2}>
                 {draft.note}
@@ -123,11 +121,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
-  merchant: {
+  headline: {
     ...StyleSheet.flatten(textStyles.h3),
     color: colors.text.primary,
   },
-  category: {
+  subline: {
     ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.secondary,
   },

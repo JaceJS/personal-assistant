@@ -25,17 +25,29 @@ const makeMessage = (
 const noop = () => {};
 
 describe('DraftTransactionCard', () => {
-  it('shows merchant, formatted amount, and category', async () => {
+  it('shows category as the headline, formatted amount, and merchant', async () => {
     const { getByText } = await render(
       <DraftTransactionCard message={makeMessage()} onSave={noop} onEdit={noop} onCancel={noop} />,
     );
-    expect(getByText('Sate')).toBeTruthy();
-    expect(getByText(/20\.000/)).toBeTruthy();
     expect(getByText('Makan')).toBeTruthy();
+    expect(getByText(/20\.000/)).toBeTruthy();
+    expect(getByText('Sate')).toBeTruthy();
   });
 
-  it('falls back to a generic title when merchant is missing', async () => {
+  it('falls back to a generic title when category is missing', async () => {
     const { getByText } = await render(
+      <DraftTransactionCard
+        message={makeMessage('pending', { category_name: null })}
+        onSave={noop}
+        onEdit={noop}
+        onCancel={noop}
+      />,
+    );
+    expect(getByText('Transaksi')).toBeTruthy();
+  });
+
+  it('omits the merchant line when merchant is missing', async () => {
+    const { queryByText } = await render(
       <DraftTransactionCard
         message={makeMessage('pending', { merchant: null })}
         onSave={noop}
@@ -43,7 +55,7 @@ describe('DraftTransactionCard', () => {
         onCancel={noop}
       />,
     );
-    expect(getByText('Transaksi')).toBeTruthy();
+    expect(queryByText('Sate')).toBeNull();
   });
 
   // Note: one fireEvent.press per test. Multiple presses in a single test leave

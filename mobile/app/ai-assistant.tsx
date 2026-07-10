@@ -56,19 +56,14 @@ import type {
   DraftMessageState,
   Message,
 } from "@/features/finance/utils/chatMessageUtils";
+import { QUICK_CHIPS, resolveQuickChipAction } from "@/features/ai/utils/quickChips";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const PROCESSING_TIMEOUT_MS = 60_000;
-
-const QUICK_CHIPS: { label: string; action: "send" | "camera"; text?: string }[] = [
-  { label: "📝 Catat pengeluaran", action: "send", text: "Catat pengeluaran" },
-  { label: "📷 Scan struk", action: "camera" },
-  { label: "💰 Catat pemasukan", action: "send", text: "Catat pemasukan" },
-  { label: "💡 Analisa keuanganku", action: "send", text: "Analisa pengeluaran dan keuanganku bulan ini" },
-];
+const SCROLL_DEBOUNCE_MS = 100;
 
 export default function AIAssistantScreen() {
   const router = useRouter();
@@ -76,7 +71,8 @@ export default function AIAssistantScreen() {
   const showToast = useToastStore((s) => s.showToast);
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
-  const { messages, setMessages, sendMessage, isLoadingHistory, clearChat } = useChat();
+  const { messages, setMessages, sendMessage, retryMessage, isLoadingHistory, clearChat } =
+    useChat();
   const confirmAiDraftMutation = useConfirmAiDraft();
   const cancelAiDraftMutation = useCancelAiDraft();
 
@@ -107,6 +103,7 @@ export default function AIAssistantScreen() {
 
   const [inputText, setInputText] = useState("");
   const listRef = useRef<FlatList<Message>>(null);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const voiceStatus = useVoiceStatus(voiceLogId);
   const receiptStatus = useReceiptStatus(receiptLogId);
@@ -214,6 +211,19 @@ export default function AIAssistantScreen() {
     return () => clearTimeout(timer);
   }, [receiptLogId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
+  }, []);
+
+  const handleContentSizeChange = useCallback(() => {
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      listRef.current?.scrollToEnd({ animated: true });
+    }, SCROLL_DEBOUNCE_MS);
+  }, []);
+
   const handleSendText = useCallback(() => {
     const text = inputText.trim();
     if (!text) return;
@@ -283,6 +293,13 @@ export default function AIAssistantScreen() {
     [setMessages, uploadReceiptFlow, uploadVoiceFlow]
   );
 
+  const handleRetryAiMessage = useCallback(
+    (message: AIMessage) => {
+      void retryMessage(message);
+    },
+    [retryMessage]
+  );
+
   const handleMicPressIn = useCallback(() => {
     if (isMicBusy || isRecording) return;
     if (!defaultAccount) {
@@ -314,6 +331,15 @@ export default function AIAssistantScreen() {
     if (result.canceled || !result.assets[0]) return;
     await uploadReceiptFlow(result.assets[0].uri, defaultAccount.id);
   }, [defaultAccount, showToast, uploadReceiptFlow]);
+
+  const handleQuickChip = useCallback(
+    (chip: (typeof QUICK_CHIPS)[number]) => {
+      const resolved = resolveQuickChipAction(chip);
+      if (resolved.kind === "camera") void handleCameraPress();
+      else void sendMessage(resolved.text);
+    },
+    [handleCameraPress, sendMessage]
+  );
 
   const handleTranscriptProcess = useCallback(
     (transcript: string) => {
@@ -454,7 +480,8 @@ export default function AIAssistantScreen() {
   const renderMessage = useCallback(
     ({ item }: { item: Message }) => {
       if (item.type === "user") return <UserBubble message={item} />;
-      if (item.type === "ai") return <AIBubble message={item as AIMessage} />;
+      if (item.type === "ai")
+        return <AIBubble message={item as AIMessage} onRetry={handleRetryAiMessage} />;
       if (item.type === "draft")
         return (
           <DraftTransactionCard
@@ -466,7 +493,7 @@ export default function AIAssistantScreen() {
         );
       return <ChatBubble message={item as ChatMessage} onRetry={handleRetry} />;
     },
-    [handleDraftCancel, handleDraftEdit, handleDraftSave, handleRetry]
+    [handleDraftCancel, handleDraftEdit, handleDraftSave, handleRetry, handleRetryAiMessage]
   );
 
   const isSendMode = inputText.length > 0;
@@ -517,10 +544,7 @@ export default function AIAssistantScreen() {
             {QUICK_CHIPS.map((chip) => (
               <Pressable
                 key={chip.label}
-                onPress={() => {
-                  if (chip.action === "camera") void handleCameraPress();
-                  else void sendMessage(chip.text!);
-                }}
+                onPress={() => handleQuickChip(chip)}
                 style={({ pressed }) => pressed && { opacity: 0.7 }}
               >
                 <View style={styles.chip}>
@@ -537,7 +561,7 @@ export default function AIAssistantScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderMessage}
           contentContainerStyle={styles.messageList}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+          onContentSizeChange={handleContentSizeChange}
         />
       )}
 
@@ -552,10 +576,7 @@ export default function AIAssistantScreen() {
           {QUICK_CHIPS.map((chip) => (
             <Pressable
               key={chip.label}
-              onPress={() => {
-                if (chip.action === "camera") void handleCameraPress();
-                else void sendMessage(chip.text!);
-              }}
+              onPress={() => handleQuickChip(chip)}
               style={({ pressed }) => pressed && { opacity: 0.7 }}
             >
               <View style={styles.chip}>

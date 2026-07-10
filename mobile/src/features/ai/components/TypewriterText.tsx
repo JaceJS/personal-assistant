@@ -3,11 +3,24 @@ import { StyleSheet, Text } from "react-native";
 
 import { colors, textStyles } from "@/theme";
 
-export function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
-  const [displayed, setDisplayed] = useState("");
-  const indexRef = useRef(0);
+export function TypewriterText({
+  text,
+  speed = 15,
+  animate = true,
+}: {
+  text: string;
+  speed?: number;
+  animate?: boolean;
+}) {
+  const [displayed, setDisplayed] = useState(animate ? "" : text);
+  const indexRef = useRef(animate ? 0 : text.length);
 
   useEffect(() => {
+    if (!animate) {
+      setDisplayed(text);
+      indexRef.current = text.length;
+      return;
+    }
     if (!text) {
       setDisplayed("");
       indexRef.current = 0;
@@ -19,7 +32,7 @@ export function TypewriterText({ text, speed = 15 }: { text: string; speed?: num
       if (indexRef.current >= text.length) clearInterval(interval);
     }, speed);
     return () => clearInterval(interval);
-  }, [text, speed]);
+  }, [text, speed, animate]);
 
   return <Text style={styles.text}>{displayed}</Text>;
 }
