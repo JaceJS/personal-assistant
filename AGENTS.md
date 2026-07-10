@@ -7,6 +7,13 @@ transactions). Vision: expand to journaling, events, and daily routine managemen
 Indonesia-first, English UI, global-ready. Tech stack: Expo React Native + FastAPI + PostgreSQL
 (Supabase) + Redis + Cloudflare R2.
 
+## Product Docs (baca sebelum mengubah scope/flow)
+
+- `docs/PRD.md` — visi, non-goals, metrik, roadmap. Semua keputusan fitur tunduk ke sini.
+- `docs/USER_FLOWS.md` — peta route & alur produk (capture 4 kanal, system flows, matriks guest,
+  spesifikasi event analytics). **Wajib di-update di PR yang sama** saat menambah/mengubah layar,
+  navigasi, atau alur data user.
+
 ## Monorepo Layout
 
 ```
