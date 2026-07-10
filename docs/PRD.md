@@ -174,14 +174,14 @@ Daftar ini adalah keputusan produk, bukan keterbatasan sementara. Setiap ide fit
 
 | # | Item | Status | Catatan |
 |---|---|---|---|
-| 1 | `mobile/eas.json` + konfigurasi EAS production build | ❌ Belum ada | Prasyarat build AAB produksi |
+| 1 | `mobile/eas.json` + konfigurasi EAS production build | ✅ Selesai | `eas.json` (profile development/preview/production) + project linked ke akun EAS `jaceee` (`app.json` `extra.eas.projectId`, `owner`) |
 | 2 | URL Privacy Policy & Terms nyata | ❌ Masih `example.com` di `mobile/app/(app)/(tabs)/settings/index.tsx` | Juga wajib diisi di Play Console |
 | 3 | Data Safety form di Play Console | ❌ Di luar repo | Deklarasikan: data keuangan user, audio (voice), foto (struk/avatar), email; hapus-akun tersedia |
-| 4 | Backend produksi di Fly.io (API + ARQ worker + Upstash Redis) | Perlu verifikasi | DB tetap Supabase, storage R2 |
-| 5 | Smoke test alur kritis di build produksi | Perlu dijalankan | Guest → catat (manual/voice/chat) → signup → data ter-sync → hapus akun |
+| 4 | Backend produksi di Fly.io (API + ARQ worker + Upstash Redis) | ✅ Selesai | App `savyn-api` (region `sin`), `fly.toml` (process `app` + `worker`), Fly Redis (`savyn-redis`), DB Supabase prod, semua migrasi (`alembic upgrade head`) sudah jalan. Health check `https://savyn-api.fly.dev/health` OK. |
+| 5 | Smoke test alur kritis di build produksi | ❌ Belum dijalankan | Prasyarat: `mobile/.env` `EXPO_PUBLIC_API_URL` masih nunjuk `http://10.0.2.2:8000` (localhost), harus diganti ke `https://savyn-api.fly.dev` dulu. Alur: Guest → catat (manual/voice/chat) → signup → data ter-sync → hapus akun |
 | 6 | `versionCode` Android | ✅ Sudah diset | |
 | 7 | Hapus akun permanen (kebijakan Play Store) | ✅ Terbangun | |
-| 8 | Rename aplikasi ke **Savyn** di kode | ❌ Belum | `mobile/app.json` (`name`, `slug` — ganti SEBELUM eas.json dibuat agar project EAS langsung benar), `package.json`, template WhatsApp support di `mobile/app/(app)/(tabs)/settings/index.tsx`, nama listing Play Console |
+| 8 | Rename aplikasi ke **Savyn** di kode | ✅ Selesai | `mobile/app.json` (`name`, `slug: savyn`, `scheme: savyn`, `android.package: com.salendah_labs.savyn`), `package.json` (`name: savyn`), template WhatsApp support di `mobile/app/(app)/(tabs)/settings/index.tsx`. Nama listing Play Console masih di luar repo. |
 
 ### Kriteria "siap rilis"
 
