@@ -8,10 +8,17 @@ from fastapi import Request
 def get_client_ip(request: Request, trusted_proxies: list[str]) -> str:
     """Return the real client IP.
 
-    Reads X-Forwarded-For only when the immediate peer address falls within a
-    trusted proxy CIDR. Falls back to the peer address when no trusted proxies
-    are configured or the peer is not in the trusted list.
+    On Fly.io, `Fly-Client-IP` is set by Fly's edge proxy to the true client
+    address and cannot be spoofed by the client (Fly overwrites/strips any
+    client-supplied value before forwarding into the private network), so it
+    is trusted unconditionally when present. Otherwise, falls back to
+    X-Forwarded-For / X-Real-IP, but only when the immediate peer address
+    falls within a trusted proxy CIDR (for non-Fly deployments).
     """
+    fly_client_ip = request.headers.get("fly-client-ip")
+    if fly_client_ip:
+        return fly_client_ip.strip()
+
     peer = request.client.host if request.client else None
     if peer and trusted_proxies and _is_trusted(peer, trusted_proxies):
         xff = request.headers.get("x-forwarded-for")
