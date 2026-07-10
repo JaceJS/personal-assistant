@@ -1,7 +1,7 @@
 """add_chat_session_id_to_transactions
 
-Revision ID: 4913419ea9ff
-Revises: fa5b13892978
+Revision ID: 0012_add_chat_session_id_to_transactions
+Revises: 0011_add_account_initial_balance
 Create Date: 2026-07-08 21:48:10.503397
 
 """
@@ -12,8 +12,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = '4913419ea9ff'
-down_revision: str | None = 'fa5b13892978'
+revision: str = '0012_add_chat_session_id_to_transactions'
+down_revision: str | None = '0011_add_account_initial_balance'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

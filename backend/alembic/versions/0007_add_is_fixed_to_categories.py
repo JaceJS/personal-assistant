@@ -1,7 +1,7 @@
 """add_is_fixed_to_categories
 
-Revision ID: 0006_add_is_fixed_to_categories
-Revises: 0005_remove_transfer_category_type
+Revision ID: 0007_add_is_fixed_to_categories
+Revises: 0006_remove_transfer_category_type
 Create Date: 2026-06-13 21:18:06.729058
 
 """
@@ -13,8 +13,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0006_add_is_fixed_to_categories"
-down_revision: str | None = "0005_remove_transfer_category_type"
+revision: str = "0007_add_is_fixed_to_categories"
+down_revision: str | None = "0006_remove_transfer_category_type"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

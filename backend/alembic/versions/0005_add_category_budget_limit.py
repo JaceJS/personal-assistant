@@ -1,7 +1,7 @@
 """add budget_limit to categories
 
-Revision ID: 0004_add_category_budget_limit
-Revises: 0003_add_receipt_logs_transcribed_status
+Revision ID: 0005_add_category_budget_limit
+Revises: 0004_add_receipt_logs_transcribed_status
 Create Date: 2026-06-06
 
 """
@@ -11,8 +11,8 @@ from __future__ import annotations
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0004_add_category_budget_limit"
-down_revision = "0003_add_receipt_logs_transcribed_status"
+revision = "0005_add_category_budget_limit"
+down_revision = "0004_add_receipt_logs_transcribed_status"
 branch_labels = None
 depends_on = None
 

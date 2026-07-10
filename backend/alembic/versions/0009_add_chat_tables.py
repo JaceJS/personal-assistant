@@ -1,7 +1,7 @@
 """add chat tables
 
-Revision ID: 0008
-Revises: 48778fbb0b0d
+Revision ID: 0009_add_chat_tables
+Revises: 0008_add_user_category_budgets_consolidate_budget_fields
 Create Date: 2026-06-15
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import UUID
 
-revision = "0008"
-down_revision = "48778fbb0b0d"
+revision = "0009_add_chat_tables"
+down_revision = "0008_add_user_category_budgets_consolidate_budget_fields"
 branch_labels = None
 depends_on = None
 

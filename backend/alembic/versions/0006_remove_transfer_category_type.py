@@ -1,14 +1,14 @@
 """remove transfer from category_type enum
 
-Revision ID: 0005_remove_transfer_category_type
-Revises: 0004_add_category_budget_limit
+Revision ID: 0006_remove_transfer_category_type
+Revises: 0005_add_category_budget_limit
 Create Date: 2026-06-13
 """
 
 from alembic import op
 
-revision = "0005_remove_transfer_category_type"
-down_revision = "0004_add_category_budget_limit"
+revision = "0006_remove_transfer_category_type"
+down_revision = "0005_add_category_budget_limit"
 branch_labels = None
 depends_on = None
 

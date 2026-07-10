@@ -1,7 +1,7 @@
 """add_user_category_budgets_consolidate_budget_fields
 
-Revision ID: 48778fbb0b0d
-Revises: 0006_add_is_fixed_to_categories
+Revision ID: 0008_add_user_category_budgets_consolidate_budget_fields
+Revises: 0007_add_is_fixed_to_categories
 Create Date: 2026-06-13 22:42:00.312266
 
 """
@@ -13,8 +13,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "48778fbb0b0d"
-down_revision: str | None = "0006_add_is_fixed_to_categories"
+revision: str = "0008_add_user_category_budgets_consolidate_budget_fields"
+down_revision: str | None = "0007_add_is_fixed_to_categories"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

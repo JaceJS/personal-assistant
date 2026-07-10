@@ -1,7 +1,7 @@
 """add_account_initial_balance
 
-Revision ID: fa5b13892978
-Revises: f3da838a6225
+Revision ID: 0011_add_account_initial_balance
+Revises: 0010_add_savings_goals_table
 Create Date: 2026-06-28 13:50:43.290855
 
 """
@@ -13,8 +13,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "fa5b13892978"
-down_revision: str | None = "f3da838a6225"
+revision: str = "0011_add_account_initial_balance"
+down_revision: str | None = "0010_add_savings_goals_table"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

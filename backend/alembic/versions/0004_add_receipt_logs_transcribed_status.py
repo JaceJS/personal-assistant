@@ -1,7 +1,7 @@
 """add_receipt_logs_transcribed_status
 
-Revision ID: 0003_add_receipt_logs_transcribed_status
-Revises: 0002_add_budgets_table
+Revision ID: 0004_add_receipt_logs_transcribed_status
+Revises: 0003_widen_alembic_version_column
 Create Date: 2026-06-02 21:23:08.221728
 
 """
@@ -14,8 +14,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "0003_add_receipt_logs_transcribed_status"
-down_revision: str | None = "0002_add_budgets_table"
+revision: str = "0004_add_receipt_logs_transcribed_status"
+down_revision: str | None = "0003_widen_alembic_version_column"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

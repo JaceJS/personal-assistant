@@ -1,7 +1,7 @@
 """add_savings_goals_table
 
-Revision ID: f3da838a6225
-Revises: 0008
+Revision ID: 0010_add_savings_goals_table
+Revises: 0009_add_chat_tables
 Create Date: 2026-06-25 23:34:12.151313
 
 """
@@ -13,8 +13,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "f3da838a6225"
-down_revision: str | None = "0008"
+revision: str = "0010_add_savings_goals_table"
+down_revision: str | None = "0009_add_chat_tables"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
