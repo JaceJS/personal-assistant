@@ -16,7 +16,7 @@ import sqlalchemy as sa
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError
 from app.domains.finance import repository as repo
 from app.domains.finance import service as finance_service
 from app.domains.finance.models import Category, Transaction, TransactionSource, TransactionStatus
@@ -431,7 +431,7 @@ async def _create_transaction(
                 chat_session_id=chat_session_id,
             ),
         )
-    except (NotFoundError, ForbiddenError) as exc:
+    except (NotFoundError, ForbiddenError, ConflictError) as exc:
         return {"error": str(exc)}
 
     account = await repo.get_account(session, account_id)

@@ -54,6 +54,7 @@ class LLMProvider(ABC):
         tools: list[dict[str, Any]],
         *,
         force_text: bool = False,
+        require_tool: bool = False,
     ) -> tuple[str, list[dict[str, Any]]]:
         """Call LLM with conversation history and tool definitions.
 
@@ -63,5 +64,10 @@ class LLMProvider(ABC):
         `force_text=True` disables tool calling for this call (tool_choice="none"),
         guaranteeing a text reply. Used as a fallback when a normal call would
         otherwise return empty content with no tool calls to act on.
+
+        `require_tool=True` forces at least one tool call (tool_choice="required"),
+        closing the path where the model answers straight from the system prompt's
+        script (e.g. claiming a transaction was recorded) with no grounding at all.
+        Ignored if `force_text` is also set.
         """
         ...

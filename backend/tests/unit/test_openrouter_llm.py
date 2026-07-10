@@ -92,3 +92,16 @@ async def test_chat_with_tools_force_text_disables_tool_choice() -> None:
     assert kwargs["tool_choice"] == "none"
     assert content == "Kamu punya Rp 1.000.000."
     assert tool_calls == []
+
+
+@pytest.mark.asyncio
+async def test_chat_with_tools_require_tool_sets_tool_choice_required() -> None:
+    llm = _make_llm()
+    tool_call = _make_tool_call("get_accounts", "{}")
+    create_mock = AsyncMock(return_value=_make_completion(content=None, tool_calls=[tool_call]))
+    llm._raw_client.chat.completions.create = create_mock
+
+    await llm.chat_with_tools("system", [], [], require_tool=True)
+
+    _, kwargs = create_mock.call_args
+    assert kwargs["tool_choice"] == "required"

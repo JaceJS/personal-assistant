@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from app.core.exceptions import ConflictError
 from app.domains.ai.tools import (
     _create_transaction,
     _fmt,
@@ -232,6 +233,27 @@ async def test_create_transaction_stamps_chat_session_id() -> None:
 
     call_args = mock_create.call_args.args[-1]
     assert call_args.chat_session_id == chat_session_id
+
+
+@pytest.mark.asyncio
+async def test_create_transaction_returns_error_on_duplicate_pending_draft() -> None:
+    """A ConflictError from the service layer (duplicate pending draft) must
+    surface as a tool error, not crash the chat turn."""
+    account_id = uuid.uuid4()
+    session = AsyncMock()
+
+    with patch(
+        "app.domains.ai.tools.finance_service.create_transaction",
+        AsyncMock(side_effect=ConflictError("Duplicate pending draft")),
+    ):
+        result = await _create_transaction(
+            _USER_ID,
+            session,
+            {"account_id": str(account_id), "amount": -10_000, "merchant": "Kopi"},
+            chat_session_id=uuid.uuid4(),
+        )
+
+    assert "error" in result
 
 
 @pytest.mark.asyncio

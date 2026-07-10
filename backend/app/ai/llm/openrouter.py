@@ -134,14 +134,21 @@ class OpenRouterLLM(LLMProvider):
         tools: list[dict[str, Any]],
         *,
         force_text: bool = False,
+        require_tool: bool = False,
     ) -> tuple[str, list[dict[str, Any]]]:
+        if force_text:
+            tool_choice = "none"
+        elif require_tool:
+            tool_choice = "required"
+        else:
+            tool_choice = "auto"
         completion = await self._raw_client.chat.completions.create(  # type: ignore[call-overload]
             model=self._model,
             max_tokens=self._max_tokens,
             temperature=_CHAT_TEMPERATURE,
             messages=[{"role": "system", "content": system_prompt}, *messages],
             tools=tools,
-            tool_choice="none" if force_text else "auto",
+            tool_choice=tool_choice,
         )
         msg = completion.choices[0].message
         if msg.tool_calls:

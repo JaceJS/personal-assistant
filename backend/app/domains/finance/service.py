@@ -10,7 +10,7 @@ from arq.connections import ArqRedis
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
+from app.core.exceptions import BadRequestError, ConflictError, ForbiddenError, NotFoundError
 from app.core.upload_utils import (
     AUDIO_EXT_MAP,
     AUDIO_MIME_ALLOWLIST,
@@ -362,6 +362,15 @@ async def create_transaction(
 
     if data.category_id is not None:
         await get_category_or_404(session, data.category_id, user_id)
+
+    if data.chat_session_id is not None and data.status == TransactionStatus.draft:
+        pending = await repo.get_pending_draft_transactions(session, data.chat_session_id)
+        merchant_key = (data.merchant or "").strip().lower()
+        if any(
+            (tx.merchant or "").strip().lower() == merchant_key and tx.amount == data.amount
+            for tx in pending
+        ):
+            raise ConflictError("A pending draft for this merchant and amount already exists")
 
     tx = await repo.create_transaction(
         session,
