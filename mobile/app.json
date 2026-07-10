@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Personal Assistant",
-    "slug": "personal-assistant",
-    "scheme": "personalassistant",
+    "name": "Savyn",
+    "slug": "savyn",
+    "scheme": "savyn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -34,7 +34,7 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
-      "package": "com.jonathan_s.personalassistant",
+      "package": "com.salendah_labs.savyn",
       "versionCode": 1
     },
     "web": {
@@ -61,6 +61,13 @@
           "iosUrlScheme": "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ecf7183a-5f83-4cf9-b88e-5cdec5f54b98"
+      }
+    },
+    "owner": "jaceee"
   }
 }

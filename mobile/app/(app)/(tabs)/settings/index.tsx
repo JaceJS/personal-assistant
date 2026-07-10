@@ -108,7 +108,7 @@ export default function SettingsScreen() {
     if (!number) return null;
     const version = Constants.expoConfig?.version ?? "";
     const text = encodeURIComponent(
-      `Halo, saya pakai Personal Assistant${version ? ` v${version}` : ""}. Mau kasih masukan:`
+      `Halo, saya pakai Savyn${version ? ` v${version}` : ""}. Mau kasih masukan:`
     );
     return `https://wa.me/${number}?text=${text}`;
   }, []);
