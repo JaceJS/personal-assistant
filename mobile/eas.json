@@ -15,12 +15,26 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://savyn-api.fly.dev",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://veiatjmazmgfzdmvcmor.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlaWF0am1hem1nZnpkbXZjbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDQwODgsImV4cCI6MjA5NTAyMDA4OH0.oPcTwXxErkZKBRqfxxYXgmzLUCaW4KMmM0UGWpNE5l0",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "566473915571-majtc5v63rmcms9m67pblb7ula1v5vbt.apps.googleusercontent.com",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://savyn-api.fly.dev",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://veiatjmazmgfzdmvcmor.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlaWF0am1hem1nZnpkbXZjbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDQwODgsImV4cCI6MjA5NTAyMDA4OH0.oPcTwXxErkZKBRqfxxYXgmzLUCaW4KMmM0UGWpNE5l0",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "566473915571-majtc5v63rmcms9m67pblb7ula1v5vbt.apps.googleusercontent.com",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },
