@@ -52,6 +52,19 @@ uv run arq app.workers.voice_processor.WorkerSettings  # voice worker
 npm run android   # or ios / start
 ```
 
+## Production Infra
+
+- **Backend:** Fly.io app `savyn-api` (region `sin`), processes `app` (uvicorn, HTTP) + `worker`
+  (ARQ). Config in `backend/fly.toml`. Health check: `https://savyn-api.fly.dev/health`.
+- **Redis:** Fly-managed Upstash Redis (`savyn-redis`), attached via `REDIS_URL` secret.
+- **Database:** Supabase Postgres prod, reached through the PgBouncer pooler (see
+  `backend/AGENTS.md` § Database Migrations for the `statement_cache_size=0` requirement).
+- **Deploy:** `flyctl deploy -a savyn-api` from `backend/` (rebuilds the image — `flyctl secrets
+  set` alone only re-releases the *existing* image, it does not rebuild).
+- **Mobile → prod backend:** EAS builds get `EXPO_PUBLIC_API_URL=https://savyn-api.fly.dev`
+  from the `env` blocks in `mobile/eas.json` (`.env` is gitignored and never uploaded).
+  `mobile/.env` only drives local dev — see `mobile/AGENTS.md` § 0 for the full env matrix.
+
 ## Architecture: How the Two Sides Connect
 
 ```

@@ -17,6 +17,27 @@ npm test            # run Jest test suite
 
 ---
 
+# 0. ENVIRONMENTS & BUILDS (READ BEFORE ANY BUILD)
+
+One repo, three build environments. Two independent axes: **where env vars come from** and **which keystore signs the APK**.
+
+| Environment | Build command | Env vars source | API target | Signing keystore |
+| --- | --- | --- | --- | --- |
+| Local dev | `npx expo run:android` | `mobile/.env` (gitignored) | `http://10.0.2.2:8000` | Debug keystore (`~/.android/debug.keystore`) |
+| Preview (APK, install di HP) | `eas build -p android --profile preview` | `eas.json` → `build.preview.env` | `https://savyn-api.fly.dev` | EAS-managed keystore |
+| Production (AAB, Play Store) | `eas build -p android --profile production` | `eas.json` → `build.production.env` | `https://savyn-api.fly.dev` | EAS keystore → Google Play App Signing re-signs |
+
+Rules:
+
+- **`.env` is NOT uploaded to EAS builds** (gitignored). Every `EXPO_PUBLIC_*` var the app needs MUST also exist in the `env` block of each `eas.json` profile. When adding a new `EXPO_PUBLIC_*` var, update all three places: `.env`, `.env.example`, and both `eas.json` env blocks.
+- **Google Sign-In**: `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (the *web* client) is the same across all environments and never changes. What differs per environment is the **Android OAuth client** in Google Cloud Console (project `566473915571`): one client per (package `com.salendah_labs.savyn` + SHA-1) pair. Registered SHA-1s: debug keystore (local), EAS keystore (preview/production APK), and later Play App Signing (from Play Console). `DEVELOPER_ERROR` code 10 at login = the SHA-1 that signed the installed APK is not registered. Definitive check: `apksigner verify --print-certs <apk>`.
+- **Sentry**: `SENTRY_DISABLE_AUTO_UPLOAD=true` is set in all EAS profiles because no Sentry org/project/auth token is configured yet. When enabling Sentry for real: remove that flag and set `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` as EAS secrets.
+- **Preview/production share the prod backend + Supabase.** Acceptable pre-launch; a separate staging backend + Supabase project is a pre-launch TODO.
+- `mobile/android/` and `mobile/ios/` are gitignored; EAS regenerates them from `app.json` on every build. After changing `app.json` native config, refresh local folders with `npx expo prebuild -p android --clean` before the next local build.
+- `mobile/patches/` (patch-package) is applied by `postinstall` both locally and on EAS. Current patch: `@supabase/supabase-js` — replaces a dynamic `import()` of optional OpenTelemetry that Hermes cannot compile. Re-check on every supabase-js upgrade.
+
+---
+
 # 1. THE PLATFORM: EXPO SDK 54
 
 - Expo managed workflow, **SDK 54**. Read https://docs.expo.dev/versions/v54.0.0/ before writing code.

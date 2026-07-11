@@ -129,6 +129,15 @@ uv run alembic revision --autogenerate -m "short_description"
 uv run alembic upgrade head
 ```
 
+- Keep revision ids reasonably short. `alembic_version.version_num` was widened to
+  `VARCHAR(255)` in `0003_widen_alembic_version_column.py` after a 40-char revision id
+  crashed `alembic upgrade head` mid-batch in production (see `.claude/learn.md`,
+  2026-07-10) — the column no longer caps you at 32 chars, but don't test that limit again.
+- Production `DATABASE_URL` goes through Supabase's PgBouncer pooler (transaction mode).
+  Both engines that talk to it (`app/core/database.py`, `alembic/env.py`) pass
+  `connect_args={"statement_cache_size": 0}` — don't create a third async engine
+  elsewhere without the same flag, or you'll hit random `DuplicatePreparedStatementError`.
+
 ### Database Conventions
 - Primary keys: `UUID` (DB default)
 - Timestamps: `created_at`, `updated_at` on every table (from `TimestampedBase`)
