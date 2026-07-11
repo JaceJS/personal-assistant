@@ -32,8 +32,8 @@ from app.domains.finance import repository as finance_repo
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
-_AI_CHAT_LIMIT = per_user_rate_limit(60, 3600)
-_AI_INSIGHT_LIMIT = per_user_rate_limit(30, 3600)
+_AI_CHAT_LIMIT = per_user_rate_limit("ai_chat", 60, 3600)
+_AI_INSIGHT_LIMIT = per_user_rate_limit("ai_insight", 30, 3600)
 
 _MAX_TOOL_ITERATIONS = 5
 _FALLBACK_REPLY = "Maaf, aku belum bisa jawab itu sekarang. Coba tanya lagi dengan cara lain ya."

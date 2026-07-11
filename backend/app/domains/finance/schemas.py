@@ -283,7 +283,7 @@ class VoiceStatusRead(BaseModel):
 
 
 class VoiceExtractRequest(BaseModel):
-    transcript: str
+    transcript: str = Field(..., max_length=5000)
 
     @field_validator("transcript")
     @classmethod

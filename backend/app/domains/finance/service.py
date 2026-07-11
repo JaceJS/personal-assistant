@@ -520,6 +520,13 @@ async def extract_voice_transcript(
     if voice_log.account_id is None:
         raise BadRequestError("Voice log has no associated account")
 
+    # Flip status before enqueueing so a second request racing the same voice
+    # log (before the worker has picked up the first job) sees "extracting"
+    # instead of "transcribed" and is rejected above, rather than enqueuing a
+    # second paid LLM extraction job.
+    await repo.update_voice_log_status(session, voice_log, VoiceProcessingStatus.extracting)
+    await session.flush()
+
     await redis.enqueue_job(
         VOICE_EXTRACTION_JOB,
         voice_log_id=str(voice_log_id),

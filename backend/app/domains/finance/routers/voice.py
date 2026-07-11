@@ -20,7 +20,8 @@ from app.shared.storage import R2Storage
 
 router = APIRouter(tags=["Voice"])
 
-_VOICE_LIMIT = per_user_rate_limit(60, 3600)
+_VOICE_LIMIT = per_user_rate_limit("voice_upload", 60, 3600)
+_VOICE_EXTRACT_LIMIT = per_user_rate_limit("voice_extract", 30, 3600)
 
 
 @router.post(
@@ -62,6 +63,7 @@ async def get_voice_status(
 @router.post(
     "/voice/{voice_log_id}/extract",
     response_model=ApiResponse[VoiceExtractResponse],
+    dependencies=[_VOICE_EXTRACT_LIMIT],
 )
 async def extract_voice(
     voice_log_id: uuid.UUID,

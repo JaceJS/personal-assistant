@@ -20,7 +20,7 @@ router = APIRouter(prefix="/users", tags=["Account"])
 
 SupabaseAdminDep = Annotated[SupabaseAdmin, Depends(get_supabase_admin)]
 
-_AVATAR_LIMIT = per_user_rate_limit(20, 3600)
+_AVATAR_LIMIT = per_user_rate_limit("avatar_upload", 20, 3600)
 
 
 @router.delete("/me", status_code=204)

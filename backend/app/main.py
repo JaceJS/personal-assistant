@@ -15,7 +15,8 @@ from app.core.config import get_settings
 from app.core.database import engine
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
-from app.core.middleware import RequestLoggingMiddleware
+from app.core.middleware import MaxBodySizeMiddleware, RequestLoggingMiddleware
+from app.core.upload_utils import MAX_AUDIO_BYTES
 from app.domains.ai.router import router as ai_router
 from app.domains.finance.router import router as finance_router
 from app.domains.sync.router import router as sync_router
@@ -23,6 +24,10 @@ from app.domains.users.router import router as users_router
 from app.shared.queue import create_redis_pool
 
 _settings = get_settings()
+
+# Largest per-field upload is voice audio (25MB); allow headroom for
+# multipart boundary/field overhead on top of that.
+_MAX_REQUEST_BODY_BYTES = MAX_AUDIO_BYTES + 5 * 1024 * 1024
 
 _lifespan_logger = structlog.get_logger("startup")
 
@@ -65,6 +70,7 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs" if not _settings.is_production else None,
     redoc_url=None,
+    openapi_url="/openapi.json" if not _settings.is_production else None,
     lifespan=lifespan,
 )
 
@@ -75,6 +81,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(MaxBodySizeMiddleware, max_bytes=_MAX_REQUEST_BODY_BYTES)
 app.add_middleware(RequestLoggingMiddleware)
 
 register_exception_handlers(app)

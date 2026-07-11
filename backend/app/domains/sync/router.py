@@ -13,7 +13,7 @@ from app.domains.sync.schemas import BulkImportPayload, BulkImportResult
 
 router = APIRouter(prefix="/sync", tags=["Sync"])
 
-_SYNC_IMPORT_LIMIT = per_user_rate_limit(10, 3600)
+_SYNC_IMPORT_LIMIT = per_user_rate_limit("sync_import", 10, 3600)
 
 
 @router.post(

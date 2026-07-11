@@ -51,6 +51,8 @@ async def get_current_user(
             signing_key.key,
             algorithms=["RS256", "ES256"],
             audience=_JWT_AUDIENCE,
+            issuer=f"{settings.supabase_url}/auth/v1",
+            options={"require": ["exp", "sub", "iss"]},
         )
     except PyJWKClientConnectionError as exc:
         _logger.error(

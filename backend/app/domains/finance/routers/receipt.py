@@ -19,7 +19,7 @@ from app.shared.storage import R2Storage
 
 router = APIRouter(tags=["Receipt"])
 
-_RECEIPT_LIMIT = per_user_rate_limit(60, 3600)
+_RECEIPT_LIMIT = per_user_rate_limit("receipt_upload", 60, 3600)
 
 
 @router.post(
