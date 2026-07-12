@@ -40,7 +40,7 @@ export async function uploadAudio(
   formData.append("file", {
     uri: audioUri,
     name: "recording.m4a",
-    type: "audio/m4a",
+    type: "audio/mp4",
   } as unknown as Blob);
   formData.append("account_id", accountId);
 

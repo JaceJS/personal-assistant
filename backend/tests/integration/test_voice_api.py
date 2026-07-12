@@ -16,6 +16,7 @@ from app.domains.finance.models import (
     TransactionStatus,
     VoiceProcessingStatus,
 )
+from tests.unit.test_upload_utils import ANDROID_M4A
 
 pytestmark = pytest.mark.integration
 
@@ -66,6 +67,43 @@ async def test_upload_voice_creates_log_and_enqueues_job(
         account_id=str(account.id),
     )
     redis.close.assert_awaited_once()
+
+
+async def test_upload_voice_accepts_real_android_recording(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    """Real magic-byte path (no filetype mock): Android mp42 must yield 201 + .m4a key."""
+    account = await repo.create_account(
+        db_session,
+        test_user_id,
+        name="Wallet",
+        type=AccountType.cash,
+        currency="IDR",
+    )
+    await db_session.commit()
+
+    storage = AsyncMock()
+    redis = AsyncMock()
+    redis.close = AsyncMock()
+
+    with (
+        patch("app.domains.finance.routers.voice.R2Storage", return_value=storage),
+        patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
+    ):
+        response = await client.post(
+            "/api/v1/voice/upload",
+            data={"account_id": str(account.id)},
+            files={"file": ("recording.m4a", ANDROID_M4A, "audio/m4a")},
+        )
+
+    assert response.status_code == 201
+    voice_log = await repo.get_voice_log(
+        db_session, uuid.UUID(response.json()["data"]["voice_log_id"])
+    )
+    assert voice_log is not None
+    assert voice_log.audio_url.endswith(".m4a")
 
 
 async def test_upload_voice_rejects_non_audio_file(

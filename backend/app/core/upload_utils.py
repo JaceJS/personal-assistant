@@ -9,12 +9,14 @@ AUDIO_MIME_ALLOWLIST: frozenset[str] = frozenset(
     {
         "audio/webm",
         "audio/mp4",
+        "audio/x-m4a",
         "audio/mpeg",
         "audio/ogg",
         "audio/wav",
         "audio/flac",
         "audio/aac",
         "video/webm",  # WebM container is sometimes detected as video/webm
+        "video/mp4",  # Android MediaRecorder writes ftyp mp42/isom → detected as video/mp4
     }
 )
 
@@ -22,6 +24,8 @@ AUDIO_EXT_MAP: dict[str, str] = {
     "audio/webm": ".webm",
     "video/webm": ".webm",
     "audio/mp4": ".m4a",
+    "audio/x-m4a": ".m4a",
+    "video/mp4": ".m4a",
     "audio/mpeg": ".mp3",
     "audio/ogg": ".ogg",
     "audio/wav": ".wav",
