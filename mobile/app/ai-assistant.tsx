@@ -20,6 +20,7 @@ import GuestGate from "@/components/ui/GuestGate";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ConfirmCard } from "@/components/voice/ConfirmCard";
 import type { ConfirmPayload } from "@/components/voice/ConfirmCard";
+import { RecordingIndicator } from "@/components/voice/RecordingIndicator";
 import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
 import { AIBubble } from "@/features/ai/components/AIBubble";
 import { ChatBubble } from "@/features/ai/components/ChatBubble";
@@ -83,6 +84,8 @@ export default function AIAssistantScreen() {
   const {
     isRecording,
     isProcessing: recorderProcessing,
+    durationMs: recordingDurationMs,
+    errorMessage: recordingError,
     startRecording,
     stopRecording,
     cancelRecording,
@@ -116,6 +119,13 @@ export default function AIAssistantScreen() {
 
   const isMicBusy = recorderProcessing || uploadAudio.isPending;
   const isCameraBusy = uploadReceipt.isPending;
+
+  // Surface recorder errors (permission denied, too-short takes) as toasts
+  useEffect(() => {
+    if (!recordingError) return;
+    showToast(recordingError, "error");
+    resetRecorder();
+  }, [recordingError, resetRecorder, showToast]);
 
   // Update voice message as status changes
   useEffect(() => {
@@ -587,6 +597,14 @@ export default function AIAssistantScreen() {
         </ScrollView>
       )}
 
+      {/* Recording indicator */}
+      {isRecording && (
+        <RecordingIndicator
+          durationMs={recordingDurationMs}
+          onCancel={() => void cancelRecording()}
+        />
+      )}
+
       {/* Input bar */}
       <View style={styles.inputBar}>
         <Pressable
@@ -618,8 +636,6 @@ export default function AIAssistantScreen() {
           onPressIn={isSendMode ? undefined : handleMicPressIn}
           onPressOut={isSendMode ? undefined : handleMicPressOut}
           onPress={isSendMode ? handleSendText : undefined}
-          onLongPress={isSendMode ? undefined : () => void cancelRecording()}
-          delayLongPress={1500}
           disabled={!isSendMode && isMicBusy && !isRecording}
           style={[styles.micBtn, isRecording && styles.micBtnRecording]}
           hitSlop={8}
