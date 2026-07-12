@@ -23,9 +23,8 @@ async def test_delete_account_maps_supabase_admin_error_to_bad_gateway() -> None
     with patch(
         "app.domains.users.service.repository.delete_all_user_data",
         AsyncMock(return_value=[]),
-    ):
-        with pytest.raises(BadGatewayError) as exc_info:
-            await service.delete_account(session, uuid.uuid4(), admin, storage)
+    ), pytest.raises(BadGatewayError) as exc_info:
+        await service.delete_account(session, uuid.uuid4(), admin, storage)
 
     # Internal config detail must not leak into the client-facing message.
     assert "SERVICE_ROLE" not in exc_info.value.message
