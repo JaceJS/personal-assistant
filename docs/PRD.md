@@ -175,7 +175,7 @@ Daftar ini adalah keputusan produk, bukan keterbatasan sementara. Setiap ide fit
 | # | Item | Status | Catatan |
 |---|---|---|---|
 | 1 | `mobile/eas.json` + konfigurasi EAS production build | ✅ Selesai | `eas.json` (profile development/preview/production) + project linked ke akun EAS `jaceee` (`app.json` `extra.eas.projectId`, `owner`) |
-| 2 | URL Privacy Policy & Terms nyata | ❌ Masih `example.com` di `mobile/app/(app)/(tabs)/settings/index.tsx` | Juga wajib diisi di Play Console |
+| 2 | URL Privacy Policy & Terms nyata | ✅ Selesai | Site `web/` (Next.js) live di Vercel: `https://savyn-ten.vercel.app` (landing + `/privacy` + `/terms`); URL di `settings/index.tsx` sudah diganti. Sisa: isi URL privacy policy di Play Console |
 | 3 | Data Safety form di Play Console | ❌ Di luar repo | Deklarasikan: data keuangan user, audio (voice), foto (struk/avatar), email; hapus-akun tersedia |
 | 4 | Backend produksi di Fly.io (API + ARQ worker + Upstash Redis) | ✅ Selesai | App `savyn-api` (region `sin`), `fly.toml` (process `app` + `worker`), Fly Redis (`savyn-redis`), DB Supabase prod, semua migrasi (`alembic upgrade head`) sudah jalan. Health check `https://savyn-api.fly.dev/health` OK. |
 | 5 | Smoke test alur kritis di build produksi | ❌ Belum dijalankan | Prasyarat: `mobile/.env` `EXPO_PUBLIC_API_URL` masih nunjuk `http://10.0.2.2:8000` (localhost), harus diganti ke `https://savyn-api.fly.dev` dulu. Alur: Guest → catat (manual/voice/chat) → signup → data ter-sync → hapus akun |

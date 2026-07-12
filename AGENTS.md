@@ -22,6 +22,7 @@ Indonesia-first, English UI, global-ready. Tech stack: Expo React Native + FastA
 │   └── AGENTS.md     # Backend-specific patterns and commands
 ├── mobile/           # Expo React Native app (SDK 54)
 │   └── AGENTS.md     # Mobile-specific patterns and commands
+├── web/              # Next.js marketing site: landing + privacy + terms (Vercel)
 └── docker-compose.yml  # Local dev: Postgres (5433) + Redis (6379)
 ```
 
@@ -64,6 +65,11 @@ npm run android   # or ios / start
 - **Mobile → prod backend:** EAS builds get `EXPO_PUBLIC_API_URL=https://savyn-api.fly.dev`
   from the `env` blocks in `mobile/eas.json` (`.env` is gitignored and never uploaded).
   `mobile/.env` only drives local dev — see `mobile/AGENTS.md` § 0 for the full env matrix.
+- **Web (marketing + legal):** Next.js in `web/`, deployed on Vercel with **Root Directory =
+  `web`** (auto CI/CD on push; enable "skip builds when Root Directory unchanged"). Site facts
+  (domain, support email, Play Store URL) live in `web/lib/site.ts`; override the domain via
+  `NEXT_PUBLIC_SITE_URL`. The privacy/terms URLs in
+  `mobile/app/(app)/(tabs)/settings/index.tsx` must point at this site's `/privacy` & `/terms`.
 
 ## Architecture: How the Two Sides Connect
 

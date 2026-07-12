@@ -245,13 +245,13 @@ export default function SettingsScreen() {
           <ExternalMenuItem
             icon={<FileText size={16} color={colors.accent.primary} />}
             label="Syarat & Ketentuan"
-            url="https://example.com/terms"
+            url="https://savyn-ten.vercel.app/terms"
           />
           <MenuDivider />
           <ExternalMenuItem
             icon={<Shield size={16} color={colors.accent.primary} />}
             label="Kebijakan Privasi"
-            url="https://example.com/privacy"
+            url="https://savyn-ten.vercel.app/privacy"
           />
         </GroupedList>
 
