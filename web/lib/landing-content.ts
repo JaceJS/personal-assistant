@@ -8,10 +8,7 @@ export interface LandingContent {
   heroTitleEm: string;
   heroSub: string;
   heroNote: string;
-  phoneTitle: string;
-  phoneBubble: string;
-  phoneDrafts: { label: string; category: string; amount: string }[];
-  phoneCaption: string;
+  heroImageAlt: string;
   manifestoLead: string;
   manifestoStrong: string;
   manifestoTail: string;
@@ -40,13 +37,8 @@ export const LANDING_ID: LandingContent = {
     "Savyn mengubah “sate 20rb parkir 2rb” jadi catatan transaksi yang rapi. " +
     "Ketik, ucapkan, atau foto struknya, AI yang membereskan sisanya. Kamu tinggal konfirmasi.",
   heroNote: "Gratis. Bisa dipakai tanpa daftar akun.",
-  phoneTitle: "Chat AI Savyn",
-  phoneBubble: "sate 20rb parkir 2rb",
-  phoneDrafts: [
-    { label: "Sate", category: "Makan & Minum · konfirmasi?", amount: "-Rp 20.000" },
-    { label: "Parkir", category: "Transport · konfirmasi?", amount: "-Rp 2.000" },
-  ],
-  phoneCaption: "Satu kalimat, dua transaksi. Kamu yang konfirmasi.",
+  heroImageAlt:
+    "Layar chat AI Savyn: pesan 'sate 20rb parkir 2rb' menjadi dua draft transaksi siap dikonfirmasi",
   manifestoLead: "Aplikasi keuangan gagal bukan karena kurang fitur. Gagal karena ",
   manifestoStrong: "mencatat itu ribet",
   manifestoTail:
@@ -184,13 +176,8 @@ export const LANDING_EN: LandingContent = {
     "Savyn turns “lunch 25k parking 2k” into tidy transaction records. " +
     "Type it, say it, or snap the receipt, and AI handles the rest. You just confirm.",
   heroNote: "Free. Works without signing up.",
-  phoneTitle: "Savyn AI Chat",
-  phoneBubble: "lunch 25k parking 2k",
-  phoneDrafts: [
-    { label: "Lunch", category: "Food & Drinks · confirm?", amount: "-Rp 25,000" },
-    { label: "Parking", category: "Transport · confirm?", amount: "-Rp 2,000" },
-  ],
-  phoneCaption: "One sentence, two transactions. You confirm.",
+  heroImageAlt:
+    "Savyn AI chat screen: the message 'sate 20rb parkir 2rb' becomes two transaction drafts ready to confirm",
   manifestoLead: "Finance apps don't fail from missing features. They fail because ",
   manifestoStrong: "logging is a chore",
   manifestoTail: ". Savyn removes the friction in every situation: at the register, on the go, or at home.",

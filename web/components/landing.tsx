@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import badgeEn from "@/public/badges/google-play-en.png";
 import badgeId from "@/public/badges/google-play-id.png";
+import heroShot from "@/public/screenshots/hero.png";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import type { LandingContent } from "@/lib/landing-content";
 import {
@@ -85,21 +86,13 @@ export function Landing({
                 <p className="hero-note">{content.heroNote}</p>
               </div>
             </div>
-            <div className="phone" aria-hidden="true">
-              <p className="phone-title">{content.phoneTitle}</p>
-              <div className="chat-flow">
-                <p className="bubble-user">{content.phoneBubble}</p>
-                {content.phoneDrafts.map((draft) => (
-                  <div className="draft-card" key={draft.label}>
-                    <p className="label">
-                      {draft.label}
-                      <span className="category">{draft.category}</span>
-                    </p>
-                    <p className="amount">{draft.amount}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="chat-caption">{content.phoneCaption}</p>
+            <div className="phone">
+              <Image
+                src={heroShot}
+                alt={content.heroImageAlt}
+                priority
+                sizes="(max-width: 820px) 80vw, 360px"
+              />
             </div>
           </div>
         </section>
