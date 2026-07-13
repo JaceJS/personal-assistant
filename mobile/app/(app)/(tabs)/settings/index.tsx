@@ -276,13 +276,13 @@ export default function SettingsScreen() {
           <ExternalMenuItem
             icon={<FileText size={16} color={colors.accent.primary} />}
             label={t("settings.termsMenu")}
-            url="https://savyn-ten.vercel.app/terms"
+            url="https://www.savyn.id/terms"
           />
           <MenuDivider />
           <ExternalMenuItem
             icon={<Shield size={16} color={colors.accent.primary} />}
             label={t("settings.privacyMenu")}
-            url="https://savyn-ten.vercel.app/privacy"
+            url="https://www.savyn.id/privacy"
           />
         </GroupedList>
 
