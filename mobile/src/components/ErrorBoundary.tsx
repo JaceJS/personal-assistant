@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AlertTriangle } from "lucide-react-native";
 
+import i18n from "@/i18n";
 import { logger } from "@/lib/logger";
 import { colors, radius, spacing } from "@/theme";
 
@@ -41,15 +42,15 @@ export class ErrorBoundary extends React.Component<
             <View style={styles.iconWrap}>
               <AlertTriangle size={26} color={colors.danger.text} />
             </View>
-            <Text style={styles.title}>Something went wrong</Text>
+            <Text style={styles.title}>{i18n.t("common.errorBoundary.title")}</Text>
             <Text style={styles.message}>
-              {this.state.message || "An unexpected error occurred."}
+              {this.state.message || i18n.t("common.errorBoundary.defaultMessage")}
             </Text>
             <Pressable
               onPress={this.handleRetry}
               style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.7 }]}
             >
-              <Text style={styles.retryLabel}>Try Again</Text>
+              <Text style={styles.retryLabel}>{i18n.t("common.errorBoundary.retryCta")}</Text>
             </Pressable>
           </View>
         </View>

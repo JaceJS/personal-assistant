@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { AlertTriangle } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
@@ -14,37 +15,41 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { signOut } = useAuthStore();
   const { showToast } = useToastStore();
   const { mutate: deleteAccount, isPending } = useDeleteAccount();
 
+  const lostDataItems = [
+    t("deleteAccount.items.financialAccounts"),
+    t("deleteAccount.items.transactionHistory"),
+    t("deleteAccount.items.budgetsGoals"),
+    t("deleteAccount.items.aiConversations"),
+  ];
+
   const handleDelete = useCallback(() => {
-    Alert.alert(
-      "Hapus Akun Permanen",
-      "Aksi ini tidak dapat dibatalkan. Semua data akan hilang selamanya.",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Hapus Sekarang",
-          style: "destructive",
-          onPress: () =>
-            deleteAccount(undefined, {
-              onSuccess: async () => {
-                showToast("Akunmu sudah dihapus", "success");
-                await signOut();
-                router.replace("/login");
-              },
-              onError: () => showToast("Gagal menghapus akun, coba lagi ya", "error"),
-            }),
-        },
-      ]
-    );
-  }, [deleteAccount, showToast, signOut, router]);
+    Alert.alert(t("deleteAccount.alertTitle"), t("deleteAccount.alertMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("deleteAccount.alertConfirm"),
+        style: "destructive",
+        onPress: () =>
+          deleteAccount(undefined, {
+            onSuccess: async () => {
+              showToast(t("deleteAccount.successToast"), "success");
+              await signOut();
+              router.replace("/login");
+            },
+            onError: () => showToast(t("deleteAccount.errorToast"), "error"),
+          }),
+      },
+    ]);
+  }, [deleteAccount, showToast, signOut, router, t]);
 
   return (
     <Screen>
-      <Header title="Hapus Akun" onBack={() => router.back()} />
+      <Header title={t("deleteAccount.headerTitle")} onBack={() => router.back()} />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -53,30 +58,23 @@ export default function DeleteAccountScreen() {
         <View style={styles.warningCard}>
           <View style={styles.warningIconRow}>
             <AlertTriangle size={20} color={colors.danger.text} />
-            <Text style={styles.warningTitle}>Data yang akan hilang</Text>
+            <Text style={styles.warningTitle}>{t("deleteAccount.warningTitle")}</Text>
           </View>
           <View style={styles.list}>
-            {[
-              "Semua akun keuangan",
-              "Seluruh riwayat transaksi",
-              "Budget dan goal",
-              "Percakapan dengan AI",
-            ].map((item) => (
+            {lostDataItems.map((item) => (
               <View key={item} style={styles.listRow}>
                 <View style={styles.bullet} />
                 <Text style={styles.listItem}>{item}</Text>
               </View>
             ))}
           </View>
-          <Text style={styles.warningNote}>
-            Aksi ini permanen dan tidak bisa dibatalkan.
-          </Text>
+          <Text style={styles.warningNote}>{t("deleteAccount.warningNote")}</Text>
         </View>
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: spacing["2xl"] + insets.bottom }]}>
         <Button
-          label={isPending ? "Menghapus..." : "Hapus Akun Permanen"}
+          label={isPending ? t("deleteAccount.ctaDeleting") : t("deleteAccount.alertTitle")}
           variant="danger"
           onPress={handleDelete}
           disabled={isPending}

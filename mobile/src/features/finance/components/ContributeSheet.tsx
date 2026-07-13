@@ -9,10 +9,11 @@ import {
   View,
 } from 'react-native';
 import { X } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import Button from '@/components/ui/Button';
 import RupiahInput from '@/components/ui/RupiahInput';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
 const QUICK_AMOUNTS = [50_000, 100_000, 200_000, 500_000];
@@ -34,6 +35,7 @@ function ContributeSheet({
   isPending,
   goalName,
 }: ContributeSheetProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('add');
   const [amount, setAmount] = useState(0);
 
@@ -72,7 +74,7 @@ function ContributeSheet({
 
           <View style={styles.titleRow}>
             <View style={styles.titleBlock}>
-              <Text style={styles.title}>Tabung / Tarik</Text>
+              <Text style={styles.title}>{t('goals.contribute.title')}</Text>
               {goalName && <Text style={styles.subtitle} numberOfLines={1}>{goalName}</Text>}
             </View>
             <Pressable
@@ -97,7 +99,7 @@ function ContributeSheet({
                 >
                   <View style={[styles.modeBtn, mode === 'add' && styles.modeBtnActive]}>
                     <Text style={[styles.modeBtnText, mode === 'add' && styles.modeBtnTextActive]}>
-                      + Tabung
+                      {t('goals.contribute.addMode')}
                     </Text>
                   </View>
                 </Pressable>
@@ -112,7 +114,7 @@ function ContributeSheet({
                 >
                   <View style={[styles.modeBtn, mode === 'withdraw' && styles.modeBtnWithdrawActive]}>
                     <Text style={[styles.modeBtnText, mode === 'withdraw' && styles.modeBtnTextActive]}>
-                      − Tarik
+                      {t('goals.contribute.withdrawMode')}
                     </Text>
                   </View>
                 </Pressable>
@@ -133,7 +135,7 @@ function ContributeSheet({
                         amount === amt && styles.quickChipTextActive,
                       ]}
                     >
-                      {formatRupiah(amt)}
+                      {formatMoney(amt)}
                     </Text>
                   </View>
                 </Pressable>
@@ -141,14 +143,20 @@ function ContributeSheet({
             </View>
 
             <RupiahInput
-              label="Jumlah (Rupiah)"
+              label={t('transaction.amountLabel')}
               value={amount}
               onChange={setAmount}
-              placeholder="atau masukkan manual"
+              placeholder={t('goals.contribute.amountPlaceholder')}
             />
 
             <Button
-              label={isPending ? 'Menyimpan…' : mode === 'add' ? 'Tabung Sekarang' : 'Tarik Dana'}
+              label={
+                isPending
+                  ? t('goals.savingEllipsis')
+                  : mode === 'add'
+                    ? t('goals.contribute.saveCta')
+                    : t('goals.contribute.withdrawCta')
+              }
               onPress={handleConfirm}
               variant={mode === 'withdraw' ? 'danger' : 'primary'}
               disabled={!isValid || isPending}

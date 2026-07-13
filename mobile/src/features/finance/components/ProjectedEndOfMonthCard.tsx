@@ -1,8 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { TrendingDown, TrendingUp } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
 function getMonthRange(year: number, month: number) {
@@ -21,6 +22,7 @@ function getMonthRange(year: number, month: number) {
 }
 
 export default function ProjectedEndOfMonthCard() {
+  const { t } = useTranslation();
   const now = new Date();
   const curr = getMonthRange(now.getFullYear(), now.getMonth());
   const last = getMonthRange(now.getFullYear(), now.getMonth() - 1);
@@ -48,8 +50,8 @@ export default function ProjectedEndOfMonthCard() {
     return (
       <View style={styles.card}>
         <View style={styles.glow} />
-        <Text style={styles.overline}>NET BULAN INI</Text>
-        <Text style={styles.emptyText}>Belum ada transaksi bulan ini</Text>
+        <Text style={styles.overline}>{t("home.projectedEndOfMonth.overline")}</Text>
+        <Text style={styles.emptyText}>{t("home.projectedEndOfMonth.emptyText")}</Text>
       </View>
     );
   }
@@ -57,20 +59,20 @@ export default function ProjectedEndOfMonthCard() {
   return (
     <View style={styles.card}>
       <View style={styles.glow} />
-      <Text style={styles.overline}>NET BULAN INI</Text>
+      <Text style={styles.overline}>{t("home.projectedEndOfMonth.overline")}</Text>
       <Text style={[styles.amount, { color: netColor }]}>
-        {isPositive ? '+' : ''}{formatRupiah(currNet)}
+        {isPositive ? '+' : ''}{formatMoney(currNet)}
       </Text>
 
       <View style={styles.statsRow}>
         <View style={styles.stat}>
-          <Text style={styles.statLabel}>Pemasukan</Text>
-          <Text style={[styles.statAmount, { color: colors.success.text }]}>+{formatRupiah(currIncome)}</Text>
+          <Text style={styles.statLabel}>{t("transaction.income")}</Text>
+          <Text style={[styles.statAmount, { color: colors.success.text }]}>+{formatMoney(currIncome)}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={[styles.stat, styles.statRight]}>
-          <Text style={styles.statLabel}>Pengeluaran</Text>
-          <Text style={[styles.statAmount, { color: colors.danger.text }]}>-{formatRupiah(currExpense)}</Text>
+          <Text style={styles.statLabel}>{t("transaction.expense")}</Text>
+          <Text style={[styles.statAmount, { color: colors.danger.text }]}>-{formatMoney(currExpense)}</Text>
         </View>
       </View>
 
@@ -78,7 +80,10 @@ export default function ProjectedEndOfMonthCard() {
         <View style={styles.trend}>
           <TrendIcon size={13} color={trendColor} strokeWidth={2} />
           <Text style={[styles.trendText, { color: trendColor }]}>
-            {Math.abs(pctChange)}% {isHigher ? 'lebih dari' : 'di bawah'} bulan lalu
+            {t(
+              isHigher ? "home.projectedEndOfMonth.trendHigher" : "home.projectedEndOfMonth.trendLower",
+              { pct: Math.abs(pctChange) },
+            )}
           </Text>
         </View>
       )}

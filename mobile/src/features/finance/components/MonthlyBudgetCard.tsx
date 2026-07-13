@@ -1,9 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { useBudget } from '@/features/finance/hooks/useBudget';
 import { SkeletonCard } from '@/components/ui/Skeleton';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
 function getBudgetColor(pct: number): string {
@@ -18,6 +19,7 @@ interface MonthlyBudgetCardProps {
 
 export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const { data: budget, isLoading } = useBudget();
 
   const budgetPath = '/(app)/finance/budget';
@@ -34,7 +36,7 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
           style={({ pressed }) => pressed && { opacity: 0.7 }}
         >
           <View style={styles.promptRow}>
-            <Text style={styles.promptText}>Atur budget bulanan</Text>
+            <Text style={styles.promptText}>{t("home.setBudgetCta")}</Text>
             <Text style={styles.promptArrow}>→</Text>
           </View>
         </Pressable>
@@ -60,8 +62,8 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
       <View style={styles.card}>
         <View style={styles.topRow}>
           <View style={styles.topLeft}>
-            <Text style={styles.budgetLabel}>TOTAL BUDGET BULANAN</Text>
-            <Text style={styles.budgetAmount}>{formatRupiah(monthlyLimit)}</Text>
+            <Text style={styles.budgetLabel}>{t("home.monthlyBudget.totalLabel")}</Text>
+            <Text style={styles.budgetAmount}>{formatMoney(monthlyLimit)}</Text>
           </View>
           <View style={[styles.pctBadge, { borderColor: barColor + '44' }]}>
             <Text style={[styles.pctText, { color: barColor }]}>{Math.round(displayPct * 100)}%</Text>
@@ -74,14 +76,16 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
 
         <View style={styles.spentRow}>
           <View>
-            <Text style={styles.rowLabel}>Terpakai</Text>
-            <Text style={styles.rowAmount}>{formatRupiah(totalExpense)}</Text>
+            <Text style={styles.rowLabel}>{t("home.monthlyBudget.spentLabel")}</Text>
+            <Text style={styles.rowAmount}>{formatMoney(totalExpense)}</Text>
           </View>
           <View style={styles.remainingCol}>
-            <Text style={styles.rowLabel}>Tersisa</Text>
-            <Text style={[styles.rowAmount, { color: colors.accent.text }]}>{formatRupiah(remaining)}</Text>
+            <Text style={styles.rowLabel}>{t("home.monthlyBudget.remainingLabel")}</Text>
+            <Text style={[styles.rowAmount, { color: colors.accent.text }]}>{formatMoney(remaining)}</Text>
             {daysLeft > 0 && (
-              <Text style={styles.daysLeft}>{daysLeft} hari lagi</Text>
+              <Text style={styles.daysLeft}>
+                {t("home.monthlyBudget.daysLeft", { count: daysLeft })}
+              </Text>
             )}
           </View>
         </View>

@@ -1,11 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronRight, CloudUpload } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function GuestModeBanner() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <Pressable onPress={() => router.push("/(app)/settings")}>
@@ -15,8 +17,8 @@ export default function GuestModeBanner() {
             <CloudUpload size={16} color={colors.accent.primary} />
           </View>
           <View style={styles.textCol}>
-            <Text style={styles.title}>Mode tamu</Text>
-            <Text style={styles.subtitle}>Data cuma di HP ini. Masuk buat backup & sync.</Text>
+            <Text style={styles.title}>{t("guest.banner.title")}</Text>
+            <Text style={styles.subtitle}>{t("guest.banner.subtitle")}</Text>
           </View>
           <ChevronRight size={16} color={colors.text.muted} />
         </View>

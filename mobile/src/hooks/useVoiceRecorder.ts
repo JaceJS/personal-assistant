@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { AudioModule, RecordingPresets, useAudioRecorder } from "expo-audio";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { isRecordingTooShort } from "@/features/finance/utils/recordingUtils";
 import { logger } from "@/lib/logger";
@@ -9,6 +10,7 @@ import { useRecordingStore } from "@/stores/recording";
 const DURATION_TICK_MS = 250;
 
 export function useVoiceRecorder() {
+  const { t } = useTranslation();
   const { phase, errorMessage, durationMs, setPhase, setAudioUri, setError, setDurationMs, reset } =
     useRecordingStore();
   const permissionGranted = useRef(false);
@@ -35,7 +37,7 @@ export function useVoiceRecorder() {
   const startRecording = useCallback(async () => {
     const granted = await requestPermission();
     if (!granted) {
-      setError("Izin mikrofon diperlukan untuk merekam suara.");
+      setError(t("ai.recording.micPermissionRequired"));
       return;
     }
     try {
@@ -51,9 +53,9 @@ export function useVoiceRecorder() {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (e) {
       logger.error("startRecording failed", e);
-      setError("Gagal memulai rekaman.");
+      setError(t("ai.recording.startFailed"));
     }
-  }, [audioRecorder, requestPermission, setDurationMs, setPhase, setError, stopTicking]);
+  }, [audioRecorder, requestPermission, setDurationMs, setPhase, setError, stopTicking, t]);
 
   const stopRecording = useCallback(async (): Promise<string | null> => {
     if (phase !== "recording") return null;
@@ -63,11 +65,11 @@ export function useVoiceRecorder() {
       await audioRecorder.stop();
     } catch (e) {
       logger.error("stopRecording failed", e);
-      setError("Gagal menghentikan rekaman.");
+      setError(t("ai.recording.stopFailed"));
       return null;
     }
     if (isRecordingTooShort(elapsedMs)) {
-      setError("Rekaman terlalu pendek. Tahan tombol mic sambil bicara.");
+      setError(t("ai.recording.tooShort"));
       return null;
     }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -75,7 +77,7 @@ export function useVoiceRecorder() {
     setAudioUri(uri);
     setPhase("processing");
     return uri;
-  }, [audioRecorder, phase, setAudioUri, setPhase, setError, stopTicking]);
+  }, [audioRecorder, phase, setAudioUri, setPhase, setError, stopTicking, t]);
 
   const cancelRecording = useCallback(async () => {
     if (phase !== "recording") return;

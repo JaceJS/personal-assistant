@@ -1,16 +1,18 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { textStyles } from "@/theme/typography";
+import { ACCOUNT_TYPE_ORDER, accountTypeLabel } from "@/features/finance/constants";
 import type { AccountType } from "@/features/finance/types";
 
-const ACCOUNT_TYPES: { value: AccountType; label: string; emoji: string }[] = [
-  { value: "bank", label: "Bank", emoji: "🏦" },
-  { value: "cash", label: "Tunai", emoji: "💵" },
-  { value: "ewallet", label: "E-Wallet", emoji: "📱" },
-  { value: "credit", label: "Kartu Kredit", emoji: "💳" },
-];
+const TYPE_EMOJI: Record<AccountType, string> = {
+  bank: "🏦",
+  cash: "💵",
+  ewallet: "📱",
+  credit: "💳",
+};
 
 type Props = {
   value: AccountType;
@@ -18,14 +20,15 @@ type Props = {
 };
 
 export function AccountTypePicker({ value, onChange }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.grid}>
-      {ACCOUNT_TYPES.map((t) => {
-        const isSelected = value === t.value;
+      {ACCOUNT_TYPE_ORDER.map((type) => {
+        const isSelected = value === type;
         return (
           <Pressable
-            key={t.value}
-            onPress={() => onChange(t.value)}
+            key={type}
+            onPress={() => onChange(type)}
             style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
           >
             <View
@@ -34,14 +37,14 @@ export function AccountTypePicker({ value, onChange }: Props) {
                 isSelected ? styles.pillSelected : styles.pillDefault,
               ]}
             >
-              <Text style={styles.emoji}>{t.emoji}</Text>
+              <Text style={styles.emoji}>{TYPE_EMOJI[type]}</Text>
               <Text
                 style={[
                   styles.label,
                   { color: isSelected ? "#fff" : colors.text.primary },
                 ]}
               >
-                {t.label}
+                {accountTypeLabel(t, type)}
               </Text>
             </View>
           </Pressable>

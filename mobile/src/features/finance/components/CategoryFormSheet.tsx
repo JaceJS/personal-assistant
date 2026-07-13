@@ -13,6 +13,8 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { X } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -22,21 +24,30 @@ import { useCreateCategory, useUpdateCategory } from "@/features/finance/hooks/u
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
-const CATEGORY_TYPES: { value: CategoryType; label: string; emoji: string }[] = [
-  { value: "expense", label: "Pengeluaran", emoji: "📤" },
-  { value: "income", label: "Pemasukan", emoji: "📥" },
+// Literal key paths (see src/i18n/types.ts) so t() stays type-checked.
+const CATEGORY_TYPES: {
+  value: CategoryType;
+  labelKey: "transaction.expense" | "transaction.income";
+  emoji: string;
+}[] = [
+  { value: "expense", labelKey: "transaction.expense", emoji: "📤" },
+  { value: "income", labelKey: "transaction.income", emoji: "📥" },
 ];
 
 const ICON_COLS = 6;
 
-const schema = z.object({
-  name: z.string().min(1, "Nama kategori wajib diisi"),
-  type: z.enum(["expense", "income"]),
-  icon: z.string().nullable(),
-  color: z.string().nullable(),
-});
+// Module-scope Zod schemas evaluate error messages at import time (before
+// i18n has a language) — factory + useMemo(() => ..., [t]) keeps them reactive.
+function makeSchema(t: TFunction) {
+  return z.object({
+    name: z.string().min(1, t("categories.form.nameRequired")),
+    type: z.enum(["expense", "income"]),
+    icon: z.string().nullable(),
+    color: z.string().nullable(),
+  });
+}
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 
 interface CategoryFormSheetProps {
   visible: boolean;
@@ -45,6 +56,8 @@ interface CategoryFormSheetProps {
 }
 
 function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryFormSheetProps) {
+  const { t } = useTranslation();
+  const schema = useMemo(() => makeSchema(t), [t]);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const { showToast } = useToastStore();
@@ -94,17 +107,20 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
       try {
         if (editingCategory) {
           await updateCategory.mutateAsync({ id: editingCategory.id, data: values });
-          showToast("Kategori diperbarui", "success");
+          showToast(t("categories.form.updatedToast"), "success");
         } else {
           await createCategory.mutateAsync(values);
-          showToast("Kategori dibuat", "success");
+          showToast(t("categories.form.createdToast"), "success");
         }
         onDismiss();
       } catch {
-        showToast(editingCategory ? "Gagal update kategori" : "Gagal buat kategori", "error");
+        showToast(
+          editingCategory ? t("categories.form.updateError") : t("categories.form.createError"),
+          "error",
+        );
       }
     },
-    [createCategory, updateCategory, editingCategory, onDismiss, showToast]
+    [createCategory, updateCategory, editingCategory, onDismiss, showToast, t]
   );
 
   const isPending = editingCategory ? updateCategory.isPending : createCategory.isPending;
@@ -130,7 +146,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {editingCategory ? "Edit Kategori" : "Kategori Baru"}
+              {editingCategory ? t("categories.form.editTitle") : t("categories.form.newTitle")}
             </Text>
             <Pressable onPress={onDismiss} style={({ pressed }) => pressed && { opacity: 0.6 }}>
               <X size={22} color={colors.text.muted} />
@@ -143,10 +159,10 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
               name="name"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Nama Kategori"
+                  label={t("categories.form.nameLabel")}
                   value={value}
                   onChangeText={onChange}
-                  placeholder="mis. Makan, Transport, Gaji"
+                  placeholder={t("categories.form.namePlaceholder")}
                   error={errors.name?.message}
                   autoFocus
                 />
@@ -154,31 +170,31 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
             />
 
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Tipe</Text>
+              <Text style={styles.sectionLabel}>{t("categories.form.typeLabel")}</Text>
               <Controller
                 control={control}
                 name="type"
                 render={({ field: { onChange, value } }) => (
                   <View style={styles.typeRow}>
-                    {CATEGORY_TYPES.map((t) => {
-                      const isSelected = value === t.value;
+                    {CATEGORY_TYPES.map((opt) => {
+                      const isSelected = value === opt.value;
                       return (
                         <Pressable
-                          key={t.value}
-                          onPress={() => onChange(t.value)}
+                          key={opt.value}
+                          onPress={() => onChange(opt.value)}
                           style={[
                             styles.typeBtn,
                             isSelected ? styles.typeBtnActive : styles.typeBtnInactive,
                           ]}
                         >
-                          <Text style={styles.typeEmoji}>{t.emoji}</Text>
+                          <Text style={styles.typeEmoji}>{opt.emoji}</Text>
                           <Text
                             style={[
                               styles.typeBtnLabel,
                               isSelected ? styles.typeBtnLabelActive : styles.typeBtnLabelInactive,
                             ]}
                           >
-                            {t.label}
+                            {t(opt.labelKey)}
                           </Text>
                         </Pressable>
                       );
@@ -189,7 +205,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Ikon</Text>
+              <Text style={styles.sectionLabel}>{t("goals.form.iconLabel")}</Text>
               <View style={styles.iconGrid}>
                 {iconRows.map((row, rowIdx) => (
                   <View key={rowIdx} style={styles.iconRow}>
@@ -229,7 +245,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Warna</Text>
+              <Text style={styles.sectionLabel}>{t("categories.form.colorLabel")}</Text>
               <View style={styles.colorRow}>
                 {PRESET_COLORS.map((color) => {
                   const isSelected = selectedColor === color;
@@ -249,7 +265,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
             </View>
 
             <Button
-              label={editingCategory ? "Simpan" : "Buat Kategori"}
+              label={editingCategory ? t("common.save") : t("categories.form.createCta")}
               onPress={handleSubmit(onSubmit)}
               loading={isPending}
               fullWidth

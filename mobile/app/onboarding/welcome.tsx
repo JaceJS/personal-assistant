@@ -3,6 +3,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MessageCircle, Mic, ScanLine, Sparkles } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { OnboardingHeader } from "@/components/layout/OnboardingHeader";
 import { colors } from "@/theme/colors";
@@ -13,26 +14,32 @@ import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 
+// Literal key paths (not built via template interpolation) so react-i18next's
+// generated key union — declared in src/i18n/types.ts — can type-check t() calls.
 const FEATURES = [
   {
+    key: "chat",
     icon: MessageCircle,
-    label: "Chat AI",
-    desc: "Tanya, catat, dan analisis lewat obrolan",
+    labelKey: "onboarding.welcome.features.chat.label",
+    descKey: "onboarding.welcome.features.chat.desc",
   },
   {
+    key: "scan",
     icon: ScanLine,
-    label: "Scan Struk",
-    desc: "Foto struk, langsung tercatat otomatis",
+    labelKey: "onboarding.welcome.features.scan.label",
+    descKey: "onboarding.welcome.features.scan.desc",
   },
   {
+    key: "voice",
     icon: Mic,
-    label: "Input Suara",
-    desc: "Ucapkan transaksi, AI yang mencatat",
+    labelKey: "onboarding.welcome.features.voice.label",
+    descKey: "onboarding.welcome.features.voice.desc",
   },
-];
+] as const;
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { isGuest, initialized } = useAuthStore();
   const { showToast } = useToastStore();
   const [loginLoading, setLoginLoading] = useState(false);
@@ -74,13 +81,13 @@ export default function WelcomeScreen() {
     setLoginLoading(true);
     try {
       const result = await signInWithGoogle();
-      if (result === "error") showToast("Login gagal, coba lagi ya", "error");
+      if (result === "error") showToast(t("auth.loginError"), "error");
       // "success": useEffect di atas yang handle navigate
       // "cancelled": diam aja
     } finally {
       setLoginLoading(false);
     }
-  }, [showToast]);
+  }, [showToast, t]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -110,24 +117,24 @@ export default function WelcomeScreen() {
         {/* Headline */}
         <View style={styles.headline}>
           <Text style={styles.headlineText}>
-            AI yang paham{"\n"}
-            <Text style={styles.headlineAccent}>keuanganmu.</Text>
+            {t("onboarding.welcome.headlineLine1")}
+            {"\n"}
+            <Text style={styles.headlineAccent}>
+              {t("onboarding.welcome.headlineAccent")}
+            </Text>
           </Text>
-          <Text style={styles.subtitle}>
-            Catat via chat, suara, atau foto struk.{"\n"}
-            Dapatkan insight yang benar-benar personal.
-          </Text>
+          <Text style={styles.subtitle}>{t("onboarding.welcome.subtitle")}</Text>
         </View>
 
         {/* Features */}
         <View style={styles.features}>
-          {FEATURES.map(({ icon: Icon, label, desc }) => (
-            <View key={label} style={styles.featureItem}>
+          {FEATURES.map(({ key, icon: Icon, labelKey, descKey }) => (
+            <View key={key} style={styles.featureItem}>
               <View style={styles.featureIcon}>
                 <Icon size={20} color={colors.accent.primary} />
               </View>
-              <Text style={styles.featureLabel}>{label}</Text>
-              <Text style={styles.featureDesc}>{desc}</Text>
+              <Text style={styles.featureLabel}>{t(labelKey)}</Text>
+              <Text style={styles.featureDesc}>{t(descKey)}</Text>
             </View>
           ))}
         </View>
@@ -139,7 +146,7 @@ export default function WelcomeScreen() {
             style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
           >
             <View style={styles.ctaButton}>
-              <Text style={styles.ctaText}>Gas Sekarang!</Text>
+              <Text style={styles.ctaText}>{t("onboarding.welcome.ctaPrimary")}</Text>
             </View>
           </Pressable>
 
@@ -149,7 +156,7 @@ export default function WelcomeScreen() {
             style={({ pressed }) => ({ opacity: pressed || loginLoading ? 0.7 : 1 })}
           >
             <Text style={styles.loginLink}>
-              {loginLoading ? "Membuka Google..." : "Udah punya akun? Masuk aja"}
+              {loginLoading ? t("auth.openingGoogle") : t("onboarding.welcome.loginLink")}
             </Text>
           </Pressable>
         </View>

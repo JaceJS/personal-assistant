@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import type { Category } from '@/features/finance/types';
 import CategoryIcon from './CategoryIcon';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
 import { colors, textStyles } from '@/theme';
 import CategoryBudgetSheet from './CategoryBudgetSheet';
 
@@ -13,43 +14,44 @@ interface FixedExpenseItemProps {
 }
 
 function FixedExpenseItem({ category, spent }: FixedExpenseItemProps) {
+  const { t } = useTranslation();
   const [sheetVisible, setSheetVisible] = useState(false);
 
   const limit = category.budget_limit ?? 0;
 
-  let badgeText = 'Belum Dibayar';
+  let badgeText = t('budget.fixed.unpaid');
   let badgeStyle: { backgroundColor: string } = styles.badgePending;
   let badgeTextStyle: { color: string } = { color: colors.text.secondary };
 
   if (limit > 0) {
     if (spent === 0) {
-      badgeText = 'Belum Dibayar';
+      badgeText = t('budget.fixed.unpaid');
       badgeStyle = styles.badgePending;
       badgeTextStyle = { color: colors.text.secondary };
     } else if (spent < limit) {
-      badgeText = `Kurang ${formatRupiah(limit - spent)}`;
+      badgeText = t('budget.fixed.partial', { amount: formatMoney(limit - spent) });
       badgeStyle = styles.badgePartial;
       badgeTextStyle = { color: colors.warning.text };
     } else {
-      badgeText = 'Lunas';
+      badgeText = t('budget.fixed.paid');
       badgeStyle = styles.badgePaid;
       badgeTextStyle = { color: colors.success.text };
     }
   } else {
     if (spent === 0) {
-      badgeText = 'Belum Dibayar';
+      badgeText = t('budget.fixed.unpaid');
       badgeStyle = styles.badgePending;
       badgeTextStyle = { color: colors.text.secondary };
     } else {
-      badgeText = 'Terbayar';
+      badgeText = t('budget.fixed.paidGeneric');
       badgeStyle = styles.badgePaid;
       badgeTextStyle = { color: colors.success.text };
     }
   }
 
   const committedLabel = limit
-    ? `Komitmen: ${formatRupiah(limit)}`
-    : 'Belum ada jumlah';
+    ? t('budget.fixed.committedLabel', { amount: formatMoney(limit) })
+    : t('budget.fixed.noAmountYet');
 
   const handlePress = useCallback(() => {
     setSheetVisible(true);
@@ -73,7 +75,7 @@ function FixedExpenseItem({ category, spent }: FixedExpenseItemProps) {
             <Text style={styles.committed} numberOfLines={1}>{committedLabel}</Text>
           </View>
           <View style={styles.right}>
-            <Text style={styles.spent}>{formatRupiah(spent)}</Text>
+            <Text style={styles.spent}>{formatMoney(spent)}</Text>
             <View style={[styles.badge, badgeStyle]}>
               <Text style={[styles.badgeText, badgeTextStyle]}>{badgeText}</Text>
             </View>

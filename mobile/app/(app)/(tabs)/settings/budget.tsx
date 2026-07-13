@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { Plus, Wallet } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import IconButton from '@/components/ui/IconButton';
 import { computeUnallocated } from '@/features/finance/utils/budgetBucketUtils';
 import { splitBudgetCategories } from '@/features/finance/utils/budgetCategoryUtils';
@@ -29,7 +30,7 @@ import { useBudget, useUpsertBudget } from '@/features/finance/hooks/useBudget';
 import { useCategories } from '@/features/finance/hooks/useCategories';
 import type { Category } from '@/features/finance/types';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
 import { useToastStore } from '@/stores/toast';
 import { colors, radius, spacing, textStyles } from '@/theme';
 import { TAB_BAR_CLEARANCE } from '@/components/ui/FloatingTabBar';
@@ -41,17 +42,21 @@ function Divider() {
 }
 
 function UnallocatedChip({ unallocated }: { unallocated: number }) {
+  const { t } = useTranslation();
   const isOver = unallocated < 0;
   return (
     <View style={[styles.chip, isOver ? styles.chipOver : styles.chipOk]}>
       <Text style={[styles.chipText, { color: isOver ? colors.danger.text : colors.success.text }]}>
-        {isOver ? `Rp ${formatRupiah(Math.abs(unallocated))} melebihi` : `${formatRupiah(unallocated)} tersisa`}
+        {isOver
+          ? t('budget.unallocatedOver', { amount: formatMoney(Math.abs(unallocated)) })
+          : t('budget.unallocatedRemaining', { amount: formatMoney(unallocated) })}
       </Text>
     </View>
   );
 }
 
 export default function BudgetScreen() {
+  const { t } = useTranslation();
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
@@ -131,10 +136,10 @@ export default function BudgetScreen() {
       { monthly_limit: amount },
       {
         onSuccess: () => setEditVisible(false),
-        onError: () => showToast('Gagal simpan budget', 'error'),
+        onError: () => showToast(t('budget.saveError'), 'error'),
       }
     );
-  }, [saveBudget, showToast]);
+  }, [saveBudget, showToast, t]);
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([refetchBudget(), refetchTx()]);
@@ -145,7 +150,7 @@ export default function BudgetScreen() {
   return (
     <Screen>
       <Header
-        title="Budget"
+        title={t('budget.headerTitle')}
         onBack={handleBack}
       />
 
@@ -179,12 +184,12 @@ export default function BudgetScreen() {
         />
 
         <View style={styles.section}>
-          <SectionHeader title="Tagihan Rutin" />
+          <SectionHeader title={t('budget.regularBillsTitle')} />
           {bills.length === 0 ? (
             <Card style={CARD_STYLE}>
               <View style={styles.emptyFixed}>
                 <Text style={styles.emptyFixedText}>
-                  Belum ada tagihan rutin. Buka kategori pengeluaran dan aktifkan "Pengeluaran Tetap" buat menambahkan.
+                  {t('budget.emptyBillsText')}
                 </Text>
               </View>
             </Card>
@@ -205,7 +210,7 @@ export default function BudgetScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Batas Pengeluaran</Text>
+            <Text style={styles.sectionTitle}>{t('budget.spendingLimitsTitle')}</Text>
             <View style={styles.sectionHeaderRight}>
               {budget && (bills.length > 0 || spending.length > 0) && (
                 <UnallocatedChip
@@ -215,15 +220,15 @@ export default function BudgetScreen() {
               <IconButton
                 icon={Plus}
                 onPress={() => setAddSheetVisible(true)}
-                accessibilityLabel="Tambah batas pengeluaran"
+                accessibilityLabel={t('budget.addLimitA11y')}
               />
             </View>
           </View>
           {spending.length === 0 ? (
             <EmptyState
               icon={Wallet}
-              title="Belum ada batas pengeluaran"
-              subtitle="Ketuk + buat tambah kategori dan atur batas bulanan"
+              title={t('budget.emptyLimitsTitle')}
+              subtitle={t('budget.emptyLimitsSubtitle')}
             />
           ) : (
             <Card style={CARD_STYLE}>

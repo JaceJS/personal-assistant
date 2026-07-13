@@ -1,9 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import { useTranslation } from "react-i18next";
 
 import { useBudget } from "@/features/finance/hooks/useBudget";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
-import { formatRupiah } from "@/lib/utils";
+import { formatMoney } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const RING_R = 36;
@@ -13,6 +14,7 @@ const RING_CENTER = RING_SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RING_R;
 
 export default function DailySpendCard() {
+  const { t } = useTranslation();
   const now = new Date();
   const today = [
     now.getFullYear(),
@@ -34,8 +36,8 @@ export default function DailySpendCard() {
   if (!budgetLoading && dailyLimit === null) {
     return (
       <View style={[styles.card, styles.cardEmpty]}>
-        <Text style={styles.emptyTitle}>Batas Pengeluaran Harian</Text>
-        <Text style={styles.noLimitSub}>Atur budget bulanan untuk memantau pengeluaran harian</Text>
+        <Text style={styles.emptyTitle}>{t("home.dailySpend.emptyTitle")}</Text>
+        <Text style={styles.noLimitSub}>{t("home.dailySpend.emptySub")}</Text>
       </View>
     );
   }
@@ -51,12 +53,14 @@ export default function DailySpendCard() {
   return (
     <View style={styles.card}>
       <View style={styles.left}>
-        <Text style={styles.overline}>PENGELUARAN HARI INI</Text>
-        <Text style={[styles.spend, { color: ringColor }]}>{formatRupiah(todaySpend)}</Text>
-        <Text style={styles.limitLabel}>dari {formatRupiah(limit)}</Text>
+        <Text style={styles.overline}>{t("home.dailySpend.overline")}</Text>
+        <Text style={[styles.spend, { color: ringColor }]}>{formatMoney(todaySpend)}</Text>
+        <Text style={styles.limitLabel}>
+          {t("home.dailySpend.ofLimit", { limit: formatMoney(limit) })}
+        </Text>
         <View style={[styles.remainingChip, { borderColor: ringColor + "44" }]}>
           <Text style={[styles.remainingText, { color: ringColor }]}>
-            sisa {formatRupiah(remaining)}
+            {t("home.dailySpend.remaining", { amount: formatMoney(remaining) })}
           </Text>
         </View>
       </View>
@@ -87,7 +91,7 @@ export default function DailySpendCard() {
         </Svg>
         <View style={styles.ringCenter}>
           <Text style={[styles.pct, { color: ringColor }]}>{Math.round(displayPct * 100)}%</Text>
-          <Text style={styles.usedLabel}>terpakai</Text>
+          <Text style={styles.usedLabel}>{t("home.dailySpend.usedLabel")}</Text>
         </View>
       </View>
     </View>

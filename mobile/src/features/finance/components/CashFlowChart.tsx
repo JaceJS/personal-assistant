@@ -2,19 +2,16 @@ import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useAnimatedReaction, useAnimatedStyle, runOnJS } from "react-native-reanimated";
 import { Bar, CartesianChart, useChartPressState } from "victory-native";
+import { useTranslation } from "react-i18next";
 
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import type { Transaction } from "@/features/finance/types";
 import { useChartFont } from "@/hooks/useChartFont";
-import { formatRupiah } from "@/lib/utils";
+import { formatChartAxisValue, formatMoney, getMonthNames } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import { ChartTooltip, TOOLTIP_WIDTH } from "./ChartTooltip";
 import { clampTooltipX } from "../utils/chartTooltipUtils";
 
-const MONTH_SHORT = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
 const CHART_HEIGHT = 200;
 const TOOLTIP_OFFSET_Y = 80;
 
@@ -26,16 +23,10 @@ interface CashFlowPoint {
   [key: string]: string | number;
 }
 
-function formatChartY(val: number): string {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}jt`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
-  return String(Math.round(val));
-}
-
-function buildCashFlowBuckets(items: Transaction[]): CashFlowPoint[] {
+function buildCashFlowBuckets(items: Transaction[], monthNames: string[]): CashFlowPoint[] {
   const buckets: CashFlowPoint[] = Array.from({ length: 12 }, (_, i) => ({
     x: i + 1,
-    label: MONTH_SHORT[i],
+    label: monthNames[i],
     income: 0,
     expense: 0,
   }));
@@ -48,6 +39,8 @@ function buildCashFlowBuckets(items: Transaction[]): CashFlowPoint[] {
 }
 
 export default function CashFlowChart() {
+  const { t, i18n } = useTranslation();
+  const monthNames = useMemo(() => getMonthNames("short"), [i18n.language]);
   const now = new Date();
   const yearStart = `${now.getFullYear()}-01-01`;
   const today = [
@@ -58,7 +51,7 @@ export default function CashFlowChart() {
   const chartFont = useChartFont();
 
   const { data } = useTransactions({ dateFrom: yearStart, dateTo: today, limit: 1000 });
-  const buckets = useMemo(() => buildCashFlowBuckets(data?.items ?? []), [data]);
+  const buckets = useMemo(() => buildCashFlowBuckets(data?.items ?? [], monthNames), [data, monthNames]);
   const hasData = buckets.some((b) => b.income > 0 || b.expense > 0);
 
   const { state, isActive } = useChartPressState({ x: 0, y: { income: 0, expense: 0 } });
@@ -108,7 +101,7 @@ export default function CashFlowChart() {
             yAxis={[
               {
                 font: chartFont,
-                formatYLabel: (v) => formatChartY(Number(v)),
+                formatYLabel: (v) => formatChartAxisValue(Number(v)),
                 labelColor: colors.text.muted,
                 lineColor: colors.border.subtle,
                 tickCount: 4,
@@ -137,7 +130,7 @@ export default function CashFlowChart() {
           </CartesianChart>
         ) : (
           <View style={styles.emptyChart}>
-            <Text style={styles.emptyText}>Belum ada data tahun ini</Text>
+            <Text style={styles.emptyText}>{t('charts.noDataThisYear')}</Text>
           </View>
         )}
 
@@ -146,8 +139,8 @@ export default function CashFlowChart() {
             animatedStyle={tooltipStyle}
             label={tooltipLabel}
             lines={[
-              { text: `↑ ${formatRupiah(incomeValue)}`, color: colors.success.text },
-              { text: `↓ ${formatRupiah(expenseValue)}`, color: colors.danger.text },
+              { text: `↑ ${formatMoney(incomeValue)}`, color: colors.success.text },
+              { text: `↓ ${formatMoney(expenseValue)}`, color: colors.danger.text },
             ]}
           />
         )}
@@ -156,11 +149,11 @@ export default function CashFlowChart() {
       <View style={styles.legend}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.success.text }]} />
-          <Text style={styles.legendLabel}>Pemasukan</Text>
+          <Text style={styles.legendLabel}>{t('transaction.income')}</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.danger.text }]} />
-          <Text style={styles.legendLabel}>Pengeluaran</Text>
+          <Text style={styles.legendLabel}>{t('transaction.expense')}</Text>
         </View>
       </View>
     </View>

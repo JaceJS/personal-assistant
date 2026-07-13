@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { CheckCircle, Circle, ChevronRight } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import type { FirstRunState } from "@/features/finance/hooks/useFirstRun";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -9,14 +10,24 @@ interface Props {
   state: Pick<FirstRunState, "hasAccount" | "hasFirstTransaction" | "hasBudget" | "setupStep">;
 }
 
+// Literal key paths (see src/i18n/types.ts) so t(step.labelKey) stays typed.
 const STEPS = [
-  { key: "account", label: "Tambah akun pertama", route: "/(app)/accounts" as const },
-  { key: "transaction", label: "Catat transaksi pertama", route: "/(app)/finance/new" as const },
-  { key: "budget", label: "Atur budget bulanan", route: "/(app)/finance/budget" as const },
+  {
+    key: "account",
+    labelKey: "home.accountBalance.promptFirstAccount",
+    route: "/(app)/accounts" as const,
+  },
+  {
+    key: "transaction",
+    labelKey: "home.accountBalance.promptFirstTransaction",
+    route: "/(app)/finance/new" as const,
+  },
+  { key: "budget", labelKey: "home.setBudgetCta", route: "/(app)/finance/budget" as const },
 ] as const;
 
 export default function HomeFirstRunChecklist({ state }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const { hasAccount, hasFirstTransaction, hasBudget } = state;
 
   const doneFlags = [hasAccount, hasFirstTransaction, hasBudget];
@@ -26,15 +37,17 @@ export default function HomeFirstRunChecklist({ state }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Yuk setup akunmu 🚀</Text>
+      <Text style={styles.title}>{t("home.firstRunChecklist.title")}</Text>
 
       <View style={styles.barTrack}>
         <View style={[styles.barFill, { width: `${Math.round(progressPct * 100)}%` as `${number}%` }]} />
       </View>
-      <Text style={styles.progressLabel}>{completedCount} dari 3 selesai</Text>
+      <Text style={styles.progressLabel}>
+        {t("home.firstRunChecklist.progressLabel", { count: completedCount })}
+      </Text>
 
       <View style={styles.steps}>
-        {STEPS.map(({ key, label, route }, i) => {
+        {STEPS.map(({ key, labelKey, route }, i) => {
           const done = doneFlags[i];
           return (
             <Pressable key={key} onPress={() => router.push(route)}>
@@ -47,7 +60,7 @@ export default function HomeFirstRunChecklist({ state }: Props) {
                       <Circle size={20} color={colors.text.muted} />
                     )}
                   </View>
-                  <Text style={[styles.stepLabel, done && styles.stepLabelDone]}>{label}</Text>
+                  <Text style={[styles.stepLabel, done && styles.stepLabelDone]}>{t(labelKey)}</Text>
                   {!done && <ChevronRight size={16} color={colors.text.muted} />}
                 </View>
               )}

@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { X } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import Button from '@/components/ui/Button';
 import RupiahInput from '@/components/ui/RupiahInput';
@@ -25,6 +26,7 @@ interface CategoryBudgetSheetProps {
 }
 
 function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetSheetProps) {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState(0);
   const [isFixed, setIsFixed] = useState(false);
   const updateCategory = useUpdateCategory();
@@ -52,12 +54,12 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
       {
         onSuccess: () => {
           onDismiss();
-          showToast('Batas pengeluaran disimpan', 'success');
+          showToast(t('budget.category.savedToast'), 'success');
         },
-        onError: () => showToast('Gagal simpan batas pengeluaran', 'error'),
+        onError: () => showToast(t('budget.category.saveError'), 'error'),
       },
     );
-  }, [category, amount, isFixed, updateCategory, onDismiss, showToast]);
+  }, [category, amount, isFixed, updateCategory, onDismiss, showToast, t]);
 
   const handleClear = useCallback(() => {
     if (!category) return;
@@ -66,14 +68,14 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
       {
         onSuccess: () => {
           onDismiss();
-          showToast('Batas pengeluaran dihapus', 'success');
+          showToast(t('budget.category.deletedToast'), 'success');
         },
-        onError: () => showToast('Gagal hapus batas pengeluaran', 'error'),
+        onError: () => showToast(t('budget.category.deleteError'), 'error'),
       },
     );
-  }, [category, updateCategory, onDismiss, showToast]);
+  }, [category, updateCategory, onDismiss, showToast, t]);
 
-  const inputLabel = isFixed ? 'Jumlah Bulanan (IDR)' : 'Batas Bulanan (IDR)';
+  const inputLabel = isFixed ? t('budget.category.monthlyAmountFixedLabel') : t('budget.category.monthlyLimitLabel');
   const saveDisabled = (isFixed && !hasValidInput) || updateCategory.isPending;
 
   return (
@@ -94,7 +96,7 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
             <View style={styles.titleRow}>
               <View>
                 <Text style={styles.title}>
-                  {category?.budget_limit ? 'Ubah Batas' : 'Atur Batas'}
+                  {category?.budget_limit ? t('budget.category.editTitle') : t('budget.category.setTitle')}
                 </Text>
                 <Text style={styles.subtitle}>{category?.name}</Text>
               </View>
@@ -110,14 +112,14 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
               label={inputLabel}
               value={amount}
               onChange={setAmount}
-              placeholder="mis. 3.000.000"
+              placeholder={t('budget.category.amountPlaceholder')}
               autoFocus
             />
 
             <View style={styles.switchRow}>
               <View style={styles.switchInfo}>
-                <Text style={styles.switchLabel}>Pengeluaran tetap</Text>
-                <Text style={styles.switchDesc}>Biaya tetap: sewa, langganan, tagihan rutin</Text>
+                <Text style={styles.switchLabel}>{t('budget.category.fixedExpenseLabel')}</Text>
+                <Text style={styles.switchDesc}>{t('budget.category.fixedExpenseDesc')}</Text>
               </View>
               <Switch
                 value={isFixed}
@@ -128,7 +130,7 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
             </View>
 
             <Button
-              label={updateCategory.isPending ? 'Simpan…' : 'Simpan Batas'}
+              label={updateCategory.isPending ? t('budget.savingEllipsis') : t('budget.category.saveLimitCta')}
               onPress={handleSave}
               variant="primary"
               disabled={saveDisabled}
@@ -137,7 +139,7 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
 
             {!isFixed && category?.budget_limit ? (
               <Button
-                label="Hapus Batas"
+                label={t('budget.category.deleteLimitCta')}
                 onPress={handleClear}
                 variant="ghost"
                 disabled={updateCategory.isPending}

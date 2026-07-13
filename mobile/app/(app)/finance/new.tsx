@@ -4,6 +4,8 @@ import { useRouter } from "expo-router";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
@@ -18,27 +20,32 @@ import { useCreateTransaction, useTransactions } from "@/features/finance/hooks/
 import { useBudget } from "@/features/finance/hooks/useBudget";
 import { computeBudgetAlert } from "@/features/finance/utils/budgetAlert";
 import { useBackNavigation } from "@/hooks/useBackNavigation";
-import { formatRupiah } from "@/lib/utils";
+import { formatMoney } from "@/lib/format";
 import { useNotificationPermissionGate } from "@/features/finance/hooks/useNotificationPermissionGate";
 import { NotificationPermissionSheet } from "@/features/finance/components/NotificationPermissionSheet";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
-const schema = z.object({
-  account_id: z.string().min(1, "Pilih akun"),
-  category_id: z.string().nullable().optional(),
-  amount: z
-    .number({ error: "Masukkan jumlah" })
-    .min(1, "Masukkan jumlah"),
-  merchant: z.string().optional(),
-  note: z.string().optional(),
-  occurred_at: z.date({ error: "Pilih tanggal" }),
-});
+// Module-scope Zod schemas evaluate error messages at import time (before
+// i18n has a language) — factory + useMemo(() => ..., [t]) keeps them reactive.
+function makeSchema(t: TFunction) {
+  return z.object({
+    account_id: z.string().min(1, t("transaction.validation.accountRequired")),
+    category_id: z.string().nullable().optional(),
+    amount: z
+      .number({ error: t("transaction.validation.amountRequired") })
+      .min(1, t("transaction.validation.amountRequired")),
+    merchant: z.string().optional(),
+    note: z.string().optional(),
+    occurred_at: z.date({ error: t("transaction.validation.dateRequired") }),
+  });
+}
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 
 export default function NewTransactionScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { data: accountsData, isLoading: accountsLoading } = useAccounts();
   const { data: categoriesData } = useCategories();
   const createTransaction = useCreateTransaction();
@@ -46,6 +53,7 @@ export default function NewTransactionScreen() {
   const { data: budget } = useBudget();
   const { sheetVisible, promptIfNeeded, acceptPermission, declinePermission } =
     useNotificationPermissionGate();
+  const schema = useMemo(() => makeSchema(t), [t]);
 
   const monthRange = useMemo(() => {
     const now = new Date();
@@ -121,8 +129,8 @@ export default function NewTransactionScreen() {
           const cat = categoriesData?.find((c) => c.id === values.category_id);
           const catSpend = cat?.budget_limit
             ? (monthTxData?.items ?? [])
-                .filter((t) => t.amount < 0 && t.category_id === values.category_id)
-                .reduce((s, t) => s + Math.abs(t.amount), 0)
+                .filter((tx) => tx.amount < 0 && tx.category_id === values.category_id)
+                .reduce((s, tx) => s + Math.abs(tx.amount), 0)
             : 0;
           const catAlert = cat?.budget_limit
             ? computeBudgetAlert(cat.budget_limit, catSpend, values.amount)
@@ -132,33 +140,50 @@ export default function NewTransactionScreen() {
             : null;
 
           if (catAlert) {
-            const sisa = formatRupiah(catAlert.remaining);
+            const remaining = formatMoney(catAlert.remaining);
             if (catAlert.level === "critical") {
-              showToast(`Budget ${cat!.name} habis! Sisa ${sisa}`, "error");
+              showToast(
+                t("transaction.budgetCategoryOver", { category: cat!.name, amount: remaining }),
+                "error",
+              );
             } else {
-              showToast(`Budget ${cat!.name} hampir habis. Sisa ${sisa}`, "warning");
+              showToast(
+                t("transaction.budgetCategoryWarning", { category: cat!.name, amount: remaining }),
+                "warning",
+              );
             }
           } else if (monthAlert) {
-            const sisa = formatRupiah(monthAlert.remaining);
+            const remaining = formatMoney(monthAlert.remaining);
             if (monthAlert.level === "critical") {
-              showToast(`Budget bulanan habis! Sisa ${sisa}`, "error");
+              showToast(t("transaction.budgetMonthlyOver", { amount: remaining }), "error");
             } else {
-              showToast(`Budget bulanan hampir habis. Sisa ${sisa}`, "warning");
+              showToast(t("transaction.budgetMonthlyWarning", { amount: remaining }), "warning");
             }
           } else {
-            showToast("Transaksi tersimpan", "success");
+            showToast(t("transaction.saveSuccess"), "success");
           }
         } else {
-          showToast("Transaksi tersimpan", "success");
+          showToast(t("transaction.saveSuccess"), "success");
         }
 
         const sheetShown = await promptIfNeeded();
         if (!sheetShown) handleBack();
       } catch {
-        showToast("Gagal menyimpan transaksi. Coba lagi.", "error");
+        showToast(t("transaction.saveError"), "error");
       }
     },
-    [createTransaction, handleBack, showToast, txType, budget, currentMonthExpense, monthTxData, categoriesData, promptIfNeeded],
+    [
+      createTransaction,
+      handleBack,
+      showToast,
+      txType,
+      budget,
+      currentMonthExpense,
+      monthTxData,
+      categoriesData,
+      promptIfNeeded,
+      t,
+    ],
   );
 
   const handlePermissionSheetAccept = useCallback(() => {
@@ -173,14 +198,14 @@ export default function NewTransactionScreen() {
 
   return (
     <Screen>
-      <Header title="Transaksi Baru" onBack={handleBack} />
+      <Header title={t("transaction.newTitle")} onBack={handleBack} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {noAccounts ? (
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyText}>Buat akun dulu sebelum mencatat transaksi.</Text>
+            <Text style={styles.emptyText}>{t("transaction.noAccountsPrompt")}</Text>
             <Button
-              label="Buat Akun"
+              label={t("accounts.createCta")}
               onPress={() => router.replace("/(app)/accounts")}
               variant="secondary"
             />
@@ -195,7 +220,7 @@ export default function NewTransactionScreen() {
               >
                 <View style={txType === "expense" ? [styles.toggleBtn, styles.toggleBtnActive] : styles.toggleBtn}>
                   <Text style={txType === "expense" ? [styles.toggleText, styles.toggleTextActive] : styles.toggleText}>
-                    Pengeluaran
+                    {t("transaction.expense")}
                   </Text>
                 </View>
               </Pressable>
@@ -205,7 +230,7 @@ export default function NewTransactionScreen() {
               >
                 <View style={txType === "income" ? [styles.toggleBtn, styles.toggleBtnActive] : styles.toggleBtn}>
                   <Text style={txType === "income" ? [styles.toggleText, styles.toggleTextActive] : styles.toggleText}>
-                    Pemasukan
+                    {t("transaction.income")}
                   </Text>
                 </View>
               </Pressable>
@@ -217,7 +242,7 @@ export default function NewTransactionScreen() {
               name="occurred_at"
               render={({ field: { onChange, value } }) => (
                 <DatePicker
-                  label="Tanggal Transaksi"
+                  label={t("transaction.dateLabel")}
                   value={value}
                   onChange={onChange}
                 />
@@ -230,7 +255,7 @@ export default function NewTransactionScreen() {
               name="amount"
               render={({ field: { onChange, value } }) => (
                 <RupiahInput
-                  label="Jumlah"
+                  label={t("transaction.amountLabel")}
                   placeholder="0"
                   value={value}
                   onChange={onChange}
@@ -246,8 +271,8 @@ export default function NewTransactionScreen() {
               name="category_id"
               render={({ field: { onChange, value } }) => (
                 <SearchableDropdown
-                  label="Kategori (opsional)"
-                  placeholder="Pilih Kategori"
+                  label={t("transaction.categoryLabel")}
+                  placeholder={t("transaction.categoryPlaceholder")}
                   items={availableCategories.map((c) => ({
                     id: c.id,
                     name: c.name,
@@ -263,7 +288,7 @@ export default function NewTransactionScreen() {
             {/* Account Selector */}
             {accountsData && accountsData.length === 1 && (
               <View style={styles.accountSection}>
-                <Text style={styles.accountLabel}>Akun</Text>
+                <Text style={styles.accountLabel}>{t("transaction.accountLabelSingle")}</Text>
                 <View style={styles.singleAccountRow}>
                   <Text style={styles.singleAccountName}>{accountsData[0].name}</Text>
                 </View>
@@ -271,7 +296,7 @@ export default function NewTransactionScreen() {
             )}
             {accountsData && accountsData.length > 1 && (
               <View style={styles.accountSection}>
-                <Text style={styles.accountLabel}>Pilih Dompet / Akun</Text>
+                <Text style={styles.accountLabel}>{t("transaction.accountLabelMulti")}</Text>
                 <Controller
                   control={control}
                   name="account_id"
@@ -312,7 +337,7 @@ export default function NewTransactionScreen() {
             >
               <View style={styles.moreToggleBtn}>
                 <Text style={styles.moreToggleText}>
-                  {showMore ? "− Sembunyikan detail tambahan" : "+ Tambah detail (Merchant, Catatan)"}
+                  {showMore ? t("transaction.hideMoreDetails") : t("transaction.showMoreDetails")}
                 </Text>
               </View>
             </Pressable>
@@ -324,10 +349,10 @@ export default function NewTransactionScreen() {
                   name="merchant"
                   render={({ field: { onChange, value } }) => (
                     <Input
-                      label="Merchant / Toko (opsional)"
+                      label={t("transaction.merchantLabel")}
                       value={value}
                       onChangeText={onChange}
-                      placeholder="Nama toko atau merchant"
+                      placeholder={t("transaction.merchantPlaceholder")}
                     />
                   )}
                 />
@@ -337,10 +362,10 @@ export default function NewTransactionScreen() {
                   name="note"
                   render={({ field: { onChange, value } }) => (
                     <Input
-                      label="Catatan (opsional)"
+                      label={t("transaction.noteLabel")}
                       value={value}
                       onChangeText={onChange}
-                      placeholder="Tambahkan catatan"
+                      placeholder={t("transaction.notePlaceholder")}
                       multiline
                     />
                   )}
@@ -354,7 +379,7 @@ export default function NewTransactionScreen() {
 
             <View style={styles.submitWrap}>
               <Button
-                label="Simpan Transaksi"
+                label={t("transaction.saveCta")}
                 onPress={handleSubmit(onSubmit)}
                 loading={createTransaction.isPending}
                 disabled={accountsLoading}

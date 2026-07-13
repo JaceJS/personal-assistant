@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import NotificationTimeSheet from "@/features/settings/components/NotificationTimeSheet";
+import LanguageSheet from "@/features/settings/components/LanguageSheet";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import {
@@ -10,6 +12,7 @@ import {
   CloudUpload,
   ExternalLink,
   FileText,
+  Languages,
   LogOut,
   MessageCircle,
   PiggyBank,
@@ -22,7 +25,9 @@ import {
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import ProfileAvatar from "@/features/settings/components/ProfileAvatar";
+import { SUPPORTED_LANGUAGES } from "@/i18n/registry";
 import { useAuthStore } from "@/stores/auth";
+import { useLanguageStore } from "@/stores/language";
 import { useToastStore } from "@/stores/toast";
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useAvatarUrl } from "@/hooks/useAvatarUrl";
@@ -39,10 +44,14 @@ import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { user, isGuest, signOut } = useAuthStore();
   const { showToast } = useToastStore();
   const avatarUrl = useAvatarUrl();
   const [backupLoading, setBackupLoading] = useState(false);
+  const [languageSheetOpen, setLanguageSheetOpen] = useState(false);
+  const { preference: languagePreference, setPreference: setLanguagePreference } =
+    useLanguageStore();
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const {
     dailyReminderEnabled,
@@ -52,10 +61,10 @@ export default function SettingsScreen() {
   } = useNotificationStore();
 
   const handleSignOut = useCallback(() => {
-    Alert.alert("Keluar", "Yakin mau keluar?", [
-      { text: "Batal", style: "cancel" },
+    Alert.alert(t("settings.signOutCta"), t("settings.signOutConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Keluar",
+        text: t("settings.signOutCta"),
         style: "destructive",
         onPress: async () => {
           await signOut();
@@ -63,23 +72,23 @@ export default function SettingsScreen() {
         },
       },
     ]);
-  }, [signOut, router]);
+  }, [signOut, router, t]);
 
   const handleBackupSync = useCallback(async () => {
     setBackupLoading(true);
     try {
       const result = await signInWithGoogle();
-      if (result === "error") showToast("Login gagal, coba lagi ya", "error");
+      if (result === "error") showToast(t("auth.loginError"), "error");
     } finally {
       setBackupLoading(false);
     }
-  }, [showToast]);
+  }, [showToast, t]);
 
   const handleReminderToggle = useCallback(async (value: boolean) => {
     if (value) {
       const granted = await requestNotificationPermission();
       if (!granted) {
-        showToast("Izin notifikasi ditolak. Aktifkan di pengaturan perangkat.", "error");
+        showToast(t("settings.permissionDenied"), "error");
         return;
       }
       setDailyReminder(true, dailyReminderHour, dailyReminderMinute);
@@ -88,7 +97,7 @@ export default function SettingsScreen() {
       setDailyReminder(false);
       await cancelDailyReminder();
     }
-  }, [dailyReminderHour, dailyReminderMinute, setDailyReminder, showToast]);
+  }, [dailyReminderHour, dailyReminderMinute, setDailyReminder, showToast, t]);
 
   const handleReminderTimeChange = useCallback(() => {
     setTimePickerOpen(true);
@@ -108,14 +117,14 @@ export default function SettingsScreen() {
     if (!number) return null;
     const version = Constants.expoConfig?.version ?? "";
     const text = encodeURIComponent(
-      `Halo, saya pakai Savyn${version ? ` v${version}` : ""}. Mau kasih masukan:`
+      t("settings.whatsappMessage", { versionSuffix: version ? ` v${version}` : "" })
     );
     return `https://wa.me/${number}?text=${text}`;
-  }, []);
+  }, [t]);
 
   return (
     <Screen>
-      <Header title="Profil" />
+      <Header title={t("tabs.settings")} />
 
       <ScrollView
         style={styles.scroll}
@@ -143,7 +152,7 @@ export default function SettingsScreen() {
 
         {isGuest && (
           <>
-            <SectionLabel label="Akun" />
+            <SectionLabel label={t("settings.accountSectionLabel")} />
             <GroupedList>
               <Pressable
                 onPress={() => void handleBackupSync()}
@@ -159,10 +168,10 @@ export default function SettingsScreen() {
                   </View>
                   <View style={styles.backupTextCol}>
                     <Text style={styles.menuLabel}>
-                      {backupLoading ? "Menghubungkan..." : "Backup & Sinkronisasi"}
+                      {backupLoading ? t("settings.connecting") : t("settings.backupSync")}
                     </Text>
                     <Text style={styles.backupSubtitle}>
-                      Masuk dengan Google untuk menyimpan data
+                      {t("settings.backupSyncSubtitle")}
                     </Text>
                   </View>
                   <ChevronRight size={14} color={colors.text.muted} />
@@ -173,41 +182,43 @@ export default function SettingsScreen() {
         )}
 
         {/* Finance section */}
-        <SectionLabel label="Keuangan" />
+        <SectionLabel label={t("settings.financeSectionLabel")} />
         <GroupedList>
           <MenuItem
             icon={<Building2 size={16} color={colors.accent.primary} />}
-            label="Kelola Akun"
+            label={t("settings.manageAccounts")}
             onPress={() => router.push("/(app)/accounts")}
           />
           <MenuDivider />
           <MenuItem
             icon={<PiggyBank size={16} color={colors.accent.primary} />}
-            label="Budget Bulanan"
+            label={t("settings.monthlyBudget")}
             onPress={() => router.push("/(app)/settings/budget")}
           />
           <MenuDivider />
           <MenuItem
             icon={<Tag size={16} color={colors.accent.primary} />}
-            label="Kategori"
+            label={t("settings.categoriesMenu")}
             onPress={() => router.push("/(app)/settings/categories")}
           />
           <MenuDivider />
         </GroupedList>
 
         {/* Notification section */}
-        <SectionLabel label="Notifikasi" />
+        <SectionLabel label={t("settings.notificationSectionLabel")} />
         <GroupedList>
           <View style={styles.menuItem}>
             <View style={styles.iconBox}>
               <Bell size={16} color={colors.accent.primary} />
             </View>
             <View style={styles.reminderTextCol}>
-              <Text style={styles.menuLabel}>Notifikasi Harian</Text>
+              <Text style={styles.menuLabel}>{t("settings.dailyReminderLabel")}</Text>
               <Text style={styles.reminderSubtitle}>
                 {dailyReminderEnabled
-                  ? `Aktif · ${String(dailyReminderHour).padStart(2, "0")}:${String(dailyReminderMinute).padStart(2, "0")}`
-                  : "Nonaktif"}
+                  ? t("settings.reminderActive", {
+                      time: `${String(dailyReminderHour).padStart(2, "0")}:${String(dailyReminderMinute).padStart(2, "0")}`,
+                    })
+                  : t("settings.reminderInactive")}
               </Text>
             </View>
             <Switch
@@ -227,7 +238,7 @@ export default function SettingsScreen() {
                 <View style={styles.menuItem}>
                   <View style={styles.iconBox} />
                   <Text style={[styles.menuLabel, { color: colors.accent.text }]}>
-                    Ubah Jam Pengingat
+                    {t("settings.changeReminderTime")}
                   </Text>
                   <Text style={styles.valueText}>
                     {`${String(dailyReminderHour).padStart(2, "0")}:${String(dailyReminderMinute).padStart(2, "0")}`}
@@ -239,18 +250,38 @@ export default function SettingsScreen() {
           )}
         </GroupedList>
 
+        {/* Language section */}
+        <SectionLabel label={t("settings.language.section")} />
+        <GroupedList>
+          <Pressable
+            onPress={() => setLanguageSheetOpen(true)}
+            style={({ pressed }) => pressed && { opacity: 0.7 }}
+          >
+            <View style={styles.menuItem}>
+              <View style={styles.iconBox}>
+                <Languages size={16} color={colors.accent.primary} />
+              </View>
+              <Text style={styles.menuLabel}>{t("settings.language.row")}</Text>
+              <Text style={styles.valueText}>
+                {SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language)?.nativeName ?? ""}
+              </Text>
+              <ChevronRight size={14} color={colors.text.muted} />
+            </View>
+          </Pressable>
+        </GroupedList>
+
         {/* Legal section */}
-        <SectionLabel label="Legal" />
+        <SectionLabel label={t("settings.legalSectionLabel")} />
         <GroupedList>
           <ExternalMenuItem
             icon={<FileText size={16} color={colors.accent.primary} />}
-            label="Syarat & Ketentuan"
+            label={t("settings.termsMenu")}
             url="https://savyn-ten.vercel.app/terms"
           />
           <MenuDivider />
           <ExternalMenuItem
             icon={<Shield size={16} color={colors.accent.primary} />}
-            label="Kebijakan Privasi"
+            label={t("settings.privacyMenu")}
             url="https://savyn-ten.vercel.app/privacy"
           />
         </GroupedList>
@@ -258,11 +289,11 @@ export default function SettingsScreen() {
         {/* Help & feedback */}
         {whatsappUrl && (
           <>
-            <SectionLabel label="Bantuan" />
+            <SectionLabel label={t("settings.helpSectionLabel")} />
             <GroupedList>
               <ExternalMenuItem
                 icon={<MessageCircle size={16} color={colors.accent.primary} />}
-                label="Chat dengan kami"
+                label={t("settings.chatWithUs")}
                 url={whatsappUrl}
               />
             </GroupedList>
@@ -275,7 +306,7 @@ export default function SettingsScreen() {
             <Pressable onPress={handleSignOut} style={({ pressed }) => pressed && { opacity: 0.7 }}>
               <View style={styles.signOutButton}>
                 <LogOut size={18} color={colors.danger.text} />
-                <Text style={styles.signOutLabel}>Keluar</Text>
+                <Text style={styles.signOutLabel}>{t("settings.signOutCta")}</Text>
               </View>
             </Pressable>
 
@@ -284,7 +315,7 @@ export default function SettingsScreen() {
             <GroupedList>
               <MenuItem
                 icon={<Trash2 size={16} color={colors.danger.text} />}
-                label="Hapus Akun"
+                label={t("deleteAccount.headerTitle")}
                 labelStyle={{ color: colors.danger.text }}
                 onPress={() => router.push("/delete-account")}
               />
@@ -299,21 +330,34 @@ export default function SettingsScreen() {
         onSelect={handleTimeSelect}
         onDismiss={() => setTimePickerOpen(false)}
       />
+
+      <LanguageSheet
+        isVisible={languageSheetOpen}
+        selected={languagePreference}
+        onSelect={(pref) => {
+          setLanguageSheetOpen(false);
+          void setLanguagePreference(pref);
+        }}
+        onDismiss={() => setLanguageSheetOpen(false)}
+      />
     </Screen>
   );
 }
 
-const GuestProfileHero = ({ name }: { name: string }) => (
-  <View style={styles.profileHero}>
-    <View style={styles.avatarWrapper}>
-      <View style={[styles.avatar, styles.guestAvatar]}>
-        <User size={36} color={colors.accent.primary} />
+const GuestProfileHero = ({ name }: { name: string }) => {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.profileHero}>
+      <View style={styles.avatarWrapper}>
+        <View style={[styles.avatar, styles.guestAvatar]}>
+          <User size={36} color={colors.accent.primary} />
+        </View>
       </View>
+      <Text style={styles.profileName}>{name || t("settings.guestName")}</Text>
+      <Text style={styles.profileEmail}>{t("settings.guestDataNote")}</Text>
     </View>
-    <Text style={styles.profileName}>{name || "Guest"}</Text>
-    <Text style={styles.profileEmail}>Data tersimpan di perangkat ini</Text>
-  </View>
-);
+  );
+};
 
 const SectionLabel = ({ label }: { label: string }) => {
   return <Text style={styles.sectionLabel}>{label.toUpperCase()}</Text>;

@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { X } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import Button from '@/components/ui/Button';
 import RupiahInput from '@/components/ui/RupiahInput';
@@ -31,6 +32,7 @@ function BudgetEditSheet({
   isPending,
   isUpdate,
 }: BudgetEditSheetProps) {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState(0);
 
   useEffect(() => {
@@ -62,7 +64,7 @@ function BudgetEditSheet({
           <View style={styles.content}>
             <View style={styles.titleRow}>
               <Text style={styles.title}>
-                {isUpdate ? 'Ubah Budget' : 'Atur Budget Bulanan'}
+                {isUpdate ? t('budget.editTitle') : t('budget.setMonthlyTitle')}
               </Text>
               <Pressable
                 style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
@@ -73,15 +75,15 @@ function BudgetEditSheet({
             </View>
 
             <RupiahInput
-              label="Jumlah dalam Rupiah (IDR)"
+              label={t('transaction.amountLabel')}
               value={amount}
               onChange={setAmount}
-              placeholder="mis. 10.000.000"
+              placeholder={t('budget.amountPlaceholder')}
               autoFocus
             />
 
             <Button
-              label={isPending ? 'Simpan…' : 'Simpan Budget'}
+              label={isPending ? t('budget.savingEllipsis') : t('budget.saveCta')}
               onPress={handleSave}
               variant="primary"
               disabled={!hasValidInput || isPending}

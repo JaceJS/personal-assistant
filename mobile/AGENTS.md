@@ -246,3 +246,20 @@ return useQuery({
 | Voice upload | `POST /voice/upload` | ✅ Yes |
 
 No endpoint in this app is public. Every route on the backend uses `CurrentUser` dependency.
+
+---
+
+# 14. INTERNATIONALIZATION (i18n)
+
+The app ships in **Indonesian (`id`, default) and English (`en`)**, via `i18next` + `react-i18next`. Default language follows the device locale (`id` device → `id`, anything else → `en`); user can override in Profil → Bahasa.
+
+- **NEVER hardcode user-facing strings.** Use `const { t } = useTranslation()` and `t("namespace.key")`. This includes toast/`Alert.alert` text, `placeholder`, `accessibilityLabel`, and empty-state copy — not just visible `<Text>`.
+- **Every key must exist in BOTH** `src/i18n/locales/id.json` and `src/i18n/locales/en.json`, at the same path. `src/i18n/types.ts` derives the typed key union from `id.json`, so a key missing from `id.json` is a TypeScript error at the `t()` call site — but a key present in `id.json` and missing from `en.json` is **not** caught by the type system; check both files by hand.
+- **Formatting** (money, dates, times, month/weekday names): use `src/lib/format.ts` (`formatMoney`, `formatDate`, `formatShortDate`, `formatTime`, `formatDateLabel`, `formatRelativeTime`, `getMonthNames`, `getWeekdayNames`, `formatChartAxisValue`), never `Intl.DateTimeFormat`/`Intl.NumberFormat`/`toLocaleDateString` directly — those helpers already read the active language. `formatMoney(amount, currency = "IDR")` is currency-agnostic; do not hardcode "Rp" in a string, that's what `formatMoney` is for.
+- **Adding a language** (e.g. Japanese): 1) create `src/i18n/locales/ja.json` (copy `en.json`, translate every value), 2) add one entry to `SUPPORTED_LANGUAGES` in `src/i18n/registry.ts` (`code`, `nativeName`, `bcp47`, `dateFnsLocale` from `date-fns/locale`, `groupingSeparator`, `resource`). Nothing else changes — `src/i18n/index.ts`, the Settings language switcher (`LanguageSheet`), and `lib/format.ts` all derive from this registry.
+- **Zod schemas with translated error messages** (e.g. `finance/new.tsx`, `accounts/index.tsx`, `CategoryFormSheet.tsx`): a module-scope `z.object({...})` evaluates its message strings once at import time, before i18n has a language. Use the factory pattern instead — `function makeSchema(t: TFunction) { return z.object({...}) }` inside the file, then `const schema = useMemo(() => makeSchema(t), [t])` in the component.
+- **Arrays of `{value, label}` used for chips/pickers/filters** (e.g. quick-action chips, category type toggle): store `labelKey` (a literal string union of the exact i18n keys, not `string`) instead of a hardcoded `label`, and render `t(opt.labelKey)`. A plain `string` type defeats the typed-key check on `t()`.
+- **Notification content** (`lib/notifications.ts`): `scheduleDailyReminder()` reads `i18n.t()` at schedule time, not at import time, since the copy is baked into the OS-level scheduled notification. Any code that changes the active language while a reminder is enabled must re-call `scheduleDailyReminder()` (see `src/stores/language.ts` `setPreference`).
+- **Class components** (e.g. `ErrorBoundary.tsx`) can't use the `useTranslation()` hook — import the `i18n` singleton from `@/i18n` and call `i18n.t()` directly.
+- **Tests**: `jest.setup.ts` initializes i18n to `id` before every test file runs, so existing component tests asserting Indonesian copy (e.g. "Batal", "Simpan", "Coba lagi") continue to pass unchanged — those strings are the literal `id.json` values, not coincidence.
+- **Data is not UI copy**: the 35 default categories (`src/features/finance/constants/defaultCategories.ts`) are seed data written to the database/SQLite, and the literal message text sent to AI chat by quick chips (`src/features/ai/utils/quickChips.ts` `text:` field) is intentionally Indonesian regardless of UI language — the AI backend prompts are Indonesian-only for now (see `docs/PRD.md` §2.5). Neither should be run through `t()`.

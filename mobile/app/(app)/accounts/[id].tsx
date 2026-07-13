@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CreditCard, Landmark, Pencil, Smartphone, Trash2, Wallet } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
@@ -10,7 +11,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import RupiahInput from "@/components/ui/RupiahInput";
 import { SkeletonList } from "@/components/ui/Skeleton";
-import { ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
+import { accountTypeLabel } from "@/features/finance/constants";
 import type { AccountType } from "@/features/finance/types";
 import {
   useAccount,
@@ -19,7 +20,7 @@ import {
 } from "@/features/finance/hooks/useAccounts";
 import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { useToastStore } from "@/stores/toast";
-import { formatRupiah } from "@/lib/utils";
+import { formatMoney } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 function TypeIcon({ type }: { type: AccountType }) {
@@ -38,6 +39,7 @@ function TypeIcon({ type }: { type: AccountType }) {
 
 export default function AccountDetailScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const handleBack = useBackNavigation("/(app)/accounts");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: account, isLoading } = useAccount(id);
@@ -59,40 +61,40 @@ export default function AccountDetailScreen() {
   const handleSaveEdit = useCallback(async () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      showToast("Nama akun tidak boleh kosong", "error");
+      showToast(t("accounts.nameRequiredToast"), "error");
       return;
     }
     try {
       await updateAccount.mutateAsync({ name: trimmed, initial_balance: initialBalance });
       setIsEditing(false);
-      showToast("Akun berhasil diperbarui", "success");
+      showToast(t("accounts.updatedToast"), "success");
     } catch {
-      showToast("Gagal memperbarui akun.", "error");
+      showToast(t("accounts.updateError"), "error");
     }
-  }, [updateAccount, name, initialBalance, showToast]);
+  }, [updateAccount, name, initialBalance, showToast, t]);
 
   const handleDelete = useCallback(() => {
     Alert.alert(
-      "Hapus Akun",
-      `"${account?.name}" akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.`,
+      t("accounts.deleteAlertTitle"),
+      t("accounts.deleteAlertMessage", { name: account?.name }),
       [
-        { text: "Batal", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Hapus",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             try {
               await archiveAccount.mutateAsync(id);
-              showToast("Akun berhasil dihapus", "info");
+              showToast(t("accounts.deletedToast"), "info");
               router.replace("/(app)/accounts");
             } catch {
-              showToast("Gagal menghapus akun.", "error");
+              showToast(t("accounts.deleteError"), "error");
             }
           },
         },
       ]
     );
-  }, [account, archiveAccount, id, router, showToast]);
+  }, [account, archiveAccount, id, router, showToast, t]);
 
   const headerRight = !isEditing && (
     <HeaderActions>
@@ -104,7 +106,7 @@ export default function AccountDetailScreen() {
   if (isLoading) {
     return (
       <Screen>
-        <Header title="Detail Akun" onBack={handleBack} />
+        <Header title={t("accounts.detailTitle")} onBack={handleBack} />
         <View style={styles.content}>
           <SkeletonList count={1} />
         </View>
@@ -115,9 +117,9 @@ export default function AccountDetailScreen() {
   if (!account) {
     return (
       <Screen>
-        <Header title="Detail Akun" onBack={handleBack} />
+        <Header title={t("accounts.detailTitle")} onBack={handleBack} />
         <View style={styles.centered}>
-          <Text style={styles.notFound}>Akun tidak ditemukan</Text>
+          <Text style={styles.notFound}>{t("accounts.notFound")}</Text>
         </View>
       </Screen>
     );
@@ -128,7 +130,7 @@ export default function AccountDetailScreen() {
 
   return (
     <Screen>
-      <Header title="Detail Akun" onBack={handleBack} right={headerRight} />
+      <Header title={t("accounts.detailTitle")} onBack={handleBack} right={headerRight} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero Card */}
         <View style={styles.heroCard}>
@@ -139,16 +141,16 @@ export default function AccountDetailScreen() {
             <View style={styles.accountIdentity}>
               <Text style={styles.accountName}>{account.name.toUpperCase()}</Text>
               <Text style={styles.accountType}>
-                {ACCOUNT_TYPE_LABELS[account.type] ?? account.type}
+                {accountTypeLabel(t, account.type)}
               </Text>
             </View>
           </View>
 
           <View style={styles.divider} />
 
-          <Text style={styles.balanceLabel}>BALANCE</Text>
+          <Text style={styles.balanceLabel}>{t("accounts.balanceHeroLabel")}</Text>
           <Text style={[styles.balance, { color: balanceColor }]}>
-            {formatRupiah(account.balance)}
+            {formatMoney(account.balance)}
           </Text>
           <Text style={styles.currency}>{account.currency}</Text>
         </View>
@@ -156,23 +158,23 @@ export default function AccountDetailScreen() {
         {/* Actions / Edit */}
         {isEditing && (
           <View style={styles.editCard}>
-            <Input label="Nama Akun" value={name} onChangeText={setName} autoFocus />
+            <Input label={t("onboarding.firstAccount.nameLabel")} value={name} onChangeText={setName} autoFocus />
             <RupiahInput
-              label="Saldo Awal"
+              label={t("accounts.initialBalanceLabel")}
               placeholder="0"
               value={initialBalance}
               onChange={setInitialBalance}
             />
             <Text style={styles.editHint}>
-              Ubah saldo awal kalau ada koreksi, transaksi yang udah tercatat gak kepengaruh.
+              {t("accounts.editBalanceHint")}
             </Text>
             <Button
-              label="Simpan Perubahan"
+              label={t("goals.form.saveChangesCta")}
               onPress={handleSaveEdit}
               loading={updateAccount.isPending}
               fullWidth
             />
-            <Button label="Batal" onPress={() => setIsEditing(false)} variant="ghost" fullWidth />
+            <Button label={t("common.cancel")} onPress={() => setIsEditing(false)} variant="ghost" fullWidth />
           </View>
         )}
       </ScrollView>

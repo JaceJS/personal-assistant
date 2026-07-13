@@ -1,10 +1,12 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Plus, Wallet } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
@@ -16,28 +18,34 @@ import RupiahInput from "@/components/ui/RupiahInput";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import AccountCard from "@/features/finance/components/AccountCard";
-import { ACCOUNT_TYPES } from "@/features/finance/constants";
+import { ACCOUNT_TYPE_ORDER, accountTypeLabel } from "@/features/finance/constants";
 import { useAccounts, useCreateAccount } from "@/features/finance/hooks/useAccounts";
 import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { useToastStore } from "@/stores/toast";
 import type { Account } from "@/features/finance/types";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
-const schema = z.object({
-  name: z.string().min(1, "Nama akun wajib diisi"),
-  type: z.enum(["cash", "bank", "ewallet", "credit"]),
-  initial_balance: z.number().default(0),
-});
+// Module-scope Zod schemas evaluate error messages at import time (before
+// i18n has a language) — factory + useMemo(() => ..., [t]) keeps them reactive.
+function makeSchema(t: TFunction) {
+  return z.object({
+    name: z.string().min(1, t("onboarding.firstAccount.nameRequired")),
+    type: z.enum(["cash", "bank", "ewallet", "credit"]),
+    initial_balance: z.number().default(0),
+  });
+}
 
-type FormValues = z.input<typeof schema>;
+type FormValues = z.input<ReturnType<typeof makeSchema>>;
 
 export default function AccountsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { data, isLoading, isRefetching, refetch } = useAccounts();
   const createAccount = useCreateAccount();
   const { showToast } = useToastStore();
   const [showModal, setShowModal] = useState(false);
 
+  const schema = useMemo(() => makeSchema(t), [t]);
   const {
     control,
     handleSubmit,
@@ -63,12 +71,12 @@ export default function AccountsScreen() {
       try {
         await createAccount.mutateAsync(values);
         handleCloseModal();
-        showToast("Akun berhasil dibuat", "success");
+        showToast(t("accounts.createdToast"), "success");
       } catch {
-        showToast("Gagal membuat akun. Coba lagi.", "error");
+        showToast(t("accounts.createError"), "error");
       }
     },
-    [createAccount, handleCloseModal, showToast]
+    [createAccount, handleCloseModal, showToast, t]
   );
 
   const renderItem = useCallback(
@@ -82,14 +90,14 @@ export default function AccountsScreen() {
     <HeaderButton
       icon={Plus}
       onPress={handleOpenModal}
-      accessibilityLabel="Add account"
+      accessibilityLabel={t("accounts.addA11y")}
     />
   );
 
   return (
     <Screen>
       <Header
-        title="Akun"
+        title={t("accounts.headerTitle")}
         onBack={handleBack}
         right={addButton}
       />
@@ -115,9 +123,9 @@ export default function AccountsScreen() {
           ListEmptyComponent={
             <EmptyState
               icon={Wallet}
-              title="Belum ada akun"
-              subtitle="Tambah akun untuk mulai mencatat pengeluaran"
-              action={{ label: "Tambah Akun", onPress: handleOpenModal }}
+              title={t("accounts.emptyTitle")}
+              subtitle={t("accounts.emptySubtitle")}
+              action={{ label: t("accounts.addActionLabel"), onPress: handleOpenModal }}
             />
           }
         />
@@ -125,7 +133,7 @@ export default function AccountsScreen() {
 
       <BottomSheet isVisible={showModal} onDismiss={handleCloseModal}>
         <View style={styles.sheetContent}>
-          <Text style={[textStyles.h2, styles.sheetTitle]}>Akun Baru</Text>
+          <Text style={[textStyles.h2, styles.sheetTitle]}>{t("accounts.newAccountTitle")}</Text>
 
           <View style={styles.modalForm}>
               <Controller
@@ -133,10 +141,10 @@ export default function AccountsScreen() {
                 name="name"
                 render={({ field: { onChange, value } }) => (
                   <Input
-                    label="Nama Akun"
+                    label={t("onboarding.firstAccount.nameLabel")}
                     value={value}
                     onChangeText={onChange}
-                    placeholder="contoh: BCA, GoPay, Dompet"
+                    placeholder={t("accounts.namePlaceholder")}
                     error={errors.name?.message}
                   />
                 )}
@@ -147,7 +155,7 @@ export default function AccountsScreen() {
                 name="initial_balance"
                 render={({ field: { onChange, value } }) => (
                   <RupiahInput
-                    label="Saldo Awal"
+                    label={t("accounts.initialBalanceLabel")}
                     placeholder="0"
                     value={value ?? 0}
                     onChange={onChange}
@@ -157,34 +165,34 @@ export default function AccountsScreen() {
               />
 
               <View style={styles.typeSection}>
-                <Text style={[textStyles.caption, styles.typeLabel]}>Jenis Akun</Text>
+                <Text style={[textStyles.caption, styles.typeLabel]}>{t("accounts.typeLabel")}</Text>
                 <Controller
                   control={control}
                   name="type"
                   render={({ field: { onChange, value } }) => (
                     <View style={styles.typeRow}>
-                      {ACCOUNT_TYPES.map((t) => (
+                      {ACCOUNT_TYPE_ORDER.map((type) => (
                         <Pressable
-                          key={t.value}
-                          onPress={() => onChange(t.value)}
+                          key={type}
+                          onPress={() => onChange(type)}
                           style={({ pressed }) => pressed && { opacity: 0.8 }}
                         >
                           <View
                             style={[
                               styles.typePill,
-                              value === t.value ? styles.typePillActive : styles.typePillInactive,
+                              value === type ? styles.typePillActive : styles.typePillInactive,
                             ]}
                           >
                             <Text
                               style={[
                                 textStyles.caption,
                                 styles.typePillLabel,
-                                value === t.value
+                                value === type
                                   ? styles.typePillLabelActive
                                   : styles.typePillLabelInactive,
                               ]}
                             >
-                              {t.label}
+                              {accountTypeLabel(t, type)}
                             </Text>
                           </View>
                         </Pressable>
@@ -195,7 +203,7 @@ export default function AccountsScreen() {
               </View>
 
               <Button
-                label="Buat Akun"
+                label={t("accounts.createCta")}
                 onPress={handleSubmit(onSubmit)}
                 loading={createAccount.isPending}
                 fullWidth

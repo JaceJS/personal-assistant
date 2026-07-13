@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { X } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -34,6 +35,7 @@ function SavingsGoalFormSheet({
   isPending,
   initialValues,
 }: SavingsGoalFormSheetProps) {
+  const { t } = useTranslation();
   const isEdit = !!initialValues;
 
   const [name, setName] = useState("");
@@ -76,7 +78,7 @@ function SavingsGoalFormSheet({
           <View style={styles.handle} />
 
           <View style={styles.titleRow}>
-            <Text style={styles.title}>{isEdit ? "Edit Goal" : "Goal Baru"}</Text>
+            <Text style={styles.title}>{isEdit ? t("goals.form.editTitle") : t("goals.form.newTitle")}</Text>
             <Pressable style={({ pressed }) => pressed && { opacity: 0.7 }} onPress={onDismiss}>
               <View style={styles.closeBtn}>
                 <X size={16} color={colors.text.secondary} strokeWidth={1.5} />
@@ -90,7 +92,7 @@ function SavingsGoalFormSheet({
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.fieldLabel}>Ikon</Text>
+            <Text style={styles.fieldLabel}>{t("goals.form.iconLabel")}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -110,22 +112,22 @@ function SavingsGoalFormSheet({
             </ScrollView>
 
             <Input
-              label="Nama Goal"
+              label={t("goals.form.nameLabel")}
               value={name}
               onChangeText={setName}
-              placeholder="Tiket konser, Liburan..."
+              placeholder={t("goals.form.namePlaceholder")}
               autoFocus={!isEdit}
             />
 
             <RupiahInput
-              label="Target (Rupiah)"
+              label={t("goals.form.targetAmountLabel")}
               value={targetAmount}
               onChange={setTargetAmount}
-              placeholder="mis. 15.000.000"
+              placeholder={t("goals.form.targetAmountPlaceholder")}
             />
 
             <Input
-              label="Target Tanggal (opsional)"
+              label={t("goals.form.targetDateLabel")}
               value={targetDate}
               onChangeText={setTargetDate}
               placeholder="YYYY-MM-DD"
@@ -133,7 +135,7 @@ function SavingsGoalFormSheet({
             />
 
             <Button
-              label={isPending ? "Menyimpan…" : isEdit ? "Simpan Perubahan" : "Buat Goal"}
+              label={isPending ? t("goals.savingEllipsis") : isEdit ? t("goals.form.saveChangesCta") : t("goals.form.createCta")}
               onPress={handleSave}
               variant="primary"
               disabled={!isValid || isPending}

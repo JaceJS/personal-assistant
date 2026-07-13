@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { BottomSheet } from "./BottomSheet";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
@@ -20,12 +21,14 @@ interface SearchableDropdownProps {
 
 export function SearchableDropdown({
   label,
-  placeholder = "Pilih item",
+  placeholder,
   items,
   selectedId,
   onSelect,
   error,
 }: SearchableDropdownProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("common.selectItemPlaceholder");
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -53,7 +56,7 @@ export function SearchableDropdown({
             <Text style={[styles.triggerText, !selectedItem && styles.triggerTextPlaceholder]}>
               {selectedItem
                 ? `${selectedItem.icon ? `${selectedItem.icon}  ` : ""}${selectedItem.name}`
-                : placeholder}
+                : resolvedPlaceholder}
             </Text>
             <Text style={styles.chevron}>▼</Text>
           </View>
@@ -67,14 +70,14 @@ export function SearchableDropdown({
         setSearchQuery("");
       }}>
         <View style={styles.sheetContent}>
-          {label && <Text style={styles.sheetTitle}>Pilih {label}</Text>}
-          
+          {label && <Text style={styles.sheetTitle}>{t("common.selectPrefix", { label })}</Text>}
+
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Cari..."
+              placeholder={t("common.searchPlaceholder")}
               placeholderTextColor={colors.text.muted}
               autoCorrect={false}
               autoCapitalize="none"
@@ -83,7 +86,7 @@ export function SearchableDropdown({
 
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
             {filteredItems.length === 0 ? (
-              <Text style={styles.emptyText}>Tidak ada pilihan ditemukan</Text>
+              <Text style={styles.emptyText}>{t("common.noOptionsFound")}</Text>
             ) : (
               filteredItems.map((item) => {
                 const active = item.id === selectedId;

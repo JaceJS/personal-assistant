@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import CategoryIcon from './CategoryIcon';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
 import type { CategorySpend } from '@/features/finance/utils/topCategoryUtils';
 import { colors, radius, spacing, textStyles } from '@/theme';
 
@@ -31,7 +31,7 @@ const CategorySpendRow = React.memo(function CategorySpendRow({ row, onPress }: 
         <View style={styles.meta}>
           <View style={styles.topLine}>
             <Text style={styles.name} numberOfLines={1}>{row.name}</Text>
-            <Text style={styles.amount}>{formatRupiah(row.total)}</Text>
+            <Text style={styles.amount}>{formatMoney(row.total)}</Text>
           </View>
           <View style={styles.barTrack}>
             <View style={[styles.barFill, { width: `${Math.round(row.barPct * 100)}%` as `${number}%`, backgroundColor: iconColor }]} />

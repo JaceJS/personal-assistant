@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pencil, Trash2 } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
@@ -18,13 +19,14 @@ import {
 } from '@/features/finance/hooks/useSavingsGoals';
 import type { SavingsGoalCreate } from '@/features/finance/types';
 import { daysRemaining, requiredMonthlyContribution } from '@/features/finance/utils/savingsGoalUtils';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
 import { useToastStore } from '@/stores/toast';
 import { colors, radius, spacing, textStyles } from '@/theme';
 import { TAB_BAR_CLEARANCE } from '@/components/ui/FloatingTabBar';
 
 export default function GoalDetailScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: goal, isLoading, isRefetching, refetch } = useSavingsGoal(id);
   const contribute = useContributeSavingsGoal();
@@ -40,12 +42,15 @@ export default function GoalDetailScreen() {
       try {
         await contribute.mutateAsync({ id, data: { amount } });
         setShowContribute(false);
-        showToast(amount > 0 ? 'Berhasil menabung!' : 'Dana berhasil ditarik', 'success');
+        showToast(
+          amount > 0 ? t('goals.contribute.savingSuccess') : t('goals.contribute.withdrawSuccess'),
+          'success',
+        );
       } catch {
-        showToast('Gagal menabung. Coba lagi.', 'error');
+        showToast(t('goals.contribute.error'), 'error');
       }
     },
-    [contribute, id, showToast],
+    [contribute, id, showToast, t],
   );
 
   const handleUpdate = useCallback(
@@ -53,32 +58,36 @@ export default function GoalDetailScreen() {
       try {
         await update.mutateAsync({ id, data });
         setShowEdit(false);
-        showToast('Goal diperbarui!', 'success');
+        showToast(t('goals.detail.updatedToast'), 'success');
       } catch {
-        showToast('Gagal memperbarui goal.', 'error');
+        showToast(t('goals.detail.updateError'), 'error');
       }
     },
-    [update, id, showToast],
+    [update, id, showToast, t],
   );
 
   const handleDelete = useCallback(() => {
-    Alert.alert('Hapus Goal', `Yakin mau hapus goal "${goal?.name}"?`, [
-      { text: 'Batal', style: 'cancel' },
-      {
-        text: 'Hapus',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteGoal.mutateAsync(id);
-            showToast('Goal dihapus', 'info');
-            router.back();
-          } catch {
-            showToast('Gagal menghapus goal.', 'error');
-          }
+    Alert.alert(
+      t('goals.detail.deleteAlertTitle'),
+      t('goals.detail.deleteAlertMessage', { name: goal?.name }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteGoal.mutateAsync(id);
+              showToast(t('goals.detail.deletedToast'), 'info');
+              router.back();
+            } catch {
+              showToast(t('goals.detail.deleteError'), 'error');
+            }
+          },
         },
-      },
-    ]);
-  }, [deleteGoal, goal, id, router, showToast]);
+      ],
+    );
+  }, [deleteGoal, goal, id, router, showToast, t]);
 
   const editButton = (
     <HeaderActions>
@@ -90,7 +99,7 @@ export default function GoalDetailScreen() {
   if (isLoading) {
     return (
       <Screen>
-        <Header title="Goal" onBack={() => router.back()} />
+        <Header title={t('goals.detail.fallbackTitle')} onBack={() => router.back()} />
         <View style={styles.skeletonWrap}>
           <SkeletonCard height={200} />
           <SkeletonCard height={120} />
@@ -102,9 +111,9 @@ export default function GoalDetailScreen() {
   if (!goal) {
     return (
       <Screen>
-        <Header title="Goal" onBack={() => router.back()} />
+        <Header title={t('goals.detail.fallbackTitle')} onBack={() => router.back()} />
         <View style={styles.centered}>
-          <Text style={styles.notFound}>Goal tidak ditemukan</Text>
+          <Text style={styles.notFound}>{t('goals.detail.notFound')}</Text>
         </View>
       </Screen>
     );
@@ -137,12 +146,14 @@ export default function GoalDetailScreen() {
         {/* Hero */}
         <View style={styles.hero}>
           <Text style={styles.heroIcon}>{goal.icon ?? '🎯'}</Text>
-          <Text style={styles.heroAmount}>{formatRupiah(goal.current_amount)}</Text>
-          <Text style={styles.heroTarget}>dari {formatRupiah(goal.target_amount)}</Text>
+          <Text style={styles.heroAmount}>{formatMoney(goal.current_amount)}</Text>
+          <Text style={styles.heroTarget}>
+            {t('goals.detail.ofTarget', { amount: formatMoney(goal.target_amount) })}
+          </Text>
 
           {goal.is_completed && (
             <View style={styles.completedBadge}>
-              <Text style={styles.completedText}>🎉 Goal Tercapai!</Text>
+              <Text style={styles.completedText}>{t('goals.detail.completedBadge')}</Text>
             </View>
           )}
         </View>
@@ -160,41 +171,43 @@ export default function GoalDetailScreen() {
               ]}
             />
           </View>
-          <Text style={styles.pctLabel}>{Math.round(goal.progress_pct)}% tercapai</Text>
+          <Text style={styles.pctLabel}>
+            {t('goals.detail.progressLabel', { pct: Math.round(goal.progress_pct) })}
+          </Text>
         </View>
 
         {/* Stats */}
         <View style={styles.statsCard}>
           {!goal.is_completed && (
             <StatRow
-              label="Sisa"
-              value={formatRupiah(Math.max(remaining, 0))}
+              label={t('goals.detail.remainingLabel')}
+              value={formatMoney(Math.max(remaining, 0))}
               valueColor={colors.text.primary}
             />
           )}
           {days !== null && (
             <StatRow
-              label="Hari tersisa"
-              value={days <= 0 ? 'Sudah lewat' : `${days} hari`}
+              label={t('goals.detail.daysLeftLabel')}
+              value={days <= 0 ? t('goals.detail.daysOverdue') : t('goals.detail.daysCount', { count: days })}
               valueColor={days < 0 ? colors.warning.text : colors.text.primary}
             />
           )}
           {monthly !== null && (
             <StatRow
-              label="Target/bulan"
-              value={formatRupiah(monthly)}
+              label={t('goals.detail.perMonthLabel')}
+              value={formatMoney(monthly)}
               valueColor={colors.accent.text}
             />
           )}
           {goal.target_date && (
-            <StatRow label="Target tanggal" value={goal.target_date} />
+            <StatRow label={t('goals.detail.targetDateLabel')} value={goal.target_date} />
           )}
         </View>
 
         {/* Action */}
         {!goal.is_completed && (
           <Button
-            label="Tabung / Tarik Dana"
+            label={t('goals.detail.contributeCta')}
             onPress={() => setShowContribute(true)}
             variant="primary"
             fullWidth

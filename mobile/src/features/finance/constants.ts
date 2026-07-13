@@ -1,18 +1,21 @@
+import type { TFunction } from "i18next";
+
 import type { AccountType } from "./types";
 
-export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  cash: "Tunai",
-  bank: "Bank",
-  ewallet: "E-Wallet",
-  credit: "Kartu Kredit",
-};
+export const ACCOUNT_TYPE_ORDER: AccountType[] = ["bank", "cash", "ewallet", "credit"];
 
-export const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
-  { value: "bank", label: "Bank" },
-  { value: "cash", label: "Tunai" },
-  { value: "ewallet", label: "E-Wallet" },
-  { value: "credit", label: "Kartu Kredit" },
-];
+export function accountTypeLabel(t: TFunction, type: AccountType): string {
+  switch (type) {
+    case "bank":
+      return t("accounts.type.bank");
+    case "cash":
+      return t("accounts.type.cash");
+    case "ewallet":
+      return t("accounts.type.ewallet");
+    case "credit":
+      return t("accounts.type.credit");
+  }
+}
 
 export const PRESET_COLORS = [
   "#E17055", // Red-orange

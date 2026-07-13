@@ -1,0 +1,568 @@
+{
+  "common": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "confirm": "Konfirmasi",
+    "delete": "Hapus",
+    "back": "Kembali",
+    "next": "Lanjut",
+    "retry": "Coba lagi",
+    "loading": "Memuat...",
+    "optional": "opsional",
+    "today": "Hari ini",
+    "yesterday": "Kemarin",
+    "justNow": "Baru saja",
+    "searchPlaceholder": "Cari...",
+    "noOptionsFound": "Tidak ada pilihan ditemukan",
+    "selectItemPlaceholder": "Pilih item",
+    "selectPrefix": "Pilih {{label}}",
+    "doneCta": "Selesai",
+    "minutesAgo_other": "{{count}} menit lalu",
+    "hoursAgo_other": "{{count}} jam lalu",
+    "daysAgo_other": "{{count}} hari lalu",
+    "errorBoundary": {
+      "title": "Terjadi kesalahan",
+      "defaultMessage": "Terjadi kesalahan yang tidak terduga.",
+      "retryCta": "Coba Lagi"
+    }
+  },
+  "datePicker": {
+    "title": "Pilih Tanggal",
+    "twoDaysAgo": "2 Hari Lalu"
+  },
+  "tabs": {
+    "home": "Beranda",
+    "history": "Aktivitas",
+    "goals": "Goal",
+    "settings": "Profil"
+  },
+  "settings": {
+    "language": {
+      "section": "Bahasa",
+      "row": "Bahasa Aplikasi",
+      "sheetTitle": "Pilih Bahasa",
+      "system": "Ikuti Sistem"
+    },
+    "accountSectionLabel": "Akun",
+    "financeSectionLabel": "Keuangan",
+    "notificationSectionLabel": "Notifikasi",
+    "legalSectionLabel": "Legal",
+    "helpSectionLabel": "Bantuan",
+    "connecting": "Menghubungkan...",
+    "backupSync": "Backup & Sinkronisasi",
+    "backupSyncSubtitle": "Masuk dengan Google untuk menyimpan data",
+    "manageAccounts": "Kelola Akun",
+    "monthlyBudget": "Budget Bulanan",
+    "categoriesMenu": "Kategori",
+    "dailyReminderLabel": "Notifikasi Harian",
+    "reminderActive": "Aktif · {{time}}",
+    "reminderInactive": "Nonaktif",
+    "changeReminderTime": "Ubah Jam Pengingat",
+    "permissionDenied": "Izin notifikasi ditolak. Aktifkan di pengaturan perangkat.",
+    "reminderTimeSheetTitle": "Pilih jam pengingat",
+    "termsMenu": "Syarat & Ketentuan",
+    "privacyMenu": "Kebijakan Privasi",
+    "chatWithUs": "Chat dengan kami",
+    "whatsappMessage": "Halo, saya pakai Savyn{{versionSuffix}}. Mau kasih masukan:",
+    "signOutCta": "Keluar",
+    "signOutConfirm": "Yakin mau keluar?",
+    "guestName": "Guest",
+    "guestDataNote": "Data tersimpan di perangkat ini",
+    "profile": {
+      "headerTitle": "Edit Profil",
+      "changePhoto": "Ganti Foto",
+      "nameLabel": "Nama",
+      "namePlaceholder": "Masukkan nama",
+      "emailLabel": "Email",
+      "emailHint": "Email tidak dapat diubah",
+      "nameEmptyToast": "Nama tidak boleh kosong",
+      "savedToast": "Profil berhasil disimpan",
+      "saveError": "Gagal menyimpan profil, coba lagi ya"
+    }
+  },
+  "categories": {
+    "addA11y": "Tambah kategori",
+    "filterAll": "Semua",
+    "expenseLower": "pengeluaran",
+    "incomeLower": "pemasukan",
+    "deleteAlertTitle": "Hapus Kategori",
+    "deleteAlertMessage": "Yakin mau hapus \"{{name}}\"?",
+    "deletedToast": "Kategori dihapus",
+    "deleteError": "Gagal hapus kategori",
+    "emptyTitle": "Belum ada kategori",
+    "emptyAllSubtitle": "Yuk mulai kategoriin transaksimu",
+    "emptyFilteredSubtitle": "Belum ada kategori {{type}}",
+    "addCta": "Tambah Kategori",
+    "form": {
+      "editTitle": "Edit Kategori",
+      "newTitle": "Kategori Baru",
+      "nameLabel": "Nama Kategori",
+      "namePlaceholder": "mis. Makan, Transport, Gaji",
+      "nameRequired": "Nama kategori wajib diisi",
+      "typeLabel": "Tipe",
+      "colorLabel": "Warna",
+      "createCta": "Buat Kategori",
+      "updatedToast": "Kategori diperbarui",
+      "createdToast": "Kategori dibuat",
+      "updateError": "Gagal update kategori",
+      "createError": "Gagal buat kategori"
+    },
+    "action": {
+      "editCta": "Ubah"
+    },
+    "selectedCount_other": "{{count}} Kategori terpilih"
+  },
+  "tabBar": {
+    "dismissGoalCoachmarkA11y": "Tutup tips: atur target nabung di sini",
+    "goalCoachmarkText": "Atur target nabung di sini 🎯",
+    "dismissBotCoachmarkA11y": "Tutup tips: coba chat, ucapin, atau foto struk di sini",
+    "botCoachmarkText": "Coba chat, ucapin, atau foto struk di sini ✨",
+    "openAiA11y": "Buka asisten AI"
+  },
+  "finance": {
+    "budgetSectionTitle": "Anggaran Bulanan",
+    "savingsGoalsTitle": "Tabungan Tujuan",
+    "savingsGoalsSubtitle": "Tiket konser, liburan, dana darurat…",
+    "cashFlowTitle": "Arus Kas"
+  },
+  "budget": {
+    "headerTitle": "Budget",
+    "saveError": "Gagal simpan budget",
+    "unallocatedOver": "{{amount}} melebihi",
+    "unallocatedRemaining": "{{amount}} tersisa",
+    "regularBillsTitle": "Tagihan Rutin",
+    "emptyBillsText": "Belum ada tagihan rutin. Buka kategori pengeluaran dan aktifkan \"Pengeluaran Tetap\" buat menambahkan.",
+    "spendingLimitsTitle": "Batas Pengeluaran",
+    "addLimitA11y": "Tambah batas pengeluaran",
+    "emptyLimitsTitle": "Belum ada batas pengeluaran",
+    "emptyLimitsSubtitle": "Ketuk + buat tambah kategori dan atur batas bulanan",
+    "noBudgetHint": "Belum ada budget",
+    "usedPctLabel": "{{pct}}% terpakai",
+    "editTitle": "Ubah Budget",
+    "setMonthlyTitle": "Atur Budget Bulanan",
+    "amountPlaceholder": "mis. 10.000.000",
+    "savingEllipsis": "Simpan…",
+    "saveCta": "Simpan Budget",
+    "bucket": {
+      "noLimit": "Tanpa Batas",
+      "onTrack": "Aman",
+      "warning": "Waspada",
+      "over": "Melebihi",
+      "tapToSetLimit": "Ketuk untuk atur batas"
+    },
+    "fixed": {
+      "unpaid": "Belum Dibayar",
+      "partial": "Kurang {{amount}}",
+      "paid": "Lunas",
+      "paidGeneric": "Terbayar",
+      "committedLabel": "Komitmen: {{amount}}",
+      "noAmountYet": "Belum ada jumlah"
+    },
+    "category": {
+      "savedToast": "Batas pengeluaran disimpan",
+      "saveError": "Gagal simpan batas pengeluaran",
+      "deletedToast": "Batas pengeluaran dihapus",
+      "deleteError": "Gagal hapus batas pengeluaran",
+      "editTitle": "Ubah Batas",
+      "setTitle": "Atur Batas",
+      "monthlyAmountFixedLabel": "Jumlah Bulanan",
+      "monthlyLimitLabel": "Batas Bulanan",
+      "amountPlaceholder": "mis. 3.000.000",
+      "fixedExpenseLabel": "Pengeluaran tetap",
+      "fixedExpenseDesc": "Biaya tetap: sewa, langganan, tagihan rutin",
+      "saveLimitCta": "Simpan Batas",
+      "deleteLimitCta": "Hapus Batas"
+    },
+    "addLimit": {
+      "title": "Tambah Batas Pengeluaran",
+      "subtitle": "Pilih kategori buat atur batas bulanan",
+      "allSetText": "Semua kategori pengeluaran sudah punya batas."
+    },
+    "yearly": {
+      "title": "Ringkasan Pengeluaran",
+      "noDataForYear": "Belum ada data untuk {{year}}",
+      "monthlyAvgLabel": "Rata-rata Bulanan: {{amount}}"
+    }
+  },
+  "charts": {
+    "millionSuffix": "jt",
+    "dailySpendLabel": "PENGELUARAN HARIAN",
+    "weeklySpendLabel": "PENGELUARAN MINGGUAN",
+    "monthlySpendLabel": "PENGELUARAN BULANAN",
+    "periodDaily": "Harian",
+    "periodWeekly": "Mingguan",
+    "periodMonthly": "Bulanan",
+    "noDataThisYear": "Belum ada data tahun ini"
+  },
+  "notifications": {
+    "reminderTitle": "Sudah catat hari ini?",
+    "reminderBody": "Jangan lupa catat pengeluaranmu hari ini 📝",
+    "permissionSheet": {
+      "title": "Mau diingetin catat transaksi tiap hari?",
+      "body": "Kami bisa kirim notifikasi harian biar kamu gak lupa catat pengeluaran.",
+      "accept": "Ya, ingetin aku",
+      "decline": "Nanti aja"
+    }
+  },
+  "auth": {
+    "loginTitle": "Selamat datang\nkembali!",
+    "loginSubtitle": "Masuk untuk melihat data & insight kamu.",
+    "loginWithGoogle": "Masuk dengan Google",
+    "openingGoogle": "Membuka Google...",
+    "continueAsGuest": "Lanjut tanpa akun →",
+    "loginError": "Login gagal, coba lagi ya"
+  },
+  "onboarding": {
+    "welcome": {
+      "features": {
+        "chat": { "label": "Chat AI", "desc": "Tanya, catat, dan analisis lewat obrolan" },
+        "scan": { "label": "Scan Struk", "desc": "Foto struk, langsung tercatat otomatis" },
+        "voice": { "label": "Input Suara", "desc": "Ucapkan transaksi, AI yang mencatat" }
+      },
+      "headlineLine1": "AI yang paham",
+      "headlineAccent": "keuanganmu.",
+      "subtitle": "Catat via chat, suara, atau foto struk.\nDapatkan insight yang benar-benar personal.",
+      "ctaPrimary": "Gas Sekarang!",
+      "loginLink": "Udah punya akun? Masuk aja"
+    },
+    "profile": {
+      "title": "Yuk, kenalan bentar 👋",
+      "subtitle": "Isi kalau mau, atau lewatin aja, bisa diubah kapan-kapan di Pengaturan.",
+      "nameLabel": "Dipanggil apa?",
+      "namePlaceholder": "misal: Jace, Budi, Rina",
+      "cta": "Lanjut →"
+    },
+    "firstAccount": {
+      "title": "Akun pertama",
+      "subtitle": "Tempat transaksimu kecatat. Kasih nama biar gampang dikenali, misal 'BCA' atau 'Dompet Tunai'.",
+      "nameLabel": "Nama Akun",
+      "namePlaceholder": "misal: BCA, Dana, Tunai",
+      "nameRequired": "Nama akun wajib diisi",
+      "balanceLabel": "Saldo Awal (opsional)",
+      "typeLabel": "Tipe Akun",
+      "cta": "Mulai →",
+      "successToast": "Yeay! Siap mulai nyatat 🚀",
+      "errorToast": "Gagal bikin akun. Coba lagi ya."
+    }
+  },
+  "guest": {
+    "gate": {
+      "title": "Fitur ini membutuhkan akun",
+      "cta": "Masuk ke Akun"
+    },
+    "banner": {
+      "title": "Mode tamu",
+      "subtitle": "Data cuma di HP ini. Masuk buat backup & sync."
+    }
+  },
+  "deleteAccount": {
+    "headerTitle": "Hapus Akun",
+    "alertTitle": "Hapus Akun Permanen",
+    "alertMessage": "Aksi ini tidak dapat dibatalkan. Semua data akan hilang selamanya.",
+    "alertConfirm": "Hapus Sekarang",
+    "successToast": "Akunmu sudah dihapus",
+    "errorToast": "Gagal menghapus akun, coba lagi ya",
+    "warningTitle": "Data yang akan hilang",
+    "items": {
+      "financialAccounts": "Semua akun keuangan",
+      "transactionHistory": "Seluruh riwayat transaksi",
+      "budgetsGoals": "Budget dan goal",
+      "aiConversations": "Percakapan dengan AI"
+    },
+    "warningNote": "Aksi ini permanen dan tidak bisa dibatalkan.",
+    "ctaDeleting": "Menghapus..."
+  },
+  "accounts": {
+    "createCta": "Buat Akun",
+    "headerTitle": "Akun",
+    "addA11y": "Tambah akun",
+    "emptyTitle": "Belum ada akun",
+    "emptySubtitle": "Tambah akun untuk mulai mencatat pengeluaran",
+    "addActionLabel": "Tambah Akun",
+    "newAccountTitle": "Akun Baru",
+    "namePlaceholder": "contoh: BCA, GoPay, Dompet",
+    "initialBalanceLabel": "Saldo Awal",
+    "typeLabel": "Jenis Akun",
+    "createdToast": "Akun berhasil dibuat",
+    "createError": "Gagal membuat akun. Coba lagi.",
+    "detailTitle": "Detail Akun",
+    "notFound": "Akun tidak ditemukan",
+    "nameRequiredToast": "Nama akun tidak boleh kosong",
+    "updatedToast": "Akun berhasil diperbarui",
+    "updateError": "Gagal memperbarui akun.",
+    "deleteAlertTitle": "Hapus Akun",
+    "deleteAlertMessage": "\"{{name}}\" akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.",
+    "deletedToast": "Akun berhasil dihapus",
+    "deleteError": "Gagal menghapus akun.",
+    "balanceHeroLabel": "BALANCE",
+    "editBalanceHint": "Ubah saldo awal kalau ada koreksi, transaksi yang udah tercatat gak kepengaruh.",
+    "syncedLabel": "Sinkron {{time}}",
+    "type": {
+      "bank": "Bank",
+      "cash": "Tunai",
+      "ewallet": "E-Wallet",
+      "credit": "Kartu Kredit"
+    }
+  },
+  "transaction": {
+    "newTitle": "Transaksi Baru",
+    "expense": "Pengeluaran",
+    "income": "Pemasukan",
+    "noAccountsPrompt": "Buat akun dulu sebelum mencatat transaksi.",
+    "dateLabel": "Tanggal Transaksi",
+    "amountLabel": "Jumlah",
+    "categoryLabel": "Kategori (opsional)",
+    "categoryPlaceholder": "Pilih Kategori",
+    "accountLabelSingle": "Akun",
+    "accountLabelMulti": "Pilih Dompet / Akun",
+    "showMoreDetails": "+ Tambah detail (Merchant, Catatan)",
+    "hideMoreDetails": "− Sembunyikan detail tambahan",
+    "merchantLabel": "Merchant / Toko (opsional)",
+    "merchantPlaceholder": "Nama toko atau merchant",
+    "noteLabel": "Catatan (opsional)",
+    "notePlaceholder": "Tambahkan catatan",
+    "saveCta": "Simpan Transaksi",
+    "saveSuccess": "Transaksi tersimpan",
+    "saveError": "Gagal menyimpan transaksi. Coba lagi.",
+    "budgetCategoryOver": "Budget {{category}} habis! Sisa {{amount}}",
+    "budgetCategoryWarning": "Budget {{category}} hampir habis. Sisa {{amount}}",
+    "budgetMonthlyOver": "Budget bulanan habis! Sisa {{amount}}",
+    "budgetMonthlyWarning": "Budget bulanan hampir habis. Sisa {{amount}}",
+    "validation": {
+      "accountRequired": "Pilih Akun",
+      "amountRequired": "Masukkan jumlah",
+      "dateRequired": "Pilih Tanggal"
+    },
+    "detailTitle": "Detail Transaksi",
+    "notFound": "Transaksi tidak ditemukan",
+    "saveChangesSuccess": "Perubahan tersimpan",
+    "saveChangesError": "Gagal menyimpan perubahan.",
+    "deleteAlertTitle": "Hapus Transaksi",
+    "deleteAlertMessage": "Yakin mau hapus transaksi ini?",
+    "deletedToast": "Transaksi dihapus",
+    "deleteError": "Gagal menghapus transaksi.",
+    "dateFieldLabel": "Tanggal",
+    "timeFieldLabel": "Waktu",
+    "statusFieldLabel": "Status",
+    "statusConfirmed": "Terkonfirmasi",
+    "statusDraft": "Draft",
+    "sourceFieldLabel": "Sumber",
+    "editCta": "Edit",
+    "merchantEditPlaceholder": "Nama toko",
+    "card": {
+      "otherFallback": "Lainnya"
+    },
+    "source": {
+      "manual": "Manual",
+      "import": "Import"
+    }
+  },
+  "ai": {
+    "headerTitle": "AI Assistant",
+    "clearChat": {
+      "menuLabel": "Hapus Percakapan",
+      "alertMessage": "Seluruh riwayat chat akan dihapus dari perangkat ini."
+    },
+    "guestSubtitle": "Masuk untuk menggunakan AI Assistant dan melihat data keuanganmu.",
+    "emptyTitle": "Ada yang bisa aku bantu?",
+    "emptySubtitle": "Ketik pesan, rekam suara, atau foto struk belanjamu.",
+    "inputPlaceholder": "Ketik pesan...",
+    "quickChips": {
+      "logExpense": { "label": "📝 Catat pengeluaran" },
+      "scanReceipt": { "label": "📷 Scan struk" },
+      "logIncome": { "label": "💰 Catat pemasukan" },
+      "analyze": { "label": "💡 Analisa keuanganku" }
+    },
+    "toast": {
+      "createAccountForScan": "Buat akun dulu sebelum scan struk.",
+      "voiceUploadFailed": "Gagal mengunggah rekaman suara. Coba lagi ya.",
+      "receiptUploadFailed": "Gagal mengunggah struk. Coba lagi ya.",
+      "noVoiceDraft": "Tidak ada draf transaksi yang dibuat.",
+      "noReceiptDraft": "Tidak bisa membaca transaksi dari struk.",
+      "voiceProcessingFailed": "Pemrosesan suara gagal.",
+      "receiptProcessingFailed": "Pemrosesan struk gagal.",
+      "transcriptProcessFailed": "Gagal memproses transkrip.",
+      "transactionSaved": "Transaksi tersimpan.",
+      "transactionSaveFailed": "Gagal menyimpan transaksi.",
+      "draftCancelFailed": "Gagal membatalkan draft.",
+      "voiceProcessingTimeout": "Pemrosesan suara kelamaan.",
+      "receiptProcessingTimeout": "Pemrosesan struk kelamaan.",
+      "processingTimeoutInline": "Pemrosesan kelamaan. Coba lagi ya."
+    },
+    "confirmCard": {
+      "amountLabel": "Jumlah",
+      "merchantLabel": "Merchant",
+      "merchantPlaceholder": "misal: Indomaret",
+      "categoryLabel": "Kategori",
+      "noteLabel": "Catatan",
+      "notePlaceholder": "Catatan opsional"
+    },
+    "transcriptSheet": {
+      "title": "Tadi ngomong apa?",
+      "hint": "Betulkan kalau ada yang salah dengar, lalu tap Proses.",
+      "placeholder": "Hasil transkrip muncul di sini…",
+      "processCta": "Proses"
+    },
+    "draftCard": {
+      "fallbackTitle": "Transaksi",
+      "editCta": "Edit",
+      "savedLabel": "Tersimpan",
+      "cancelledLabel": "Dibatalkan"
+    },
+    "recording": {
+      "releaseHint": "Lepas untuk kirim",
+      "micPermissionRequired": "Izin mikrofon diperlukan untuk merekam suara.",
+      "startFailed": "Gagal memulai rekaman.",
+      "stopFailed": "Gagal menghentikan rekaman.",
+      "tooShort": "Rekaman terlalu pendek. Tahan tombol mic sambil bicara."
+    },
+    "chatBubble": {
+      "status": {
+        "pending": "Mengunggah...",
+        "transcribing": "Mengubah suara jadi teks...",
+        "transcribed": "Cek transkrip",
+        "extracting": "Membaca transaksi...",
+        "completed": "Selesai",
+        "failed": "Gagal"
+      },
+      "typeVoice": "Suara",
+      "typeReceipt": "Struk"
+    },
+    "insight": {
+      "label": "AI INSIGHT",
+      "fallback": "Insight tidak tersedia. Terus catat pengeluaranmu!"
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "Selamat pagi",
+      "afternoon": "Selamat siang",
+      "evening": "Selamat malam"
+    },
+    "loadTransactionsFailed": "Gagal memuat transaksi",
+    "addTransactionA11y": "Tambah transaksi",
+    "setBudgetCta": "Atur budget bulanan",
+    "accountBalance": {
+      "totalLabel": "TOTAL SALDO",
+      "accountCount_other": "{{count}} akun",
+      "promptFirstAccount": "Tambah akun pertama",
+      "promptFirstTransaction": "Catat transaksi pertama"
+    },
+    "dailySpend": {
+      "emptyTitle": "Batas Pengeluaran Harian",
+      "emptySub": "Atur budget bulanan untuk memantau pengeluaran harian",
+      "overline": "PENGELUARAN HARI INI",
+      "ofLimit": "dari {{limit}}",
+      "remaining": "sisa {{amount}}",
+      "usedLabel": "terpakai"
+    },
+    "weeklySummary": {
+      "title": "Minggu Ini",
+      "emptyText": "Belum ada transaksi minggu ini",
+      "net": "Selisih"
+    },
+    "monthlyBudget": {
+      "totalLabel": "TOTAL BUDGET BULANAN",
+      "spentLabel": "Terpakai",
+      "remainingLabel": "Tersisa",
+      "daysLeft_other": "{{count}} hari lagi"
+    },
+    "topCategories": {
+      "title": "TOP SPENDING",
+      "loadFailedTitle": "Gagal loading",
+      "loadFailedSub": "Tarik ke bawah buat refresh",
+      "emptyTitle": "Gak ada pengeluaran",
+      "emptySub": "Belum transaksi bulan {{month}}"
+    },
+    "projectedEndOfMonth": {
+      "overline": "NET BULAN INI",
+      "emptyText": "Belum ada transaksi bulan ini",
+      "trendHigher": "{{pct}}% lebih dari bulan lalu",
+      "trendLower": "{{pct}}% di bawah bulan lalu"
+    },
+    "firstRunChecklist": {
+      "title": "Yuk setup akunmu 🚀",
+      "progressLabel": "{{count}} dari 3 selesai"
+    }
+  },
+  "history": {
+    "simpleTitle": "Riwayat",
+    "searchPlaceholder": "Cari transaksi...",
+    "filterSheetTitle": "Filter Transaksi",
+    "allCategories": "Semua Kategori",
+    "dateRangeLabel": "Rentang Waktu",
+    "monthly": "Bulanan",
+    "custom": "Kustom",
+    "fromDate": "Dari Tanggal",
+    "toDate": "Sampai Tanggal",
+    "resetCta": "Reset",
+    "applyCta": "Terapkan",
+    "totalPrefix": "Total",
+    "emptyTitle": "Belum ada transaksi",
+    "emptySubtitle": "Belum ada catatan bulan ini",
+    "recentTitle": "Transaksi Terbaru",
+    "seeAllCta": "Lihat Semua",
+    "loadFailedSub": "Tarik ke bawah untuk memuat ulang",
+    "emptyRecentSubtitle": "Mulai catat pengeluaran pertamamu"
+  },
+  "goals": {
+    "addA11y": "Tambah goal",
+    "emptyTitle": "Belum ada goal",
+    "emptySubtitle": "Mulai simpan untuk liburan, atau dana darurat.",
+    "createFirstCta": "Buat Goal Pertama",
+    "ongoingLabel": "Sedang Berjalan",
+    "completedLabel": "Sudah Tercapai",
+    "createdToast": "Goal dibuat!",
+    "createError": "Gagal membuat goal. Coba lagi.",
+    "savingEllipsis": "Menyimpan…",
+    "detail": {
+      "fallbackTitle": "Goal",
+      "notFound": "Goal tidak ditemukan",
+      "ofTarget": "dari {{amount}}",
+      "completedBadge": "🎉 Goal Tercapai!",
+      "progressLabel": "{{pct}}% tercapai",
+      "remainingLabel": "Sisa",
+      "daysLeftLabel": "Hari tersisa",
+      "daysOverdue": "Sudah lewat",
+      "daysCount_other": "{{count}} hari",
+      "perMonthLabel": "Target/bulan",
+      "targetDateLabel": "Target tanggal",
+      "contributeCta": "Tabung / Tarik Dana",
+      "updatedToast": "Goal diperbarui!",
+      "updateError": "Gagal memperbarui goal.",
+      "deleteAlertTitle": "Hapus Goal",
+      "deleteAlertMessage": "Yakin mau hapus goal \"{{name}}\"?",
+      "deletedToast": "Goal dihapus",
+      "deleteError": "Gagal menghapus goal."
+    },
+    "card": {
+      "pastTarget": "Sudah lewat target",
+      "todayLabel": "Hari ini!",
+      "daysLeft_other": "{{count}} hari lagi",
+      "completedBadge": "✓ Tercapai"
+    },
+    "contribute": {
+      "savingSuccess": "Berhasil menabung!",
+      "withdrawSuccess": "Dana berhasil ditarik",
+      "error": "Gagal menabung. Coba lagi.",
+      "title": "Tabung / Tarik",
+      "addMode": "+ Tabung",
+      "withdrawMode": "− Tarik",
+      "amountPlaceholder": "atau masukkan manual",
+      "saveCta": "Tabung Sekarang",
+      "withdrawCta": "Tarik Dana"
+    },
+    "form": {
+      "editTitle": "Edit Goal",
+      "newTitle": "Goal Baru",
+      "iconLabel": "Ikon",
+      "nameLabel": "Nama Goal",
+      "namePlaceholder": "Tiket konser, Liburan...",
+      "targetAmountLabel": "Target",
+      "targetAmountPlaceholder": "mis. 15.000.000",
+      "targetDateLabel": "Target Tanggal (opsional)",
+      "saveChangesCta": "Simpan Perubahan",
+      "createCta": "Buat Goal"
+    }
+  }
+}

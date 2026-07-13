@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import Button from "@/components/ui/Button";
 import type { ExtractedTransaction } from "@/features/finance/api/voice";
@@ -41,6 +42,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
   onSave,
   onDismiss,
 }: Props) {
+  const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
 
   const [amountText, setAmountText] = useState("");
@@ -77,7 +79,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
   return (
     <BottomSheet isVisible={isVisible} onDismiss={onDismiss}>
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.sectionLabel}>Jumlah (Rp)</Text>
+        <Text style={styles.sectionLabel}>{t("ai.confirmCard.amountLabel")}</Text>
         <TextInput
           style={[styles.amountInput, isExpense ? styles.amountExpense : styles.amountIncome]}
           value={amountText}
@@ -88,7 +90,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
 
         {accounts.length > 0 && (
           <View style={styles.field}>
-            <Text style={styles.sectionLabel}>Akun</Text>
+            <Text style={styles.sectionLabel}>{t("transaction.accountLabelSingle")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
               {accounts.map((acc) => (
                 <Pressable
@@ -108,19 +110,19 @@ export const ConfirmCard = React.memo(function ConfirmCard({
         )}
 
         <View style={styles.field}>
-          <Text style={styles.sectionLabel}>Merchant</Text>
+          <Text style={styles.sectionLabel}>{t("ai.confirmCard.merchantLabel")}</Text>
           <TextInput
             style={styles.textInput}
             value={merchant}
             onChangeText={setMerchant}
-            placeholder="e.g. Indomaret"
+            placeholder={t("ai.confirmCard.merchantPlaceholder")}
             placeholderTextColor={colors.text.muted}
           />
         </View>
 
         {categories.length > 0 && (
           <View style={styles.field}>
-            <Text style={styles.sectionLabel}>Kategori</Text>
+            <Text style={styles.sectionLabel}>{t("ai.confirmCard.categoryLabel")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
               {categories.map((cat) => (
                 <Pressable
@@ -140,20 +142,20 @@ export const ConfirmCard = React.memo(function ConfirmCard({
         )}
 
         <View style={styles.field}>
-          <Text style={styles.sectionLabel}>Catatan</Text>
+          <Text style={styles.sectionLabel}>{t("ai.confirmCard.noteLabel")}</Text>
           <TextInput
             style={[styles.textInput, styles.noteInput]}
             value={note}
             onChangeText={setNote}
             multiline
-            placeholder="Catatan opsional"
+            placeholder={t("ai.confirmCard.notePlaceholder")}
             placeholderTextColor={colors.text.muted}
           />
         </View>
 
         <View style={styles.actions}>
-          <Button label="Simpan Transaksi" onPress={handleSave} loading={isSaving} fullWidth />
-          <Button label="Batal" onPress={onDismiss} variant="secondary" fullWidth />
+          <Button label={t("transaction.saveCta")} onPress={handleSave} loading={isSaving} fullWidth />
+          <Button label={t("common.cancel")} onPress={onDismiss} variant="secondary" fullWidth />
         </View>
       </ScrollView>
     </BottomSheet>

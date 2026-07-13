@@ -17,6 +17,7 @@ import {
   SlidersHorizontal,
   Wallet,
 } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Header } from '@/components/layout/Header';
 import { Screen } from '@/components/layout/Screen';
@@ -31,57 +32,18 @@ import TransactionCard from '@/features/finance/components/TransactionCard';
 import { useCategories } from '@/features/finance/hooks/useCategories';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import type { Transaction } from '@/features/finance/types';
-import { formatRupiah, formatShortDate } from '@/lib/utils';
+import { formatDateLabel, formatMoney, formatShortDate, getMonthNames } from '@/lib/format';
 import { colors, radius, spacing, textStyles } from '@/theme';
 import { TAB_BAR_CLEARANCE } from '@/components/ui/FloatingTabBar';
-
-const MONTH_NAMES = [
-  'Januari',
-  'Februari',
-  'Maret',
-  'April',
-  'Mei',
-  'Juni',
-  'Juli',
-  'Agustus',
-  'September',
-  'Oktober',
-  'November',
-  'Desember',
-];
 
 type ListRow =
   | { type: 'header'; key: string; label: string }
   | { type: 'item'; key: string; data: Transaction };
 
-function formatDateLabel(dateStr: string): string {
-  const now = new Date();
-  const today = [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, '0'),
-    String(now.getDate()).padStart(2, '0'),
-  ].join('-');
-
-  const yesterdayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-  const yesterday = [
-    yesterdayDate.getFullYear(),
-    String(yesterdayDate.getMonth() + 1).padStart(2, '0'),
-    String(yesterdayDate.getDate()).padStart(2, '0'),
-  ].join('-');
-
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const dateObj = new Date(year, month - 1, day);
-  const fullDate = dateObj.toLocaleDateString('id-ID', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  });
-
-  if (dateStr === today) return `Hari ini - ${fullDate}`;
-  if (dateStr === yesterday) return `Kemarin - ${fullDate}`;
-  return fullDate;
-}
-
 export default function AktivitasScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
+  const monthNames = useMemo(() => getMonthNames("long"), [i18n.language]);
   const params = useLocalSearchParams<{ categoryId?: string; year?: string; month?: string }>();
   const now = useMemo(() => new Date(), []);
 
@@ -246,7 +208,7 @@ export default function AktivitasScreen() {
 
   return (
     <Screen>
-      <Header title="Aktivitas" />
+      <Header title={t("tabs.history")} />
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
@@ -255,7 +217,7 @@ export default function AktivitasScreen() {
             style={styles.searchInput}
             value={query}
             onChangeText={setQuery}
-            placeholder="Cari transaksi..."
+            placeholder={t("history.searchPlaceholder")}
             placeholderTextColor={colors.text.muted}
           />
         </View>
@@ -300,7 +262,7 @@ export default function AktivitasScreen() {
           <Pressable style={styles.monthNav} hitSlop={8} onPress={goBack}>
             <ChevronLeft size={16} color={colors.text.secondary} strokeWidth={2} />
             <Text style={styles.monthNavText}>
-              {MONTH_NAMES[selectedMonth.month].slice(0, 3)} {selectedMonth.year}
+              {monthNames[selectedMonth.month].slice(0, 3)} {selectedMonth.year}
             </Text>
             <Pressable hitSlop={8} onPress={goForward} style={{ opacity: canGoForward ? 1 : 0.3 }}>
               <ChevronRight size={16} color={colors.text.secondary} strokeWidth={2} />
@@ -313,8 +275,8 @@ export default function AktivitasScreen() {
             { color: totalIsNegative ? colors.danger.text : colors.success.text },
           ]}
         >
-          Total: {totalIsNegative ? '−' : '+'}
-          {formatRupiah(Math.abs(periodTotal))}
+          {t("history.totalPrefix")}: {totalIsNegative ? '−' : '+'}
+          {formatMoney(Math.abs(periodTotal))}
         </Text>
       </View>
 
@@ -331,8 +293,8 @@ export default function AktivitasScreen() {
           ) : (
             <EmptyState
               icon={Wallet}
-              title="Belum ada transaksi"
-              subtitle="Belum ada catatan bulan ini"
+              title={t("history.emptyTitle")}
+              subtitle={t("history.emptySubtitle")}
             />
           )
         }
@@ -349,17 +311,17 @@ export default function AktivitasScreen() {
       <Fab
         onPress={() => router.push("/(app)/finance/new")}
         icon={Plus}
-        accessibilityLabel="Add transaction"
+        accessibilityLabel={t("home.addTransactionA11y")}
       />
 
       <BottomSheet isVisible={isFilterOpen} onDismiss={() => setIsFilterOpen(false)}>
         <View style={styles.sheetContent}>
-          <Text style={styles.sheetTitle}>Filter Transaksi</Text>
+          <Text style={styles.sheetTitle}>{t("history.filterSheetTitle")}</Text>
           {/* Category Filter Section */}
           <View style={styles.filterSection}>
             <MultiSearchableDropdown
-              label="Kategori"
-              placeholder="Semua Kategori"
+              label={t("ai.confirmCard.categoryLabel")}
+              placeholder={t("history.allCategories")}
               items={categoriesData?.filter((c) => !c.is_archived).map((cat) => ({
                 id: cat.id,
                 name: cat.name,
@@ -372,7 +334,7 @@ export default function AktivitasScreen() {
 
           {/* Date Range Selection Section */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterSectionLabel}>Rentang Waktu</Text>
+            <Text style={styles.filterSectionLabel}>{t("history.dateRangeLabel")}</Text>
             <View style={styles.toggleContainer}>
               <Pressable
                 onPress={() => setTempIsCustom(false)}
@@ -380,7 +342,7 @@ export default function AktivitasScreen() {
               >
                 <View style={!tempIsCustom ? [styles.toggleBtn, styles.toggleBtnActive] : styles.toggleBtn}>
                   <Text style={!tempIsCustom ? [styles.toggleText, styles.toggleTextActive] : styles.toggleText}>
-                    Bulanan
+                    {t("history.monthly")}
                   </Text>
                 </View>
               </Pressable>
@@ -390,7 +352,7 @@ export default function AktivitasScreen() {
               >
                 <View style={tempIsCustom ? [styles.toggleBtn, styles.toggleBtnActive] : styles.toggleBtn}>
                   <Text style={tempIsCustom ? [styles.toggleText, styles.toggleTextActive] : styles.toggleText}>
-                    Kustom
+                    {t("history.custom")}
                   </Text>
                 </View>
               </Pressable>
@@ -401,14 +363,14 @@ export default function AktivitasScreen() {
             <View style={styles.datePickerRow}>
               <View style={styles.datePickerCol}>
                 <DatePicker
-                  label="Dari Tanggal"
+                  label={t("history.fromDate")}
                   value={tempDateFrom}
                   onChange={setTempDateFrom}
                 />
               </View>
               <View style={styles.datePickerCol}>
                 <DatePicker
-                  label="Sampai Tanggal"
+                  label={t("history.toDate")}
                   value={tempDateTo}
                   onChange={setTempDateTo}
                 />
@@ -419,10 +381,10 @@ export default function AktivitasScreen() {
           {/* Actions footer */}
           <View style={styles.footerButtons}>
             <View style={styles.footerBtnWrapper}>
-              <Button label="Reset" variant="ghost" onPress={resetFilter} fullWidth />
+              <Button label={t("history.resetCta")} variant="ghost" onPress={resetFilter} fullWidth />
             </View>
             <View style={styles.footerBtnWrapper}>
-              <Button label="Terapkan" onPress={applyFilter} fullWidth />
+              <Button label={t("history.applyCta")} onPress={applyFilter} fullWidth />
             </View>
           </View>
         </View>

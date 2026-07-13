@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { useTranslation } from "react-i18next";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
@@ -18,6 +19,7 @@ import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { showToast } = useToastStore();
   const updateProfile = useUpdateProfile();
@@ -42,26 +44,26 @@ export default function ProfileScreen() {
   const handleSave = useCallback(() => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      showToast("Nama tidak boleh kosong", "error");
+      showToast(t("settings.profile.nameEmptyToast"), "error");
       return;
     }
     updateProfile.mutate(
       { name: trimmedName, avatarUri: pickedAvatarUri },
       {
         onSuccess: () => {
-          showToast("Profil berhasil disimpan", "success");
+          showToast(t("settings.profile.savedToast"), "success");
           router.back();
         },
-        onError: () => showToast("Gagal menyimpan profil, coba lagi ya", "error"),
+        onError: () => showToast(t("settings.profile.saveError"), "error"),
       }
     );
-  }, [name, pickedAvatarUri, updateProfile, showToast, router]);
+  }, [name, pickedAvatarUri, updateProfile, showToast, router, t]);
 
   const initial = name[0]?.toUpperCase() ?? "U";
 
   return (
     <Screen>
-      <Header title="Edit Profil" onBack={() => router.back()} />
+      <Header title={t("settings.profile.headerTitle")} onBack={() => router.back()} />
 
       <ScrollView
         style={styles.scroll}
@@ -77,31 +79,31 @@ export default function ProfileScreen() {
               onEdit={() => void pickImage()}
             />
           </Pressable>
-          <Text style={styles.changePhotoLabel}>Ganti Foto</Text>
+          <Text style={styles.changePhotoLabel}>{t("settings.profile.changePhoto")}</Text>
         </View>
 
         <View style={styles.fields}>
           <Input
-            label="Nama"
+            label={t("settings.profile.nameLabel")}
             value={name}
             onChangeText={setName}
-            placeholder="Masukkan nama"
+            placeholder={t("settings.profile.namePlaceholder")}
             autoCapitalize="words"
             returnKeyType="done"
             maxLength={80}
           />
           <Input
-            label="Email"
+            label={t("settings.profile.emailLabel")}
             value={user?.email ?? ""}
             editable={false}
             selectTextOnFocus={false}
             style={styles.readOnly}
           />
-          <Text style={styles.hint}>Email tidak dapat diubah</Text>
+          <Text style={styles.hint}>{t("settings.profile.emailHint")}</Text>
         </View>
 
         <Button
-          label="Simpan"
+          label={t("common.save")}
           onPress={handleSave}
           loading={updateProfile.isPending}
           fullWidth

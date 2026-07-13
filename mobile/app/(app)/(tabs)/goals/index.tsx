@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
@@ -18,6 +19,7 @@ import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
 
 export default function GoalsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { data: goals, isLoading, isRefetching, refetch } = useSavingsGoals();
   const createGoal = useCreateSavingsGoal();
   const { showToast } = useToastStore();
@@ -28,12 +30,12 @@ export default function GoalsScreen() {
       try {
         await createGoal.mutateAsync(data);
         setShowForm(false);
-        showToast("Goal dibuat!", "success");
+        showToast(t("goals.createdToast"), "success");
       } catch {
-        showToast("Gagal membuat goal. Coba lagi.", "error");
+        showToast(t("goals.createError"), "error");
       }
     },
-    [createGoal, showToast]
+    [createGoal, showToast, t]
   );
 
   const handleGoalPress = useCallback(
@@ -48,12 +50,12 @@ export default function GoalsScreen() {
   const ongoing = active.filter((g) => !g.is_completed);
 
   const addButton = (
-    <HeaderButton icon={Plus} onPress={() => setShowForm(true)} accessibilityLabel="Add goal" />
+    <HeaderButton icon={Plus} onPress={() => setShowForm(true)} accessibilityLabel={t("goals.addA11y")} />
   );
 
   return (
     <Screen>
-      <Header title="Goal" right={addButton} />
+      <Header title={t("tabs.goals")} right={addButton} />
 
       {isLoading ? (
         <View style={styles.skeletonWrap}>
@@ -64,9 +66,9 @@ export default function GoalsScreen() {
       ) : active.length === 0 ? (
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyEmoji}>🎯</Text>
-          <Text style={styles.emptyTitle}>Belum ada goal</Text>
-          <Text style={styles.emptySubtitle}>Mulai simpan untuk liburan, atau dana darurat.</Text>
-          <Button label="Buat Goal Pertama" onPress={() => setShowForm(true)} variant="primary" />
+          <Text style={styles.emptyTitle}>{t("goals.emptyTitle")}</Text>
+          <Text style={styles.emptySubtitle}>{t("goals.emptySubtitle")}</Text>
+          <Button label={t("goals.createFirstCta")} onPress={() => setShowForm(true)} variant="primary" />
         </View>
       ) : (
         <FlatList
@@ -87,12 +89,12 @@ export default function GoalsScreen() {
           }
           ListHeaderComponent={
             ongoing.length > 0 && completed.length > 0 ? (
-              <Text style={styles.sectionLabel}>Sedang Berjalan</Text>
+              <Text style={styles.sectionLabel}>{t("goals.ongoingLabel")}</Text>
             ) : null
           }
           ListFooterComponent={
             completed.length > 0 ? (
-              <Text style={[styles.sectionLabel, styles.completedLabel]}>Sudah Tercapai</Text>
+              <Text style={[styles.sectionLabel, styles.completedLabel]}>{t("goals.completedLabel")}</Text>
             ) : null
           }
         />

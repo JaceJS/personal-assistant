@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import Button from '@/components/ui/Button';
 import { colors, radius, spacing, textStyles } from '@/theme';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function TranscriptSheet({ transcript, isVisible, onProcess, onDismiss }: Props) {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
 
   useEffect(() => {
@@ -27,20 +29,20 @@ export function TranscriptSheet({ transcript, isVisible, onProcess, onDismiss }:
   return (
     <BottomSheet isVisible={isVisible} onDismiss={onDismiss}>
       <View style={styles.container}>
-        <Text style={styles.label}>Tadi ngomong apa?</Text>
-        <Text style={styles.hint}>Betulkan kalau ada yang salah dengar, lalu tap Proses.</Text>
+        <Text style={styles.label}>{t('ai.transcriptSheet.title')}</Text>
+        <Text style={styles.hint}>{t('ai.transcriptSheet.hint')}</Text>
         <TextInput
           style={styles.input}
           value={text}
           onChangeText={setText}
           multiline
           autoFocus
-          placeholder="Hasil transkrip muncul di sini…"
+          placeholder={t('ai.transcriptSheet.placeholder')}
           placeholderTextColor={colors.text.muted}
         />
         <View style={styles.actions}>
-          <Button label="Proses" onPress={handleProcess} fullWidth />
-          <Button label="Batal" onPress={onDismiss} variant="secondary" fullWidth />
+          <Button label={t('ai.transcriptSheet.processCta')} onPress={handleProcess} fullWidth />
+          <Button label={t('common.cancel')} onPress={onDismiss} variant="secondary" fullWidth />
         </View>
       </View>
     </BottomSheet>

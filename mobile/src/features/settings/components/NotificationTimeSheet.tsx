@@ -1,5 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
@@ -13,10 +14,11 @@ interface Props {
 }
 
 function NotificationTimeSheet({ isVisible, selectedHour, onSelect, onDismiss }: Props) {
+  const { t } = useTranslation();
   return (
     <BottomSheet isVisible={isVisible} onDismiss={onDismiss}>
       <View style={styles.content}>
-        <Text style={styles.title}>Pilih jam pengingat</Text>
+        <Text style={styles.title}>{t("settings.reminderTimeSheetTitle")}</Text>
         <View style={styles.grid}>
           {PRESET_HOURS.map((h) => {
             const active = h === selectedHour;

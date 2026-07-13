@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
@@ -15,27 +16,15 @@ import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { useDisplayName } from "@/hooks/useDisplayName";
+import { getMonthNames } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const RECENT_COUNT = 3;
 
-const MONTH_NAMES = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember",
-];
-
 export default function FinanceDashboard() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
+  const monthNames = useMemo(() => getMonthNames("long"), [i18n.language]);
   const displayName = useDisplayName();
   const initial = (displayName[0] ?? "U").toUpperCase();
   const now = new Date();
@@ -49,7 +38,7 @@ export default function FinanceDashboard() {
     String(now.getMonth() + 1).padStart(2, '0'),
     String(now.getDate()).padStart(2, '0'),
   ].join('-');
-  const monthLabel = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+  const monthLabel = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
   const { data: accountsData } = useAccounts();
   const { data: categoriesData } = useCategories();
@@ -81,7 +70,7 @@ export default function FinanceDashboard() {
   return (
     <Screen>
       <Header
-        title="Keuangan"
+        title={t("settings.financeSectionLabel")}
         subtitle={monthLabel}
         left={
           <View style={styles.avatar}>
@@ -98,7 +87,7 @@ export default function FinanceDashboard() {
           style={styles.filterScroll}
         >
           <FilterPill
-            label="Semua"
+            label={t("categories.filterAll")}
             active={selectedAccountId === null}
             onPress={() => setSelectedAccountId(null)}
           />
@@ -126,14 +115,14 @@ export default function FinanceDashboard() {
       >
         <ProjectedEndOfMonthCard />
 
-        <SectionHeader title="Anggaran Bulanan" />
+        <SectionHeader title={t("finance.budgetSectionTitle")} />
         <MonthlyBudgetCard totalExpense={totalExpense} />
 
         <SectionHeader
-          title="Tabungan Tujuan"
+          title={t("finance.savingsGoalsTitle")}
           right={
             <Pressable onPress={handleGoToSavings} hitSlop={8}>
-              <Text style={styles.seeAll}>Lihat Semua</Text>
+              <Text style={styles.seeAll}>{t("history.seeAllCta")}</Text>
             </Pressable>
           }
         />
@@ -144,27 +133,27 @@ export default function FinanceDashboard() {
           <View style={styles.savingsEntryCard}>
             <Text style={styles.savingsEntryEmoji}>🎯</Text>
             <View style={styles.savingsEntryText}>
-              <Text style={styles.savingsEntryTitle}>Tabungan Tujuan</Text>
-              <Text style={styles.savingsEntrySubtitle}>Tiket konser, liburan, dana darurat…</Text>
+              <Text style={styles.savingsEntryTitle}>{t("finance.savingsGoalsTitle")}</Text>
+              <Text style={styles.savingsEntrySubtitle}>{t("finance.savingsGoalsSubtitle")}</Text>
             </View>
             <Text style={styles.savingsEntryChevron}>›</Text>
           </View>
         </Pressable>
 
-        <SectionHeader title="Arus Kas" />
+        <SectionHeader title={t("finance.cashFlowTitle")} />
         <CashFlowChart />
 
         <SectionHeader
-          title="Transaksi Terbaru"
+          title={t("history.recentTitle")}
           right={
             <Pressable onPress={handleSeeAll} hitSlop={8}>
-              <Text style={styles.seeAll}>Lihat Semua</Text>
+              <Text style={styles.seeAll}>{t("history.seeAllCta")}</Text>
             </Pressable>
           }
         />
         <View style={styles.transactionsCard}>
           {recentItems.length === 0 ? (
-            <Text style={styles.emptyText}>Belum ada transaksi bulan ini</Text>
+            <Text style={styles.emptyText}>{t("home.projectedEndOfMonth.emptyText")}</Text>
           ) : (
             recentItems.map((tx, idx) => {
               const category = categoriesData?.find(c => c.id === tx.category_id);
@@ -183,7 +172,7 @@ export default function FinanceDashboard() {
         </View>
       </ScrollView>
 
-      <Fab onPress={handleAdd} icon={Plus} accessibilityLabel="Add transaction" />
+      <Fab onPress={handleAdd} icon={Plus} accessibilityLabel={t("home.addTransactionA11y")} />
     </Screen>
   );
 }

@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Header } from "@/components/layout/Header";
 import GuestGate from "@/components/ui/GuestGate";
@@ -68,6 +69,7 @@ const SCROLL_DEBOUNCE_MS = 100;
 
 export default function AIAssistantScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { isGuest } = useAuthStore();
   const showToast = useToastStore((s) => s.showToast);
   const { data: accounts } = useAccounts();
@@ -145,14 +147,14 @@ export default function AIAssistantScreen() {
         setVoiceConfirmVisible(true);
       } else {
         setVoiceLogId(null);
-        showToast("Tidak ada draf transaksi yang dibuat.", "error");
+        showToast(t("ai.toast.noVoiceDraft"), "error");
       }
     } else if (voiceStatus.data.status === "failed") {
       resetRecorder();
       setVoiceLogId(null);
-      showToast(voiceStatus.data.error_message ?? "Pemrosesan suara gagal.", "error");
+      showToast(voiceStatus.data.error_message ?? t("ai.toast.voiceProcessingFailed"), "error");
     }
-  }, [resetRecorder, setMessages, showToast, voiceLogId, voiceStatus.data]);
+  }, [resetRecorder, setMessages, showToast, voiceLogId, voiceStatus.data, t]);
 
   // Update receipt message as status changes
   useEffect(() => {
@@ -167,13 +169,13 @@ export default function AIAssistantScreen() {
         setReceiptConfirmVisible(true);
       } else {
         setReceiptLogId(null);
-        showToast("Tidak bisa membaca transaksi dari struk.", "error");
+        showToast(t("ai.toast.noReceiptDraft"), "error");
       }
     } else if (receiptStatus.data.status === "failed") {
       setReceiptLogId(null);
-      showToast(receiptStatus.data.error_message ?? "Pemrosesan struk gagal.", "error");
+      showToast(receiptStatus.data.error_message ?? t("ai.toast.receiptProcessingFailed"), "error");
     }
-  }, [setMessages, showToast, receiptLogId, receiptStatus.data]);
+  }, [setMessages, showToast, receiptLogId, receiptStatus.data, t]);
 
   // Auto-fail voice if worker never responds
   useEffect(() => {
@@ -186,7 +188,7 @@ export default function AIAssistantScreen() {
             ? {
                 ...(m as ChatMessage),
                 status: "failed",
-                errorMessage: "Pemrosesan kelamaan. Coba lagi ya.",
+                errorMessage: t("ai.toast.processingTimeoutInline"),
               }
             : m
         )
@@ -194,10 +196,10 @@ export default function AIAssistantScreen() {
       setVoiceLogId(null);
       setTranscriptVisible(false);
       resetRecorder();
-      showToast("Pemrosesan suara kelamaan.", "error");
+      showToast(t("ai.toast.voiceProcessingTimeout"), "error");
     }, PROCESSING_TIMEOUT_MS);
     return () => clearTimeout(timer);
-  }, [voiceLogId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [voiceLogId, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fail receipt if worker never responds
   useEffect(() => {
@@ -210,16 +212,16 @@ export default function AIAssistantScreen() {
             ? {
                 ...(m as ChatMessage),
                 status: "failed",
-                errorMessage: "Pemrosesan kelamaan. Coba lagi ya.",
+                errorMessage: t("ai.toast.processingTimeoutInline"),
               }
             : m
         )
       );
       setReceiptLogId(null);
-      showToast("Pemrosesan struk kelamaan.", "error");
+      showToast(t("ai.toast.receiptProcessingTimeout"), "error");
     }, PROCESSING_TIMEOUT_MS);
     return () => clearTimeout(timer);
-  }, [receiptLogId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [receiptLogId, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     return () => {
@@ -242,15 +244,11 @@ export default function AIAssistantScreen() {
   }, [inputText, sendMessage]);
 
   const handleClearChat = useCallback(() => {
-    Alert.alert(
-      "Hapus Percakapan",
-      "Seluruh riwayat chat akan dihapus dari perangkat ini.",
-      [
-        { text: "Batal", style: "cancel" },
-        { text: "Hapus", style: "destructive", onPress: () => void clearChat() },
-      ]
-    );
-  }, [clearChat]);
+    Alert.alert(t("ai.clearChat.menuLabel"), t("ai.clearChat.alertMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.delete"), style: "destructive", onPress: () => void clearChat() },
+    ]);
+  }, [clearChat, t]);
 
   const uploadVoiceFlow = useCallback(
     async (audioUri: string, accountId: string) => {
@@ -265,12 +263,12 @@ export default function AIAssistantScreen() {
         resetRecorder();
         setMessages((prev) => [
           ...prev,
-          createFailedUploadMessage("voice", audioUri, accountId, "Gagal mengunggah rekaman suara."),
+          createFailedUploadMessage("voice", audioUri, accountId, t("ai.toast.voiceUploadFailed")),
         ]);
-        showToast("Gagal mengunggah rekaman suara. Coba lagi ya.", "error");
+        showToast(t("ai.toast.voiceUploadFailed"), "error");
       }
     },
-    [resetRecorder, setMessages, showToast, uploadAudio]
+    [resetRecorder, setMessages, showToast, uploadAudio, t]
   );
 
   const uploadReceiptFlow = useCallback(
@@ -285,12 +283,12 @@ export default function AIAssistantScreen() {
       } catch {
         setMessages((prev) => [
           ...prev,
-          createFailedUploadMessage("receipt", imageUri, accountId, "Gagal mengunggah struk."),
+          createFailedUploadMessage("receipt", imageUri, accountId, t("ai.toast.receiptUploadFailed")),
         ]);
-        showToast("Gagal mengunggah struk. Coba lagi ya.", "error");
+        showToast(t("ai.toast.receiptUploadFailed"), "error");
       }
     },
-    [setMessages, showToast, uploadReceipt]
+    [setMessages, showToast, uploadReceipt, t]
   );
 
   const handleRetry = useCallback(
@@ -313,11 +311,11 @@ export default function AIAssistantScreen() {
   const handleMicPressIn = useCallback(() => {
     if (isMicBusy || isRecording) return;
     if (!defaultAccount) {
-      showToast("Buat akun dulu sebelum mencatat transaksi.", "error");
+      showToast(t("transaction.noAccountsPrompt"), "error");
       return;
     }
     void startRecording();
-  }, [defaultAccount, isMicBusy, isRecording, showToast, startRecording]);
+  }, [defaultAccount, isMicBusy, isRecording, showToast, startRecording, t]);
 
   const handleMicPressOut = useCallback(() => {
     if (!isRecording || !defaultAccount) return;
@@ -330,7 +328,7 @@ export default function AIAssistantScreen() {
 
   const handleCameraPress = useCallback(async () => {
     if (!defaultAccount) {
-      showToast("Buat akun dulu sebelum scan struk.", "error");
+      showToast(t("ai.toast.createAccountForScan"), "error");
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -340,7 +338,7 @@ export default function AIAssistantScreen() {
     });
     if (result.canceled || !result.assets[0]) return;
     await uploadReceiptFlow(result.assets[0].uri, defaultAccount.id);
-  }, [defaultAccount, showToast, uploadReceiptFlow]);
+  }, [defaultAccount, showToast, uploadReceiptFlow, t]);
 
   const handleQuickChip = useCallback(
     (chip: (typeof QUICK_CHIPS)[number]) => {
@@ -357,9 +355,9 @@ export default function AIAssistantScreen() {
       setTranscriptVisible(false);
       void extractVoice
         .mutateAsync({ voiceLogId, transcript })
-        .catch(() => showToast("Gagal memproses transkrip.", "error"));
+        .catch(() => showToast(t("ai.toast.transcriptProcessFailed"), "error"));
     },
-    [extractVoice, showToast, voiceLogId]
+    [extractVoice, showToast, voiceLogId, t]
   );
 
   const handleTranscriptDismiss = useCallback(() => {
@@ -378,10 +376,10 @@ export default function AIAssistantScreen() {
       resetRecorder();
       void confirmVoiceTransaction
         .mutateAsync({ transactionId, ...payload })
-        .then(() => showToast("Transaksi tersimpan.", "success"))
-        .catch(() => showToast("Gagal menyimpan transaksi.", "error"));
+        .then(() => showToast(t("ai.toast.transactionSaved"), "success"))
+        .catch(() => showToast(t("ai.toast.transactionSaveFailed"), "error"));
     },
-    [confirmVoiceTransaction, resetRecorder, showToast, voiceStatus.data?.transaction_id]
+    [confirmVoiceTransaction, resetRecorder, showToast, voiceStatus.data?.transaction_id, t]
   );
 
   const handleVoiceConfirmDismiss = useCallback(() => {
@@ -398,10 +396,10 @@ export default function AIAssistantScreen() {
       setReceiptLogId(null);
       void confirmReceiptTransaction
         .mutateAsync({ transactionId, ...payload })
-        .then(() => showToast("Transaksi tersimpan.", "success"))
-        .catch(() => showToast("Gagal menyimpan transaksi.", "error"));
+        .then(() => showToast(t("ai.toast.transactionSaved"), "success"))
+        .catch(() => showToast(t("ai.toast.transactionSaveFailed"), "error"));
     },
-    [confirmReceiptTransaction, showToast, receiptStatus.data?.transaction_id]
+    [confirmReceiptTransaction, showToast, receiptStatus.data?.transaction_id, t]
   );
 
   const handleReceiptConfirmDismiss = useCallback(() => {
@@ -439,14 +437,14 @@ export default function AIAssistantScreen() {
         })
         .then(() => {
           updateDraftMessage(msg.id, "saved");
-          showToast("Transaksi tersimpan.", "success");
+          showToast(t("ai.toast.transactionSaved"), "success");
         })
         .catch(() => {
           updateDraftMessage(msg.id, "pending");
-          showToast("Gagal menyimpan transaksi.", "error");
+          showToast(t("ai.toast.transactionSaveFailed"), "error");
         });
     },
-    [categories, confirmAiDraftMutation, showToast, updateDraftMessage]
+    [categories, confirmAiDraftMutation, showToast, updateDraftMessage, t]
   );
 
   const handleDraftCancel = useCallback(
@@ -457,10 +455,10 @@ export default function AIAssistantScreen() {
         .then(() => updateDraftMessage(msg.id, "cancelled"))
         .catch(() => {
           updateDraftMessage(msg.id, "pending");
-          showToast("Gagal membatalkan draft.", "error");
+          showToast(t("ai.toast.draftCancelFailed"), "error");
         });
     },
-    [cancelAiDraftMutation, showToast, updateDraftMessage]
+    [cancelAiDraftMutation, showToast, updateDraftMessage, t]
   );
 
   const handleDraftEdit = useCallback((msg: DraftMessage) => {
@@ -477,14 +475,14 @@ export default function AIAssistantScreen() {
         .mutateAsync({ transactionId: editingDraft.draft.transaction_id, payload })
         .then(() => {
           updateDraftMessage(id, "saved");
-          showToast("Transaksi tersimpan.", "success");
+          showToast(t("ai.toast.transactionSaved"), "success");
         })
         .catch(() => {
           updateDraftMessage(id, "pending");
-          showToast("Gagal menyimpan transaksi.", "error");
+          showToast(t("ai.toast.transactionSaveFailed"), "error");
         });
     },
-    [confirmAiDraftMutation, editingDraft, showToast, updateDraftMessage]
+    [confirmAiDraftMutation, editingDraft, showToast, updateDraftMessage, t]
   );
 
   const renderMessage = useCallback(
@@ -511,13 +509,13 @@ export default function AIAssistantScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right", "bottom"]}>
       <Header
-        title="AI Assistant"
+        title={t("ai.headerTitle")}
         onBack={() => router.back()}
         right={
           <OverflowMenu
             items={[
               {
-                label: "Hapus Percakapan",
+                label: t("ai.clearChat.menuLabel"),
                 icon: <Trash2 size={15} color={colors.danger.text} />,
                 destructive: true,
                 onPress: handleClearChat,
@@ -529,7 +527,7 @@ export default function AIAssistantScreen() {
 
       {/* Guest gate */}
       {isGuest ? (
-        <GuestGate subtitle="Masuk untuk menggunakan AI Assistant dan melihat data keuanganmu." />
+        <GuestGate subtitle={t("ai.guestSubtitle")} />
       ) : (
       <>
       {/* Chat area */}
@@ -540,10 +538,8 @@ export default function AIAssistantScreen() {
       ) : messages.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyGreeting}>
-            <Text style={styles.emptyTitle}>Ada yang bisa aku bantu?</Text>
-            <Text style={styles.emptySubtitle}>
-              Ketik pesan, rekam suara, atau foto struk belanjamu.
-            </Text>
+            <Text style={styles.emptyTitle}>{t("ai.emptyTitle")}</Text>
+            <Text style={styles.emptySubtitle}>{t("ai.emptySubtitle")}</Text>
           </View>
           <ScrollView
             horizontal
@@ -553,12 +549,12 @@ export default function AIAssistantScreen() {
           >
             {QUICK_CHIPS.map((chip) => (
               <Pressable
-                key={chip.label}
+                key={chip.id}
                 onPress={() => handleQuickChip(chip)}
                 style={({ pressed }) => pressed && { opacity: 0.7 }}
               >
                 <View style={styles.chip}>
-                  <Text style={styles.chipLabel}>{chip.label}</Text>
+                  <Text style={styles.chipLabel}>{t(chip.labelKey)}</Text>
                 </View>
               </Pressable>
             ))}
@@ -585,12 +581,12 @@ export default function AIAssistantScreen() {
         >
           {QUICK_CHIPS.map((chip) => (
             <Pressable
-              key={chip.label}
+              key={chip.id}
               onPress={() => handleQuickChip(chip)}
               style={({ pressed }) => pressed && { opacity: 0.7 }}
             >
               <View style={styles.chip}>
-                <Text style={styles.chipLabel}>{chip.label}</Text>
+                <Text style={styles.chipLabel}>{t(chip.labelKey)}</Text>
               </View>
             </Pressable>
           ))}
@@ -624,7 +620,7 @@ export default function AIAssistantScreen() {
           style={styles.textInput}
           value={inputText}
           onChangeText={setInputText}
-          placeholder="Ketik pesan..."
+          placeholder={t("ai.inputPlaceholder")}
           placeholderTextColor={colors.text.muted}
           returnKeyType="send"
           onSubmitEditing={handleSendText}

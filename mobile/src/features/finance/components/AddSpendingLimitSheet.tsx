@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { X } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import type { Category } from '@/features/finance/types';
 import CategoryCard from '@/features/finance/components/CategoryCard';
@@ -21,6 +22,7 @@ interface AddSpendingLimitSheetProps {
 }
 
 function AddSpendingLimitSheet({ categories, isVisible, onDismiss, onSelect }: AddSpendingLimitSheetProps) {
+  const { t } = useTranslation();
   const renderItem = useCallback(({ item }: { item: Category }) => (
     <CategoryCard category={item} onPress={onSelect} />
   ), [onSelect]);
@@ -39,7 +41,7 @@ function AddSpendingLimitSheet({ categories, isVisible, onDismiss, onSelect }: A
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <View style={styles.titleRow}>
-            <Text style={styles.title}>Tambah Batas Pengeluaran</Text>
+            <Text style={styles.title}>{t('budget.addLimit.title')}</Text>
             <Pressable
               style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
               onPress={onDismiss}
@@ -47,11 +49,11 @@ function AddSpendingLimitSheet({ categories, isVisible, onDismiss, onSelect }: A
               <X size={16} color={colors.text.secondary} strokeWidth={1.5} />
             </Pressable>
           </View>
-          <Text style={styles.subtitle}>Pilih kategori buat atur batas bulanan</Text>
+          <Text style={styles.subtitle}>{t('budget.addLimit.subtitle')}</Text>
 
           {categories.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>Semua kategori pengeluaran sudah punya batas.</Text>
+              <Text style={styles.emptyText}>{t('budget.addLimit.allSetText')}</Text>
             </View>
           ) : (
             <FlatList

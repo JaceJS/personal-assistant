@@ -1,8 +1,9 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { CreditCard, Landmark, RefreshCw, Smartphone, Wallet } from "lucide-react-native";
-import { formatRelativeTime, formatRupiah } from "@/lib/utils";
-import { ACCOUNT_TYPE_LABELS } from "@/features/finance/constants";
+import { useTranslation } from "react-i18next";
+import { formatRelativeTime, formatMoney } from "@/lib/format";
+import { accountTypeLabel } from "@/features/finance/constants";
 import type { Account, AccountType } from "@/features/finance/types";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
@@ -24,6 +25,7 @@ interface AccountCardProps {
 }
 
 function AccountCard({ account, onPress }: AccountCardProps) {
+  const { t } = useTranslation();
   const balanceColor =
     account.type === "credit" && account.balance < 0
       ? colors.danger.text
@@ -39,20 +41,20 @@ function AccountCard({ account, onPress }: AccountCardProps) {
           <View style={styles.nameBlock}>
             <Text style={styles.name}>{account.name.toUpperCase()}</Text>
             <Text style={[textStyles.caption, styles.typeLabel]}>
-              {ACCOUNT_TYPE_LABELS[account.type]}
+              {accountTypeLabel(t, account.type)}
             </Text>
           </View>
           <TypeIcon type={account.type} />
         </View>
 
         <Text style={[textStyles.display, styles.balance, { color: balanceColor }]}>
-          {formatRupiah(account.balance)}
+          {formatMoney(account.balance)}
         </Text>
 
         <View style={styles.footer}>
           <RefreshCw size={12} color={colors.text.muted} />
           <Text style={[textStyles.caption, styles.syncText]}>
-            Synced {formatRelativeTime(account.updated_at)}
+            {t("accounts.syncedLabel", { time: formatRelativeTime(account.updated_at) })}
           </Text>
         </View>
       </View>

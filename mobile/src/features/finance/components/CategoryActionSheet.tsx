@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import Button from '@/components/ui/Button';
 import type { Category } from '@/features/finance/types';
@@ -20,6 +21,7 @@ function CategoryActionSheet({
   onEdit,
   onDelete,
 }: CategoryActionSheetProps) {
+  const { t } = useTranslation();
   const tint = category?.color ? `${category.color}28` : `${colors.accent.primary}28`;
 
   return (
@@ -37,9 +39,14 @@ function CategoryActionSheet({
         </View>
 
         <View style={styles.actions}>
-          <Button label="Ubah" variant="secondary" fullWidth onPress={() => category && onEdit(category)} />
           <Button
-            label="Hapus"
+            label={t("categories.action.editCta")}
+            variant="secondary"
+            fullWidth
+            onPress={() => category && onEdit(category)}
+          />
+          <Button
+            label={t("common.delete")}
             variant="danger"
             fullWidth
             onPress={() => category && onDelete(category)}

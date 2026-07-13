@@ -1,32 +1,28 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedReaction, useAnimatedStyle, runOnJS } from 'react-native-reanimated';
 import { Area, CartesianChart, Line, useChartPressState } from 'victory-native';
 import { ChevronDown } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { buildDailyBuckets, buildMonthlyBuckets, buildWeeklyBuckets } from '@/features/finance/utils/chart';
-import { formatRupiah } from '@/lib/utils';
+import { formatChartAxisValue, formatMoney, getMonthNames } from '@/lib/format';
 import { useChartFont } from '@/hooks/useChartFont';
 import { colors, radius, spacing } from '@/theme';
 
 type Period = 'D' | 'W' | 'M';
 
-const PERIOD_OPTIONS: { value: Period; label: string }[] = [
-  { value: 'D', label: 'Daily' },
-  { value: 'W', label: 'Weekly' },
-  { value: 'M', label: 'Monthly' },
+// Literal key paths (see src/i18n/types.ts) so t() stays type-checked.
+const PERIOD_OPTIONS: { value: Period; labelKey: 'charts.periodDaily' | 'charts.periodWeekly' | 'charts.periodMonthly' }[] = [
+  { value: 'D', labelKey: 'charts.periodDaily' },
+  { value: 'W', labelKey: 'charts.periodWeekly' },
+  { value: 'M', labelKey: 'charts.periodMonthly' },
 ];
 
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-function formatChartY(val: number): string {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}jt`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
-  return String(Math.round(val));
-}
-
 export default function SpendChartCard() {
+  const { t, i18n } = useTranslation();
+  const monthNames = useMemo(() => getMonthNames("long"), [i18n.language]);
   const [period, setPeriod] = useState<Period>('M');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [activePoint, setActivePoint] = useState<{ week: number; amount: number } | null>(null);
@@ -85,7 +81,7 @@ export default function SpendChartCard() {
     <View style={styles.card}>
       <View style={styles.spendHeader}>
         <Text style={styles.sectionLabel}>
-          {period === 'D' ? 'DAILY SPEND' : period === 'W' ? 'WEEKLY SPEND' : 'MONTHLY SPEND'}
+          {period === 'D' ? t('charts.dailySpendLabel') : period === 'W' ? t('charts.weeklySpendLabel') : t('charts.monthlySpendLabel')}
         </Text>
         <View style={styles.dropdownWrap}>
           <Pressable
@@ -93,7 +89,7 @@ export default function SpendChartCard() {
             onPress={() => setDropdownOpen((o) => !o)}
           >
             <Text style={styles.dropdownTriggerText}>
-              {PERIOD_OPTIONS.find((o) => o.value === period)?.label}
+              {t(PERIOD_OPTIONS.find((o) => o.value === period)!.labelKey)}
             </Text>
             <ChevronDown size={12} color={colors.text.muted} strokeWidth={2} />
           </Pressable>
@@ -106,7 +102,7 @@ export default function SpendChartCard() {
                   onPress={() => { setPeriod(opt.value); setDropdownOpen(false); }}
                 >
                   <Text style={[styles.dropdownItemText, period === opt.value && styles.dropdownItemTextActive]}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </Text>
                 </Pressable>
               ))}
@@ -116,10 +112,10 @@ export default function SpendChartCard() {
       </View>
 
       {period !== 'M' && (
-        <Text style={styles.monthLabel}>{MONTH_NAMES[now.getMonth()]} {now.getFullYear()}</Text>
+        <Text style={styles.monthLabel}>{monthNames[now.getMonth()]} {now.getFullYear()}</Text>
       )}
 
-      <Text style={styles.spendAmount}>{formatRupiah(periodSpend)}</Text>
+      <Text style={styles.spendAmount}>{formatMoney(periodSpend)}</Text>
 
       <View style={styles.chartWrap}>
         {hasChartData ? (
@@ -139,7 +135,7 @@ export default function SpendChartCard() {
             }}
             yAxis={[{
               font: chartFont,
-              formatYLabel: (v) => formatChartY(Number(v)),
+              formatYLabel: (v) => formatChartAxisValue(Number(v)),
               labelColor: colors.text.muted,
               lineColor: colors.border.subtle,
               tickCount: 4,
@@ -171,7 +167,7 @@ export default function SpendChartCard() {
             {activePoint ? (chartData.find((d) => d.x === activePoint.week)?.label ?? '') : ''}
           </Text>
           <Text style={styles.tooltipAmount}>
-            {activePoint ? formatRupiah(activePoint.amount) : ''}
+            {activePoint ? formatMoney(activePoint.amount) : ''}
           </Text>
         </Animated.View>
       </View>

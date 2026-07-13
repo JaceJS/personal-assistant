@@ -1,8 +1,9 @@
 import { Check } from "lucide-react-native";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import type { DraftMessage } from "@/features/finance/utils/chatMessageUtils";
-import { formatRupiah } from "@/lib/utils";
+import { formatMoney } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function DraftTransactionCard({ message, onSave, onEdit, onCancel }: Props) {
+  const { t } = useTranslation();
   const { draft, state } = message;
   const isExpense = draft.amount < 0;
   const isCancelled = state === "cancelled";
@@ -23,7 +25,7 @@ export function DraftTransactionCard({ message, onSave, onEdit, onCancel }: Prop
         <View style={styles.row}>
           <View style={styles.info}>
             <Text style={styles.headline} numberOfLines={1}>
-              {draft.category_name ?? "Transaksi"}
+              {draft.category_name ?? t("ai.draftCard.fallbackTitle")}
             </Text>
             {draft.merchant ? <Text style={styles.subline}>{draft.merchant}</Text> : null}
             {draft.note ? (
@@ -34,7 +36,7 @@ export function DraftTransactionCard({ message, onSave, onEdit, onCancel }: Prop
           </View>
           <Text style={[styles.amount, isExpense ? styles.amountExpense : styles.amountIncome]}>
             {isExpense ? "-" : "+"}
-            {formatRupiah(Math.abs(draft.amount))}
+            {formatMoney(Math.abs(draft.amount))}
           </Text>
         </View>
 
@@ -46,7 +48,7 @@ export function DraftTransactionCard({ message, onSave, onEdit, onCancel }: Prop
               hitSlop={4}
             >
               <View style={[styles.btn, styles.btnPrimary]}>
-                <Text style={styles.btnPrimaryLabel}>Simpan</Text>
+                <Text style={styles.btnPrimaryLabel}>{t("common.save")}</Text>
               </View>
             </Pressable>
             <Pressable
@@ -55,7 +57,7 @@ export function DraftTransactionCard({ message, onSave, onEdit, onCancel }: Prop
               hitSlop={4}
             >
               <View style={[styles.btn, styles.btnGhost]}>
-                <Text style={styles.btnGhostLabel}>Edit</Text>
+                <Text style={styles.btnGhostLabel}>{t("ai.draftCard.editCta")}</Text>
               </View>
             </Pressable>
             <Pressable
@@ -64,7 +66,7 @@ export function DraftTransactionCard({ message, onSave, onEdit, onCancel }: Prop
               hitSlop={4}
             >
               <View style={[styles.btn, styles.btnGhost]}>
-                <Text style={styles.btnDangerLabel}>Batal</Text>
+                <Text style={styles.btnDangerLabel}>{t("common.cancel")}</Text>
               </View>
             </Pressable>
           </View>
@@ -79,13 +81,13 @@ export function DraftTransactionCard({ message, onSave, onEdit, onCancel }: Prop
         {state === "saved" && (
           <View style={styles.statusRow}>
             <Check size={14} color={colors.success.text} strokeWidth={2.5} />
-            <Text style={styles.savedLabel}>Tersimpan</Text>
+            <Text style={styles.savedLabel}>{t("ai.draftCard.savedLabel")}</Text>
           </View>
         )}
 
         {isCancelled && (
           <View style={styles.statusRow}>
-            <Text style={styles.cancelledLabel}>Dibatalkan</Text>
+            <Text style={styles.cancelledLabel}>{t("ai.draftCard.cancelledLabel")}</Text>
           </View>
         )}
       </View>

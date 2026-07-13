@@ -1,9 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import type { SavingsGoal } from '@/features/finance/types';
 import { daysRemaining } from '@/features/finance/utils/savingsGoalUtils';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
 import { colors, radius, textStyles } from '@/theme';
 
 interface SavingsGoalCardProps {
@@ -18,14 +19,15 @@ function getBarColor(pct: number): string {
 }
 
 function SavingsGoalCard({ goal, onPress }: SavingsGoalCardProps) {
+  const { t } = useTranslation();
   const days = daysRemaining(goal.target_date);
   const barColor = getBarColor(goal.progress_pct);
 
   let daysLabel: string | null = null;
   if (days !== null) {
-    if (days < 0) daysLabel = 'Sudah lewat target';
-    else if (days === 0) daysLabel = 'Hari ini!';
-    else daysLabel = `${days} hari lagi`;
+    if (days < 0) daysLabel = t('goals.card.pastTarget');
+    else if (days === 0) daysLabel = t('goals.card.todayLabel');
+    else daysLabel = t('goals.card.daysLeft', { count: days });
   }
 
   return (
@@ -48,7 +50,7 @@ function SavingsGoalCard({ goal, onPress }: SavingsGoalCardProps) {
         </View>
         {goal.is_completed && (
           <View style={styles.completedBadge}>
-            <Text style={styles.completedText}>✓ Tercapai</Text>
+            <Text style={styles.completedText}>{t('goals.card.completedBadge')}</Text>
           </View>
         )}
       </View>
@@ -66,9 +68,9 @@ function SavingsGoalCard({ goal, onPress }: SavingsGoalCardProps) {
       </View>
 
       <View style={styles.amountRow}>
-        <Text style={styles.currentAmount}>{formatRupiah(goal.current_amount)}</Text>
+        <Text style={styles.currentAmount}>{formatMoney(goal.current_amount)}</Text>
         <Text style={styles.pct}>{Math.round(goal.progress_pct)}%</Text>
-        <Text style={styles.targetAmount}>{formatRupiah(goal.target_amount)}</Text>
+        <Text style={styles.targetAmount}>{formatMoney(goal.target_amount)}</Text>
       </View>
       </View>
     </Pressable>

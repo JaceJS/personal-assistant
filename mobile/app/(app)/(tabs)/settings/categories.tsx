@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Plus, Tag } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { Screen } from "@/components/layout/Screen";
 import { Header } from "@/components/layout/Header";
 import { HeaderButton } from "@/components/ui/HeaderButton";
@@ -18,13 +19,18 @@ import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
 
 const GRID_COLS = 4;
 
-const TYPE_FILTER_OPTIONS: { value: CategoryType | "all"; label: string }[] = [
-  { value: "all", label: "Semua" },
-  { value: "expense", label: "Pengeluaran" },
-  { value: "income", label: "Pemasukan" },
+// Literal key paths (see src/i18n/types.ts) so t() stays type-checked.
+const TYPE_FILTER_OPTIONS: {
+  value: CategoryType | "all";
+  labelKey: "categories.filterAll" | "transaction.expense" | "transaction.income";
+}[] = [
+  { value: "all", labelKey: "categories.filterAll" },
+  { value: "expense", labelKey: "transaction.expense" },
+  { value: "income", labelKey: "transaction.income" },
 ];
 
 export default function CategoriesScreen() {
+  const { t } = useTranslation();
   const handleBack = useBackNavigation();
 
   const { data, isLoading, isRefetching, refetch } = useCategories();
@@ -68,40 +74,40 @@ export default function CategoriesScreen() {
   const handleDelete = useCallback(
     (category: Category) => {
       Alert.alert(
-        "Hapus Kategori",
-        `Yakin mau hapus "${category.name}"?`,
+        t("categories.deleteAlertTitle"),
+        t("categories.deleteAlertMessage", { name: category.name }),
         [
-          { text: "Batal", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
-            text: "Hapus",
+            text: t("common.delete"),
             style: "destructive",
             onPress: async () => {
               try {
                 await archiveCategory.mutateAsync(category.id);
-                showToast("Kategori dihapus", "info");
+                showToast(t("categories.deletedToast"), "info");
               } catch {
-                showToast("Gagal hapus kategori", "error");
+                showToast(t("categories.deleteError"), "error");
               }
             },
           },
         ]
       );
     },
-    [archiveCategory, showToast]
+    [archiveCategory, showToast, t]
   );
 
   const addButton = (
     <HeaderButton
       icon={Plus}
       onPress={handleOpenCreate}
-      accessibilityLabel="Add category"
+      accessibilityLabel={t("categories.addA11y")}
     />
   );
 
   return (
     <Screen>
       <Header
-        title="Kategori"
+        title={t("settings.categoriesMenu")}
         onBack={handleBack}
         right={addButton}
       />
@@ -110,7 +116,7 @@ export default function CategoriesScreen() {
         {TYPE_FILTER_OPTIONS.map((opt) => (
           <FilterPill
             key={opt.value}
-            label={opt.label}
+            label={t(opt.labelKey)}
             active={activeFilter === opt.value}
             onPress={() => setActiveFilter(opt.value)}
           />
@@ -130,15 +136,20 @@ export default function CategoriesScreen() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Tag}
-          title="Belum ada kategori"
+          title={t("categories.emptyTitle")}
           subtitle={
             activeFilter === "all"
-              ? "Yuk mulai kategoriin transaksimu"
-              : `Belum ada kategori ${activeFilter === "expense" ? "pengeluaran" : "pemasukan"}`
+              ? t("categories.emptyAllSubtitle")
+              : t("categories.emptyFilteredSubtitle", {
+                  type:
+                    activeFilter === "expense"
+                      ? t("categories.expenseLower")
+                      : t("categories.incomeLower"),
+                })
           }
           action={
             activeFilter === "all"
-              ? { label: "Tambah Kategori", onPress: handleOpenCreate }
+              ? { label: t("categories.addCta"), onPress: handleOpenCreate }
               : undefined
           }
         />

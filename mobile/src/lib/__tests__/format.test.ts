@@ -1,0 +1,99 @@
+import i18n from "@/i18n";
+import {
+  formatDateLabel,
+  formatMoney,
+  formatRelativeTime,
+  getMonthNames,
+} from "../format";
+
+describe("format helpers", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("id");
+  });
+
+  describe("formatMoney", () => {
+    it("formats IDR with Indonesian separators when language is id", async () => {
+      await i18n.changeLanguage("id");
+      expect(formatMoney(10000)).toMatch(/Rp\s?10\.000/);
+    });
+
+    it("formats IDR with English separators when language is en", async () => {
+      await i18n.changeLanguage("en");
+      expect(formatMoney(10000)).toMatch(/IDR\s?10,000/);
+    });
+
+    it("is currency-agnostic via the currency parameter", async () => {
+      await i18n.changeLanguage("en");
+      expect(formatMoney(10000, "USD")).toMatch(/\$\s?10,000/);
+    });
+
+    it("shows no decimal fraction", async () => {
+      await i18n.changeLanguage("id");
+      expect(formatMoney(10500)).not.toMatch(/,00|\.00/);
+    });
+  });
+
+  describe("getMonthNames", () => {
+    it("returns 12 Indonesian month names for id", async () => {
+      await i18n.changeLanguage("id");
+      const months = getMonthNames();
+      expect(months).toHaveLength(12);
+      expect(months[0]).toBe("Januari");
+      expect(months[7]).toBe("Agustus");
+    });
+
+    it("returns English month names for en", async () => {
+      await i18n.changeLanguage("en");
+      const months = getMonthNames();
+      expect(months[0]).toBe("January");
+      expect(months[11]).toBe("December");
+    });
+  });
+
+  describe("formatDateLabel", () => {
+    function ymd(d: Date): string {
+      return [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, "0"),
+        String(d.getDate()).padStart(2, "0"),
+      ].join("-");
+    }
+
+    it("labels today and yesterday in Indonesian", async () => {
+      await i18n.changeLanguage("id");
+      const today = new Date();
+      const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+      expect(formatDateLabel(ymd(today))).toMatch(/^Hari ini - /);
+      expect(formatDateLabel(ymd(yesterday))).toMatch(/^Kemarin - /);
+    });
+
+    it("labels today in English", async () => {
+      await i18n.changeLanguage("en");
+      expect(formatDateLabel(ymd(new Date()))).toMatch(/^Today - /);
+    });
+
+    it("returns a plain localized date for older days", async () => {
+      await i18n.changeLanguage("id");
+      const label = formatDateLabel("2026-01-05");
+      expect(label).not.toMatch(/Hari ini|Kemarin/);
+      expect(label).toContain("Januari");
+    });
+  });
+
+  describe("formatRelativeTime", () => {
+    it("translates relative time in Indonesian", async () => {
+      await i18n.changeLanguage("id");
+      expect(formatRelativeTime(new Date().toISOString())).toBe("Baru saja");
+      const fiveMinAgo = new Date(Date.now() - 5 * 60_000).toISOString();
+      expect(formatRelativeTime(fiveMinAgo)).toBe("5 menit lalu");
+    });
+
+    it("pluralizes in English", async () => {
+      await i18n.changeLanguage("en");
+      const oneMinAgo = new Date(Date.now() - 60_000).toISOString();
+      const fiveMinAgo = new Date(Date.now() - 5 * 60_000).toISOString();
+      expect(formatRelativeTime(oneMinAgo)).toBe("1 min ago");
+      expect(formatRelativeTime(fiveMinAgo)).toBe("5 mins ago");
+    });
+  });
+});

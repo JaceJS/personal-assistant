@@ -1,10 +1,12 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 import ListItem from '@/components/ui/ListItem';
 import CategoryIcon from './CategoryIcon';
 import type { Category, Transaction } from '@/features/finance/types';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney, formatTime } from '@/lib/format';
 import { colors, textStyles } from '@/theme';
 
 interface TransactionCardProps {
@@ -14,11 +16,14 @@ interface TransactionCardProps {
   onPress?: () => void;
 }
 
-function getCardLabels(transaction: Transaction, categoryName?: string) {
-  const timeStr = new Date(transaction.occurred_at)
-    .toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-  const sourceMap: Record<string, string> = { voice: 'Suara', receipt: 'Struk' };
-  const sourceLabel = sourceMap[transaction.source];
+function getCardLabels(t: TFunction, transaction: Transaction, categoryName?: string) {
+  const timeStr = formatTime(transaction.occurred_at);
+  const sourceLabel =
+    transaction.source === 'voice'
+      ? t('ai.chatBubble.typeVoice')
+      : transaction.source === 'receipt'
+        ? t('ai.chatBubble.typeReceipt')
+        : undefined;
   const timeLine = sourceLabel ? `${timeStr} · ${sourceLabel}` : timeStr;
 
   if (transaction.merchant) {
@@ -37,13 +42,14 @@ function getCardLabels(transaction: Transaction, categoryName?: string) {
   if (transaction.note) {
     return { title: transaction.note, subtitle: timeLine };
   }
-  return { title: 'Lainnya', subtitle: timeStr };
+  return { title: t('transaction.card.otherFallback'), subtitle: timeStr };
 }
 
 function TransactionCard({ transaction, category, showId, onPress }: TransactionCardProps) {
+  const { t } = useTranslation();
   const isExpense = transaction.amount < 0;
-  const { title, subtitle } = getCardLabels(transaction, category?.name);
-  const amountText = `${isExpense ? '−' : '+'} ${formatRupiah(Math.abs(transaction.amount))}`;
+  const { title, subtitle } = getCardLabels(t, transaction, category?.name);
+  const amountText = `${isExpense ? '−' : '+'} ${formatMoney(Math.abs(transaction.amount))}`;
   const amountColor = isExpense ? colors.danger.text : colors.success.text;
 
   const emoji = category?.icon ?? (isExpense ? '💸' : '💰');

@@ -1,0 +1,576 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "back": "Back",
+    "next": "Next",
+    "retry": "Try again",
+    "loading": "Loading...",
+    "optional": "optional",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "justNow": "Just now",
+    "searchPlaceholder": "Search...",
+    "noOptionsFound": "No options found",
+    "selectItemPlaceholder": "Select item",
+    "selectPrefix": "Select {{label}}",
+    "doneCta": "Done",
+    "minutesAgo_one": "{{count}} min ago",
+    "minutesAgo_other": "{{count}} mins ago",
+    "hoursAgo_one": "{{count}} hour ago",
+    "hoursAgo_other": "{{count}} hours ago",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago",
+    "errorBoundary": {
+      "title": "Something went wrong",
+      "defaultMessage": "An unexpected error occurred.",
+      "retryCta": "Try Again"
+    }
+  },
+  "datePicker": {
+    "title": "Select Date",
+    "twoDaysAgo": "2 Days Ago"
+  },
+  "tabs": {
+    "home": "Home",
+    "history": "Activity",
+    "goals": "Goals",
+    "settings": "Profile"
+  },
+  "settings": {
+    "language": {
+      "section": "Language",
+      "row": "App Language",
+      "sheetTitle": "Choose Language",
+      "system": "Follow System"
+    },
+    "accountSectionLabel": "Account",
+    "financeSectionLabel": "Finance",
+    "notificationSectionLabel": "Notifications",
+    "legalSectionLabel": "Legal",
+    "helpSectionLabel": "Help",
+    "connecting": "Connecting...",
+    "backupSync": "Backup & Sync",
+    "backupSyncSubtitle": "Sign in with Google to save your data",
+    "manageAccounts": "Manage Accounts",
+    "monthlyBudget": "Monthly Budget",
+    "categoriesMenu": "Categories",
+    "dailyReminderLabel": "Daily Reminder",
+    "reminderActive": "Active · {{time}}",
+    "reminderInactive": "Inactive",
+    "changeReminderTime": "Change Reminder Time",
+    "permissionDenied": "Notification permission denied. Enable it in device settings.",
+    "reminderTimeSheetTitle": "Choose reminder time",
+    "termsMenu": "Terms & Conditions",
+    "privacyMenu": "Privacy Policy",
+    "chatWithUs": "Chat with us",
+    "whatsappMessage": "Hi, I'm using Savyn{{versionSuffix}}. I'd like to share some feedback:",
+    "signOutCta": "Sign Out",
+    "signOutConfirm": "Are you sure you want to sign out?",
+    "guestName": "Guest",
+    "guestDataNote": "Data is stored on this device",
+    "profile": {
+      "headerTitle": "Edit Profile",
+      "changePhoto": "Change Photo",
+      "nameLabel": "Name",
+      "namePlaceholder": "Enter your name",
+      "emailLabel": "Email",
+      "emailHint": "Email cannot be changed",
+      "nameEmptyToast": "Name cannot be empty",
+      "savedToast": "Profile saved successfully",
+      "saveError": "Couldn't save profile, try again"
+    }
+  },
+  "categories": {
+    "addA11y": "Add category",
+    "filterAll": "All",
+    "expenseLower": "expense",
+    "incomeLower": "income",
+    "deleteAlertTitle": "Delete Category",
+    "deleteAlertMessage": "Delete \"{{name}}\"?",
+    "deletedToast": "Category deleted",
+    "deleteError": "Couldn't delete category",
+    "emptyTitle": "No categories yet",
+    "emptyAllSubtitle": "Start categorizing your transactions",
+    "emptyFilteredSubtitle": "No {{type}} categories yet",
+    "addCta": "Add Category",
+    "form": {
+      "editTitle": "Edit Category",
+      "newTitle": "New Category",
+      "nameLabel": "Category Name",
+      "namePlaceholder": "e.g. Food, Transport, Salary",
+      "nameRequired": "Category name is required",
+      "typeLabel": "Type",
+      "colorLabel": "Color",
+      "createCta": "Create Category",
+      "updatedToast": "Category updated",
+      "createdToast": "Category created",
+      "updateError": "Couldn't update category",
+      "createError": "Couldn't create category"
+    },
+    "action": {
+      "editCta": "Edit"
+    },
+    "selectedCount_one": "{{count}} Category selected",
+    "selectedCount_other": "{{count}} Categories selected"
+  },
+  "tabBar": {
+    "dismissGoalCoachmarkA11y": "Dismiss tip: set your savings goal here",
+    "goalCoachmarkText": "Set your savings goal here 🎯",
+    "dismissBotCoachmarkA11y": "Dismiss tip: try chat, voice, or photo a receipt here",
+    "botCoachmarkText": "Try chat, voice, or snap a receipt here ✨",
+    "openAiA11y": "Open AI assistant"
+  },
+  "finance": {
+    "budgetSectionTitle": "Monthly Budget",
+    "savingsGoalsTitle": "Savings Goals",
+    "savingsGoalsSubtitle": "Concert tickets, vacations, emergency funds…",
+    "cashFlowTitle": "Cash Flow"
+  },
+  "budget": {
+    "headerTitle": "Budget",
+    "saveError": "Couldn't save budget",
+    "unallocatedOver": "{{amount}} over",
+    "unallocatedRemaining": "{{amount}} left",
+    "regularBillsTitle": "Recurring Bills",
+    "emptyBillsText": "No recurring bills yet. Open an expense category and enable \"Fixed Expense\" to add one.",
+    "spendingLimitsTitle": "Spending Limits",
+    "addLimitA11y": "Add spending limit",
+    "emptyLimitsTitle": "No spending limits yet",
+    "emptyLimitsSubtitle": "Tap + to add a category and set a monthly limit",
+    "noBudgetHint": "No budget set yet",
+    "usedPctLabel": "{{pct}}% used",
+    "editTitle": "Edit Budget",
+    "setMonthlyTitle": "Set Monthly Budget",
+    "amountPlaceholder": "e.g. 10,000,000",
+    "savingEllipsis": "Saving…",
+    "saveCta": "Save Budget",
+    "bucket": {
+      "noLimit": "No Limit",
+      "onTrack": "On Track",
+      "warning": "Warning",
+      "over": "Over",
+      "tapToSetLimit": "Tap to set a limit"
+    },
+    "fixed": {
+      "unpaid": "Unpaid",
+      "partial": "{{amount}} short",
+      "paid": "Paid",
+      "paidGeneric": "Paid",
+      "committedLabel": "Committed: {{amount}}",
+      "noAmountYet": "No amount set yet"
+    },
+    "category": {
+      "savedToast": "Spending limit saved",
+      "saveError": "Couldn't save the spending limit",
+      "deletedToast": "Spending limit deleted",
+      "deleteError": "Couldn't delete the spending limit",
+      "editTitle": "Edit Limit",
+      "setTitle": "Set Limit",
+      "monthlyAmountFixedLabel": "Monthly Amount",
+      "monthlyLimitLabel": "Monthly Limit",
+      "amountPlaceholder": "e.g. 3,000,000",
+      "fixedExpenseLabel": "Fixed expense",
+      "fixedExpenseDesc": "Fixed costs: rent, subscriptions, recurring bills",
+      "saveLimitCta": "Save Limit",
+      "deleteLimitCta": "Delete Limit"
+    },
+    "addLimit": {
+      "title": "Add Spending Limit",
+      "subtitle": "Choose a category to set a monthly limit",
+      "allSetText": "All expense categories already have a limit."
+    },
+    "yearly": {
+      "title": "Spending Overview",
+      "noDataForYear": "No data for {{year}} yet",
+      "monthlyAvgLabel": "Monthly Average: {{amount}}"
+    }
+  },
+  "charts": {
+    "millionSuffix": "M",
+    "dailySpendLabel": "DAILY SPEND",
+    "weeklySpendLabel": "WEEKLY SPEND",
+    "monthlySpendLabel": "MONTHLY SPEND",
+    "periodDaily": "Daily",
+    "periodWeekly": "Weekly",
+    "periodMonthly": "Monthly",
+    "noDataThisYear": "No data for this year yet"
+  },
+  "notifications": {
+    "reminderTitle": "Logged anything today?",
+    "reminderBody": "Don't forget to record today's spending 📝",
+    "permissionSheet": {
+      "title": "Want a daily reminder to log transactions?",
+      "body": "We can send a daily notification so you don't forget to log your spending.",
+      "accept": "Yes, remind me",
+      "decline": "Maybe later"
+    }
+  },
+  "auth": {
+    "loginTitle": "Welcome\nback!",
+    "loginSubtitle": "Sign in to see your data & insights.",
+    "loginWithGoogle": "Sign in with Google",
+    "openingGoogle": "Opening Google...",
+    "continueAsGuest": "Continue without an account →",
+    "loginError": "Login failed, try again"
+  },
+  "onboarding": {
+    "welcome": {
+      "features": {
+        "chat": { "label": "AI Chat", "desc": "Ask, log, and analyze through conversation" },
+        "scan": { "label": "Scan Receipt", "desc": "Snap a photo, it's recorded automatically" },
+        "voice": { "label": "Voice Input", "desc": "Say your transaction, AI logs it" }
+      },
+      "headlineLine1": "AI that understands",
+      "headlineAccent": "your finances.",
+      "subtitle": "Log via chat, voice, or a receipt photo.\nGet insights that are truly personal.",
+      "ctaPrimary": "Let's Go!",
+      "loginLink": "Already have an account? Sign in"
+    },
+    "profile": {
+      "title": "Let's get acquainted 👋",
+      "subtitle": "Fill this in if you'd like, or skip it — you can change it anytime in Settings.",
+      "nameLabel": "What should we call you?",
+      "namePlaceholder": "e.g. Jace, Alex, Sam",
+      "cta": "Next →"
+    },
+    "firstAccount": {
+      "title": "First account",
+      "subtitle": "Where your transactions get recorded. Give it a name you'll recognize, like 'Chase' or 'Cash Wallet'.",
+      "nameLabel": "Account Name",
+      "namePlaceholder": "e.g. Chase, PayPal, Cash",
+      "nameRequired": "Account name is required",
+      "balanceLabel": "Starting Balance (optional)",
+      "typeLabel": "Account Type",
+      "cta": "Start →",
+      "successToast": "Yay! Ready to start tracking 🚀",
+      "errorToast": "Couldn't create the account. Please try again."
+    }
+  },
+  "guest": {
+    "gate": {
+      "title": "This feature requires an account",
+      "cta": "Sign In"
+    },
+    "banner": {
+      "title": "Guest mode",
+      "subtitle": "Data is only on this device. Sign in to back up & sync."
+    }
+  },
+  "deleteAccount": {
+    "headerTitle": "Delete Account",
+    "alertTitle": "Permanently Delete Account",
+    "alertMessage": "This action cannot be undone. All your data will be lost forever.",
+    "alertConfirm": "Delete Now",
+    "successToast": "Your account has been deleted",
+    "errorToast": "Couldn't delete your account, try again",
+    "warningTitle": "Data that will be lost",
+    "items": {
+      "financialAccounts": "All financial accounts",
+      "transactionHistory": "Entire transaction history",
+      "budgetsGoals": "Budgets and goals",
+      "aiConversations": "Conversations with AI"
+    },
+    "warningNote": "This action is permanent and cannot be undone.",
+    "ctaDeleting": "Deleting..."
+  },
+  "accounts": {
+    "createCta": "Create Account",
+    "headerTitle": "Accounts",
+    "addA11y": "Add account",
+    "emptyTitle": "No accounts yet",
+    "emptySubtitle": "Add an account to start tracking expenses",
+    "addActionLabel": "Add Account",
+    "newAccountTitle": "New Account",
+    "namePlaceholder": "e.g. Chase, PayPal, Wallet",
+    "initialBalanceLabel": "Starting Balance",
+    "typeLabel": "Account Type",
+    "createdToast": "Account created successfully",
+    "createError": "Couldn't create the account. Try again.",
+    "detailTitle": "Account Details",
+    "notFound": "Account not found",
+    "nameRequiredToast": "Account name cannot be empty",
+    "updatedToast": "Account updated successfully",
+    "updateError": "Couldn't update the account.",
+    "deleteAlertTitle": "Delete Account",
+    "deleteAlertMessage": "\"{{name}}\" will be permanently deleted. This action cannot be undone.",
+    "deletedToast": "Account deleted successfully",
+    "deleteError": "Couldn't delete the account.",
+    "balanceHeroLabel": "BALANCE",
+    "editBalanceHint": "Update the starting balance for corrections — transactions already recorded won't be affected.",
+    "syncedLabel": "Synced {{time}}",
+    "type": {
+      "bank": "Bank",
+      "cash": "Cash",
+      "ewallet": "E-Wallet",
+      "credit": "Credit Card"
+    }
+  },
+  "transaction": {
+    "newTitle": "New Transaction",
+    "expense": "Expense",
+    "income": "Income",
+    "noAccountsPrompt": "Create an account before logging a transaction.",
+    "dateLabel": "Transaction Date",
+    "amountLabel": "Amount",
+    "categoryLabel": "Category (optional)",
+    "categoryPlaceholder": "Choose Category",
+    "accountLabelSingle": "Account",
+    "accountLabelMulti": "Choose Wallet / Account",
+    "showMoreDetails": "+ Add details (Merchant, Note)",
+    "hideMoreDetails": "− Hide extra details",
+    "merchantLabel": "Merchant / Store (optional)",
+    "merchantPlaceholder": "Store or merchant name",
+    "noteLabel": "Note (optional)",
+    "notePlaceholder": "Add a note",
+    "saveCta": "Save Transaction",
+    "saveSuccess": "Transaction saved",
+    "saveError": "Couldn't save the transaction. Try again.",
+    "budgetCategoryOver": "{{category}} budget is out! {{amount}} left",
+    "budgetCategoryWarning": "{{category}} budget is almost out. {{amount}} left",
+    "budgetMonthlyOver": "Monthly budget is out! {{amount}} left",
+    "budgetMonthlyWarning": "Monthly budget is almost out. {{amount}} left",
+    "validation": {
+      "accountRequired": "Select an account",
+      "amountRequired": "Enter an amount",
+      "dateRequired": "Select a date"
+    },
+    "detailTitle": "Transaction Details",
+    "notFound": "Transaction not found",
+    "saveChangesSuccess": "Changes saved",
+    "saveChangesError": "Couldn't save changes.",
+    "deleteAlertTitle": "Delete Transaction",
+    "deleteAlertMessage": "Delete this transaction?",
+    "deletedToast": "Transaction deleted",
+    "deleteError": "Couldn't delete the transaction.",
+    "dateFieldLabel": "Date",
+    "timeFieldLabel": "Time",
+    "statusFieldLabel": "Status",
+    "statusConfirmed": "Confirmed",
+    "statusDraft": "Draft",
+    "sourceFieldLabel": "Source",
+    "editCta": "Edit",
+    "merchantEditPlaceholder": "Store name",
+    "card": {
+      "otherFallback": "Other"
+    },
+    "source": {
+      "manual": "Manual",
+      "import": "Import"
+    }
+  },
+  "ai": {
+    "headerTitle": "AI Assistant",
+    "clearChat": {
+      "menuLabel": "Clear Conversation",
+      "alertMessage": "The entire chat history will be removed from this device."
+    },
+    "guestSubtitle": "Sign in to use the AI Assistant and see your financial data.",
+    "emptyTitle": "How can I help?",
+    "emptySubtitle": "Type a message, record your voice, or snap a receipt photo.",
+    "inputPlaceholder": "Type a message...",
+    "quickChips": {
+      "logExpense": { "label": "📝 Log an expense" },
+      "scanReceipt": { "label": "📷 Scan receipt" },
+      "logIncome": { "label": "💰 Log income" },
+      "analyze": { "label": "💡 Analyze my finances" }
+    },
+    "toast": {
+      "createAccountForScan": "Create an account before scanning a receipt.",
+      "voiceUploadFailed": "Couldn't upload the recording. Try again.",
+      "receiptUploadFailed": "Couldn't upload the receipt. Try again.",
+      "noVoiceDraft": "No transaction draft was created.",
+      "noReceiptDraft": "Couldn't read a transaction from the receipt.",
+      "voiceProcessingFailed": "Voice processing failed.",
+      "receiptProcessingFailed": "Receipt processing failed.",
+      "transcriptProcessFailed": "Couldn't process the transcript.",
+      "transactionSaved": "Transaction saved.",
+      "transactionSaveFailed": "Couldn't save the transaction.",
+      "draftCancelFailed": "Couldn't cancel the draft.",
+      "voiceProcessingTimeout": "Voice processing took too long.",
+      "receiptProcessingTimeout": "Receipt processing took too long.",
+      "processingTimeoutInline": "Taking too long. Try again."
+    },
+    "confirmCard": {
+      "amountLabel": "Amount",
+      "merchantLabel": "Merchant",
+      "merchantPlaceholder": "e.g. Starbucks",
+      "categoryLabel": "Category",
+      "noteLabel": "Note",
+      "notePlaceholder": "Optional note"
+    },
+    "transcriptSheet": {
+      "title": "What did you say?",
+      "hint": "Fix anything that was misheard, then tap Process.",
+      "placeholder": "Transcript will appear here…",
+      "processCta": "Process"
+    },
+    "draftCard": {
+      "fallbackTitle": "Transaction",
+      "editCta": "Edit",
+      "savedLabel": "Saved",
+      "cancelledLabel": "Cancelled"
+    },
+    "recording": {
+      "releaseHint": "Release to send",
+      "micPermissionRequired": "Microphone permission is required to record audio.",
+      "startFailed": "Couldn't start recording.",
+      "stopFailed": "Couldn't stop recording.",
+      "tooShort": "Recording is too short. Hold the mic button while speaking."
+    },
+    "chatBubble": {
+      "status": {
+        "pending": "Uploading...",
+        "transcribing": "Converting speech to text...",
+        "transcribed": "Check transcript",
+        "extracting": "Reading transaction...",
+        "completed": "Done",
+        "failed": "Failed"
+      },
+      "typeVoice": "Voice",
+      "typeReceipt": "Receipt"
+    },
+    "insight": {
+      "label": "AI INSIGHT",
+      "fallback": "No insight available yet. Keep logging your spending!"
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "loadTransactionsFailed": "Couldn't load transactions",
+    "addTransactionA11y": "Add transaction",
+    "setBudgetCta": "Set a monthly budget",
+    "accountBalance": {
+      "totalLabel": "TOTAL BALANCE",
+      "accountCount_one": "{{count}} account",
+      "accountCount_other": "{{count}} accounts",
+      "promptFirstAccount": "Add your first account",
+      "promptFirstTransaction": "Log your first transaction"
+    },
+    "dailySpend": {
+      "emptyTitle": "Daily Spending Limit",
+      "emptySub": "Set a monthly budget to track daily spending",
+      "overline": "TODAY'S SPENDING",
+      "ofLimit": "of {{limit}}",
+      "remaining": "{{amount}} left",
+      "usedLabel": "used"
+    },
+    "weeklySummary": {
+      "title": "This Week",
+      "emptyText": "No transactions this week yet",
+      "net": "Net"
+    },
+    "monthlyBudget": {
+      "totalLabel": "TOTAL MONTHLY BUDGET",
+      "spentLabel": "Spent",
+      "remainingLabel": "Remaining",
+      "daysLeft_one": "{{count}} day left",
+      "daysLeft_other": "{{count}} days left"
+    },
+    "topCategories": {
+      "title": "TOP SPENDING",
+      "loadFailedTitle": "Couldn't load",
+      "loadFailedSub": "Pull down to refresh",
+      "emptyTitle": "No spending yet",
+      "emptySub": "No transactions in {{month}} yet"
+    },
+    "projectedEndOfMonth": {
+      "overline": "THIS MONTH'S NET",
+      "emptyText": "No transactions this month yet",
+      "trendHigher": "{{pct}}% higher than last month",
+      "trendLower": "{{pct}}% lower than last month"
+    },
+    "firstRunChecklist": {
+      "title": "Let's set up your account 🚀",
+      "progressLabel": "{{count}} of 3 done"
+    }
+  },
+  "history": {
+    "simpleTitle": "History",
+    "searchPlaceholder": "Search transactions...",
+    "filterSheetTitle": "Filter Transactions",
+    "allCategories": "All Categories",
+    "dateRangeLabel": "Date Range",
+    "monthly": "Monthly",
+    "custom": "Custom",
+    "fromDate": "From Date",
+    "toDate": "To Date",
+    "resetCta": "Reset",
+    "applyCta": "Apply",
+    "totalPrefix": "Total",
+    "emptyTitle": "No transactions yet",
+    "emptySubtitle": "No records this month yet",
+    "recentTitle": "Recent Transactions",
+    "seeAllCta": "See All",
+    "loadFailedSub": "Pull down to reload",
+    "emptyRecentSubtitle": "Start logging your first expense"
+  },
+  "goals": {
+    "addA11y": "Add goal",
+    "emptyTitle": "No goals yet",
+    "emptySubtitle": "Start saving for a vacation or emergency fund.",
+    "createFirstCta": "Create Your First Goal",
+    "ongoingLabel": "In Progress",
+    "completedLabel": "Completed",
+    "createdToast": "Goal created!",
+    "createError": "Couldn't create the goal. Try again.",
+    "savingEllipsis": "Saving…",
+    "detail": {
+      "fallbackTitle": "Goal",
+      "notFound": "Goal not found",
+      "ofTarget": "of {{amount}}",
+      "completedBadge": "🎉 Goal Reached!",
+      "progressLabel": "{{pct}}% reached",
+      "remainingLabel": "Remaining",
+      "daysLeftLabel": "Days left",
+      "daysOverdue": "Overdue",
+      "daysCount_one": "{{count}} day",
+      "daysCount_other": "{{count}} days",
+      "perMonthLabel": "Target/month",
+      "targetDateLabel": "Target date",
+      "contributeCta": "Save / Withdraw Funds",
+      "updatedToast": "Goal updated!",
+      "updateError": "Couldn't update the goal.",
+      "deleteAlertTitle": "Delete Goal",
+      "deleteAlertMessage": "Delete the goal \"{{name}}\"?",
+      "deletedToast": "Goal deleted",
+      "deleteError": "Couldn't delete the goal."
+    },
+    "card": {
+      "pastTarget": "Past target date",
+      "todayLabel": "Today!",
+      "daysLeft_one": "{{count}} day left",
+      "daysLeft_other": "{{count}} days left",
+      "completedBadge": "✓ Reached"
+    },
+    "contribute": {
+      "savingSuccess": "Saved successfully!",
+      "withdrawSuccess": "Funds withdrawn successfully",
+      "error": "Couldn't save. Try again.",
+      "title": "Save / Withdraw",
+      "addMode": "+ Save",
+      "withdrawMode": "− Withdraw",
+      "amountPlaceholder": "or enter manually",
+      "saveCta": "Save Now",
+      "withdrawCta": "Withdraw Funds"
+    },
+    "form": {
+      "editTitle": "Edit Goal",
+      "newTitle": "New Goal",
+      "iconLabel": "Icon",
+      "nameLabel": "Goal Name",
+      "namePlaceholder": "Concert tickets, Vacation...",
+      "targetAmountLabel": "Target",
+      "targetAmountPlaceholder": "e.g. 15,000,000",
+      "targetDateLabel": "Target Date (optional)",
+      "saveChangesCta": "Save Changes",
+      "createCta": "Create Goal"
+    }
+  }
+}

@@ -1,5 +1,7 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Input from './Input';
+import { SUPPORTED_LANGUAGES } from '@/i18n/registry';
 
 interface RupiahInputProps {
   label?: string;
@@ -10,13 +12,18 @@ interface RupiahInputProps {
   autoFocus?: boolean;
 }
 
-function formatDisplay(n: number): string {
+function formatDisplay(n: number, groupingSeparator: string): string {
   if (n === 0) return '';
-  // Manual dot separator to avoid Node.js Intl/ICU locale dependency
-  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  // Manual grouping (not Intl.NumberFormat) to avoid an ICU/locale-data
+  // dependency on this hot typing path; the separator itself is locale-aware.
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, groupingSeparator);
 }
 
 function RupiahInput({ value, onChange, ...rest }: RupiahInputProps) {
+  const { i18n } = useTranslation();
+  const groupingSeparator =
+    SUPPORTED_LANGUAGES.find((lang) => lang.code === i18n.language)?.groupingSeparator ?? '.';
+
   function handleChangeText(raw: string) {
     const digits = raw.replace(/\D/g, '');
     onChange(digits ? Number(digits) : 0);
@@ -25,7 +32,7 @@ function RupiahInput({ value, onChange, ...rest }: RupiahInputProps) {
   return (
     <Input
       keyboardType="numeric"
-      value={formatDisplay(value)}
+      value={formatDisplay(value, groupingSeparator)}
       onChangeText={handleChangeText}
       {...rest}
     />

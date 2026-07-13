@@ -13,9 +13,10 @@ import {
   subMonths,
   subDays,
 } from "date-fns";
-import { id as localeID } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { BottomSheet } from "./BottomSheet";
+import { activeDateFnsLocale, getWeekdayNames } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import Button from "./Button";
 
@@ -25,11 +26,14 @@ interface DatePickerProps {
   label?: string;
 }
 
-const WEEKDAYS = ["S", "S", "R", "K", "J", "S", "M"]; // Senin, Selasa, Rabu, Kamis, Jumat, Sabtu, Minggu
-
 export default function DatePicker({ value, onChange, label }: DatePickerProps) {
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date(value));
+
+  // Re-derive on language change (i18n.language in deps), not on every render.
+  const dateFnsLocale = useMemo(() => activeDateFnsLocale(), [i18n.language]);
+  const weekdays = useMemo(() => getWeekdayNames("narrow"), [i18n.language]);
 
   const daysGrid = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -94,14 +98,14 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
         <View style={styles.trigger}>
           <CalendarIcon size={18} color={colors.text.secondary} style={styles.triggerIcon} />
           <Text style={styles.triggerText}>
-            {format(value, "eeee, d MMMM yyyy", { locale: localeID })}
+            {format(value, "eeee, d MMMM yyyy", { locale: dateFnsLocale })}
           </Text>
         </View>
       </Pressable>
 
       <BottomSheet isVisible={isOpen} onDismiss={() => setIsOpen(false)}>
         <View style={styles.sheetContent}>
-          <Text style={styles.sheetTitle}>Pilih Tanggal</Text>
+          <Text style={styles.sheetTitle}>{t("datePicker.title")}</Text>
 
           {/* Quick Select Presets */}
           <View style={styles.presetsRow}>
@@ -118,7 +122,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
                     isSameDay(value, new Date()) && styles.presetTextActive,
                   ]}
                 >
-                  Hari Ini
+                  {t("common.today")}
                 </Text>
               </View>
             </Pressable>
@@ -138,7 +142,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
                     isSameDay(value, subDays(new Date(), 1)) && styles.presetTextActive,
                   ]}
                 >
-                  Kemarin
+                  {t("common.yesterday")}
                 </Text>
               </View>
             </Pressable>
@@ -158,7 +162,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
                     isSameDay(value, subDays(new Date(), 2)) && styles.presetTextActive,
                   ]}
                 >
-                  2 Hari Lalu
+                  {t("datePicker.twoDaysAgo")}
                 </Text>
               </View>
             </Pressable>
@@ -176,7 +180,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
             </Pressable>
 
             <Text style={styles.monthLabel}>
-              {format(currentMonth, "MMMM yyyy", { locale: localeID })}
+              {format(currentMonth, "MMMM yyyy", { locale: dateFnsLocale })}
             </Text>
 
             <Pressable
@@ -191,7 +195,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
 
           {/* Calendar Weekdays Row */}
           <View style={styles.weekdaysRow}>
-            {WEEKDAYS.map((day, index) => (
+            {weekdays.map((day, index) => (
               <Text key={index} style={styles.weekdayText}>
                 {day}
               </Text>
@@ -245,7 +249,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
 
           {/* Confirm Action Button */}
           <View style={styles.footer}>
-            <Button label="Konfirmasi" onPress={handleConfirm} fullWidth />
+            <Button label={t("common.confirm")} onPress={handleConfirm} fullWidth />
           </View>
         </View>
       </BottomSheet>

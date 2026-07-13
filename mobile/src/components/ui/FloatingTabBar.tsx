@@ -11,6 +11,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { colors, radius, textStyles } from "@/theme";
 import { useOnboardingStore } from "@/stores/onboarding";
@@ -27,14 +28,16 @@ const TAB_ICONS: Record<string, typeof Home> = {
   settings: User,
 };
 
-const TAB_LABELS: Record<string, string> = {
-  "(home)": "Beranda",
-  history: "Aktivitas",
-  goals: "Goal",
-  settings: "Profil",
+// Literal key paths (see src/i18n/types.ts) so t() stays type-checked.
+const TAB_LABEL_KEYS: Record<string, "tabs.home" | "tabs.history" | "tabs.goals" | "tabs.settings"> = {
+  "(home)": "tabs.home",
+  history: "tabs.history",
+  goals: "tabs.goals",
+  settings: "tabs.settings",
 };
 
 export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const dismissedBotCoachmark = useOnboardingStore((s) => s.dismissedBotCoachmark);
@@ -63,7 +66,7 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const renderTab = (route: (typeof visibleRoutes)[0]) => {
     const focused = state.index === state.routes.indexOf(route);
     const Icon = TAB_ICONS[route.name];
-    const label = TAB_LABELS[route.name];
+    const label = t(TAB_LABEL_KEYS[route.name]);
     const isGoalTab = route.name === "goals";
 
     return (
@@ -73,9 +76,9 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
             onPress={() => void dismissGoalCoachmark()}
             style={styles.goalCoachmark}
             accessibilityRole="button"
-            accessibilityLabel="Tutup tips: atur target nabung di sini"
+            accessibilityLabel={t("tabBar.dismissGoalCoachmarkA11y")}
           >
-            <Text style={styles.coachmarkText}>Atur target nabung di sini 🎯</Text>
+            <Text style={styles.coachmarkText}>{t("tabBar.goalCoachmarkText")}</Text>
             <View style={styles.goalCoachmarkArrow} />
           </Pressable>
         )}
@@ -126,10 +129,10 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
               onPress={() => void dismissBotCoachmark()}
               style={styles.coachmark}
               accessibilityRole="button"
-              accessibilityLabel="Tutup tips: coba chat, ucapin, atau foto struk di sini"
+              accessibilityLabel={t("tabBar.dismissBotCoachmarkA11y")}
             >
               <Text style={styles.coachmarkText}>
-                Coba chat, ucapin, atau foto struk di sini ✨
+                {t("tabBar.botCoachmarkText")}
               </Text>
               <View style={styles.coachmarkArrow} />
             </Pressable>
@@ -139,7 +142,7 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
             style={styles.fabPressable}
             hitSlop={10}
             accessibilityRole="button"
-            accessibilityLabel="Buka asisten AI"
+            accessibilityLabel={t("tabBar.openAiA11y")}
           >
             <Animated.View style={[styles.fab, animatedFabStyle]}>
               <Bot size={26} color={colors.accent.primary} strokeWidth={2} />

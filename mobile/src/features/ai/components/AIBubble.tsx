@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { RotateCcw } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { colors, radius, spacing, textStyles } from "@/theme";
 import type { AIMessage } from "@/features/finance/utils/chatMessageUtils";
@@ -14,6 +15,7 @@ export function AIBubble({
   message: AIMessage;
   onRetry?: (message: AIMessage) => void;
 }) {
+  const { t } = useTranslation();
   const canRetry = !!message.failed && !!onRetry;
 
   return (
@@ -31,7 +33,7 @@ export function AIBubble({
             hitSlop={6}
           >
             <RotateCcw size={13} color={colors.accent.primary} strokeWidth={2} />
-            <Text style={styles.retryLabel}>Coba lagi</Text>
+            <Text style={styles.retryLabel}>{t("common.retry")}</Text>
           </Pressable>
         )}
       </View>

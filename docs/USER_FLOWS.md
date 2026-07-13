@@ -2,10 +2,12 @@
 
 | | |
 |---|---|
-| **Versi dokumen** | 1.0 |
-| **Tanggal** | 10 Juli 2026 |
+| **Versi dokumen** | 1.1 |
+| **Tanggal** | 13 Juli 2026 |
 | **Memotret** | Kondisi kode v1.0 (pre-launch Play Store) — apa adanya, bukan rencana |
 | **Pasangan** | `docs/PRD.md` (kenapa & ke mana), dokumen ini (bagaimana alurnya hari ini) |
+
+> **Changelog v1.1 (13 Juli 2026):** UI mobile menjadi multi-bahasa (Indonesia + English, `i18next`) — tambah flow "Bahasa" di §5, catatan re-schedule reminder di §6.2, properti `language` + event `E-LANG1` di §9. Belum mencakup bahasa output AI (chat/insight/ekstraksi) — itu tetap Bahasa Indonesia (lihat PRD §2.5), fase terpisah.
 
 > Semua path file relatif dari root repo. Istilah **kanal** dan friksi **F1–F5** mengacu ke PRD §2. Diagram memakai Mermaid (render otomatis di GitHub & VS Code).
 
@@ -320,6 +322,7 @@ Format ringkas: entry → aksi → konfirmasi. Semua 🟢 guest-OK via repositor
 | **Kategori** | Profil → "Kategori" | Grid 4 kolom, filter Semua/Pengeluaran/Pemasukan; buat/edit via sheet; hapus (Alert) = arsip; 35 kategori default di-seed |
 | **Goals** | Tab Goal → `+` (sheet buat); tap kartu → `/goals/[id]` | Detail: kontribusi via sheet (nilai negatif = tarik dana), hitung "perlu nabung/bulan"; edit & hapus (Alert) di header |
 | **Profil** | Profil → hero (hanya login) → `/settings/profile` | Edit nama + foto (galeri, crop 1:1); simpan → toast → back |
+| **Bahasa** | Profil → "Bahasa Aplikasi" → `LanguageSheet` | Pilih Ikuti Sistem / Bahasa Indonesia / English; ganti langsung tanpa restart; jika reminder harian aktif, dijadwalkan ulang dengan copy bahasa baru (§6.2). Guest & login sama-sama bisa ganti bahasa. |
 
 **File terkait:** `mobile/app/(app)/accounts/*`, `mobile/app/(app)/(tabs)/{history,goals,settings}/*`, `mobile/app/(app)/finance/*`, hooks di `mobile/src/features/finance/hooks/`.
 
@@ -339,6 +342,7 @@ Format ringkas: entry → aksi → konfirmasi. Semua 🟢 guest-OK via repositor
 - **Explainer sheet** (sekali seumur install): muncul setelah transaksi manual pertama tersimpan — "Mau diingetin catat transaksi tiap hari? 🔔" → terima = izin OS + reminder aktif default **21:00**; tolak = tidak ditanya lagi (toggle tetap ada di Profil).
 - **Profil → Notifikasi Harian:** switch on/off (on → minta izin OS; ditolak → toast arahkan ke pengaturan perangkat) + "Ubah Jam Pengingat" (preset 07/08/09/12/18/20/21/22, menit selalu :00).
 - Notifikasi lokal `expo-notifications`, trigger DAILY, copy "Sudah catat hari ini?". Berjalan untuk guest juga.
+- **Bahasa notifikasi mengikuti bahasa UI aktif** — copy dibaca dari `i18n.t()` saat `scheduleDailyReminder()` dipanggil (bukan reaktif otomatis), jadi `src/stores/language.ts` menjadwalkan ulang reminder setiap kali user ganti bahasa sementara reminder aktif.
 - PRD open question #2: jam-tetap vs cue berbasis event — parkir di roadmap.
 
 ### 6.3 Kartu proaktif di Beranda (urutan render)
@@ -468,7 +472,7 @@ Titik sentuh guest→signup di UI: `GuestModeBanner` (Beranda), `GuestGate` (mod
 
 > **Status: SPESIFIKASI — belum diinstrumentasi.** Crash reporting (Sentry) sudah aktif di `mobile/app/_layout.tsx`; event analytics adalah item wajib Fase 1 (PRD §7). Nama & properti di bawah adalah kontrak untuk implementasi; saat dipasang, ubah kolom Status.
 
-Properti global: `is_guest`, `app_version`. `channel` ∈ `manual | voice | chat | receipt`.
+Properti global: `is_guest`, `app_version`, `language` (`id`/`en`, bahasa UI aktif — bukan preferensi "system" mentah, sudah di-resolve; lihat `src/stores/language.ts`). `channel` ∈ `manual | voice | chat | receipt`.
 
 | ID | Event | Properti kunci | Metrik PRD §6 yang dilayani | Status |
 |---|---|---|---|---|
@@ -488,6 +492,7 @@ Properti global: `is_guest`, `app_version`. `channel` ∈ `manual | voice | chat
 | E-BGT1 | `budget_alert_shown` | `scope` (`category/monthly`), `level` (`warning/critical`) | F5: alert memicu koreksi atau uninstall? | ⬜ spec |
 | E-NOTIF1 | `reminder_permission_answered` | `accepted`, `surface` (`sheet/settings`) | Open question #2 (reminder vs retensi) | ⬜ spec |
 | E-NOTIF2 | `reminder_toggled` | `enabled`, `hour` | idem | ⬜ spec |
+| E-LANG1 | `language_changed` | `from`, `to` (`system/id/en`), `resolved_to` (`id/en`) | Apakah deteksi otomatis bahasa device akurat; adopsi EN vs ID | ⬜ spec |
 | E-RET1 | `app_opened` | `days_since_install` | D7 ≥ 25% / D30 ≥ 12% | ⬜ spec |
 
 Aturan implementasi: (1) `duration_ms` dihitung dari `capture_started` sampai sukses tersimpan/terkonfirmasi — per kanal, sesuai target PRD §2.5; (2) JANGAN mengirim isi transaksi (jumlah, merchant, catatan) ke analytics — cukup metadata (aturan keamanan `AGENTS.md`: never log financial data); (3) event guest tetap dikirim (tanpa user id, pakai anonymous id) agar konversi terukur.

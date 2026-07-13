@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { formatRecordingDuration } from "@/features/finance/utils/recordingUtils";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -36,6 +37,7 @@ interface RecordingIndicatorProps {
 }
 
 export function RecordingIndicator({ durationMs, onCancel }: RecordingIndicatorProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={styles.bars}>
@@ -44,10 +46,10 @@ export function RecordingIndicator({ durationMs, onCancel }: RecordingIndicatorP
         ))}
       </View>
       <Text style={styles.timer}>{formatRecordingDuration(durationMs)}</Text>
-      <Text style={styles.hint}>Lepas untuk kirim</Text>
+      <Text style={styles.hint}>{t("ai.recording.releaseHint")}</Text>
       <Pressable onPress={onCancel} hitSlop={8}>
         <View style={styles.cancelBtn}>
-          <Text style={styles.cancelLabel}>Batal</Text>
+          <Text style={styles.cancelLabel}>{t("common.cancel")}</Text>
         </View>
       </Pressable>
     </View>

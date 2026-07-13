@@ -3,16 +3,16 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAnimatedReaction, useAnimatedStyle, runOnJS } from 'react-native-reanimated';
 import { Bar, CartesianChart, useChartPressState } from 'victory-native';
 import { Check, ChevronDown } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import type { Transaction } from '@/features/finance/types';
 import { useChartFont } from '@/hooks/useChartFont';
-import { formatRupiah } from '@/lib/utils';
+import { formatChartAxisValue, formatMoney, getMonthNames } from '@/lib/format';
 import { colors, radius, spacing, textStyles } from '@/theme';
 import { ChartTooltip, TOOLTIP_WIDTH } from './ChartTooltip';
 import { clampTooltipX } from '../utils/chartTooltipUtils';
 
-const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const CHART_HEIGHT = 200;
 const TOOLTIP_OFFSET_Y = 64;
 
@@ -23,10 +23,10 @@ interface MonthlyPoint {
   [key: string]: string | number;
 }
 
-function buildMonthlyExpenseBuckets(items: Transaction[]): MonthlyPoint[] {
+function buildMonthlyExpenseBuckets(items: Transaction[], monthNames: string[]): MonthlyPoint[] {
   const buckets: MonthlyPoint[] = Array.from({ length: 12 }, (_, i) => ({
     x: i + 1,
-    label: MONTH_SHORT[i],
+    label: monthNames[i],
     expense: 0,
   }));
   items.forEach(tx => {
@@ -36,12 +36,6 @@ function buildMonthlyExpenseBuckets(items: Transaction[]): MonthlyPoint[] {
     }
   });
   return buckets;
-}
-
-function formatChartY(val: number): string {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}jt`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
-  return String(Math.round(val));
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -98,6 +92,7 @@ interface ChartContentProps {
 }
 
 function ChartContent({ buckets, year, chartFont }: ChartContentProps) {
+  const { t } = useTranslation();
   const { state, isActive } = useChartPressState({ x: 0, y: { expense: 0 } });
   const [containerWidth, setContainerWidth] = useState(0);
   const [tooltipLabel, setTooltipLabel] = useState('');
@@ -122,7 +117,7 @@ function ChartContent({ buckets, year, chartFont }: ChartContentProps) {
   if (!hasData) {
     return (
       <View style={styles.emptyWrap}>
-        <Text style={styles.emptyText}>Belum ada data untuk {year}</Text>
+        <Text style={styles.emptyText}>{t('budget.yearly.noDataForYear', { year })}</Text>
       </View>
     );
   }
@@ -147,7 +142,7 @@ function ChartContent({ buckets, year, chartFont }: ChartContentProps) {
         }}
         yAxis={[{
           font: chartFont,
-          formatYLabel: v => formatChartY(Number(v)),
+          formatYLabel: v => formatChartAxisValue(Number(v)),
           labelColor: colors.text.muted,
           lineColor: colors.border.subtle,
           tickCount: 4,
@@ -168,7 +163,7 @@ function ChartContent({ buckets, year, chartFont }: ChartContentProps) {
         <ChartTooltip
           animatedStyle={tooltipStyle}
           label={tooltipLabel}
-          lines={[{ text: formatRupiah(tooltipValue), color: colors.accent.primary }]}
+          lines={[{ text: formatMoney(tooltipValue), color: colors.accent.primary }]}
         />
       )}
     </View>
@@ -180,12 +175,15 @@ interface ChartLegendProps {
 }
 
 function ChartLegend({ monthlyAvg }: ChartLegendProps) {
+  const { t } = useTranslation();
   if (monthlyAvg === 0) return null;
 
   return (
     <View style={styles.legend}>
       <View style={[styles.legendDot, { backgroundColor: colors.accent.primary }]} />
-      <Text style={styles.legendText}>Rata-rata Bulanan: {formatRupiah(monthlyAvg)}</Text>
+      <Text style={styles.legendText}>
+        {t('budget.yearly.monthlyAvgLabel', { amount: formatMoney(monthlyAvg) })}
+      </Text>
     </View>
   );
 }
@@ -205,11 +203,16 @@ function YearlyPerformanceSection({
   onYearChange,
   isLoading,
 }: YearlyPerformanceSectionProps) {
+  const { t, i18n } = useTranslation();
   const chartFont = useChartFont();
   const currentYear = new Date().getFullYear();
   const years = [currentYear - 2, currentYear - 1, currentYear];
+  const monthNames = useMemo(() => getMonthNames("short"), [i18n.language]);
 
-  const buckets = useMemo(() => buildMonthlyExpenseBuckets(transactions), [transactions]);
+  const buckets = useMemo(
+    () => buildMonthlyExpenseBuckets(transactions, monthNames),
+    [transactions, monthNames],
+  );
 
   const monthlyAvg = useMemo(() => {
     const total = buckets.reduce((sum, b) => sum + b.expense, 0);
@@ -220,7 +223,7 @@ function YearlyPerformanceSection({
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={styles.title}>Ringkasan Pengeluaran</Text>
+        <Text style={styles.title}>{t('budget.yearly.title')}</Text>
         <YearDropdown value={year} options={years} onChange={onYearChange} />
       </View>
 

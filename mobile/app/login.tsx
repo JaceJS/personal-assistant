@@ -3,6 +3,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Sparkles } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { colors } from "@/theme/colors";
 import { textStyles } from "@/theme/typography";
@@ -14,6 +15,7 @@ import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { isGuest, initialized } = useAuthStore();
   const { showToast } = useToastStore();
   const [loginLoading, setLoginLoading] = useState(false);
@@ -54,13 +56,13 @@ export default function LoginScreen() {
     setLoginLoading(true);
     try {
       const result = await signInWithGoogle();
-      if (result === "error") showToast("Login gagal, coba lagi ya", "error");
+      if (result === "error") showToast(t("auth.loginError"), "error");
       // "success": useEffect above handles navigate
       // "cancelled": stay on screen
     } finally {
       setLoginLoading(false);
     }
-  }, [showToast]);
+  }, [showToast, t]);
 
   const handleContinueAsGuest = useCallback(() => {
     router.replace("/(app)");
@@ -85,10 +87,8 @@ export default function LoginScreen() {
         </Animated.View>
 
         <View style={styles.headline}>
-          <Text style={styles.headlineText}>Selamat datang{"\n"}kembali!</Text>
-          <Text style={styles.subtitle}>
-            Masuk untuk melihat data & insight kamu.
-          </Text>
+          <Text style={styles.headlineText}>{t("auth.loginTitle")}</Text>
+          <Text style={styles.subtitle}>{t("auth.loginSubtitle")}</Text>
         </View>
 
         <View style={styles.cta}>
@@ -99,7 +99,7 @@ export default function LoginScreen() {
           >
             <View style={styles.ctaButton}>
               <Text style={styles.ctaText}>
-                {loginLoading ? "Membuka Google..." : "Masuk dengan Google"}
+                {loginLoading ? t("auth.openingGoogle") : t("auth.loginWithGoogle")}
               </Text>
             </View>
           </Pressable>
@@ -107,7 +107,7 @@ export default function LoginScreen() {
           <Pressable onPress={handleContinueAsGuest}>
             {({ pressed }) => (
               <View style={[styles.guestLinkWrap, pressed && { opacity: 0.6 }]}>
-                <Text style={styles.guestLink}>Lanjut tanpa akun →</Text>
+                <Text style={styles.guestLink}>{t("auth.continueAsGuest")}</Text>
               </View>
             )}
           </Pressable>

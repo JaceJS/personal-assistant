@@ -1,17 +1,27 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Camera, Mic, RotateCcw } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
+import { formatMoney } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import type { ChatMessage } from "@/features/finance/utils/chatMessageUtils";
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Mengunggah...",
-  transcribing: "Mengubah suara jadi teks...",
-  transcribed: "Cek transkrip",
-  extracting: "Membaca transaksi...",
-  completed: "Selesai",
-  failed: "Gagal",
-};
+// Literal key paths (see src/i18n/types.ts) so t() stays type-checked even
+// though the status used to index this map is a runtime string.
+const STATUS_LABEL_KEYS = {
+  pending: "ai.chatBubble.status.pending",
+  transcribing: "ai.chatBubble.status.transcribing",
+  transcribed: "ai.chatBubble.status.transcribed",
+  extracting: "ai.chatBubble.status.extracting",
+  completed: "ai.chatBubble.status.completed",
+  failed: "ai.chatBubble.status.failed",
+} as const;
+
+function statusLabel(t: TFunction, status: string): string {
+  const key = STATUS_LABEL_KEYS[status as keyof typeof STATUS_LABEL_KEYS];
+  return key ? t(key) : status;
+}
 
 export function ChatBubble({
   message,
@@ -20,6 +30,7 @@ export function ChatBubble({
   message: ChatMessage;
   onRetry?: (message: ChatMessage) => void;
 }) {
+  const { t } = useTranslation();
   const isProcessing = message.status !== "completed" && message.status !== "failed";
   const isVoice = message.type === "voice";
   const canRetry = message.status === "failed" && !!message.localUri && !!onRetry;
@@ -34,7 +45,7 @@ export function ChatBubble({
             message.status === "completed" && styles.statusDone,
           ]}
         >
-          {STATUS_LABELS[message.status] ?? message.status}
+          {statusLabel(t, message.status)}
         </Text>
         {message.transcript && message.status === "transcribed" && (
           <Text style={styles.transcript} numberOfLines={3}>
@@ -43,7 +54,7 @@ export function ChatBubble({
         )}
         {message.extractedData && message.status === "completed" && (
           <Text style={styles.amount}>
-            {message.extractedData.currency} {message.extractedData.amount.toLocaleString()}
+            {formatMoney(message.extractedData.amount, message.extractedData.currency)}
           </Text>
         )}
         {message.errorMessage && <Text style={styles.error}>{message.errorMessage}</Text>}
@@ -61,7 +72,7 @@ export function ChatBubble({
             hitSlop={6}
           >
             <RotateCcw size={13} color={colors.accent.primary} strokeWidth={2} />
-            <Text style={styles.retryLabel}>Coba lagi</Text>
+            <Text style={styles.retryLabel}>{t("common.retry")}</Text>
           </Pressable>
         )}
         <View style={styles.typeFooter}>
@@ -70,7 +81,9 @@ export function ChatBubble({
           ) : (
             <Camera size={12} color={colors.text.muted} strokeWidth={1.8} />
           )}
-          <Text style={styles.typeLabel}>{isVoice ? "Suara" : "Struk"}</Text>
+          <Text style={styles.typeLabel}>
+            {isVoice ? t("ai.chatBubble.typeVoice") : t("ai.chatBubble.typeReceipt")}
+          </Text>
         </View>
       </View>
     </View>

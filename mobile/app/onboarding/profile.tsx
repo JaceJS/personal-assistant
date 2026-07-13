@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { User } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { OnboardingHeader } from "@/components/layout/OnboardingHeader";
 import { OnboardingStepHeader } from "@/components/layout/OnboardingStepHeader";
@@ -23,6 +24,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function ProfileOnboardingScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const googleName = (user?.user_metadata?.full_name as string | undefined) ?? "";
 
@@ -52,8 +54,8 @@ export default function ProfileOnboardingScreen() {
         <View>
           <OnboardingStepHeader
             icon={User}
-            title="Yuk, kenalan bentar 👋"
-            subtitle="Isi kalau mau, atau lewatin aja, bisa diubah kapan-kapan di Pengaturan."
+            title={t("onboarding.profile.title")}
+            subtitle={t("onboarding.profile.subtitle")}
           />
 
           <View style={styles.form}>
@@ -62,10 +64,10 @@ export default function ProfileOnboardingScreen() {
               name="displayName"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Dipanggil apa?"
+                  label={t("onboarding.profile.nameLabel")}
                   value={value}
                   onChangeText={onChange}
-                  placeholder="misal: Jace, Budi, Rina"
+                  placeholder={t("onboarding.profile.namePlaceholder")}
                   autoFocus
                   autoCapitalize="words"
                   returnKeyType="done"
@@ -78,10 +80,10 @@ export default function ProfileOnboardingScreen() {
 
         <View style={styles.bottomNav}>
           <View style={styles.backBtn}>
-            <Button label="Kembali" variant="ghost" onPress={() => router.back()} fullWidth />
+            <Button label={t("common.back")} variant="ghost" onPress={() => router.back()} fullWidth />
           </View>
           <View style={styles.nextBtn}>
-            <Button label="Lanjut →" onPress={handleSubmit(onSubmit)} fullWidth />
+            <Button label={t("onboarding.profile.cta")} onPress={handleSubmit(onSubmit)} fullWidth />
           </View>
         </View>
       </ScrollView>

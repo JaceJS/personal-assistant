@@ -1,12 +1,13 @@
 import { StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useAIInsight } from "@/features/ai/hooks/useAIInsight";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 const GLOW_COLOR = colors.accent.primary;
-const FALLBACK_TEXT = "Insight tidak tersedia. Terus catat pengeluaranmu!";
 
 export function AIInsightCard() {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useAIInsight();
 
   if (isLoading) {
@@ -20,7 +21,7 @@ export function AIInsightCard() {
   if (isError || !data) {
     return (
       <View testID="ai-insight-fallback" style={[styles.card, styles.fallbackCard]}>
-        <Text style={styles.fallbackText}>{FALLBACK_TEXT}</Text>
+        <Text style={styles.fallbackText}>{t("ai.insight.fallback")}</Text>
       </View>
     );
   }
@@ -30,7 +31,7 @@ export function AIInsightCard() {
       <View style={styles.glowLarge} />
       <View style={styles.glowSmall} />
       <View style={styles.inner}>
-        <Text style={styles.label}>AI INSIGHT</Text>
+        <Text style={styles.label}>{t("ai.insight.label")}</Text>
         <Text style={styles.body}>{data.insight}</Text>
       </View>
     </View>

@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
-import { formatRupiah } from "@/lib/utils";
+import { formatMoney } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function AccountBalanceCard() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { data } = useAccounts();
   const { data: txData } = useTransactions({ limit: 1 });
   const accounts = (data ?? []).filter((a) => !a.is_archived);
@@ -42,7 +44,11 @@ export default function AccountBalanceCard() {
     return (
       <View style={styles.card}>
         <View style={styles.glow} />
-        {hasAccounts && <Text style={styles.sub}>{accounts.length} akun</Text>}
+        {hasAccounts && (
+          <Text style={styles.sub}>
+            {t("home.accountBalance.accountCount", { count: accounts.length })}
+          </Text>
+        )}
         <Pressable
           onPress={() =>
             router.push(hasAccounts ? "/(app)/finance/new" : "/(app)/accounts")
@@ -51,7 +57,9 @@ export default function AccountBalanceCard() {
           {({ pressed }) => (
             <View style={[styles.promptRow, pressed && styles.pressed]}>
               <Text style={styles.promptText}>
-                {hasAccounts ? "Catat transaksi pertama" : "Tambah akun pertama"}
+                {hasAccounts
+                  ? t("home.accountBalance.promptFirstTransaction")
+                  : t("home.accountBalance.promptFirstAccount")}
               </Text>
               <Text style={styles.promptArrow}>→</Text>
             </View>
@@ -64,9 +72,11 @@ export default function AccountBalanceCard() {
   return (
     <View style={styles.card}>
       <View style={styles.glow} />
-      <Text style={styles.label}>TOTAL SALDO</Text>
-      <Text style={styles.amount}>{formatRupiah(displayBalance)}</Text>
-      <Text style={styles.sub}>{accounts.length} akun</Text>
+      <Text style={styles.label}>{t("home.accountBalance.totalLabel")}</Text>
+      <Text style={styles.amount}>{formatMoney(displayBalance)}</Text>
+      <Text style={styles.sub}>
+        {t("home.accountBalance.accountCount", { count: accounts.length })}
+      </Text>
     </View>
   );
 }

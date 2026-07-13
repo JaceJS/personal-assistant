@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { List } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import EmptyState from "@/components/ui/EmptyState";
 import { SkeletonList } from "@/components/ui/Skeleton";
@@ -23,12 +24,13 @@ export default function RecentTransactions({
   onSeeAll,
   onPress,
 }: RecentTransactionsProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={styles.title}>Transaksi Terbaru</Text>
+        <Text style={styles.title}>{t("history.recentTitle")}</Text>
         <Pressable onPress={onSeeAll}>
-          <Text style={styles.seeAll}>Lihat Semua</Text>
+          <Text style={styles.seeAll}>{t("history.seeAllCta")}</Text>
         </Pressable>
       </View>
 
@@ -37,14 +39,14 @@ export default function RecentTransactions({
       ) : error ? (
         <EmptyState
           icon={List}
-          title="Gagal memuat transaksi"
-          subtitle="Tarik ke bawah untuk memuat ulang"
+          title={t("home.loadTransactionsFailed")}
+          subtitle={t("history.loadFailedSub")}
         />
       ) : items.length === 0 ? (
         <EmptyState
           icon={List}
-          title="Belum ada transaksi"
-          subtitle="Mulai catat pengeluaran pertamamu"
+          title={t("history.emptyTitle")}
+          subtitle={t("history.emptyRecentSubtitle")}
         />
       ) : (
         <View style={styles.list}>

@@ -2,14 +2,19 @@ import { QUICK_CHIPS, resolveQuickChipAction } from '@/features/ai/utils/quickCh
 
 describe('resolveQuickChipAction', () => {
   it('resolves a camera chip to a camera action', () => {
-    expect(resolveQuickChipAction({ label: 'Scan', action: 'camera' })).toEqual({
-      kind: 'camera',
-    });
+    expect(
+      resolveQuickChipAction({ id: 'scan', labelKey: 'ai.quickChips.scanReceipt.label', action: 'camera' })
+    ).toEqual({ kind: 'camera' });
   });
 
   it('resolves a send chip to a send action carrying its text', () => {
     expect(
-      resolveQuickChipAction({ label: 'Analisa', action: 'send', text: 'Analisa keuanganku' })
+      resolveQuickChipAction({
+        id: 'analyze',
+        labelKey: 'ai.quickChips.analyze.label',
+        action: 'send',
+        text: 'Analisa keuanganku',
+      })
     ).toEqual({ kind: 'send', text: 'Analisa keuanganku' });
   });
 });

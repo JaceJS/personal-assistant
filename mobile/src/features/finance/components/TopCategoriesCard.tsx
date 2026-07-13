@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, ChevronRight, PieChart } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import EmptyState from '@/components/ui/EmptyState';
 import { SkeletonList } from '@/components/ui/Skeleton';
@@ -9,17 +10,15 @@ import CategorySpendRow from '@/features/finance/components/CategorySpendRow';
 import { useCategories } from '@/features/finance/hooks/useCategories';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { buildTopCategories } from '@/features/finance/utils/topCategoryUtils';
+import { getMonthNames } from '@/lib/format';
 import { colors, radius, spacing, textStyles } from '@/theme';
-
-const MONTH_NAMES = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-];
 
 const TOP_N = 5;
 
 export default function TopCategoriesCard() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
+  const monthNames = useMemo(() => getMonthNames("long"), [i18n.language]);
   const now = new Date();
 
   const [selectedMonth, setSelectedMonth] = useState({
@@ -66,13 +65,13 @@ export default function TopCategoriesCard() {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>TOP SPENDING</Text>
+        <Text style={styles.title}>{t("home.topCategories.title")}</Text>
         <View style={styles.monthPicker}>
           <Pressable hitSlop={8} onPress={goBack}>
             <ChevronLeft size={14} color={colors.text.secondary} strokeWidth={2} />
           </Pressable>
           <Text style={styles.monthLabel}>
-            {MONTH_NAMES[selectedMonth.month].slice(0, 3)} {selectedMonth.year}
+            {monthNames[selectedMonth.month].slice(0, 3)} {selectedMonth.year}
           </Text>
           <Pressable hitSlop={8} onPress={goForward} style={{ opacity: isCurrentMonth ? 0.3 : 1 }}>
             <ChevronRight size={14} color={colors.text.secondary} strokeWidth={2} />
@@ -85,14 +84,14 @@ export default function TopCategoriesCard() {
       ) : txError ? (
         <EmptyState
           icon={PieChart}
-          title="Gagal loading"
-          subtitle="Tarik ke bawah buat refresh"
+          title={t("home.topCategories.loadFailedTitle")}
+          subtitle={t("home.topCategories.loadFailedSub")}
         />
       ) : rows.length === 0 ? (
         <EmptyState
           icon={PieChart}
-          title="Gak ada pengeluaran"
-          subtitle={`Belum transaksi bulan ${MONTH_NAMES[selectedMonth.month]}`}
+          title={t("home.topCategories.emptyTitle")}
+          subtitle={t("home.topCategories.emptySub", { month: monthNames[selectedMonth.month] })}
         />
       ) : (
         <View style={styles.list}>

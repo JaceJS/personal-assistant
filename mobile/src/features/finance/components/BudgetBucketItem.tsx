@@ -1,20 +1,28 @@
 import React, { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 import type { Category } from '@/features/finance/types';
 import CategoryIcon from './CategoryIcon';
 import { computeBucketStatus, getBucketBarWidth } from '@/features/finance/utils/budgetBucketUtils';
 import type { BucketStatus } from '@/features/finance/utils/budgetBucketUtils';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
 import { colors, radius, textStyles } from '@/theme';
 import CategoryBudgetSheet from './CategoryBudgetSheet';
 
-const STATUS_LABELS: Record<BucketStatus, string> = {
-  'no-limit': 'Tanpa Batas',
-  'on-track': 'Aman',
-  warning: 'Waspada',
-  over: 'Melebihi',
-};
+function statusLabel(t: TFunction, status: BucketStatus): string {
+  switch (status) {
+    case 'no-limit':
+      return t('budget.bucket.noLimit');
+    case 'on-track':
+      return t('budget.bucket.onTrack');
+    case 'warning':
+      return t('budget.bucket.warning');
+    case 'over':
+      return t('budget.bucket.over');
+  }
+}
 
 const STATUS_COLORS: Record<BucketStatus, string> = {
   'no-limit': colors.text.muted,
@@ -36,6 +44,7 @@ interface BudgetBucketItemProps {
 }
 
 function BudgetBucketItem({ category, spent }: BudgetBucketItemProps) {
+  const { t } = useTranslation();
   const [sheetVisible, setSheetVisible] = useState(false);
   const status = computeBucketStatus(spent, category.budget_limit);
   const barPct = getBucketBarWidth(spent, category.budget_limit);
@@ -44,8 +53,8 @@ function BudgetBucketItem({ category, spent }: BudgetBucketItemProps) {
   }, []);
 
   const limitLabel = category.budget_limit
-    ? `/ ${formatRupiah(category.budget_limit)}`
-    : 'Ketuk untuk atur batas';
+    ? `/ ${formatMoney(category.budget_limit)}`
+    : t('budget.bucket.tapToSetLimit');
 
   return (
     <>
@@ -62,11 +71,11 @@ function BudgetBucketItem({ category, spent }: BudgetBucketItemProps) {
           />
           <View style={styles.info}>
             <Text style={styles.name} numberOfLines={1}>{category.name}</Text>
-            <Text style={styles.subtitle}>{formatRupiah(spent)} {limitLabel}</Text>
+            <Text style={styles.subtitle}>{formatMoney(spent)} {limitLabel}</Text>
           </View>
           <View style={styles.right}>
             <Text style={[styles.status, { color: STATUS_COLORS[status] }]}>
-              {STATUS_LABELS[status]}
+              {statusLabel(t, status)}
             </Text>
           </View>
         </View>

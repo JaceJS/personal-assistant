@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Wallet } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { OnboardingHeader } from "@/components/layout/OnboardingHeader";
 import { OnboardingStepHeader } from "@/components/layout/OnboardingStepHeader";
@@ -22,22 +23,29 @@ import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { textStyles } from "@/theme/typography";
 import type { AccountType } from "@/features/finance/types";
+import type { TFunction } from "i18next";
 
-const schema = z.object({
-  accountName: z.string().min(1, "Nama akun wajib diisi"),
-  accountType: z.enum(["cash", "bank", "ewallet", "credit"]),
-  initialBalance: z.number(),
-});
+// Module-scope Zod schemas evaluate error messages at import time (before
+// i18n has a language) — factory + useMemo(() => ..., [t]) keeps them reactive.
+function makeSchema(t: TFunction) {
+  return z.object({
+    accountName: z.string().min(1, t("onboarding.firstAccount.nameRequired")),
+    accountType: z.enum(["cash", "bank", "ewallet", "credit"]),
+    initialBalance: z.number(),
+  });
+}
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 
 export default function FirstAccountOnboardingScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { displayName } = useLocalSearchParams<{ displayName: string }>();
   const createAccount = useCreateAccount();
   const { complete, setGuestName } = useOnboardingStore();
   const { showToast } = useToastStore();
 
+  const schema = useMemo(() => makeSchema(t), [t]);
   const {
     control,
     handleSubmit,
@@ -68,14 +76,14 @@ export default function FirstAccountOnboardingScreen() {
           initial_balance: values.initialBalance,
         });
         await complete();
-        showToast("Yeay! Siap mulai nyatat 🚀", "success");
+        showToast(t("onboarding.firstAccount.successToast"), "success");
         router.replace("/(app)");
       } catch (err) {
         logger.error("Failed to create first account during onboarding", err);
-        showToast("Gagal bikin akun. Coba lagi ya.", "error");
+        showToast(t("onboarding.firstAccount.errorToast"), "error");
       }
     },
-    [displayName, createAccount, complete, setGuestName, showToast, router]
+    [displayName, createAccount, complete, setGuestName, showToast, router, t]
   );
 
   return (
@@ -89,8 +97,8 @@ export default function FirstAccountOnboardingScreen() {
         <View>
           <OnboardingStepHeader
             icon={Wallet}
-            title="Akun pertama"
-            subtitle="Tempat transaksimu kecatat. Kasih nama biar gampang dikenali, misal 'BCA' atau 'Dompet Tunai'."
+            title={t("onboarding.firstAccount.title")}
+            subtitle={t("onboarding.firstAccount.subtitle")}
           />
 
           <View style={styles.form}>
@@ -99,10 +107,10 @@ export default function FirstAccountOnboardingScreen() {
               name="accountName"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Nama Akun"
+                  label={t("onboarding.firstAccount.nameLabel")}
                   value={value}
                   onChangeText={onChange}
-                  placeholder="misal: BCA, Dana, Tunai"
+                  placeholder={t("onboarding.firstAccount.namePlaceholder")}
                   error={errors.accountName?.message}
                   autoFocus
                 />
@@ -114,7 +122,7 @@ export default function FirstAccountOnboardingScreen() {
               name="initialBalance"
               render={({ field: { onChange, value } }) => (
                 <RupiahInput
-                  label="Saldo Awal (opsional)"
+                  label={t("onboarding.firstAccount.balanceLabel")}
                   placeholder="0"
                   value={value}
                   onChange={onChange}
@@ -123,7 +131,7 @@ export default function FirstAccountOnboardingScreen() {
             />
 
             <View style={styles.typeSection}>
-              <Text style={styles.typeLabel}>Tipe Akun</Text>
+              <Text style={styles.typeLabel}>{t("onboarding.firstAccount.typeLabel")}</Text>
               <Controller
                 control={control}
                 name="accountType"
@@ -137,11 +145,11 @@ export default function FirstAccountOnboardingScreen() {
 
         <View style={styles.bottomNav}>
           <View style={styles.backBtn}>
-            <Button label="Kembali" variant="ghost" onPress={() => router.back()} fullWidth />
+            <Button label={t("common.back")} variant="ghost" onPress={() => router.back()} fullWidth />
           </View>
           <View style={styles.nextBtn}>
             <Button
-              label="Mulai →"
+              label={t("onboarding.firstAccount.cta")}
               onPress={handleSubmit(onSubmit)}
               loading={createAccount.isPending}
               fullWidth

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { BottomSheet } from "./BottomSheet";
 import Button from "./Button";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -21,12 +22,14 @@ interface MultiSearchableDropdownProps {
 
 export function MultiSearchableDropdown({
   label,
-  placeholder = "Pilih item",
+  placeholder,
   items,
   selectedIds,
   onSelect,
   error,
 }: MultiSearchableDropdownProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("common.selectItemPlaceholder");
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -35,13 +38,13 @@ export function MultiSearchableDropdown({
   }, [items, selectedIds]);
 
   const triggerLabel = useMemo(() => {
-    if (selectedItems.length === 0) return placeholder;
+    if (selectedItems.length === 0) return resolvedPlaceholder;
     if (selectedItems.length === 1) {
       const item = selectedItems[0];
       return `${item.icon ? `${item.icon}  ` : ""}${item.name}`;
     }
-    return `${selectedItems.length} Kategori terpilih`;
-  }, [selectedItems, placeholder]);
+    return t("categories.selectedCount", { count: selectedItems.length });
+  }, [selectedItems, resolvedPlaceholder, t]);
 
   const filteredItems = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -90,14 +93,14 @@ export function MultiSearchableDropdown({
         }}
       >
         <View style={styles.sheetContent}>
-          {label && <Text style={styles.sheetTitle}>Pilih {label}</Text>}
+          {label && <Text style={styles.sheetTitle}>{t("common.selectPrefix", { label })}</Text>}
 
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Cari..."
+              placeholder={t("common.searchPlaceholder")}
               placeholderTextColor={colors.text.muted}
               autoCorrect={false}
               autoCapitalize="none"
@@ -106,7 +109,7 @@ export function MultiSearchableDropdown({
 
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
             {filteredItems.length === 0 ? (
-              <Text style={styles.emptyText}>Tidak ada pilihan ditemukan</Text>
+              <Text style={styles.emptyText}>{t("common.noOptionsFound")}</Text>
             ) : (
               filteredItems.map((item) => {
                 const active = selectedIds.includes(item.id);
@@ -131,7 +134,7 @@ export function MultiSearchableDropdown({
 
           <View style={styles.footer}>
             <Button
-              label="Selesai"
+              label={t("common.doneCta")}
               onPress={() => {
                 setIsOpen(false);
                 setSearchQuery("");

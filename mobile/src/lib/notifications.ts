@@ -1,6 +1,8 @@
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import i18n from "@/i18n";
+
 const PERMISSION_REQUESTED_KEY = "notif_permission_requested";
 
 Notifications.setNotificationHandler({
@@ -32,8 +34,11 @@ export async function scheduleDailyReminder(hour: number, minute: number): Promi
   await Notifications.cancelAllScheduledNotificationsAsync();
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "Sudah catat hari ini?",
-      body: "Jangan lupa catat pengeluaranmu hari ini 📝",
+      // i18n.t() read at schedule time (not import time) so the copy is
+      // always in the language active *now* — callers re-schedule on
+      // language change (see src/stores/language.ts setPreference).
+      title: i18n.t("notifications.reminderTitle"),
+      body: i18n.t("notifications.reminderBody"),
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Pencil } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import type { Budget } from '@/features/finance/types';
-import { formatRupiah } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
 import { colors, radius, textStyles } from '@/theme';
 
 function getBudgetBarColor(pct: number): string {
@@ -19,13 +20,14 @@ interface BudgetHeroCardProps {
 }
 
 function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
+  const { t } = useTranslation();
   if (!budget) {
     return (
       <View style={styles.card}>
         <View style={styles.noBudgetRow}>
           <View style={styles.noBudgetText}>
-            <Text style={styles.label}>TOTAL BUDGET BULANAN</Text>
-            <Text style={styles.noBudgetHint}>Belum ada budget</Text>
+            <Text style={styles.label}>{t('home.monthlyBudget.totalLabel')}</Text>
+            <Text style={styles.noBudgetHint}>{t('budget.noBudgetHint')}</Text>
           </View>
           <Pressable
             style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
@@ -46,8 +48,8 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
     <View style={styles.card}>
       <View style={styles.topRow}>
         <View style={styles.topLeft}>
-          <Text style={styles.label}>TOTAL BUDGET BULANAN</Text>
-          <Text style={styles.amount}>{formatRupiah(budget.monthly_limit)}</Text>
+          <Text style={styles.label}>{t('home.monthlyBudget.totalLabel')}</Text>
+          <Text style={styles.amount}>{formatMoney(budget.monthly_limit)}</Text>
         </View>
         <Pressable
           style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
@@ -70,7 +72,7 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
       </View>
 
       <Text style={[styles.pctText, { color: barColor }]}>
-        {Math.round(displayPct * 100)}% terpakai
+        {t('budget.usedPctLabel', { pct: Math.round(displayPct * 100) })}
       </Text>
     </View>
   );

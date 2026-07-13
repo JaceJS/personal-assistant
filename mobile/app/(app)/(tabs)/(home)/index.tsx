@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { Screen } from "@/components/layout/Screen";
 import Fab from "@/components/ui/Fab";
@@ -22,16 +23,18 @@ import { useToastStore } from "@/stores/toast";
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { colors, spacing, textStyles } from "@/theme";
 import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
+import type { TFunction } from "i18next";
 
-function getGreeting() {
+function getGreeting(t: TFunction): string {
   const h = new Date().getHours();
-  if (h < 12) return "Selamat pagi";
-  if (h < 17) return "Selamat siang";
-  return "Selamat malam";
+  if (h < 12) return t("home.greeting.morning");
+  if (h < 17) return t("home.greeting.afternoon");
+  return t("home.greeting.evening");
 }
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const isGuest = useAuthStore((s) => s.isGuest);
   const showToast = useToastStore((s) => s.showToast);
@@ -52,8 +55,8 @@ export default function HomeScreen() {
   const isFetching = useIsFetching({ queryKey: ["transactions"] });
 
   useEffect(() => {
-    if (txError) showToast("Gagal memuat transaksi", "error");
-  }, [txError, showToast]);
+    if (txError) showToast(t("home.loadTransactionsFailed"), "error");
+  }, [txError, showToast, t]);
 
   const totalExpense = useMemo(
     () =>
@@ -88,7 +91,7 @@ export default function HomeScreen() {
         }
       >
         <Text style={styles.greeting}>
-          {getGreeting()}
+          {getGreeting(t)}
           {firstName ? `, ${firstName}` : ""}!
         </Text>
 
@@ -108,7 +111,7 @@ export default function HomeScreen() {
       <Fab
         onPress={() => router.push("/(app)/finance/new")}
         icon={Plus}
-        accessibilityLabel="Add transaction"
+        accessibilityLabel={t("home.addTransactionA11y")}
       />
     </Screen>
   );

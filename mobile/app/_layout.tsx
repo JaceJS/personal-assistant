@@ -22,6 +22,7 @@ import { runMigrations } from "@/lib/db/client";
 import { logger } from "@/lib/logger";
 import { Toast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguageStore } from "@/stores/language";
 import { useOnboardingStore } from "@/stores/onboarding";
 
 Sentry.init({
@@ -49,13 +50,14 @@ function RootLayoutInner() {
   const [dbReady, setDbReady] = useState(false);
 
   useAuth();
-  const initialize = useOnboardingStore((s) => s.initialize);
+  const initializeOnboarding = useOnboardingStore((s) => s.initialize);
+  const initializeLanguage = useLanguageStore((s) => s.initialize);
 
   useEffect(() => {
     async function setup() {
       try {
-        await runMigrations();
-        await initialize();
+        // Migrasi SQLite tidak bergantung pada onboarding/bahasa — jalan paralel.
+        await Promise.all([runMigrations(), initializeOnboarding(), initializeLanguage()]);
       } catch (e) {
         logger.error("[startup] setup failed", e);
       } finally {
@@ -63,7 +65,7 @@ function RootLayoutInner() {
       }
     }
     void setup();
-  }, [initialize]);
+  }, [initializeOnboarding, initializeLanguage]);
 
   if (!fontsLoaded || !dbReady) return null;
 
