@@ -145,7 +145,7 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
             accessibilityLabel={t("tabBar.openAiA11y")}
           >
             <Animated.View style={[styles.fab, animatedFabStyle]}>
-              <Bot size={26} color={colors.accent.primary} strokeWidth={2} />
+              <Bot size={26} color="#FFFFFF" strokeWidth={2} />
             </Animated.View>
           </Pressable>
         </View>
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: radius.full,
-    backgroundColor: "#FCEFE8",
+    backgroundColor: colors.accent.primary,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: colors.accent.primary,
