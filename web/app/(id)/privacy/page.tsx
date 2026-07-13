@@ -1,19 +1,24 @@
 import type { Metadata } from "next";
 
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import { DEVELOPER_NAME, LEGAL_EFFECTIVE_DATE, SUPPORT_EMAIL } from "@/lib/site";
+import {
+  DEVELOPER_NAME,
+  languageAlternates,
+  LEGAL_EFFECTIVE_DATE,
+  SUPPORT_EMAIL,
+} from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Kebijakan Privasi",
   description:
     "Kebijakan Privasi Savyn: data apa yang dikumpulkan, bagaimana dipakai, dan kendali Anda atasnya.",
-  alternates: { canonical: "/privacy" },
+  alternates: { canonical: "/privacy", languages: languageAlternates("/privacy") },
 };
 
 export default function PrivacyPage() {
   return (
     <>
-      <SiteHeader />
+      <SiteHeader locale="id" page="/privacy" />
       <main className="legal">
         <div className="container">
           <article>
@@ -242,7 +247,7 @@ export default function PrivacyPage() {
           </article>
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter locale="id" />
     </>
   );
 }

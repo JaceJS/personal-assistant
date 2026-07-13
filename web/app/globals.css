@@ -97,6 +97,28 @@ h3 {
   color: var(--brand);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lang-switch {
+  font-family: var(--font-mono), monospace;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.lang-switch:hover {
+  border-color: var(--ink);
+}
+
 /* ── Buttons ── */
 .btn {
   display: inline-flex;
@@ -127,7 +149,7 @@ h3 {
 
 /* ── Hero ── */
 .hero {
-  padding: 72px 0 40px;
+  padding: 72px 0;
 }
 
 .hero .container {
@@ -422,6 +444,7 @@ h3 {
   grid-template-columns: repeat(2, 1fr);
   gap: 18px;
   list-style: none;
+  margin-top: 26px;
 }
 
 .privacy-points li {
@@ -444,6 +467,7 @@ h3 {
 /* FAQ */
 .faq-list {
   max-width: 720px;
+  margin-top: 26px;
 }
 
 .faq-list details {
@@ -487,7 +511,7 @@ h3 {
 /* Final CTA */
 .cta-final {
   text-align: center;
-  padding: 88px 0;
+  padding: 72px 0 88px;
 }
 
 .cta-final h2 {
@@ -596,5 +620,17 @@ h3 {
 
   .section {
     padding: 56px 0;
+  }
+
+  .hero {
+    padding: 56px 0;
+  }
+
+  .manifesto {
+    padding: 48px 0;
+  }
+
+  .cta-final {
+    padding: 56px 0 72px;
   }
 }

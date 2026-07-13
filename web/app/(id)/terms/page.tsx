@@ -2,19 +2,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import { DEVELOPER_NAME, LEGAL_EFFECTIVE_DATE, SUPPORT_EMAIL } from "@/lib/site";
+import {
+  DEVELOPER_NAME,
+  languageAlternates,
+  LEGAL_EFFECTIVE_DATE,
+  SUPPORT_EMAIL,
+} from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Syarat & Ketentuan",
   description:
     "Syarat & Ketentuan penggunaan aplikasi Savyn: cakupan layanan, tanggung jawab, dan hak Anda.",
-  alternates: { canonical: "/terms" },
+  alternates: { canonical: "/terms", languages: languageAlternates("/terms") },
 };
 
 export default function TermsPage() {
   return (
     <>
-      <SiteHeader />
+      <SiteHeader locale="id" page="/terms" />
       <main className="legal">
         <div className="container">
           <article>
@@ -147,7 +152,7 @@ export default function TermsPage() {
           </article>
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter locale="id" />
     </>
   );
 }
