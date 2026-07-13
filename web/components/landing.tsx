@@ -1,3 +1,7 @@
+import Image from "next/image";
+
+import badgeEn from "@/public/badges/google-play-en.png";
+import badgeId from "@/public/badges/google-play-id.png";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import type { LandingContent } from "@/lib/landing-content";
 import {
@@ -7,6 +11,20 @@ import {
   SITE_URL,
   type Locale,
 } from "@/lib/site";
+
+const PLAY_BADGE = {
+  id: { src: badgeId, alt: "Temukan di Google Play" },
+  en: { src: badgeEn, alt: "Get it on Google Play" },
+} as const;
+
+function PlayBadge({ locale }: { locale: Locale }) {
+  const badge = PLAY_BADGE[locale];
+  return (
+    <a className="store-badge" href={PLAY_STORE_URL}>
+      <Image src={badge.src} alt={badge.alt} height={60} priority />
+    </a>
+  );
+}
 
 /** JSON-LD: MobileApplication + FAQPage untuk rich results. */
 function buildJsonLd(locale: Locale, description: string, content: LandingContent): string {
@@ -57,16 +75,13 @@ export function Landing({
         <section className="hero">
           <div className="container">
             <div>
-              <p className="hero-eyebrow">{content.heroEyebrow}</p>
               <h1>
                 {content.heroTitleLead}
                 <em>{content.heroTitleEm}</em>
               </h1>
               <p className="hero-sub">{content.heroSub}</p>
               <div className="hero-ctas">
-                <a className="btn btn-primary" href={PLAY_STORE_URL}>
-                  {content.ctaDownload}
-                </a>
+                <PlayBadge locale={locale} />
                 <p className="hero-note">{content.heroNote}</p>
               </div>
             </div>
@@ -173,9 +188,9 @@ export function Landing({
           <div className="container">
             <h2>{content.ctaFinalTitle}</h2>
             <p>{content.ctaFinalSub}</p>
-            <a className="btn btn-primary" href={PLAY_STORE_URL}>
-              {content.ctaDownload}
-            </a>
+            <div className="cta-badge">
+              <PlayBadge locale={locale} />
+            </div>
           </div>
         </section>
       </main>

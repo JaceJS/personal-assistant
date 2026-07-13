@@ -4,11 +4,9 @@
  */
 
 export interface LandingContent {
-  heroEyebrow: string;
   heroTitleLead: string;
   heroTitleEm: string;
   heroSub: string;
-  ctaDownload: string;
   heroNote: string;
   phoneTitle: string;
   phoneBubble: string;
@@ -36,13 +34,11 @@ export interface LandingContent {
 }
 
 export const LANDING_ID: LandingContent = {
-  heroEyebrow: "Pencatat keuangan AI · Gratis di Android",
   heroTitleLead: "Catat pengeluaran ",
   heroTitleEm: "secepat kamu ngetik chat",
   heroSub:
     "Savyn mengubah “sate 20rb parkir 2rb” jadi catatan transaksi yang rapi. " +
     "Ketik, ucapkan, atau foto struknya, AI yang membereskan sisanya. Kamu tinggal konfirmasi.",
-  ctaDownload: "Download di Google Play",
   heroNote: "Gratis. Bisa dipakai tanpa daftar akun.",
   phoneTitle: "Chat AI Savyn",
   phoneBubble: "sate 20rb parkir 2rb",
@@ -182,13 +178,11 @@ export const LANDING_ID: LandingContent = {
 };
 
 export const LANDING_EN: LandingContent = {
-  heroEyebrow: "AI expense tracker · Free on Android",
   heroTitleLead: "Track expenses ",
   heroTitleEm: "as fast as you type a chat",
   heroSub:
     "Savyn turns “lunch 25k parking 2k” into tidy transaction records. " +
     "Type it, say it, or snap the receipt, and AI handles the rest. You just confirm.",
-  ctaDownload: "Get it on Google Play",
   heroNote: "Free. Works without signing up.",
   phoneTitle: "Savyn AI Chat",
   phoneBubble: "lunch 25k parking 2k",

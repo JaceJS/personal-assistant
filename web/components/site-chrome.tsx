@@ -12,50 +12,78 @@ type SitePage = "/" | "/privacy" | "/terms";
 
 const CHROME = {
   id: {
-    download: "Download di Google Play",
+    download: "Download",
+    menu: [
+      { href: "#kanal", label: "Fitur" },
+      { href: "#asisten", label: "Asisten" },
+      { href: "#privasi", label: "Privasi" },
+      { href: "#faq", label: "FAQ" },
+    ],
+    menuNav: "Menu utama",
+    langNav: "Pilih bahasa",
     legalNav: "Tautan legal",
     privacy: "Kebijakan Privasi",
     terms: "Syarat & Ketentuan",
     contact: "Kontak",
-    switchLabel: "English version",
-    switchShort: "EN",
   },
   en: {
-    download: "Get it on Google Play",
+    download: "Download",
+    menu: [
+      { href: "#kanal", label: "Features" },
+      { href: "#asisten", label: "Assistant" },
+      { href: "#privasi", label: "Privacy" },
+      { href: "#faq", label: "FAQ" },
+    ],
+    menuNav: "Main menu",
+    langNav: "Choose language",
     legalNav: "Legal links",
     privacy: "Privacy Policy",
     terms: "Terms of Service",
     contact: "Contact",
-    switchLabel: "Versi Bahasa Indonesia",
-    switchShort: "ID",
   },
 } as const;
 
-const OTHER_LOCALE: Record<Locale, Locale> = { id: "en", en: "id" };
+const LANGUAGES: { locale: Locale; label: string }[] = [
+  { locale: "id", label: "Bahasa Indonesia" },
+  { locale: "en", label: "English" },
+];
 
 export function SiteHeader({ locale, page }: { locale: Locale; page: SitePage }) {
   const t = CHROME[locale];
-  const other = OTHER_LOCALE[locale];
+  const home = localePath(locale, "/");
   return (
     <header className="site-header">
       <div className="container">
-        <Link href={localePath(locale, "/")} className="wordmark">
+        <Link href={`${home}#top`} className="wordmark">
           Savyn<span>.</span>
         </Link>
-        <nav className="header-actions" aria-label="Header">
-          <Link
-            href={localePath(other, page)}
-            className="lang-switch"
-            hrefLang={other}
-            aria-label={t.switchLabel}
-            title={t.switchLabel}
-          >
-            {t.switchShort}
-          </Link>
+        <nav className="site-nav" aria-label={t.menuNav}>
+          {t.menu.map((item) => (
+            <Link key={item.href} href={`${home}${item.href}`}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="header-actions">
           <a className="btn btn-primary btn-header" href={PLAY_STORE_URL}>
             {t.download}
           </a>
-        </nav>
+          <details className="lang-dropdown">
+            <summary aria-label={t.langNav}>{locale.toUpperCase()}</summary>
+            <nav className="lang-menu" aria-label={t.langNav}>
+              {LANGUAGES.map((lang) => (
+                <Link
+                  key={lang.locale}
+                  href={localePath(lang.locale, page)}
+                  hrefLang={lang.locale}
+                  aria-current={lang.locale === locale ? "true" : undefined}
+                >
+                  {lang.label}
+                </Link>
+              ))}
+            </nav>
+          </details>
+        </div>
       </div>
     </header>
   );
