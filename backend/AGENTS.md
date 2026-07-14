@@ -138,6 +138,17 @@ uv run alembic upgrade head
   `connect_args={"statement_cache_size": 0}` — don't create a third async engine
   elsewhere without the same flag, or you'll hit random `DuplicatePreparedStatementError`.
 
+### RLS in Migrations (Required)
+
+Every migration that creates a table **must** also run
+`op.execute("ALTER TABLE <name> ENABLE ROW LEVEL SECURITY")` (see
+`0013_enable_rls_new_tables.py`). The backend bypasses RLS (connects as table
+owner), but without RLS the table is exposed through Supabase PostgREST to
+anyone holding the anon key that ships in the mobile app. No policies needed —
+RLS with zero policies = deny-all, which is correct since the app never uses
+PostgREST. `tests/integration/test_rls_migrations.py` runs the full chain
+against a scratch DB and fails CI if any table lacks RLS.
+
 ### Database Conventions
 - Primary keys: `UUID` (DB default)
 - Timestamps: `created_at`, `updated_at` on every table (from `TimestampedBase`)
