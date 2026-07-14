@@ -97,7 +97,7 @@ async def test_import_creates_transactions(
     assert response.json()["data"]["imported"]["transactions"] == 1
 
 
-async def test_import_upserts_budget(client: AsyncClient) -> None:
+async def test_import_creates_budget(client: AsyncClient) -> None:
     payload = {
         "accounts": [],
         "categories": [],
@@ -109,6 +109,35 @@ async def test_import_upserts_budget(client: AsyncClient) -> None:
 
     assert response.status_code == 200
     assert response.json()["data"]["imported"]["budgets"] == 1
+
+
+async def test_reimport_does_not_overwrite_existing_budget(client: AsyncClient) -> None:
+    """Server-wins on conflict, same semantics as accounts/categories/transactions.
+
+    A guest re-syncing (e.g. after "Nanti Dulu" then logging in again) must never
+    let a stale local budget clobber a value the user already changed on the server.
+    """
+    first_payload = {
+        "accounts": [],
+        "categories": [],
+        "transactions": [],
+        "budget": {"id": str(uuid.uuid4()), "monthly_limit": 5_000_000},
+    }
+    await client.post("/api/v1/sync/import", json=first_payload)
+
+    second_payload = {
+        "accounts": [],
+        "categories": [],
+        "transactions": [],
+        "budget": {"id": str(uuid.uuid4()), "monthly_limit": 2_000_000},
+    }
+    response = await client.post("/api/v1/sync/import", json=second_payload)
+
+    assert response.status_code == 200
+    assert response.json()["data"]["imported"]["budgets"] == 0
+
+    detail = await client.get("/api/v1/budget")
+    assert detail.json()["data"]["monthly_limit"] == 5_000_000
 
 
 async def test_import_handles_empty_payload(client: AsyncClient) -> None:

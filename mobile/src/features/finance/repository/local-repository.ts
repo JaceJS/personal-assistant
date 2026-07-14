@@ -451,4 +451,16 @@ export class LocalRepository implements FinanceRepository {
       .where(eq(savingsGoals.id, id))
       .run();
   }
+
+  // --- Sync ---
+
+  /** Wipes local finance data after a successful sync-on-login import, since the
+   * server copy becomes the source of truth going forward. */
+  async clearFinanceData(): Promise<void> {
+    this.db.delete(transactions).run();
+    this.db.delete(savingsGoals).run();
+    this.db.delete(budgets).run();
+    this.db.delete(accounts).run();
+    this.db.delete(categories).run();
+  }
 }

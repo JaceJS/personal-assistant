@@ -158,14 +158,11 @@ async def import_budget(
     stmt = (
         pg_insert(Budget)
         .values(user_id=user_id, monthly_limit=budget.monthly_limit)
-        .on_conflict_do_update(
-            index_elements=["user_id"],
-            set_={"monthly_limit": budget.monthly_limit, "updated_at": sa.func.now()},
-        )
+        .on_conflict_do_nothing(index_elements=["user_id"])
     )
-    await session.execute(stmt)
+    result = await session.execute(stmt)
     await session.flush()
-    return 1
+    return cast("CursorResult[Any]", result).rowcount
 
 
 async def import_savings_goals(

@@ -257,6 +257,19 @@
     "banner": {
       "title": "Guest mode",
       "subtitle": "Data is only on this device. Sign in to back up & sync."
+    },
+    "sync": {
+      "title": "Merge guest data into your account?",
+      "description": "We found data from your guest session: {{items}}. Merge it so it isn't lost.",
+      "itemAccounts": "{{count}} accounts",
+      "itemTransactions": "{{count}} transactions",
+      "itemBudget": "1 budget",
+      "itemSavingsGoals": "{{count}} savings goals",
+      "confirmCta": "Merge into Account",
+      "laterCta": "Not Now",
+      "syncingLabel": "Merging data...",
+      "errorMessage": "Couldn't merge data. Try again?",
+      "retryCta": "Try Again"
     }
   },
   "deleteAccount": {

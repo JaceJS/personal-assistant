@@ -253,6 +253,19 @@
     "banner": {
       "title": "Mode tamu",
       "subtitle": "Data cuma di HP ini. Masuk buat backup & sync."
+    },
+    "sync": {
+      "title": "Gabungkan data tamu ke akun?",
+      "description": "Kami menemukan data dari sesi tamu Anda: {{items}}. Gabungkan supaya tidak hilang.",
+      "itemAccounts": "{{count}} akun",
+      "itemTransactions": "{{count}} transaksi",
+      "itemBudget": "1 budget",
+      "itemSavingsGoals": "{{count}} tujuan tabungan",
+      "confirmCta": "Gabungkan ke Akun",
+      "laterCta": "Nanti Dulu",
+      "syncingLabel": "Menggabungkan data...",
+      "errorMessage": "Gagal menggabungkan data. Coba lagi?",
+      "retryCta": "Coba Lagi"
     }
   },
   "deleteAccount": {

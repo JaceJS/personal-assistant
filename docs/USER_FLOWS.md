@@ -176,18 +176,23 @@ flowchart TD
 ```mermaid
 flowchart TD
     G["Guest (data di SQLite)"] -- "signInWithGoogle() sukses" --> SI["Supabase event SIGNED_IN<br/>&& wasGuest"]
-    SI --> SYNC["syncOnLogin():<br/>1. migrasi id kategori non-UUID<br/>2. baca semua data lokal<br/>3. skip jika tidak ada data bermakna<br/>4. POST /api/v1/sync/import"]
-    SYNC -- sukses --> OK["Data di cloud; log info.<br/>Data lokal TIDAK dihapus"]
-    SYNC -- gagal --> KEEP["Log error; data lokal utuh.<br/>⚠️ Tanpa feedback UI ke user"]
+    C["Cold start:<br/>getSession() → sudah login"] --> CHK
+    SI --> CHK["checkForLocalDataToMerge():<br/>getLocalDataSummary (read-only, tanpa migrasi)"]
+    CHK -- "tidak ada data bermakna" --> SKIP["Tidak ada prompt"]
+    CHK -- "ada data" --> PROMPT["GuestDataMergeSheet muncul:<br/>ringkasan (N akun, N transaksi, ...)"]
+    PROMPT -- "Nanti Dulu" --> DEFER["dismiss(): idle, data lokal utuh.<br/>Prompt muncul lagi di login/cold-start berikutnya"]
+    PROMPT -- "Gabungkan ke Akun" --> SYNC["useSyncOnLogin():<br/>1. migrasi id kategori non-UUID<br/>2. baca semua data lokal<br/>3. POST /api/v1/sync/import<br/>4. invalidate semua query cache"]
+    SYNC -- sukses --> OK["clearFinanceData(): SQLite lokal dikosongkan.<br/>Server jadi source of truth"]
+    SYNC -- gagal --> ERR["phase=error, ringkasan tetap ada.<br/>Toast + tombol Coba Lagi; data lokal tetap aman"]
 ```
 
-**Detail backend import** (urutan; semua idempoten `ON CONFLICT (id) DO NOTHING`): accounts → categories → filter transaksi yang akun/kategorinya bukan milik user (di-skip + warning log) → transactions (dipaksa `status=confirmed`) → apply delta saldo per akun (`FOR UPDATE`, hanya dari baris baru → re-import tidak double-count) → budget (upsert) → savings goals. Batas 5000 item/list, rate limit 10 req/jam.
+**Detail backend import** (urutan; semua idempoten `ON CONFLICT DO NOTHING` — **server menang** di setiap konflik, termasuk budget): accounts → categories → filter transaksi yang akun/kategorinya bukan milik user (di-skip + warning log) → transactions (dipaksa `status=confirmed`) → apply delta saldo per akun (`FOR UPDATE`, hanya dari baris baru → re-import tidak double-count) → budget → savings goals. Batas 5000 item/list, rate limit 10 req/jam.
 
-**Sign out:** Profil → "Keluar" → Alert konfirmasi → supabase signOut + `queryClient.clear()` + masuk guest mode → `replace /login`. Dari `/login` bisa Google lagi atau "Lanjut tanpa akun →" (kembali sebagai guest; data lokal lama masih ada).
+**Sign out:** Profil → "Keluar" → Alert konfirmasi → supabase signOut + `queryClient.clear()` + masuk guest mode → `replace /login`. Dari `/login` bisa Google lagi atau "Lanjut tanpa akun →" (kembali sebagai guest; data lokal lama masih ada, karena logout tidak pernah menghapus SQLite).
 
-**Cabang & edge case:** sync gagal diam-diam (hanya log) — user tidak tahu datanya belum di-backup; smoke test rilis (PRD §5 #5) wajib melewati jalur ini.
+**Cabang & edge case:** sync tidak pernah jalan diam-diam — selalu lewat konfirmasi `GuestDataMergeSheet`. Setelah sync sukses, SQLite lokal dikosongkan (`clearFinanceData`) supaya re-sync berikutnya tidak menimpa data server dengan data lokal basi. Kalau user pilih "Nanti Dulu", data lokal tetap ada dan prompt dicek ulang setiap login/cold-start selama data itu belum digabungkan. Smoke test rilis (PRD §5 #5) wajib melewati jalur ini.
 **Event analytics:** E-AUTH1..E-AUTH4, E-SYNC1 (§9).
-**File terkait:** `mobile/src/hooks/useAuth.ts`, `mobile/src/features/sync/{useSyncOnLogin,syncService,api}.ts`, `backend/app/domains/sync/`, `mobile/app/login.tsx`, `mobile/src/components/ui/GuestGate.tsx`, `mobile/src/features/finance/components/GuestModeBanner.tsx`.
+**File terkait:** `mobile/src/hooks/useAuth.ts`, `mobile/src/stores/syncPrompt.ts`, `mobile/src/features/sync/{useSyncOnLogin,syncService,api}.ts`, `mobile/src/features/sync/components/GuestDataMergeSheet.tsx`, `backend/app/domains/sync/`, `mobile/app/login.tsx`, `mobile/src/components/ui/GuestGate.tsx`, `mobile/src/features/finance/components/GuestModeBanner.tsx`.
 
 ### 3.4 Hapus akun permanen (kebijakan Play Store)
 

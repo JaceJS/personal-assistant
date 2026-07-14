@@ -66,6 +66,18 @@ function makeTestDb() {
       error TEXT,
       created_at TEXT NOT NULL
     );
+    CREATE TABLE savings_goals (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      name TEXT NOT NULL,
+      icon TEXT,
+      target_amount INTEGER NOT NULL,
+      current_amount INTEGER NOT NULL DEFAULT 0,
+      target_date TEXT,
+      is_archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
   return drizzle(sqlite, { schema });
 }
@@ -75,10 +87,13 @@ const BASE_TX = { id: "tx-1", account_id: "acc-1", amount: 50000, occurred_at: n
 
 describe("LocalRepository", () => {
   let repo: LocalRepository;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let testDb: any;
 
   beforeEach(() => {
     // Each test gets a fresh in-memory DB
-    repo = new LocalRepository(makeTestDb());
+    testDb = makeTestDb();
+    repo = new LocalRepository(testDb);
   });
 
   describe("accounts", () => {
@@ -349,6 +364,36 @@ describe("LocalRepository", () => {
       const updated = await repo.upsertBudget({ id: "budget-1", monthly_limit: 8_000_000 });
       expect(updated.monthly_limit).toBe(8_000_000);
       expect((await repo.getBudget())?.monthly_limit).toBe(8_000_000);
+    });
+  });
+
+  describe("clearFinanceData", () => {
+    it("removes all accounts, categories, transactions, budget, and savings goals", async () => {
+      await repo.createAccount(BASE_ACCOUNT);
+      await repo.createCategory({ id: "cat-1", name: "Food", type: "expense" });
+      await repo.createTransaction(BASE_TX);
+      await repo.upsertBudget({ id: "budget-1", monthly_limit: 5_000_000 });
+      await repo.createSavingsGoal({
+        id: "goal-1",
+        name: "Motor",
+        target_amount: 15_000_000,
+        target_date: null,
+      });
+
+      await repo.clearFinanceData();
+
+      // Query raw tables directly: listCategories() re-seeds defaults when
+      // empty (intentional first-run behavior), which would mask a real clear.
+      expect(testDb.select().from(schema.accounts).all()).toEqual([]);
+      expect(testDb.select().from(schema.categories).all()).toEqual([]);
+      expect(testDb.select().from(schema.transactions).all()).toEqual([]);
+      expect(testDb.select().from(schema.budgets).all()).toEqual([]);
+      expect(testDb.select().from(schema.savingsGoals).all()).toEqual([]);
+    });
+
+    it("is a no-op on an already-empty database", async () => {
+      await expect(repo.clearFinanceData()).resolves.not.toThrow();
+      expect(await repo.listAccounts()).toEqual([]);
     });
   });
 });

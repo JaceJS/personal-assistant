@@ -21,6 +21,7 @@ import { queryClient } from "@/lib/queryClient";
 import { runMigrations } from "@/lib/db/client";
 import { logger } from "@/lib/logger";
 import { Toast } from "@/components/ui/Toast";
+import { GuestDataMergeSheet } from "@/features/sync/components/GuestDataMergeSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguageStore } from "@/stores/language";
 import { useOnboardingStore } from "@/stores/onboarding";
@@ -77,6 +78,7 @@ function RootLayoutInner() {
         <Stack.Screen name="delete-account" />
       </Stack>
       <Toast />
+      <GuestDataMergeSheet />
     </SafeAreaProvider>
   );
 }

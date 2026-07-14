@@ -1,4 +1,4 @@
-import { syncLocalData } from "../syncService";
+import { syncLocalData, getLocalDataSummary } from "../syncService";
 
 const makeRepo = (overrides: Record<string, jest.Mock> = {}) => ({
   migrateNonUuidCategoryIds: jest.fn().mockResolvedValue(undefined),
@@ -7,6 +7,7 @@ const makeRepo = (overrides: Record<string, jest.Mock> = {}) => ({
   listTransactions: jest.fn().mockResolvedValue({ items: [], total: 0 }),
   getBudget: jest.fn().mockResolvedValue(null),
   listSavingsGoals: jest.fn().mockResolvedValue([]),
+  clearFinanceData: jest.fn().mockResolvedValue(undefined),
   ...overrides,
 });
 
@@ -139,5 +140,73 @@ describe("syncLocalData", () => {
     const syncApi = jest.fn().mockRejectedValue(new Error("Network error"));
 
     await expect(syncLocalData(repo, syncApi)).rejects.toThrow("Network error");
+  });
+
+  it("clears local data after a successful sync", async () => {
+    const repo = makeRepo({
+      listAccounts: jest.fn().mockResolvedValue([ACCOUNT]),
+    });
+    const syncApi = jest.fn().mockResolvedValue(IMPORTED);
+
+    await syncLocalData(repo, syncApi);
+
+    expect(repo.clearFinanceData).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not clear local data when sync is skipped (nothing to sync)", async () => {
+    const repo = makeRepo();
+    const syncApi = jest.fn();
+
+    await syncLocalData(repo, syncApi);
+
+    expect(repo.clearFinanceData).not.toHaveBeenCalled();
+  });
+
+  it("does not clear local data when the sync API call fails", async () => {
+    const repo = makeRepo({
+      listAccounts: jest.fn().mockResolvedValue([ACCOUNT]),
+    });
+    const syncApi = jest.fn().mockRejectedValue(new Error("Network error"));
+
+    await expect(syncLocalData(repo, syncApi)).rejects.toThrow("Network error");
+    expect(repo.clearFinanceData).not.toHaveBeenCalled();
+  });
+});
+
+describe("getLocalDataSummary", () => {
+  it("returns null when there is nothing meaningful to sync", async () => {
+    const repo = makeRepo();
+
+    expect(await getLocalDataSummary(repo)).toBeNull();
+  });
+
+  it("returns null when only default categories exist", async () => {
+    const repo = makeRepo({ listCategories: jest.fn().mockResolvedValue([CATEGORY]) });
+
+    expect(await getLocalDataSummary(repo)).toBeNull();
+  });
+
+  it("counts accounts, transactions, savings goals, and whether a budget is set", async () => {
+    const repo = makeRepo({
+      listAccounts: jest.fn().mockResolvedValue([ACCOUNT, ACCOUNT]),
+      listTransactions: jest.fn().mockResolvedValue({ items: [TRANSACTION], total: 1 }),
+      getBudget: jest.fn().mockResolvedValue(BUDGET),
+      listSavingsGoals: jest.fn().mockResolvedValue([GOAL]),
+    });
+
+    expect(await getLocalDataSummary(repo)).toEqual({
+      accounts: 2,
+      transactions: 1,
+      hasBudget: true,
+      savingsGoals: 1,
+    });
+  });
+
+  it("does not run the non-UUID category migration (read-only preview)", async () => {
+    const repo = makeRepo({ listAccounts: jest.fn().mockResolvedValue([ACCOUNT]) });
+
+    await getLocalDataSummary(repo);
+
+    expect(repo.migrateNonUuidCategoryIds).not.toHaveBeenCalled();
   });
 });
