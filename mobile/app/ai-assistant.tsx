@@ -603,16 +603,21 @@ export default function AIAssistantScreen() {
 
       {/* Input bar */}
       <View style={styles.inputBar}>
-        <Pressable
-          onPress={() => void handleCameraPress()}
-          disabled={isCameraBusy}
-          style={[styles.inputBtn, isCameraBusy && styles.inputBtnDisabled]}
-          hitSlop={8}
-        >
-          {isCameraBusy ? (
-            <ActivityIndicator size="small" color={colors.accent.primary} />
-          ) : (
-            <Camera size={22} color={colors.accent.primary} strokeWidth={1.8} />
+        <Pressable onPress={() => void handleCameraPress()} disabled={isCameraBusy} hitSlop={8}>
+          {({ pressed }) => (
+            <View
+              style={[
+                styles.inputBtn,
+                isCameraBusy && styles.inputBtnDisabled,
+                pressed && styles.btnPressed,
+              ]}
+            >
+              {isCameraBusy ? (
+                <ActivityIndicator size="small" color={colors.accent.primary} />
+              ) : (
+                <Camera size={22} color={colors.accent.primary} strokeWidth={1.8} />
+              )}
+            </View>
           )}
         </Pressable>
 
@@ -633,17 +638,26 @@ export default function AIAssistantScreen() {
           onPressOut={isSendMode ? undefined : handleMicPressOut}
           onPress={isSendMode ? handleSendText : undefined}
           disabled={!isSendMode && isMicBusy && !isRecording}
-          style={[styles.micBtn, isRecording && styles.micBtnRecording]}
           hitSlop={8}
         >
-          {isMicBusy && !isRecording && !isSendMode ? (
-            <ActivityIndicator color={colors.accent.primary} />
-          ) : isRecording ? (
-            <Square size={22} color={colors.danger.text} fill={colors.danger.text} />
-          ) : isSendMode ? (
-            <SendHorizontal size={22} color={colors.accent.primary} strokeWidth={2} />
-          ) : (
-            <Mic size={22} color={colors.accent.primary} strokeWidth={2} />
+          {({ pressed }) => (
+            <View
+              style={[
+                styles.micBtn,
+                isRecording && styles.micBtnRecording,
+                pressed && styles.btnPressed,
+              ]}
+            >
+              {isMicBusy && !isRecording && !isSendMode ? (
+                <ActivityIndicator color={colors.accent.primary} />
+              ) : isRecording ? (
+                <Square size={22} color={colors.danger.text} fill={colors.danger.text} />
+              ) : isSendMode ? (
+                <SendHorizontal size={22} color={colors.accent.primary} strokeWidth={2} />
+              ) : (
+                <Mic size={22} color={colors.accent.primary} strokeWidth={2} />
+              )}
+            </View>
           )}
         </Pressable>
       </View>
@@ -777,11 +791,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#FCEFE8",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.accent.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: `${colors.accent.primary}4D`,
+    boxShadow: `0 2px 4px ${colors.accent.primary}40`,
+  },
+  btnPressed: {
+    opacity: 0.7,
   },
   micBtnRecording: {
     backgroundColor: colors.danger.bg,
