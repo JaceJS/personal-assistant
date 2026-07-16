@@ -9,6 +9,10 @@ export interface LandingContent {
   heroSub: string;
   heroNote: string;
   heroImageAlt: string;
+  aboutEyebrow: string;
+  aboutTitle: string;
+  aboutLede: string;
+  aboutBody: string;
   manifestoLead: string;
   manifestoStrong: string;
   manifestoTail: string;
@@ -39,6 +43,17 @@ export const LANDING_ID: LandingContent = {
   heroNote: "Gratis. Bisa dipakai tanpa daftar akun.",
   heroImageAlt:
     "Layar chat AI Savyn: pesan 'sate 20rb parkir 2rb' menjadi dua draft transaksi siap dikonfirmasi",
+  aboutEyebrow: "Tentang Savyn",
+  aboutTitle: "Savyn itu apa, sih?",
+  aboutLede:
+    "Savyn adalah asisten keuangan pribadi berbasis AI. Bukan cuma tempat mencatat pengeluaran, " +
+    "tapi juga yang mengingatkan, merangkum, dan membantu kamu tetap dalam budget, tanpa perlu " +
+    "buka spreadsheet atau isi form panjang.",
+  aboutBody:
+    "Catat transaksi lewat chat, suara, atau foto struk, AI yang membereskan sisanya jadi catatan " +
+    "rapi lengkap dengan kategori. Savyn juga proaktif kasih tahu lewat notifikasi budget dan " +
+    "ringkasan mingguan, jadi kamu tetap tahu kondisi keuanganmu tanpa harus rajin buka aplikasi. " +
+    "Bisa dipakai langsung tanpa daftar akun, dan gratis.",
   manifestoLead: "Aplikasi keuangan gagal bukan karena kurang fitur. Gagal karena ",
   manifestoStrong: "mencatat itu ribet",
   manifestoTail:
@@ -178,6 +193,17 @@ export const LANDING_EN: LandingContent = {
   heroNote: "Free. Works without signing up.",
   heroImageAlt:
     "Savyn AI chat screen: the message 'sate 20rb parkir 2rb' becomes two transaction drafts ready to confirm",
+  aboutEyebrow: "About Savyn",
+  aboutTitle: "So, what is Savyn?",
+  aboutLede:
+    "Savyn is an AI-powered personal finance assistant. It's more than a place to log expenses: " +
+    "it reminds you, summarizes your spending, and helps you stay on budget, without ever " +
+    "opening a spreadsheet or filling out a long form.",
+  aboutBody:
+    "Log transactions by typing, speaking, or snapping a photo of a receipt, and AI turns it " +
+    "into a clean, categorized record. Savyn also checks in proactively with budget alerts and " +
+    "weekly summaries, so you always know where you stand without opening the app every day. " +
+    "No account needed to start, and it's free.",
   manifestoLead: "Finance apps don't fail from missing features. They fail because ",
   manifestoStrong: "logging is a chore",
   manifestoTail: ". Savyn removes the friction in every situation: at the register, on the go, or at home.",

@@ -97,6 +97,15 @@ export function Landing({
           </div>
         </section>
 
+        <section className="section" id="tentang">
+          <div className="container">
+            <p className="section-eyebrow">{content.aboutEyebrow}</p>
+            <h2>{content.aboutTitle}</h2>
+            <p className="section-lede">{content.aboutLede}</p>
+            <p className="section-lede">{content.aboutBody}</p>
+          </div>
+        </section>
+
         <section className="manifesto">
           <div className="container">
             <p>

@@ -87,6 +87,9 @@ h3 {
 }
 
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-display), sans-serif;
   font-weight: 800;
   font-size: 1.35rem;
@@ -94,8 +97,9 @@ h3 {
   text-decoration: none;
 }
 
-.wordmark span {
-  color: var(--brand);
+.wordmark-icon {
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .site-nav {
@@ -226,10 +230,15 @@ h3 {
 
 /* ── Hero ── */
 .hero {
+  display: flex;
+  align-items: center;
+  min-height: calc(100vh - 64px);
+  min-height: calc(100dvh - 64px);
   padding: 72px 0;
 }
 
 .hero .container {
+  width: 100%;
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   gap: 48px;
@@ -511,6 +520,12 @@ h3 {
 .site-footer nav {
   display: flex;
   gap: 22px;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ── Legal pages ── */

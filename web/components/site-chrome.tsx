@@ -1,5 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 
+import logoMark from "@/public/web-app-manifest-192x192.png";
 import {
   DEVELOPER_NAME,
   localePath,
@@ -14,6 +16,7 @@ const CHROME = {
   id: {
     download: "Download",
     menu: [
+      { href: "#tentang", label: "Tentang" },
       { href: "#kanal", label: "Fitur" },
       { href: "#asisten", label: "Asisten" },
       { href: "#privasi", label: "Privasi" },
@@ -29,6 +32,7 @@ const CHROME = {
   en: {
     download: "Download",
     menu: [
+      { href: "#tentang", label: "About" },
       { href: "#kanal", label: "Features" },
       { href: "#asisten", label: "Assistant" },
       { href: "#privasi", label: "Privacy" },
@@ -55,7 +59,8 @@ export function SiteHeader({ locale, page }: { locale: Locale; page: SitePage })
     <header className="site-header">
       <div className="container">
         <Link href={`${home}#top`} className="wordmark">
-          Savyn<span>.</span>
+          <Image src={logoMark} alt="" width={28} height={28} className="wordmark-icon" priority />
+          Savyn
         </Link>
         <nav className="site-nav" aria-label={t.menuNav}>
           {t.menu.map((item) => (
@@ -94,9 +99,12 @@ export function SiteFooter({ locale }: { locale: Locale }) {
   return (
     <footer className="site-footer">
       <div className="container">
-        <p>
-          © {new Date().getFullYear()} {DEVELOPER_NAME}
-        </p>
+        <div className="footer-brand">
+          <Image src={logoMark} alt="" width={20} height={20} className="wordmark-icon" />
+          <p>
+            © {new Date().getFullYear()} {DEVELOPER_NAME}
+          </p>
+        </div>
         <nav aria-label={t.legalNav}>
           <Link href={localePath(locale, "/privacy")}>{t.privacy}</Link>
           <Link href={localePath(locale, "/terms")}>{t.terms}</Link>
