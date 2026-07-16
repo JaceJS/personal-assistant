@@ -1,15 +1,13 @@
+import "intl-pluralrules";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from "./registry";
 
 const resources = Object.fromEntries(
-  SUPPORTED_LANGUAGES.map((lang) => [lang.code, { translation: lang.resource }]),
+  SUPPORTED_LANGUAGES.map((lang) => [lang.code, { translation: lang.resource }])
 );
 
-// initImmediate: false → init sinkron (resource lokal, tanpa fetch), sehingga
-// render pertama & unit test tidak pernah melihat state "belum siap". Bahasa
-// nyata diterapkan oleh language store saat hydrate (lihat src/stores/language.ts).
 void i18n.use(initReactI18next).init({
   resources,
   lng: DEFAULT_LANGUAGE,
