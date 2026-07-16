@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MessageCircle, Mic, ScanLine, Sparkles } from "lucide-react-native";
+import { MessageCircle, Mic, ScanLine } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
 import { OnboardingHeader } from "@/components/layout/OnboardingHeader";
+import { Logo } from "@/components/ui/Logo";
 import { colors } from "@/theme/colors";
 import { textStyles } from "@/theme/typography";
 import { spacing } from "@/theme/spacing";
@@ -14,8 +15,6 @@ import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { signInWithGoogle } from "@/lib/auth/signInWithGoogle";
 
-// Literal key paths (not built via template interpolation) so react-i18next's
-// generated key union — declared in src/i18n/types.ts — can type-check t() calls.
 const FEATURES = [
   {
     key: "chat",
@@ -82,8 +81,6 @@ export default function WelcomeScreen() {
     try {
       const result = await signInWithGoogle();
       if (result === "error") showToast(t("auth.loginError"), "error");
-      // "success": useEffect di atas yang handle navigate
-      // "cancelled": diam aja
     } finally {
       setLoginLoading(false);
     }
@@ -99,18 +96,12 @@ export default function WelcomeScreen() {
       <OnboardingHeader currentStep={1} totalSteps={3} />
 
       <Animated.View
-        style={[
-          styles.container,
-          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-        ]}
+        style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
       >
-
         {/* Hero icon */}
-        <Animated.View
-          style={[styles.iconWrap, { transform: [{ scale: scaleAnim }] }]}
-        >
+        <Animated.View style={[styles.iconWrap, { transform: [{ scale: scaleAnim }] }]}>
           <View style={styles.iconCircle}>
-            <Sparkles size={40} color="#fff" />
+            <Logo size={56} />
           </View>
         </Animated.View>
 
@@ -119,9 +110,7 @@ export default function WelcomeScreen() {
           <Text style={styles.headlineText}>
             {t("onboarding.welcome.headlineLine1")}
             {"\n"}
-            <Text style={styles.headlineAccent}>
-              {t("onboarding.welcome.headlineAccent")}
-            </Text>
+            <Text style={styles.headlineAccent}>{t("onboarding.welcome.headlineAccent")}</Text>
           </Text>
           <Text style={styles.subtitle}>{t("onboarding.welcome.subtitle")}</Text>
         </View>
@@ -213,7 +202,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: radius.xl,
-    backgroundColor: colors.accent.primary,
+    backgroundColor: colors.accent.subtle,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: colors.accent.primary,

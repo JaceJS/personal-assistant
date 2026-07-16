@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Sparkles } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
+import { Logo } from "@/components/ui/Logo";
 import { colors } from "@/theme/colors";
 import { textStyles } from "@/theme/typography";
 import { spacing } from "@/theme/spacing";
@@ -82,7 +82,7 @@ export default function LoginScreen() {
       >
         <Animated.View style={[styles.iconWrap, { transform: [{ scale: scaleAnim }] }]}>
           <View style={styles.iconCircle}>
-            <Sparkles size={40} color="#fff" />
+            <Logo size={56} />
           </View>
         </Animated.View>
 
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: radius.xl,
-    backgroundColor: colors.accent.primary,
+    backgroundColor: colors.accent.subtle,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: colors.accent.primary,
