@@ -10,6 +10,7 @@ import pytest
 
 from app.domains.ai.router import _count_amount_mentions, chat
 from app.domains.ai.schemas import ChatRequest
+from app.domains.finance.models import CategoryType
 
 _USER_ID = uuid.uuid4()
 _SESSION_ID = uuid.uuid4()
@@ -30,15 +31,27 @@ def _history_message(role: str, content: str) -> MagicMock:
     return msg
 
 
+def _category(name: str, type_: CategoryType) -> MagicMock:
+    cat = MagicMock()
+    cat.name = name
+    cat.type = type_
+    return cat
+
+
 @pytest.fixture(autouse=True)
 def _no_pending_drafts_by_default():
-    """Most tests don't care about the same-session-duplicate-guard query;
-    default it to "no pending drafts" so it's a no-op unless a test opts in."""
+    """Most tests don't care about the same-session-duplicate-guard query or
+    the category-list prompt injection; default both to empty so they're
+    no-ops unless a test opts in."""
     with patch(
         "app.domains.ai.router.finance_repo",
-        MagicMock(get_pending_draft_transactions=AsyncMock(return_value=[])),
-    ):
-        yield
+        MagicMock(
+            get_pending_draft_transactions=AsyncMock(return_value=[]),
+            list_categories=AsyncMock(return_value=[]),
+            list_system_categories=AsyncMock(return_value=[]),
+        ),
+    ) as mock_finance_repo:
+        yield mock_finance_repo
 
 
 def _draft_result(merchant: str, amount: int) -> str:
@@ -125,7 +138,9 @@ async def test_chat_reminds_model_of_pending_drafts_to_avoid_duplicate_recording
     finance_repo_mock = MagicMock(
         get_pending_draft_transactions=AsyncMock(
             return_value=[_pending_draft("sate", -20000)]
-        )
+        ),
+        list_categories=AsyncMock(return_value=[]),
+        list_system_categories=AsyncMock(return_value=[]),
     )
 
     with (
@@ -468,3 +483,62 @@ async def test_chat_uses_fallback_reply_when_forced_completion_still_empty() -> 
     assert llm.chat_with_tools.call_count == 2
     persisted_content = repo_mock.add_message.call_args.args[-1]
     assert persisted_content == response.data.reply
+
+
+@pytest.mark.asyncio
+async def test_chat_system_prompt_lists_user_categories() -> None:
+    """The model can only pick a correct category_name if it knows the user's
+    actual category names — without the list it guesses ('Makan') and the
+    backend's ilike match silently fails against the real name."""
+    llm = MagicMock()
+    llm.chat_with_tools = AsyncMock(return_value=("Halo!", []))
+    finance_repo_mock = MagicMock(
+        get_pending_draft_transactions=AsyncMock(return_value=[]),
+        list_categories=AsyncMock(
+            return_value=[
+                _category("Makan & Jajan", CategoryType.expense),
+                _category("Ojek & Transport", CategoryType.expense),
+                _category("Gaji", CategoryType.income),
+            ]
+        ),
+        list_system_categories=AsyncMock(return_value=[]),
+    )
+
+    with (
+        patch("app.domains.ai.router.OpenRouterLLM", return_value=llm),
+        patch("app.domains.ai.router.get_settings", return_value=MagicMock()),
+        patch("app.domains.ai.router.repo", _mock_repo()),
+        patch("app.domains.ai.router.finance_repo", finance_repo_mock),
+    ):
+        await chat(ChatRequest(message="makan 30k", session_id=_SESSION_ID), _USER_ID, AsyncMock())
+
+    system_prompt = llm.chat_with_tools.call_args_list[0].args[0]
+    assert "Makan & Jajan" in system_prompt
+    assert "Ojek & Transport" in system_prompt
+    assert "Gaji" in system_prompt
+
+
+@pytest.mark.asyncio
+async def test_chat_system_prompt_falls_back_to_system_categories() -> None:
+    """A brand-new user who chats before any screen triggered the per-user
+    category seeding still gets the system defaults listed in the prompt."""
+    llm = MagicMock()
+    llm.chat_with_tools = AsyncMock(return_value=("Halo!", []))
+    finance_repo_mock = MagicMock(
+        get_pending_draft_transactions=AsyncMock(return_value=[]),
+        list_categories=AsyncMock(return_value=[]),
+        list_system_categories=AsyncMock(
+            return_value=[_category("Makan & Jajan", CategoryType.expense)]
+        ),
+    )
+
+    with (
+        patch("app.domains.ai.router.OpenRouterLLM", return_value=llm),
+        patch("app.domains.ai.router.get_settings", return_value=MagicMock()),
+        patch("app.domains.ai.router.repo", _mock_repo()),
+        patch("app.domains.ai.router.finance_repo", finance_repo_mock),
+    ):
+        await chat(ChatRequest(message="makan 30k", session_id=_SESSION_ID), _USER_ID, AsyncMock())
+
+    system_prompt = llm.chat_with_tools.call_args_list[0].args[0]
+    assert "Makan & Jajan" in system_prompt

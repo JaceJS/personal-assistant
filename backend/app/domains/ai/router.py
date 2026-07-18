@@ -29,6 +29,7 @@ from app.domains.ai.schemas import (
 )
 from app.domains.ai.tools import TOOLS, execute_tool
 from app.domains.finance import repository as finance_repo
+from app.domains.finance.models import CategoryType
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -47,6 +48,14 @@ _PENDING_DRAFTS_NOTICE_TEMPLATE = (
     "call create_transaction for them again unless the user explicitly asks you to: {items}"
 )
 _EMPTY_ASSISTANT_TURN_PLACEHOLDER = "(action completed — see the draft card shown in the chat)"
+_CATEGORY_LIST_TEMPLATE = (
+    "These are the user's transaction categories. When calling create_transaction, "
+    "category_name MUST be one of these names copied EXACTLY — never invent or translate "
+    "a name. Pick the closest match for what the money was for (e.g. 'makan siang' -> "
+    "'Makan & Jajan', 'ojek' -> 'Ojek & Transport').\n"
+    "Expense categories: {expense}\n"
+    "Income categories: {income}"
+)
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
@@ -160,6 +169,21 @@ async def chat(
     # instructions in the leading system prompt far more reliably than with a
     # system-role message buried between tool turns, which it tends to ignore.
     system_prompt = _SYSTEM_PROMPT
+
+    # The model can only fill category_name correctly if it knows the user's
+    # actual category names — without this list it guesses ("Makan") and the
+    # backend ilike match fails silently, leaving drafts uncategorized.
+    categories = await finance_repo.list_categories(session, user_id)
+    if not categories:
+        # Brand-new user before any screen triggered per-user seeding.
+        categories = await finance_repo.list_system_categories(session)
+    if categories:
+        expense_names = ", ".join(c.name for c in categories if c.type == CategoryType.expense)
+        income_names = ", ".join(c.name for c in categories if c.type == CategoryType.income)
+        system_prompt += "\n\n" + _CATEGORY_LIST_TEMPLATE.format(
+            expense=expense_names or "-", income=income_names or "-"
+        )
+
     pending_drafts = await finance_repo.get_pending_draft_transactions(session, chat_session.id)
     if pending_drafts:
         items = ", ".join(f"{tx.merchant or 'item'} (Rp{abs(tx.amount)})" for tx in pending_drafts)
@@ -226,6 +250,8 @@ async def chat(
             loop_messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
             if tc["name"] == "create_transaction":
                 result_data = json.loads(result)
+                # Feedback for the model only, not part of the draft schema.
+                result_data.pop("category_warning", None)
                 if "transaction_id" in result_data:
                     draft_transactions.append(DraftTransaction(**result_data))
 

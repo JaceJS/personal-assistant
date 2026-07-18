@@ -394,17 +394,32 @@ async def _create_transaction(
 
     category_id: uuid.UUID | None = None
     category_name_resolved: str | None = None
-    if args.get("category_name"):
+    category_warning: str | None = None
+    requested_category = args.get("category_name")
+    if requested_category:
         cat_row = await session.execute(
             sa.select(Category).where(
                 sa.or_(Category.user_id == user_id, Category.user_id.is_(None)),
-                Category.name.ilike(f"%{args['category_name']}%"),
+                Category.name.ilike(f"%{requested_category}%"),
             )
         )
         cat = cat_row.scalars().first()
         if cat:
             category_id = cat.id
             category_name_resolved = cat.name
+        else:
+            category_warning = (
+                f"category_name '{requested_category}' did not match any of the user's "
+                "categories — the draft was created WITHOUT a category. Next time pick a "
+                "name exactly from the category list in your instructions."
+            )
+            _logger.warning("ai_category_unresolved", requested=str(requested_category))
+    else:
+        category_warning = (
+            "no category_name was given — the draft was created WITHOUT a category. "
+            "Always pick the closest name from the category list in your instructions."
+        )
+        _logger.warning("ai_category_missing")
 
     occurred_at: datetime
     if args.get("occurred_at"):
@@ -437,7 +452,7 @@ async def _create_transaction(
     account = await repo.get_account(session, account_id)
     currency = account.currency if account else "IDR"
 
-    return {
+    result: dict[str, Any] = {
         "transaction_id": str(tx.id),
         "amount": tx.amount,
         "currency": currency,
@@ -446,6 +461,9 @@ async def _create_transaction(
         "note": tx.note,
         "account_id": str(tx.account_id),
     }
+    if category_warning:
+        result["category_warning"] = category_warning
+    return result
 
 
 # ── Dispatcher ────────────────────────────────────────────────────────────────

@@ -271,3 +271,99 @@ async def test_execute_tool_threads_chat_session_id_to_create_transaction() -> N
     mock_create_transaction.assert_awaited_once_with(
         _USER_ID, session, {}, chat_session_id=chat_session_id
     )
+
+
+def _tx_session(found_category: MagicMock | None) -> AsyncMock:
+    """AsyncMock session whose category lookup resolves to `found_category`."""
+    session = AsyncMock()
+    scalars = MagicMock()
+    scalars.first.return_value = found_category
+    result = MagicMock()
+    result.scalars.return_value = scalars
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+def _created_tx(account_id: uuid.UUID) -> MagicMock:
+    tx = MagicMock()
+    tx.id = uuid.uuid4()
+    tx.amount = -30_000
+    tx.merchant = None
+    tx.note = None
+    tx.account_id = account_id
+    return tx
+
+
+@pytest.mark.asyncio
+async def test_create_transaction_warns_when_category_name_unmatched() -> None:
+    """A category_name that matches nothing must not fail the draft, but the
+    tool result must carry a warning so the model can correct itself."""
+    account_id = uuid.uuid4()
+    session = _tx_session(found_category=None)
+
+    with (
+        patch(
+            "app.domains.ai.tools.finance_service.create_transaction",
+            AsyncMock(return_value=_created_tx(account_id)),
+        ),
+        patch("app.domains.ai.tools.repo.get_account", AsyncMock(return_value=None)),
+    ):
+        result = await _create_transaction(
+            _USER_ID,
+            session,
+            {"account_id": str(account_id), "amount": -30_000, "category_name": "Makanan Berat"},
+            chat_session_id=uuid.uuid4(),
+        )
+
+    assert "transaction_id" in result
+    assert result["category_name"] is None
+    assert "Makanan Berat" in result["category_warning"]
+
+
+@pytest.mark.asyncio
+async def test_create_transaction_warns_when_category_name_missing() -> None:
+    account_id = uuid.uuid4()
+    session = _tx_session(found_category=None)
+
+    with (
+        patch(
+            "app.domains.ai.tools.finance_service.create_transaction",
+            AsyncMock(return_value=_created_tx(account_id)),
+        ),
+        patch("app.domains.ai.tools.repo.get_account", AsyncMock(return_value=None)),
+    ):
+        result = await _create_transaction(
+            _USER_ID,
+            session,
+            {"account_id": str(account_id), "amount": -30_000},
+            chat_session_id=uuid.uuid4(),
+        )
+
+    assert "transaction_id" in result
+    assert "category_warning" in result
+
+
+@pytest.mark.asyncio
+async def test_create_transaction_no_warning_when_category_matches() -> None:
+    account_id = uuid.uuid4()
+    cat = MagicMock()
+    cat.id = uuid.uuid4()
+    cat.name = "Makan & Jajan"
+    session = _tx_session(found_category=cat)
+
+    with (
+        patch(
+            "app.domains.ai.tools.finance_service.create_transaction",
+            AsyncMock(return_value=_created_tx(account_id)),
+        ),
+        patch("app.domains.ai.tools.repo.get_account", AsyncMock(return_value=None)),
+    ):
+        result = await _create_transaction(
+            _USER_ID,
+            session,
+            {"account_id": str(account_id), "amount": -30_000, "category_name": "makan"},
+            chat_session_id=uuid.uuid4(),
+        )
+
+    assert result["category_name"] == "Makan & Jajan"
+    assert "category_warning" not in result

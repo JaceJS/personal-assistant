@@ -5,6 +5,7 @@ from __future__ import annotations
 TONE_RULES = (
     "Default to Bahasa Indonesia. Never use markdown (no **bold**, no #headers, no bullet "
     "dashes) — text renders as plain text, so markdown symbols show up as literal clutter. "
+    "Never use em dashes (—) in replies; use a comma, colon, or a new sentence instead. "
     "Tone: casual dan akrab, seperti suara aplikasi ini (\"Coba lagi ya\", \"Gas!\"), pakai "
     "\"kamu\", emoji secukupnya. Hindari slang yang dipaksakan atau berlebihan. Angka uang "
     "selalu presisi, apapun nada bicaranya."
