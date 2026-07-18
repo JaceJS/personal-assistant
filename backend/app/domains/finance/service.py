@@ -494,14 +494,14 @@ async def get_voice_status(
     session: AsyncSession, user_id: uuid.UUID, voice_log_id: uuid.UUID
 ) -> VoiceStatusRead:
     voice_log = await get_voice_log_or_404(session, voice_log_id, user_id)
-    tx = await repo.get_transaction_by_voice_log(session, voice_log.id)
+    txs = await repo.get_transactions_by_voice_log(session, voice_log.id)
 
     return VoiceStatusRead(
         id=voice_log.id,
         status=voice_log.processing_status,
         transcript=voice_log.transcript,
-        extracted_data=voice_log.extracted_data,
-        transaction_id=tx.id if tx is not None else None,
+        extracted_data=voice_log.extracted_data or [],
+        transaction_ids=[tx.id for tx in txs],
         error_message=voice_log.error_message,
     )
 
@@ -596,11 +596,12 @@ async def get_receipt_status(
     session: AsyncSession, user_id: uuid.UUID, receipt_log_id: uuid.UUID
 ) -> ReceiptStatusRead:
     receipt_log = await get_receipt_log_or_404(session, receipt_log_id, user_id)
+    txs = await repo.get_transactions_by_receipt_log(session, receipt_log.id)
 
     return ReceiptStatusRead(
         id=receipt_log.id,
         status=receipt_log.processing_status,
-        extracted_data=receipt_log.extracted_data,
-        transaction_id=receipt_log.transaction_id,
+        extracted_data=receipt_log.extracted_data or [],
+        transaction_ids=[tx.id for tx in txs],
         error_message=receipt_log.error_message,
     )

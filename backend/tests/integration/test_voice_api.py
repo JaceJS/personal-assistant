@@ -177,14 +177,16 @@ async def test_get_voice_status_returns_completed_transaction(
         voice_log,
         VoiceProcessingStatus.completed,
         transcript="beli makan gocap di warung",
-        extracted_data={
-            "amount": -50_000,
-            "currency": "IDR",
-            "merchant": "Warung",
-            "category_name": "Food",
-            "note": None,
-            "confidence": 0.9,
-        },
+        extracted_data=[
+            {
+                "amount": -50_000,
+                "currency": "IDR",
+                "merchant": "Warung",
+                "category_name": "Food",
+                "note": None,
+                "confidence": 0.9,
+            }
+        ],
         confidence_score=0.9,
     )
     tx = await repo.create_transaction(
@@ -206,5 +208,5 @@ async def test_get_voice_status_returns_completed_transaction(
     assert response.status_code == 200
     body = response.json()["data"]
     assert body["status"] == VoiceProcessingStatus.completed
-    assert body["transaction_id"] == str(tx.id)
-    assert body["extracted_data"]["amount"] == -50_000
+    assert body["transaction_ids"] == [str(tx.id)]
+    assert body["extracted_data"][0]["amount"] == -50_000

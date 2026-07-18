@@ -23,9 +23,9 @@ from app.core.config import get_settings
 from app.core.database import SessionFactory
 from app.core.logging import configure_logging
 from app.domains.finance import repository as repo
-from app.domains.finance.extractor import extract_transaction
+from app.domains.finance.extractor import extract_transactions
 from app.domains.finance.models import TransactionSource, TransactionStatus, VoiceProcessingStatus
-from app.domains.finance.receipt_extractor import extract_from_receipt
+from app.domains.finance.receipt_extractor import extract_transactions_from_receipt
 from app.shared.queue import redis_settings
 from app.shared.storage import R2Storage
 
@@ -131,27 +131,34 @@ async def extract_voice(
             await repo.update_voice_log_status(session, voice_log, VoiceProcessingStatus.extracting)
             await session.commit()
 
-            extracted = await extract_transaction(transcript, llm)
+            extracted_list = await extract_transactions(transcript, llm)
 
-            await repo.create_transaction(
-                session,
-                voice_log.user_id,
-                account_id=acc_id,
-                amount=extracted.amount,
-                currency=extracted.currency,
-                merchant=extracted.merchant,
-                note=extracted.note or transcript,
-                occurred_at=voice_log.created_at,
-                source=TransactionSource.voice,
-                status=TransactionStatus.draft,
-                voice_log_id=voice_log.id,
-            )
+            extracted_data: list[dict[str, object]] = []
+            for extracted in extracted_list:
+                note = extracted.note or transcript
+                await repo.create_transaction(
+                    session,
+                    voice_log.user_id,
+                    account_id=acc_id,
+                    amount=extracted.amount,
+                    currency=extracted.currency,
+                    merchant=extracted.merchant,
+                    note=note,
+                    occurred_at=voice_log.created_at,
+                    source=TransactionSource.voice,
+                    status=TransactionStatus.draft,
+                    voice_log_id=voice_log.id,
+                )
+                extracted_data.append({**extracted.model_dump(), "note": note})
+
+            # Highest confidence across all extracted items, for the log's summary field.
+            top_confidence = max(item.confidence for item in extracted_list)
             await repo.update_voice_log_status(
                 session,
                 voice_log,
                 VoiceProcessingStatus.completed,
-                extracted_data={**extracted.model_dump(), "note": extracted.note or transcript},
-                confidence_score=extracted.confidence,
+                extracted_data=extracted_data,
+                confidence_score=top_confidence,
             )
             await session.commit()
 
@@ -203,27 +210,33 @@ async def process_receipt(
             suffix = Path(receipt_log.image_url).suffix.lower()
             media_type = f"image/{suffix.lstrip('.') or 'jpeg'}"
 
-            extracted = await extract_from_receipt(image_bytes, media_type, vision_llm)
-
-            tx = await repo.create_transaction(
-                session,
-                receipt_log.user_id,
-                account_id=acc_id,
-                amount=extracted.amount,
-                currency=extracted.currency,
-                merchant=extracted.merchant,
-                note=extracted.note or extracted.category_name,
-                occurred_at=receipt_log.created_at,
-                source=TransactionSource.receipt,
-                status=TransactionStatus.draft,
+            extracted_list = await extract_transactions_from_receipt(
+                image_bytes, media_type, vision_llm
             )
+
+            extracted_data: list[dict[str, object]] = []
+            for extracted in extracted_list:
+                await repo.create_transaction(
+                    session,
+                    receipt_log.user_id,
+                    account_id=acc_id,
+                    amount=extracted.amount,
+                    currency=extracted.currency,
+                    merchant=extracted.merchant,
+                    note=extracted.note or extracted.category_name,
+                    occurred_at=receipt_log.created_at,
+                    source=TransactionSource.receipt,
+                    status=TransactionStatus.draft,
+                    receipt_log_id=receipt_log.id,
+                )
+                extracted_data.append(extracted.model_dump())
+
             await repo.update_receipt_log_status(
                 session,
                 receipt_log,
                 VoiceProcessingStatus.completed,
-                ocr_text=extracted.note,
-                extracted_data=extracted.model_dump(),
-                transaction_id=tx.id,
+                ocr_text=extracted_list[0].note,
+                extracted_data=extracted_data,
             )
             await session.commit()
 

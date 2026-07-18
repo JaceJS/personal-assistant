@@ -229,13 +229,26 @@ async def get_transaction(session: AsyncSession, tx_id: uuid.UUID) -> Transactio
     return await session.get(Transaction, tx_id)
 
 
-async def get_transaction_by_voice_log(
+async def get_transactions_by_voice_log(
     session: AsyncSession, voice_log_id: uuid.UUID
-) -> Transaction | None:
+) -> list[Transaction]:
     result = await session.execute(
-        sa.select(Transaction).where(Transaction.voice_log_id == voice_log_id)
+        sa.select(Transaction)
+        .where(Transaction.voice_log_id == voice_log_id)
+        .order_by(Transaction.created_at)
     )
-    return result.scalar_one_or_none()
+    return list(result.scalars().all())
+
+
+async def get_transactions_by_receipt_log(
+    session: AsyncSession, receipt_log_id: uuid.UUID
+) -> list[Transaction]:
+    result = await session.execute(
+        sa.select(Transaction)
+        .where(Transaction.receipt_log_id == receipt_log_id)
+        .order_by(Transaction.created_at)
+    )
+    return list(result.scalars().all())
 
 
 async def get_pending_draft_transactions(
@@ -385,7 +398,7 @@ async def update_voice_log_status(
     status: VoiceProcessingStatus,
     *,
     transcript: str | None = None,
-    extracted_data: dict[str, Any] | None = None,
+    extracted_data: list[dict[str, Any]] | None = None,
     confidence_score: float | None = None,
     error_message: str | None = None,
 ) -> VoiceLog:
@@ -429,8 +442,7 @@ async def update_receipt_log_status(
     status: VoiceProcessingStatus,
     *,
     ocr_text: str | None = None,
-    extracted_data: dict[str, Any] | None = None,
-    transaction_id: uuid.UUID | None = None,
+    extracted_data: list[dict[str, Any]] | None = None,
     error_message: str | None = None,
 ) -> ReceiptLog:
     receipt_log.processing_status = status
@@ -438,8 +450,6 @@ async def update_receipt_log_status(
         receipt_log.ocr_text = ocr_text
     if extracted_data is not None:
         receipt_log.extracted_data = extracted_data
-    if transaction_id is not None:
-        receipt_log.transaction_id = transaction_id
     if error_message is not None:
         receipt_log.error_message = error_message
     await session.flush()

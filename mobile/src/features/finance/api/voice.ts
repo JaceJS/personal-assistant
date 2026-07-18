@@ -27,8 +27,8 @@ export interface VoiceStatusResponse {
   id: string;
   status: VoiceProcessingStatus;
   transcript: string | null;
-  extracted_data: ExtractedTransaction | null;
-  transaction_id: string | null;
+  extracted_data: ExtractedTransaction[];
+  transaction_ids: string[];
   error_message: string | null;
 }
 

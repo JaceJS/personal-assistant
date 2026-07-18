@@ -9,8 +9,7 @@ export type ChatMessage = {
   type: 'voice' | 'receipt';
   status: VoiceProcessingStatus;
   transcript?: string;
-  extractedData?: ExtractedTransaction;
-  transactionId?: string;
+  extractedData?: ExtractedTransaction[];
   errorMessage?: string;
   // Local audio/image URI + account, kept so a failed upload can be retried
   // without re-recording.
@@ -105,8 +104,7 @@ export function applyVoiceStatus(msg: ChatMessage, status: VoiceStatusResponse):
     ...msg,
     status: status.status,
     transcript: status.transcript ?? msg.transcript,
-    extractedData: status.extracted_data ?? msg.extractedData,
-    transactionId: status.transaction_id ?? msg.transactionId,
+    extractedData: status.extracted_data.length > 0 ? status.extracted_data : msg.extractedData,
     errorMessage: status.error_message ?? msg.errorMessage,
   };
 }
@@ -115,8 +113,7 @@ export function applyReceiptStatus(msg: ChatMessage, status: ReceiptStatusRespon
   return {
     ...msg,
     status: status.status,
-    extractedData: status.extracted_data ?? msg.extractedData,
-    transactionId: status.transaction_id ?? msg.transactionId,
+    extractedData: status.extracted_data.length > 0 ? status.extracted_data : msg.extractedData,
     errorMessage: status.error_message ?? msg.errorMessage,
   };
 }
@@ -135,6 +132,26 @@ export function resolveAIMessage(msg: AIMessage, content: string): AIMessage {
 
 export function rejectAIMessage(msg: AIMessage, errorText: string): AIMessage {
   return { ...msg, content: errorText, isTyping: false, failed: true };
+}
+
+// Voice/receipt extraction returns two parallel arrays (extracted fields +
+// created draft transaction ids, same order) rather than a merged shape, so
+// pair them up by index before feeding them into the same DraftMessage/
+// DraftTransactionCard machinery the chat flow already uses.
+export function extractionToDraftTransactions(
+  items: ExtractedTransaction[],
+  transactionIds: string[],
+  accountId: string,
+): DraftTransaction[] {
+  return items.slice(0, transactionIds.length).map((item, i) => ({
+    transaction_id: transactionIds[i],
+    amount: item.amount,
+    currency: item.currency,
+    merchant: item.merchant,
+    category_name: item.category_name,
+    note: item.note,
+    account_id: accountId,
+  }));
 }
 
 export function createDraftMessages(drafts: DraftTransaction[]): DraftMessage[] {

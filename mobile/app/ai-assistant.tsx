@@ -32,23 +32,16 @@ import { useChat } from "@/features/ai/hooks/useChat";
 import { useConfirmAiDraft } from "@/features/ai/hooks/useConfirmAiDraft";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCategories } from "@/features/finance/hooks/useCategories";
-import {
-  useConfirmReceiptTransaction,
-  useReceiptStatus,
-  useUploadReceipt,
-} from "@/features/finance/hooks/useReceipt";
-import {
-  useConfirmVoiceTransaction,
-  useExtractVoice,
-  useUploadAudio,
-  useVoiceStatus,
-} from "@/features/finance/hooks/useVoice";
+import { useReceiptStatus, useUploadReceipt } from "@/features/finance/hooks/useReceipt";
+import { useExtractVoice, useUploadAudio, useVoiceStatus } from "@/features/finance/hooks/useVoice";
 import {
   applyReceiptStatus,
   applyVoiceStatus,
+  createDraftMessages,
   createFailedUploadMessage,
   createReceiptMessage,
   createVoiceMessage,
+  extractionToDraftTransactions,
   setDraftState,
 } from "@/features/finance/utils/chatMessageUtils";
 import type {
@@ -82,7 +75,6 @@ export default function AIAssistantScreen() {
   // Voice hooks
   const uploadAudio = useUploadAudio();
   const extractVoice = useExtractVoice();
-  const confirmVoiceTransaction = useConfirmVoiceTransaction();
   const {
     isRecording,
     isProcessing: recorderProcessing,
@@ -96,14 +88,11 @@ export default function AIAssistantScreen() {
 
   // Receipt hooks
   const uploadReceipt = useUploadReceipt();
-  const confirmReceiptTransaction = useConfirmReceiptTransaction();
 
   // Processing state
   const [voiceLogId, setVoiceLogId] = useState<string | null>(null);
   const [transcriptVisible, setTranscriptVisible] = useState(false);
-  const [voiceConfirmVisible, setVoiceConfirmVisible] = useState(false);
   const [receiptLogId, setReceiptLogId] = useState<string | null>(null);
-  const [receiptConfirmVisible, setReceiptConfirmVisible] = useState(false);
   const [editingDraft, setEditingDraft] = useState<DraftMessage | null>(null);
 
   const [inputText, setInputText] = useState("");
@@ -143,18 +132,25 @@ export default function AIAssistantScreen() {
     } else if (voiceStatus.data.status === "completed") {
       resetRecorder();
       setTranscriptVisible(false);
-      if (voiceStatus.data.extracted_data && voiceStatus.data.transaction_id) {
-        setVoiceConfirmVisible(true);
+      const { extracted_data, transaction_ids } = voiceStatus.data;
+      const accountId = defaultAccount?.id;
+      if (extracted_data.length > 0 && transaction_ids.length > 0 && accountId) {
+        setMessages((prev) => [
+          ...prev,
+          ...createDraftMessages(
+            extractionToDraftTransactions(extracted_data, transaction_ids, accountId)
+          ),
+        ]);
       } else {
-        setVoiceLogId(null);
         showToast(t("ai.toast.noVoiceDraft"), "error");
       }
+      setVoiceLogId(null);
     } else if (voiceStatus.data.status === "failed") {
       resetRecorder();
       setVoiceLogId(null);
       showToast(voiceStatus.data.error_message ?? t("ai.toast.voiceProcessingFailed"), "error");
     }
-  }, [resetRecorder, setMessages, showToast, voiceLogId, voiceStatus.data, t]);
+  }, [resetRecorder, setMessages, showToast, voiceLogId, voiceStatus.data, defaultAccount, t]);
 
   // Update receipt message as status changes
   useEffect(() => {
@@ -165,17 +161,24 @@ export default function AIAssistantScreen() {
       )
     );
     if (receiptStatus.data.status === "completed") {
-      if (receiptStatus.data.extracted_data && receiptStatus.data.transaction_id) {
-        setReceiptConfirmVisible(true);
+      const { extracted_data, transaction_ids } = receiptStatus.data;
+      const accountId = defaultAccount?.id;
+      if (extracted_data.length > 0 && transaction_ids.length > 0 && accountId) {
+        setMessages((prev) => [
+          ...prev,
+          ...createDraftMessages(
+            extractionToDraftTransactions(extracted_data, transaction_ids, accountId)
+          ),
+        ]);
       } else {
-        setReceiptLogId(null);
         showToast(t("ai.toast.noReceiptDraft"), "error");
       }
+      setReceiptLogId(null);
     } else if (receiptStatus.data.status === "failed") {
       setReceiptLogId(null);
       showToast(receiptStatus.data.error_message ?? t("ai.toast.receiptProcessingFailed"), "error");
     }
-  }, [setMessages, showToast, receiptLogId, receiptStatus.data, t]);
+  }, [setMessages, showToast, receiptLogId, receiptStatus.data, defaultAccount, t]);
 
   // Auto-fail voice if worker never responds
   useEffect(() => {
@@ -366,46 +369,6 @@ export default function AIAssistantScreen() {
     setMessages((prev) => prev.filter((m) => m.id !== voiceLogId));
     resetRecorder();
   }, [resetRecorder, setMessages, voiceLogId]);
-
-  const handleVoiceConfirm = useCallback(
-    (payload: ConfirmPayload) => {
-      const transactionId = voiceStatus.data?.transaction_id;
-      if (!transactionId) return;
-      setVoiceConfirmVisible(false);
-      setVoiceLogId(null);
-      resetRecorder();
-      void confirmVoiceTransaction
-        .mutateAsync({ transactionId, ...payload })
-        .then(() => showToast(t("ai.toast.transactionSaved"), "success"))
-        .catch(() => showToast(t("ai.toast.transactionSaveFailed"), "error"));
-    },
-    [confirmVoiceTransaction, resetRecorder, showToast, voiceStatus.data?.transaction_id, t]
-  );
-
-  const handleVoiceConfirmDismiss = useCallback(() => {
-    setVoiceConfirmVisible(false);
-    setVoiceLogId(null);
-    resetRecorder();
-  }, [resetRecorder]);
-
-  const handleReceiptConfirm = useCallback(
-    (payload: ConfirmPayload) => {
-      const transactionId = receiptStatus.data?.transaction_id;
-      if (!transactionId) return;
-      setReceiptConfirmVisible(false);
-      setReceiptLogId(null);
-      void confirmReceiptTransaction
-        .mutateAsync({ transactionId, ...payload })
-        .then(() => showToast(t("ai.toast.transactionSaved"), "success"))
-        .catch(() => showToast(t("ai.toast.transactionSaveFailed"), "error"));
-    },
-    [confirmReceiptTransaction, showToast, receiptStatus.data?.transaction_id, t]
-  );
-
-  const handleReceiptConfirmDismiss = useCallback(() => {
-    setReceiptConfirmVisible(false);
-    setReceiptLogId(null);
-  }, []);
 
   const updateDraftMessage = useCallback(
     (id: string, state: DraftMessageState) => {
@@ -667,26 +630,6 @@ export default function AIAssistantScreen() {
         isVisible={transcriptVisible}
         onProcess={handleTranscriptProcess}
         onDismiss={handleTranscriptDismiss}
-      />
-
-      <ConfirmCard
-        data={voiceStatus.data?.extracted_data ?? null}
-        accounts={activeAccounts}
-        defaultAccountId={defaultAccount?.id ?? null}
-        isVisible={voiceConfirmVisible}
-        isSaving={confirmVoiceTransaction.isPending}
-        onSave={handleVoiceConfirm}
-        onDismiss={handleVoiceConfirmDismiss}
-      />
-
-      <ConfirmCard
-        data={receiptStatus.data?.extracted_data ?? null}
-        accounts={activeAccounts}
-        defaultAccountId={defaultAccount?.id ?? null}
-        isVisible={receiptConfirmVisible}
-        isSaving={confirmReceiptTransaction.isPending}
-        onSave={handleReceiptConfirm}
-        onDismiss={handleReceiptConfirmDismiss}
       />
 
       <ConfirmCard

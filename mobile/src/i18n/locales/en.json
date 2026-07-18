@@ -443,7 +443,8 @@
         "failed": "Failed"
       },
       "typeVoice": "Voice",
-      "typeReceipt": "Receipt"
+      "typeReceipt": "Receipt",
+      "itemsExtracted": "{{count}} transactions detected"
     },
     "insight": {
       "label": "AI INSIGHT",

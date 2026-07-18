@@ -52,9 +52,14 @@ export function ChatBubble({
             {message.transcript}
           </Text>
         )}
-        {message.extractedData && message.status === "completed" && (
+        {message.extractedData && message.extractedData.length === 1 && message.status === "completed" && (
           <Text style={styles.amount}>
-            {formatMoney(message.extractedData.amount, message.extractedData.currency)}
+            {formatMoney(message.extractedData[0].amount, message.extractedData[0].currency)}
+          </Text>
+        )}
+        {message.extractedData && message.extractedData.length > 1 && message.status === "completed" && (
+          <Text style={styles.amount}>
+            {t("ai.chatBubble.itemsExtracted", { count: message.extractedData.length })}
           </Text>
         )}
         {message.errorMessage && <Text style={styles.error}>{message.errorMessage}</Text>}

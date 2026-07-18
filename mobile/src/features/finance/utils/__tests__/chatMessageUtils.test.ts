@@ -9,9 +9,10 @@ import {
   rejectAIMessage,
   createDraftMessages,
   setDraftState,
+  extractionToDraftTransactions,
 } from '../chatMessageUtils';
 import type { DraftMessage } from '../chatMessageUtils';
-import type { VoiceStatusResponse } from '@/features/finance/api/voice';
+import type { ExtractedTransaction, VoiceStatusResponse } from '@/features/finance/api/voice';
 import type { ReceiptStatusResponse } from '@/features/finance/api/receipt';
 import type { DraftTransaction } from '@/features/ai/api/chat';
 
@@ -87,11 +88,10 @@ describe('createVoiceMessage', () => {
     expect(msg.status).toBe('pending');
   });
 
-  it('starts with no transcript, extractedData, or transactionId', () => {
+  it('starts with no transcript, extractedData, or errorMessage', () => {
     const msg = createVoiceMessage('voice-id-123');
     expect(msg.transcript).toBeUndefined();
     expect(msg.extractedData).toBeUndefined();
-    expect(msg.transactionId).toBeUndefined();
     expect(msg.errorMessage).toBeUndefined();
   });
 
@@ -127,8 +127,8 @@ describe('applyVoiceStatus', () => {
       id: 'voice-id-123',
       status: 'transcribing',
       transcript: null,
-      extracted_data: null,
-      transaction_id: null,
+      extracted_data: [],
+      transaction_ids: [],
       error_message: null,
     };
     const updated = applyVoiceStatus(base(), status);
@@ -141,8 +141,8 @@ describe('applyVoiceStatus', () => {
       id: 'voice-id-123',
       status: 'transcribed',
       transcript: 'Transportasi 10000',
-      extracted_data: null,
-      transaction_id: null,
+      extracted_data: [],
+      transaction_ids: [],
       error_message: null,
     };
     const updated = applyVoiceStatus(base(), status);
@@ -150,27 +150,28 @@ describe('applyVoiceStatus', () => {
     expect(updated.transcript).toBe('Transportasi 10000');
   });
 
-  it('sets extractedData and transactionId when completed', () => {
-    const extractedData = {
-      amount: 10000,
-      currency: 'IDR',
-      merchant: null,
-      category_name: 'Transport',
-      note: 'Transportasi 10000',
-      confidence: 0.9,
-    };
+  it('sets extractedData (array) when completed', () => {
+    const extractedData: ExtractedTransaction[] = [
+      {
+        amount: 10000,
+        currency: 'IDR',
+        merchant: null,
+        category_name: 'Transport',
+        note: 'Transportasi 10000',
+        confidence: 0.9,
+      },
+    ];
     const status: VoiceStatusResponse = {
       id: 'voice-id-123',
       status: 'completed',
       transcript: 'Transportasi 10000',
       extracted_data: extractedData,
-      transaction_id: 'tx-789',
+      transaction_ids: ['tx-789'],
       error_message: null,
     };
     const updated = applyVoiceStatus(base(), status);
     expect(updated.status).toBe('completed');
     expect(updated.extractedData).toEqual(extractedData);
-    expect(updated.transactionId).toBe('tx-789');
   });
 
   it('sets errorMessage when failed', () => {
@@ -178,8 +179,8 @@ describe('applyVoiceStatus', () => {
       id: 'voice-id-123',
       status: 'failed',
       transcript: null,
-      extracted_data: null,
-      transaction_id: null,
+      extracted_data: [],
+      transaction_ids: [],
       error_message: 'STT provider error',
     };
     const updated = applyVoiceStatus(base(), status);
@@ -193,12 +194,62 @@ describe('applyVoiceStatus', () => {
       id: 'voice-id-123',
       status: 'transcribing',
       transcript: null,
-      extracted_data: null,
-      transaction_id: null,
+      extracted_data: [],
+      transaction_ids: [],
       error_message: null,
     };
     applyVoiceStatus(original, status);
     expect(original.status).toBe('pending');
+  });
+});
+
+describe('extractionToDraftTransactions', () => {
+  const item = (overrides: Partial<ExtractedTransaction> = {}): ExtractedTransaction => ({
+    amount: -15000,
+    currency: 'IDR',
+    merchant: null,
+    category_name: 'Makan',
+    note: null,
+    confidence: 0.9,
+    ...overrides,
+  });
+
+  it('zips extracted items with their transaction ids and account id', () => {
+    const drafts = extractionToDraftTransactions(
+      [item({ merchant: 'Kopi' }), item({ merchant: 'Parkir', amount: -5000 })],
+      ['tx-1', 'tx-2'],
+      'acc-1'
+    );
+    expect(drafts).toEqual([
+      {
+        transaction_id: 'tx-1',
+        amount: -15000,
+        currency: 'IDR',
+        merchant: 'Kopi',
+        category_name: 'Makan',
+        note: null,
+        account_id: 'acc-1',
+      },
+      {
+        transaction_id: 'tx-2',
+        amount: -5000,
+        currency: 'IDR',
+        merchant: 'Parkir',
+        category_name: 'Makan',
+        note: null,
+        account_id: 'acc-1',
+      },
+    ]);
+  });
+
+  it('returns empty array when there are no extracted items', () => {
+    expect(extractionToDraftTransactions([], [], 'acc-1')).toEqual([]);
+  });
+
+  it('ignores extra items beyond the number of transaction ids', () => {
+    const drafts = extractionToDraftTransactions([item(), item(), item()], ['tx-1'], 'acc-1');
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].transaction_id).toBe('tx-1');
   });
 });
 
@@ -326,42 +377,51 @@ describe('applyReceiptStatus', () => {
     const status: ReceiptStatusResponse = {
       id: 'receipt-id-456',
       status: 'extracting',
-      extracted_data: null,
-      transaction_id: null,
+      extracted_data: [],
+      transaction_ids: [],
       error_message: null,
     };
     const updated = applyReceiptStatus(base(), status);
     expect(updated.status).toBe('extracting');
   });
 
-  it('sets extractedData and transactionId when completed', () => {
-    const extractedData = {
-      amount: 50000,
-      currency: 'IDR',
-      merchant: 'Indomaret',
-      category_name: 'Food',
-      note: 'Struk belanja',
-      confidence: 0.95,
-    };
+  it('sets extractedData (array) when completed, including multiple items', () => {
+    const extractedData: ExtractedTransaction[] = [
+      {
+        amount: -80000,
+        currency: 'IDR',
+        merchant: null,
+        category_name: 'Groceries',
+        note: null,
+        confidence: 0.9,
+      },
+      {
+        amount: -40000,
+        currency: 'IDR',
+        merchant: null,
+        category_name: 'Kesehatan',
+        note: null,
+        confidence: 0.85,
+      },
+    ];
     const status: ReceiptStatusResponse = {
       id: 'receipt-id-456',
       status: 'completed',
       extracted_data: extractedData,
-      transaction_id: 'tx-receipt-001',
+      transaction_ids: ['tx-receipt-001', 'tx-receipt-002'],
       error_message: null,
     };
     const updated = applyReceiptStatus(base(), status);
     expect(updated.status).toBe('completed');
     expect(updated.extractedData).toEqual(extractedData);
-    expect(updated.transactionId).toBe('tx-receipt-001');
   });
 
   it('sets errorMessage when failed', () => {
     const status: ReceiptStatusResponse = {
       id: 'receipt-id-456',
       status: 'failed',
-      extracted_data: null,
-      transaction_id: null,
+      extracted_data: [],
+      transaction_ids: [],
       error_message: 'Vision model timeout',
     };
     const updated = applyReceiptStatus(base(), status);
@@ -374,8 +434,8 @@ describe('applyReceiptStatus', () => {
     const status: ReceiptStatusResponse = {
       id: 'receipt-id-456',
       status: 'extracting',
-      extracted_data: null,
-      transaction_id: null,
+      extracted_data: [],
+      transaction_ids: [],
       error_message: null,
     };
     applyReceiptStatus(original, status);

@@ -277,8 +277,8 @@ class VoiceStatusRead(BaseModel):
     id: uuid.UUID
     status: VoiceProcessingStatus
     transcript: str | None
-    extracted_data: VoiceExtractedData | None
-    transaction_id: uuid.UUID | None
+    extracted_data: list[VoiceExtractedData] = Field(default_factory=list)
+    transaction_ids: list[uuid.UUID] = Field(default_factory=list)
     error_message: str | None
 
 
@@ -310,6 +310,6 @@ class ReceiptUploadResponse(BaseModel):
 class ReceiptStatusRead(BaseModel):
     id: uuid.UUID
     status: VoiceProcessingStatus
-    extracted_data: VoiceExtractedData | None
-    transaction_id: uuid.UUID | None
+    extracted_data: list[VoiceExtractedData] = Field(default_factory=list)
+    transaction_ids: list[uuid.UUID] = Field(default_factory=list)
     error_message: str | None

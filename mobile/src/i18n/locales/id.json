@@ -439,7 +439,8 @@
         "failed": "Gagal"
       },
       "typeVoice": "Suara",
-      "typeReceipt": "Struk"
+      "typeReceipt": "Struk",
+      "itemsExtracted": "{{count}} transaksi terdeteksi"
     },
     "insight": {
       "label": "AI INSIGHT",

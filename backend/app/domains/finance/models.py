@@ -106,7 +106,8 @@ class VoiceLog(TimestampedBase):
     )
     audio_url: Mapped[str] = mapped_column(sa.Text(), nullable=False)
     transcript: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
-    extracted_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB(), nullable=True)
+    # One JSON object per extracted transaction (a voice note may yield several).
+    extracted_data: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB(), nullable=True)
     confidence_score: Mapped[float | None] = mapped_column(sa.Float(), nullable=True)
     processing_status: Mapped[VoiceProcessingStatus] = mapped_column(
         _pg_enum(VoiceProcessingStatus, "voice_processing_status"),
@@ -127,16 +128,12 @@ class ReceiptLog(TimestampedBase):
     )
     image_url: Mapped[str] = mapped_column(sa.Text(), nullable=False)
     ocr_text: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
-    extracted_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB(), nullable=True)
+    # One JSON object per extracted transaction (a receipt may yield several).
+    extracted_data: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB(), nullable=True)
     processing_status: Mapped[VoiceProcessingStatus] = mapped_column(
         _pg_enum(VoiceProcessingStatus, "voice_processing_status"),
         nullable=False,
         server_default="pending",
-    )
-    transaction_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        sa.ForeignKey("transactions.id", ondelete="SET NULL"),
-        nullable=True,
     )
     error_message: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
 
@@ -196,6 +193,13 @@ class Transaction(TimestampedBase):
     voice_log_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         sa.ForeignKey("voice_logs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    receipt_log_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        sa.ForeignKey(
+            "receipt_logs.id", ondelete="SET NULL", name="transactions_receipt_log_id_fkey"
+        ),
         nullable=True,
     )
     chat_session_id: Mapped[uuid.UUID | None] = mapped_column(
