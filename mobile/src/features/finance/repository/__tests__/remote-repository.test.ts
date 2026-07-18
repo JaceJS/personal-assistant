@@ -20,6 +20,14 @@ jest.mock("@/features/finance/api/budget", () => ({
   getBudget: jest.fn(),
   upsertBudget: jest.fn(),
 }));
+jest.mock("@/features/finance/api/savingsGoals", () => ({
+  listSavingsGoals: jest.fn(),
+  getSavingsGoal: jest.fn(),
+  createSavingsGoal: jest.fn(),
+  updateSavingsGoal: jest.fn(),
+  contributeToSavingsGoal: jest.fn(),
+  deleteSavingsGoal: jest.fn(),
+}));
 
 import * as accountsApi from "@/features/finance/api/accounts";
 import * as categoriesApi from "@/features/finance/api/categories";

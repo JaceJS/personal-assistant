@@ -5,6 +5,10 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 jest.mock('@/features/ai/api/insight', () => ({
   fetchDailyInsight: jest.fn(),
 }));
+jest.mock('@/stores/auth', () => ({
+  useAuthStore: (selector: (state: { initialized: boolean; isGuest: boolean }) => unknown) =>
+    selector({ initialized: true, isGuest: false }),
+}));
 
 import { fetchDailyInsight } from '@/features/ai/api/insight';
 import { useAIInsight } from '@/features/ai/hooks/useAIInsight';
