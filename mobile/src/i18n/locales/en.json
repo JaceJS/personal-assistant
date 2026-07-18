@@ -231,7 +231,7 @@
     },
     "profile": {
       "title": "Let's get acquainted 👋",
-      "subtitle": "Fill this in if you'd like, or skip it — you can change it anytime in Settings.",
+      "subtitle": "Fill this in if you'd like, or skip it. You can change it anytime in Settings.",
       "nameLabel": "What should we call you?",
       "namePlaceholder": "e.g. Jace, Alex, Sam",
       "cta": "Next →"
@@ -312,7 +312,7 @@
     "deletedToast": "Account deleted successfully",
     "deleteError": "Couldn't delete the account.",
     "balanceHeroLabel": "BALANCE",
-    "editBalanceHint": "Update the starting balance for corrections — transactions already recorded won't be affected.",
+    "editBalanceHint": "Update the starting balance for corrections. Transactions already recorded won't be affected.",
     "syncedLabel": "Synced {{time}}",
     "type": {
       "bank": "Bank",
