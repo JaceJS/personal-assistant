@@ -23,9 +23,6 @@ class Settings(BaseSettings):
 
     # App
     app_env: str = "development"
-    app_debug: bool = True
-    app_host: str = "0.0.0.0"
-    app_port: int = 8000
 
     # Database. The defaults match the bundled docker-compose Postgres so the
     # app and tests import cleanly even before a .env file exists.
@@ -36,7 +33,6 @@ class Settings(BaseSettings):
 
     # Supabase
     supabase_url: str = ""
-    supabase_anon_key: str = ""
     supabase_service_role_key: str = ""
 
     # Redis

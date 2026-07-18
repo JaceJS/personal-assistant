@@ -116,8 +116,9 @@ Mobile polls → GET /api/v1/voice/{id} → completed → shows draft for user c
 ## Environment Variables
 
 Copy `backend/.env.example` → `backend/.env` and `mobile/.env.example` → `mobile/.env`.
-Key vars: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_JWT_SECRET`,
-`REDIS_URL`, `R2_*`, `OPENROUTER_API_KEY`, `STT_MODEL`, `LLM_MODEL`.
+Backend key vars: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `REDIS_URL`,
+`R2_*`, `OPENROUTER_API_KEY`, `STT_MODEL`, `LLM_MODEL`, `RECEIPT_MODEL`. Mobile key vars:
+`EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
 
 ## Codebase Exploration (Use the Knowledge Graph First)
 

@@ -11,6 +11,19 @@
         "buildType": "apk"
       }
     },
+    "staging": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://savyn-api-staging.fly.dev",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vesfuuvtsvtkqbytbgtx.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlc2Z1dXZ0c3Z0a3FieXRiZ3R4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNzgzNTgsImV4cCI6MjA5OTk1NDM1OH0.uZLct_hx3s9q_QtMIjmYw0Hj2lHAXYgQD2QFJKKUETM",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "566473915571-majtc5v63rmcms9m67pblb7ula1v5vbt.apps.googleusercontent.com",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "android": {
