@@ -26,6 +26,7 @@ from app.domains.finance import repository as repo
 from app.domains.finance.extractor import extract_transactions
 from app.domains.finance.models import TransactionSource, TransactionStatus, VoiceProcessingStatus
 from app.domains.finance.receipt_extractor import extract_transactions_from_receipt
+from app.shared import model_registry  # noqa: F401
 from app.shared.queue import redis_settings
 from app.shared.storage import R2Storage
 

@@ -13,9 +13,8 @@ from alembic import context
 from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-import app.domains.ai.models
-import app.domains.finance.models  # noqa: F401
 from app.core.config import get_settings
+from app.shared import model_registry  # noqa: F401
 from app.shared.models import Base
 
 config = context.config
