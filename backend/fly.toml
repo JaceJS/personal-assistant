@@ -9,6 +9,7 @@ APP_DEBUG = "false"
 LOG_LEVEL = "INFO"
 STT_MODEL = "openai/whisper-1"
 LLM_MODEL = "google/gemini-2.5-flash-lite"
+RECEIPT_MODEL = "google/gemini-2.5-flash-lite"
 
 [processes]
 app = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
