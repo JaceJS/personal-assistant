@@ -1,8 +1,8 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 
 import { ChatBubble } from '@/features/ai/components/ChatBubble';
-import { createVoiceMessage } from '@/features/finance/utils/chatMessageUtils';
+import { createReceiptMessage, createVoiceMessage } from '@/features/finance/utils/chatMessageUtils';
 import type { ChatMessage } from '@/features/finance/utils/chatMessageUtils';
 import type { ExtractedTransaction } from '@/features/finance/api/voice';
 
@@ -43,5 +43,30 @@ describe('ChatBubble', () => {
       <ChatBubble message={{ ...createVoiceMessage('voice-2'), status: 'completed' }} />
     );
     expect(queryByText(/transaksi terdeteksi/)).toBeNull();
+  });
+
+  it('shows the photo thumbnail for a receipt message with a local URI', async () => {
+    const message = createReceiptMessage('receipt-1', 'file:///tmp/receipt.jpg', 'acc-1');
+    const { getByTestId } = await render(<ChatBubble message={message} />);
+    expect(getByTestId('receipt-thumbnail').props.source.uri).toBe('file:///tmp/receipt.jpg');
+  });
+
+  it('does not show a thumbnail for a receipt message without a local URI', async () => {
+    const message = createReceiptMessage('receipt-2');
+    const { queryByTestId } = await render(<ChatBubble message={message} />);
+    expect(queryByTestId('receipt-thumbnail')).toBeNull();
+  });
+
+  it('does not show a thumbnail for a voice message even with a local URI', async () => {
+    const message = createVoiceMessage('voice-3', 'file:///tmp/audio.m4a', 'acc-1');
+    const { queryByTestId } = await render(<ChatBubble message={message} />);
+    expect(queryByTestId('receipt-thumbnail')).toBeNull();
+  });
+
+  it('falls back to the icon footer when the thumbnail fails to load', async () => {
+    const message = createReceiptMessage('receipt-3', 'file:///tmp/broken.jpg', 'acc-1');
+    const { getByTestId, queryByTestId } = await render(<ChatBubble message={message} />);
+    await fireEvent(getByTestId('receipt-thumbnail'), 'error');
+    expect(queryByTestId('receipt-thumbnail')).toBeNull();
   });
 });

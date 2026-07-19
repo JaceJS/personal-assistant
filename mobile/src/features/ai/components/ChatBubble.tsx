@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Camera, Mic, RotateCcw } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -31,13 +32,23 @@ export function ChatBubble({
   onRetry?: (message: ChatMessage) => void;
 }) {
   const { t } = useTranslation();
+  const [hasImageError, setHasImageError] = useState(false);
   const isProcessing = message.status !== "completed" && message.status !== "failed";
   const isVoice = message.type === "voice";
   const canRetry = message.status === "failed" && !!message.localUri && !!onRetry;
+  const showThumbnail = message.type === "receipt" && !!message.localUri && !hasImageError;
 
   return (
     <View style={styles.wrap}>
       <View style={styles.bubble}>
+        {showThumbnail && (
+          <Image
+            testID="receipt-thumbnail"
+            source={{ uri: message.localUri }}
+            style={styles.thumbnail}
+            onError={() => setHasImageError(true)}
+          />
+        )}
         <Text
           style={[
             styles.status,
@@ -108,6 +119,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     maxWidth: "80%",
     gap: spacing.xs,
+  },
+  thumbnail: {
+    width: 160,
+    height: 160,
+    borderRadius: radius.md,
+    backgroundColor: colors.bg.surface,
   },
   status: {
     ...StyleSheet.flatten(textStyles.body),
