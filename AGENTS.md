@@ -54,12 +54,28 @@ npm run android   # or ios / start
 
 ## Production Infra
 
-- **Backend:** Fly.io app `savyn-api` (region `sin`), single `app` process (uvicorn, HTTP).
+- **Backend (prod):** Fly.io app `savyn-api` (region `sin`), single `app` process (uvicorn, HTTP).
   Config in `backend/fly.toml`. Health check: `https://savyn-api.fly.dev/health`.
-- **Database:** Supabase Postgres prod, reached through the PgBouncer pooler (see
-  `backend/AGENTS.md` § Database Migrations for the `statement_cache_size=0` requirement).
-- **Deploy:** `flyctl deploy -a savyn-api` from `backend/` (rebuilds the image — `flyctl secrets
-  set` alone only re-releases the *existing* image, it does not rebuild).
+- **Backend (staging):** Fly.io app `savyn-api-staging`, same shape, config in
+  `backend/fly.staging.toml`. Health check: `https://savyn-api-staging.fly.dev/health`. Separate
+  Supabase project — its own `DATABASE_URL` secret, not shared with prod.
+- **Database:** Supabase Postgres (prod + a separate staging project), reached through the
+  PgBouncer pooler (see `backend/AGENTS.md` § Database Migrations for the
+  `statement_cache_size=0` requirement).
+- **Migrations run automatically on deploy**: both `fly.toml` and `fly.staging.toml` set
+  `[deploy] release_command = "alembic upgrade head"` — Fly runs it on a release machine before
+  cutting traffic to the new version, using the app's own secrets. A failed migration blocks the
+  deploy (old version keeps serving). Don't run `alembic upgrade head` by hand against
+  staging/prod anymore except for one-off debugging.
+- **Deploy — staging:** automatic. `.github/workflows/deploy-staging.yml` runs on every push to
+  `main` once `ci.yml` passes, and deploys `savyn-api-staging`.
+- **Deploy — production:** manual gate, one click. `.github/workflows/deploy-prod.yml` is
+  `workflow_dispatch`-only — trigger it from the GitHub Actions tab ("Run workflow") after
+  checking staging. Equivalent manual fallback: `flyctl deploy -a savyn-api` from `backend/`.
+  (`flyctl secrets set` alone only re-releases the *existing* image, it does not rebuild.)
+- Both deploy workflows authenticate with per-app Fly deploy tokens stored as repo secrets
+  (`FLY_API_TOKEN_STAGING`, `FLY_API_TOKEN_PROD` — 20-year expiry, `flyctl tokens create deploy
+  -a <app>`), never the account-wide Fly token.
 - **Mobile → prod backend:** EAS builds get `EXPO_PUBLIC_API_URL=https://savyn-api.fly.dev`
   from the `env` blocks in `mobile/eas.json` (`.env` is gitignored and never uploaded).
   `mobile/.env` only drives local dev — see `mobile/AGENTS.md` § 0 for the full env matrix.

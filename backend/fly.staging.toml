@@ -3,6 +3,9 @@ primary_region = "sin"
 
 [build]
 
+[deploy]
+release_command = "alembic upgrade head"
+
 [env]
 APP_ENV = "staging"
 LOG_LEVEL = "INFO"
