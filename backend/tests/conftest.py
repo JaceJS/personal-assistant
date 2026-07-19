@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from app.core.auth import get_current_user
 from app.core.config import get_settings
 from app.core.database import get_session
+from app.domains.finance.models import Category
 from app.main import app
 from app.shared.models import Base
 
@@ -56,6 +57,22 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
         for ddl in _ENUM_DROP:
             await conn.execute(sa.text(ddl))
     await engine.dispose()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _cleanup_system_categories(db_engine: AsyncEngine) -> AsyncGenerator[None, None]:
+    """Delete system-default categories (user_id IS NULL) after each test.
+
+    User-owned rows never collide across tests (each test gets a fresh random
+    test_user_id), but system rows are global and the DB tables persist for
+    the whole session — without this, a category a test seeds as a system
+    default leaks into every later test that copies system defaults for a
+    new user (e.g. sync's bulk_import -> seed_default_categories).
+    """
+    yield
+    async with AsyncSession(db_engine) as session:
+        await session.execute(sa.delete(Category).where(Category.user_id.is_(None)))
+        await session.commit()
 
 
 @pytest.fixture

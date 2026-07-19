@@ -9,6 +9,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.finance import repository as finance_repo
+from app.domains.finance import service as finance_service
 from app.domains.sync import repository as repo
 from app.domains.sync.schemas import (
     BulkImportPayload,
@@ -33,6 +34,18 @@ async def _apply_balance_deltas(
         if account is None or account.user_id != user_id:
             continue
         await finance_repo.update_account(session, account, balance=account.balance + delta)
+
+
+def _remap_category_ids(
+    transactions: list[TransactionImport], remap: dict[uuid.UUID, uuid.UUID]
+) -> list[TransactionImport]:
+    """Point each transaction at the category id `import_categories` resolved to."""
+    return [
+        t if t.category_id is None else t.model_copy(
+            update={"category_id": remap.get(t.category_id, t.category_id)}
+        )
+        for t in transactions
+    ]
 
 
 async def _filter_owned_transactions(
@@ -63,9 +76,18 @@ async def _filter_owned_transactions(
 async def bulk_import(
     session: AsyncSession, user_id: uuid.UUID, payload: BulkImportPayload
 ) -> BulkImportResult:
+    # Guest default categories must merge into the user's own defaults, not
+    # duplicate them, so those defaults need to exist before import_categories
+    # tries to match against them (see repository.import_categories).
+    if not await finance_repo.has_user_categories(session, user_id):
+        await finance_service.seed_default_categories(session, user_id)
+
     accounts_count = await repo.import_accounts(session, user_id, payload.accounts)
-    categories_count = await repo.import_categories(session, user_id, payload.categories)
-    owned_transactions = await _filter_owned_transactions(session, user_id, payload.transactions)
+    categories_count, category_remap = await repo.import_categories(
+        session, user_id, payload.categories
+    )
+    remapped_transactions = _remap_category_ids(payload.transactions, category_remap)
+    owned_transactions = await _filter_owned_transactions(session, user_id, remapped_transactions)
     inserted_transactions = await repo.import_transactions(session, user_id, owned_transactions)
     transactions_count = len(inserted_transactions)
     await _apply_balance_deltas(session, user_id, inserted_transactions)

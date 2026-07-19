@@ -375,6 +375,77 @@ async def test_import_allows_transaction_referencing_system_category(
     assert response.json()["data"]["imported"]["transactions"] == 1
 
 
+async def test_import_merges_category_with_existing_by_name_instead_of_duplicating(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    """Guest default categories must reuse the ones already seeded for the user.
+
+    Simulates the race where `GET /categories` already lazy-seeded "Makanan"
+    for this user before the guest's sync payload (which has its own,
+    unrelated local id for a same-named category) arrives.
+    """
+    existing = await repo.create_category(
+        db_session, test_user_id, name="Makanan", type=CategoryType.expense
+    )
+    await db_session.commit()
+
+    payload = {
+        "accounts": [],
+        "categories": [{"id": str(uuid.uuid4()), "name": "Makanan", "type": "expense"}],
+        "transactions": [],
+        "budget": None,
+    }
+
+    response = await client.post("/api/v1/sync/import", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["data"]["imported"]["categories"] == 0
+
+    categories = await repo.list_categories(db_session, test_user_id)
+    matching = [c for c in categories if c.name == "Makanan"]
+    assert len(matching) == 1
+    assert matching[0].id == existing.id
+
+
+async def test_import_transaction_follows_merged_category_id(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    """A transaction tagged with the guest's local category id must still land
+    on the category it got merged into, not get silently dropped as unowned.
+    """
+    account = await repo.create_account(
+        db_session, test_user_id, name="Dompet", type=AccountType.cash, currency="IDR"
+    )
+    await repo.create_category(db_session, test_user_id, name="Makanan", type=CategoryType.expense)
+    await db_session.commit()
+
+    local_category_id = uuid.uuid4()
+    payload = {
+        "accounts": [],
+        "categories": [{"id": str(local_category_id), "name": "Makanan", "type": "expense"}],
+        "transactions": [
+            {
+                "id": str(uuid.uuid4()),
+                "account_id": str(account.id),
+                "category_id": str(local_category_id),
+                "amount": -10_000,
+                "occurred_at": datetime(2024, 3, 1, 12, 0, 0, tzinfo=UTC).isoformat(),
+                "source": "manual",
+            }
+        ],
+        "budget": None,
+    }
+
+    response = await client.post("/api/v1/sync/import", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["data"]["imported"]["transactions"] == 1
+
+
 async def test_import_rejects_payload_over_max_items(client: AsyncClient) -> None:
     payload = {
         "accounts": [

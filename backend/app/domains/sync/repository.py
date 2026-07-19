@@ -59,29 +59,60 @@ async def import_accounts(
 
 async def import_categories(
     session: AsyncSession, user_id: uuid.UUID, categories: list[CategoryImport]
-) -> int:
+) -> tuple[int, dict[uuid.UUID, uuid.UUID]]:
+    """Merge guest categories into the user's existing ones by (name, type).
+
+    Guest-mode default categories always carry the same names as the ones
+    already seeded for the user (see `bulk_import`), but arrive with
+    unrelated client-generated ids. Inserting them blindly by id would
+    create duplicates instead of reusing the existing rows.
+
+    Returns `(new_count, remap)`: how many categories were actually newly
+    created, and a {local_id: resolved_id} map so the caller can rewrite
+    `transaction.category_id` onto whichever row each category resolved to.
+    """
     if not categories:
-        return 0
-    stmt = (
-        pg_insert(Category)
-        .values(
-            [
-                {
-                    "id": c.id,
-                    "user_id": user_id,
-                    "name": c.name,
-                    "type": c.type,
-                    "icon": c.icon,
-                    "color": c.color,
-                }
-                for c in categories
-            ]
-        )
-        .on_conflict_do_nothing(index_elements=["id"])
+        return 0, {}
+
+    existing = await session.execute(
+        sa.select(Category.id, Category.name, Category.type).where(Category.user_id == user_id)
     )
-    result = await session.execute(stmt)
-    await session.flush()
-    return cast("CursorResult[Any]", result).rowcount
+    existing_by_key = {(row.name, row.type): row.id for row in existing}
+
+    remap: dict[uuid.UUID, uuid.UUID] = {}
+    to_insert: list[CategoryImport] = []
+    for c in categories:
+        key = (c.name, c.type)
+        existing_id = existing_by_key.get(key)
+        if existing_id is not None:
+            remap[c.id] = existing_id
+            continue
+        remap[c.id] = c.id
+        to_insert.append(c)
+        existing_by_key[key] = c.id
+
+    if to_insert:
+        stmt = (
+            pg_insert(Category)
+            .values(
+                [
+                    {
+                        "id": c.id,
+                        "user_id": user_id,
+                        "name": c.name,
+                        "type": c.type,
+                        "icon": c.icon,
+                        "color": c.color,
+                    }
+                    for c in to_insert
+                ]
+            )
+            .on_conflict_do_nothing(index_elements=["id"])
+        )
+        await session.execute(stmt)
+        await session.flush()
+
+    return len(to_insert), remap
 
 
 async def get_owned_account_ids(
