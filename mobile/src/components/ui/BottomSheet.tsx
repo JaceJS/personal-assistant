@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -55,7 +56,7 @@ export function BottomSheet({ isVisible, onDismiss, children }: BottomSheetProps
 
       <Animated.View style={[styles.sheet, sheetStyle, { paddingBottom: insets.bottom + 16 }]}>
         <View style={styles.handle} />
-        {children}
+        <KeyboardAvoidingView behavior="padding">{children}</KeyboardAvoidingView>
       </Animated.View>
     </Modal>
   );

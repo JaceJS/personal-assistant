@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
@@ -46,6 +47,7 @@ export default function ProfileOnboardingScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <OnboardingHeader currentStep={2} totalSteps={3} />
+      <KeyboardAvoidingView style={styles.scroll} behavior="padding">
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -87,6 +89,7 @@ export default function ProfileOnboardingScreen() {
           </View>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

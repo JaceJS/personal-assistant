@@ -13,6 +13,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -493,6 +494,7 @@ export default function AIAssistantScreen() {
         <GuestGate subtitle={t("ai.guestSubtitle")} />
       ) : (
       <>
+      <KeyboardAvoidingView style={styles.keyboardAvoider} behavior="padding">
       {/* Chat area */}
       {isLoadingHistory ? (
         <View style={styles.historyLoader}>
@@ -624,6 +626,7 @@ export default function AIAssistantScreen() {
           )}
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
 
       <TranscriptSheet
         transcript={voiceStatus.data?.transcript ?? null}
@@ -664,6 +667,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.bg.canvas,
+  },
+  keyboardAvoider: {
+    flex: 1,
   },
   historyLoader: {
     flex: 1,

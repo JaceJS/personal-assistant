@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
@@ -69,7 +68,7 @@ function SavingsGoalFormSheet({
     <Modal visible={isVisible} transparent animationType="slide" onRequestClose={onDismiss}>
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior="padding"
       >
         <Pressable style={StyleSheet.absoluteFillObject} onPress={onDismiss}>
           <View style={styles.backdrop} />

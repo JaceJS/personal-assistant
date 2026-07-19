@@ -14,6 +14,7 @@ import { QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -85,13 +86,15 @@ function RootLayoutInner() {
 
 function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <ErrorBoundary>
-          <RootLayoutInner />
-        </ErrorBoundary>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <KeyboardProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <QueryClientProvider client={queryClient}>
+          <ErrorBoundary>
+            <RootLayoutInner />
+          </ErrorBoundary>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </KeyboardProvider>
   );
 }
 

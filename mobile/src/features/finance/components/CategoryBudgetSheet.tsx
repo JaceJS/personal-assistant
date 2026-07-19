@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Switch,
   Text,
   View,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -87,7 +86,7 @@ function CategoryBudgetSheet({ category, isVisible, onDismiss }: CategoryBudgetS
     >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior="padding"
       >
         <Pressable style={styles.backdrop} onPress={onDismiss} />
         <View style={styles.sheet}>

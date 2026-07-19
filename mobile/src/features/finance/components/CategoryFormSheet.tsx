@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -135,7 +134,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
     >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior="padding"
       >
         <Pressable style={styles.backdrop} onPress={onDismiss} />
         <ScrollView

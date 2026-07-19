@@ -9,6 +9,12 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   jest.requireActual("@react-native-async-storage/async-storage/jest/async-storage-mock")
 );
 
+// react-native-keyboard-controller wraps a native module — its own jest mock
+// (docs: recipes/jest-testing-guide) stands in for that native binding.
+jest.mock("react-native-keyboard-controller", () =>
+  jest.requireActual("react-native-keyboard-controller/jest")
+);
+
 // Import for its side effect: initializes the shared i18next singleton so
 // every test (including ones that never touch i18n directly, but render a
 // component using useTranslation()) sees deterministic Indonesian copy.

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -200,6 +201,7 @@ export default function NewTransactionScreen() {
     <Screen>
       <Header title={t("transaction.newTitle")} onBack={handleBack} />
 
+      <KeyboardAvoidingView style={styles.scroll} behavior="padding">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {noAccounts ? (
           <View style={styles.emptyWrap}>
@@ -389,6 +391,7 @@ export default function NewTransactionScreen() {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <NotificationPermissionSheet
         isVisible={sheetVisible}
