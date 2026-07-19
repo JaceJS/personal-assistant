@@ -155,9 +155,6 @@ export default function PrivacyPage() {
                 receipt photos temporarily during processing).
               </li>
               <li>
-                <strong>Upstash</strong>: processing queue infrastructure.
-              </li>
-              <li>
                 <strong>OpenRouter</strong>: AI processing. Voice audio, transcripts, chat
                 messages, and receipt images are forwarded to AI model providers to be processed
                 and produce the output you requested.

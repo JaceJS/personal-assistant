@@ -23,7 +23,7 @@ placeholders for later.
 | Migrations     | Alembic                                          |
 | Validation     | Pydantic v2                                      |
 | Auth           | Supabase Auth (JWT verified on the backend)      |
-| Job queue      | ARQ (Redis)                                      |
+| Background jobs| FastAPI `BackgroundTasks`, in-process (no queue) |
 | Object storage | Cloudflare R2 (S3-compatible)                    |
 | STT            | OpenRouter audio transcription                   |
 | LLM            | OpenRouter structured extraction                 |
@@ -35,7 +35,7 @@ placeholders for later.
 - Python 3.12
 - [uv](https://docs.astral.sh/uv/) (install per-user, no admin required):
   `python -m pip install --user uv`
-- Docker + Docker Compose (for local Postgres and Redis)
+- Docker + Docker Compose (for local Postgres)
 
 ## First-time setup
 
@@ -48,7 +48,7 @@ uv sync
 # 2. Create your local environment file and fill in the secrets
 cp .env.example .env        # Windows PowerShell: copy .env.example .env
 
-# 3. Start Postgres 16 + Redis 7
+# 3. Start Postgres 16
 docker compose up -d
 
 # 4. Apply database migrations
@@ -63,10 +63,10 @@ uv run python scripts/seed_data.py
 ```bash
 # API server (http://localhost:8000, docs at /docs)
 uv run uvicorn app.main:app --reload
-
-# ARQ worker for the voice-processing pipeline (separate terminal)
-uv run arq app.workers.voice_processor.WorkerSettings
 ```
+
+Voice/receipt processing runs as `BackgroundTasks` inside the same API process
+(`app/domains/finance/jobs.py`) — no separate worker process to start.
 
 `GET /health` needs no auth. All `/api/v1/*` endpoints require a Supabase JWT
 in the `Authorization: Bearer <token>` header.
@@ -103,18 +103,19 @@ uv run alembic upgrade head
 ## Environment variables
 
 See [.env.example](.env.example) for the full list. Key groups: app settings,
-`DATABASE_URL`, Supabase keys, `REDIS_URL`, Cloudflare R2 credentials, and
-OpenRouter settings (`OPENROUTER_API_KEY`, `STT_MODEL`, `LLM_MODEL`).
+`DATABASE_URL`, Supabase keys, Cloudflare R2 credentials, and OpenRouter
+settings (`OPENROUTER_API_KEY`, `STT_MODEL`, `LLM_MODEL`).
 
 ## Project layout
 
 ```
 app/
-  core/      config, database, auth, exceptions, logging
+  core/      config, database, auth, exceptions, logging, rate limiting
   ai/        STT + LLM provider abstractions (swappable), intent classifier
-  shared/    base model, R2 storage client, ARQ queue setup
-  domains/   one self-contained package per domain (finance implemented)
-  workers/   ARQ workers (voice processing pipeline)
+  shared/    base model, R2 storage client
+  domains/   one self-contained package per domain (finance implemented);
+             background jobs (voice/receipt processing) live in
+             domains/finance/jobs.py, run via FastAPI BackgroundTasks
 alembic/     migrations
 tests/       unit + integration
 scripts/     seed data, db init

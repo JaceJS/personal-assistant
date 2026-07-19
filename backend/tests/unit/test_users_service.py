@@ -1,4 +1,4 @@
-"""Unit tests for the users service (no DB/Redis needed)."""
+"""Unit tests for the users service (no DB needed)."""
 
 from __future__ import annotations
 

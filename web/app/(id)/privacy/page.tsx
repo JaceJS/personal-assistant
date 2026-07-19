@@ -156,9 +156,6 @@ export default function PrivacyPage() {
                 struk secara sementara selama pemrosesan).
               </li>
               <li>
-                <strong>Upstash</strong>: infrastruktur antrean pemrosesan.
-              </li>
-              <li>
                 <strong>OpenRouter</strong>: pemrosesan AI. Audio suara, transkrip, pesan chat,
                 dan gambar struk diteruskan ke penyedia model AI untuk diproses dan menghasilkan
                 keluaran yang Anda minta.

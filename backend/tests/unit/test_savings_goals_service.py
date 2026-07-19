@@ -1,4 +1,4 @@
-"""Unit tests for savings goals service logic (no DB/Redis needed)."""
+"""Unit tests for savings goals service logic (no DB needed)."""
 
 from __future__ import annotations
 

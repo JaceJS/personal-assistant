@@ -1,4 +1,4 @@
-"""Unit tests for get_client_ip (no DB/Redis needed)."""
+"""Unit tests for get_client_ip (no DB needed)."""
 
 from __future__ import annotations
 

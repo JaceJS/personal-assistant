@@ -356,7 +356,7 @@ Format ringkas: entry → aksi → konfirmasi. Semua 🟢 guest-OK via repositor
 
 ### 6.4 AI insight harian (login saja)
 
-`GET /ai/insight` → cache Redis per user per hari (TTL sampai tengah malam UTC) → miss: rangkum 3 tool keuangan → LLM 1–2 kalimat actionable Bahasa Indonesia. Mobile `staleTime` 1 jam; guest/error → teks fallback netral. Rate limit 30/jam.
+`GET /ai/insight` → cache `daily_insight_cache` (Postgres) per user per hari (TTL sampai tengah malam UTC) → miss: rangkum 3 tool keuangan → LLM 1–2 kalimat actionable Bahasa Indonesia. Mobile `staleTime` 1 jam; guest/error → teks fallback netral. Rate limit 30/jam.
 
 ### 6.5 Coachmark first-run (berurutan)
 
@@ -379,36 +379,35 @@ sequenceDiagram
     participant M as Mobile
     participant API as FastAPI
     participant R2 as R2 Storage
-    participant Q as Redis/ARQ
-    participant W as Worker
+    participant BG as BackgroundTasks (in-process)
     participant OR as OpenRouter
 
     M->>API: POST /voice/upload (m4a + account_id)
     API->>API: validasi magic bytes, max 25MB, ownership akun
     API->>R2: upload voice/{user}/{uuid}
-    API->>Q: enqueue process_voice
+    API->>BG: schedule process_voice
     API-->>M: 201 {voice_log_id, status pending}
     loop poll tiap 1,5 dtk
         M->>API: GET /voice/{id}
     end
-    W->>R2: download audio
-    W->>OR: STT (STT_MODEL)
-    W->>W: status = transcribed (BERHENTI, tunggu user)
+    BG->>R2: download audio
+    BG->>OR: STT (STT_MODEL)
+    BG->>BG: status = transcribed (BERHENTI, tunggu user)
     Note over M: TranscriptSheet - user review/edit transkrip
     M->>API: POST /voice/{id}/extract {transcript}
-    API->>Q: enqueue extract_voice
-    W->>OR: LLM ekstraksi (SLANG_MAP: gocap, ceban, ...)
+    API->>BG: schedule extract_voice
+    BG->>OR: LLM ekstraksi (SLANG_MAP: gocap, ceban, ...)
     alt confidence >= 0.4
-        W->>W: buat Transaction draft (source=voice), status = completed
+        BG->>BG: buat Transaction draft (source=voice), status = completed
     else confidence dibawah 0.4
-        W->>W: status = failed + error_message
+        BG->>BG: status = failed + error_message
     end
-    W->>R2: hapus audio (selalu, finally)
+    BG->>R2: hapus audio (selalu, finally)
     M->>API: PATCH /transactions/{id} status=confirmed
     API-->>M: saldo akun ter-update
 ```
 
-Poin state: `pending → transcribing → transcribed` ⏸ *(review user)* `→ extracting → completed | failed`. Tanpa retry worker (exception ditangkap sendiri, ARQ tidak retry); mobile mutations `retry: false`.
+Poin state: `pending → transcribing → transcribed` ⏸ *(review user)* `→ extracting → completed | failed`. Job jalan via FastAPI `BackgroundTasks` di proses yang sama (`backend/app/domains/finance/jobs.py`), bukan queue worker terpisah — exception ditangkap & disimpan sebagai `failed`, tanpa retry otomatis; mobile mutations `retry: false`.
 
 ### 7.2 Chat tool-loop
 

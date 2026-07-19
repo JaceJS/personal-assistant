@@ -153,7 +153,7 @@ Daftar ini adalah keputusan produk, bukan keterbatasan sementara. Setiap ide fit
 - Hapus akun permanen (wajib Play Store) termasuk hapus objek R2; WhatsApp support link di Settings.
 
 **Fondasi teknis** (ringkas — detail di `AGENTS.md`)
-- Expo RN (SDK 54) + FastAPI + PostgreSQL (Supabase, auth-only di sisi mobile) + Redis/ARQ + Cloudflare R2 + OpenRouter (STT & LLM). Rate limiting, upload validation, session terenkripsi at rest, ownership check di setiap endpoint.
+- Expo RN (SDK 54) + FastAPI + PostgreSQL (Supabase, auth-only di sisi mobile) + Cloudflare R2 + OpenRouter (STT & LLM). Background job voice/receipt pakai FastAPI `BackgroundTasks` in-process; rate limiting & daily insight cache disimpan di Postgres (bukan Redis/ARQ lagi — lihat commit `9f302d02`). Upload validation, session terenkripsi at rest, ownership check di setiap endpoint.
 
 ### Belum terbangun (kandidat roadmap — lihat §7)
 
@@ -177,7 +177,7 @@ Daftar ini adalah keputusan produk, bukan keterbatasan sementara. Setiap ide fit
 | 1 | `mobile/eas.json` + konfigurasi EAS production build | ✅ Selesai | `eas.json` (profile development/preview/production) + project linked ke akun EAS `jaceee` (`app.json` `extra.eas.projectId`, `owner`) |
 | 2 | URL Privacy Policy & Terms nyata | ✅ Selesai | Site `web/` (Next.js) live di Vercel: `https://www.savyn.id` (landing + `/privacy` + `/terms`); URL di `settings/index.tsx` sudah diganti. Sisa: isi URL privacy policy di Play Console |
 | 3 | Data Safety form di Play Console | ❌ Di luar repo | Deklarasikan: data keuangan user, audio (voice), foto (struk/avatar), email; hapus-akun tersedia |
-| 4 | Backend produksi di Fly.io (API + ARQ worker + Upstash Redis) | ✅ Selesai | App `savyn-api` (region `sin`), `fly.toml` (process `app` + `worker`), Fly Redis (`savyn-redis`), DB Supabase prod, semua migrasi (`alembic upgrade head`) sudah jalan. Health check `https://savyn-api.fly.dev/health` OK. |
+| 4 | Backend produksi di Fly.io (API, single process — job/cache/rate-limit di Postgres) | ✅ Selesai | App `savyn-api` (region `sin`), `fly.toml` (process `app` saja, worker ARQ + Redis dihapus 19 Juli 2026), DB Supabase prod, semua migrasi (`alembic upgrade head`) sudah jalan. Health check `https://savyn-api.fly.dev/health` OK. Staging: app `savyn-api-staging` (`fly.staging.toml`) juga sudah deploy dengan pola yang sama. |
 | 5 | Smoke test alur kritis di build produksi | ❌ Belum dijalankan | Prasyarat: `mobile/.env` `EXPO_PUBLIC_API_URL` masih nunjuk `http://10.0.2.2:8000` (localhost), harus diganti ke `https://savyn-api.fly.dev` dulu. Alur: Guest → catat (manual/voice/chat) → signup → data ter-sync → hapus akun |
 | 6 | `versionCode` Android | ✅ Sudah diset | |
 | 7 | Hapus akun permanen (kebijakan Play Store) | ✅ Terbangun | |
@@ -244,7 +244,7 @@ Tiga kandidat yang lolos litmus test; **urutan pengerjaan ditentukan sinyal Fase
 | Item | Masalah yang diselesaikan | Litmus | Ukuran berhasil |
 |---|---|---|---|
 | **Import screenshot/galeri + share-sheet** untuk bukti QRIS/e-wallet/transfer (celah capture #1, §2.5; reuse pipeline receipt yang ada — tambah `launchImageLibraryAsync` + Android share intent) | Bukti transaksi cashless berbentuk layar, bukan struk; scan kamera-only melewatkannya (F3) [R16][R17] | Mencatat lebih mudah untuk moda pembayaran dominan | Share input via scan naik; % transaksi e-wallet tercatat naik |
-| **Transaksi berulang** (gaji/langganan/cicilan auto-post; backend domain baru `recurring/` mengikuti pola `finance/` + scheduler ARQ) | Transaksi rutin harus dicatat manual tiap bulan (F1) | Asisten "mengingat untukmu" → proaktif | ≥ 30% user aktif memasang ≥ 1 recurring; transaksi/user/minggu naik |
+| **Transaksi berulang** (gaji/langganan/cicilan auto-post; backend domain baru `recurring/` mengikuti pola `finance/`; scheduling via Postgres, bukan ARQ — stack job sudah pindah ke Postgres, lihat §4) | Transaksi rutin harus dicatat manual tiap bulan (F1) | Asisten "mengingat untukmu" → proaktif | ≥ 30% user aktif memasang ≥ 1 recurring; transaksi/user/minggu naik |
 | **Auto-kategorisasi yang belajar** (alias/dictionary: "indomaret" → Belanja, diprioritaskan sebelum LLM; belajar dari koreksi user) | Kelelahan kategorisasi & ekstraksi salah kategori (F4) [R21] | Mencatat lebih cepat & akurat | Edit-rate kategori pada draft turun; durasi capture turun |
 
 **Gerbang masuk per item:** ada sinyal kebutuhan dari feedback/metrik Fase 1 (mis. % transaksi e-wallet yang tak tercatat, keluhan "capek catat gaji tiap bulan", edit-rate kategori tinggi). Jika sinyal tidak muncul, item ditunda — bukan dibangun karena sudah tertulis di sini.
