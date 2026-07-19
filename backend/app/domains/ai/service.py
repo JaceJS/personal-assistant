@@ -1,12 +1,11 @@
-"""AI domain service for daily insight generation with Redis caching."""
+"""AI domain service for daily insight generation with Postgres caching."""
 
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 from typing import Any
 
-from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.openrouter import OpenRouterLLM
@@ -23,8 +22,6 @@ from app.domains.ai.tools import (
 from app.domains.finance import repository as finance_repo
 from app.domains.finance.models import Transaction
 
-_INSIGHT_CACHE_PREFIX = "ai_insight_v2"
-
 _FALLBACK_INSIGHT = "Terus catat transaksimu untuk mendapatkan insight keuangan yang personal!"
 
 _INSIGHT_SYSTEM = (
@@ -34,16 +31,6 @@ _INSIGHT_SYSTEM = (
     "atau tips menabung yang konkret. Langsung dan encouraging. Jangan sertakan salam "
     f"atau penutup. {TONE_RULES}"
 )
-
-
-def _cache_key(user_id: uuid.UUID) -> str:
-    return f"{_INSIGHT_CACHE_PREFIX}:{user_id}:{date.today()}"
-
-
-def _seconds_until_midnight() -> int:
-    now = datetime.now(UTC)
-    tomorrow = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    return max(int((tomorrow - now).total_seconds()), 1)
 
 
 async def _fetch_financial_context(user_id: uuid.UUID, session: AsyncSession) -> dict[str, Any]:
@@ -115,17 +102,12 @@ async def get_session_messages(
 async def get_daily_insight(
     user_id: uuid.UUID,
     session: AsyncSession,
-    redis: Redis,
     llm: OpenRouterLLM,
 ) -> DailyInsight:
-    key = _cache_key(user_id)
-    cached = await redis.get(key)
-    if cached:
-        return DailyInsight(
-            insight=cached if isinstance(cached, str) else cached.decode(),
-            generated_at=datetime.now(UTC),
-            is_cached=True,
-        )
+    today = date.today()
+    cached = await repo.get_daily_insight_cache(session, user_id)
+    if cached is not None and cached.generated_date == today:
+        return DailyInsight(insight=cached.insight, generated_at=datetime.now(UTC), is_cached=True)
 
     try:
         context = await _fetch_financial_context(user_id, session)
@@ -139,5 +121,5 @@ async def get_daily_insight(
     except Exception:
         insight = _FALLBACK_INSIGHT
 
-    await redis.set(key, insight, ex=_seconds_until_midnight())
+    await repo.upsert_daily_insight_cache(session, user_id, insight, today)
     return DailyInsight(insight=insight, generated_at=datetime.now(UTC), is_cached=False)

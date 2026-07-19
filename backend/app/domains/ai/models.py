@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
@@ -27,3 +28,11 @@ class ChatMessage(TimestampedBase):
     )
     role: Mapped[str] = mapped_column(sa.Text(), nullable=False)  # user | assistant
     content: Mapped[str] = mapped_column(sa.Text(), nullable=False)
+
+
+class DailyInsightCache(TimestampedBase):
+    __tablename__ = "daily_insight_cache"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, unique=True)
+    insight: Mapped[str] = mapped_column(sa.Text(), nullable=False)
+    generated_date: Mapped[date] = mapped_column(sa.Date(), nullable=False)

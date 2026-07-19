@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.ai.models import ChatMessage, ChatSession
+from app.domains.ai.models import ChatMessage, ChatSession, DailyInsightCache
 
 
 async def create_session(db: AsyncSession, user_id: uuid.UUID) -> ChatSession:
@@ -62,3 +64,31 @@ async def get_recent_messages(
         .order_by(ChatMessage.created_at.asc())
     )
     return list(result.scalars())
+
+
+async def get_daily_insight_cache(db: AsyncSession, user_id: uuid.UUID) -> DailyInsightCache | None:
+    result = await db.execute(
+        sa.select(DailyInsightCache).where(DailyInsightCache.user_id == user_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def upsert_daily_insight_cache(
+    db: AsyncSession, user_id: uuid.UUID, insight: str, generated_date: date
+) -> DailyInsightCache:
+    stmt = (
+        pg_insert(DailyInsightCache)
+        .values(user_id=user_id, insight=insight, generated_date=generated_date)
+        .on_conflict_do_update(
+            index_elements=["user_id"],
+            set_={
+                "insight": insight,
+                "generated_date": generated_date,
+                "updated_at": sa.func.now(),
+            },
+        )
+        .returning(DailyInsightCache)
+    )
+    result = await db.execute(stmt)
+    await db.flush()
+    return result.scalar_one()

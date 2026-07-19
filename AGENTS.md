@@ -5,7 +5,7 @@
 AI-powered personal assistant starting with a **finance wedge** (budgeting, accounts, voice
 transactions). Vision: expand to journaling, events, and daily routine management. Target market:
 Indonesia-first, English UI, global-ready. Tech stack: Expo React Native + FastAPI + PostgreSQL
-(Supabase) + Redis + Cloudflare R2.
+(Supabase) + Cloudflare R2.
 
 ## Product Docs (baca sebelum mengubah scope/flow)
 
@@ -18,12 +18,12 @@ Indonesia-first, English UI, global-ready. Tech stack: Expo React Native + FastA
 
 ```
 /
-├── backend/          # FastAPI API + ARQ workers (Python 3.12)
+├── backend/          # FastAPI API (Python 3.12)
 │   └── AGENTS.md     # Backend-specific patterns and commands
 ├── mobile/           # Expo React Native app (SDK 54)
 │   └── AGENTS.md     # Mobile-specific patterns and commands
 ├── web/              # Next.js marketing site: landing + privacy + terms (Vercel)
-└── docker-compose.yml  # Local dev: Postgres (5433) + Redis (6379)
+└── docker-compose.yml  # Local dev: Postgres (5433)
 ```
 
 Each subdirectory has its own AGENTS.md (read those when working inside them).
@@ -47,7 +47,6 @@ docker compose up -d
 
 # 2. Backend API (from backend/)
 uv run uvicorn app.main:app --reload       # http://localhost:8000
-uv run arq app.workers.voice_processor.WorkerSettings  # voice worker
 
 # 3. Mobile (from mobile/)
 npm run android   # or ios / start
@@ -55,9 +54,8 @@ npm run android   # or ios / start
 
 ## Production Infra
 
-- **Backend:** Fly.io app `savyn-api` (region `sin`), processes `app` (uvicorn, HTTP) + `worker`
-  (ARQ). Config in `backend/fly.toml`. Health check: `https://savyn-api.fly.dev/health`.
-- **Redis:** Fly-managed Upstash Redis (`savyn-redis`), attached via `REDIS_URL` secret.
+- **Backend:** Fly.io app `savyn-api` (region `sin`), single `app` process (uvicorn, HTTP).
+  Config in `backend/fly.toml`. Health check: `https://savyn-api.fly.dev/health`.
 - **Database:** Supabase Postgres prod, reached through the PgBouncer pooler (see
   `backend/AGENTS.md` § Database Migrations for the `statement_cache_size=0` requirement).
 - **Deploy:** `flyctl deploy -a savyn-api` from `backend/` (rebuilds the image — `flyctl secrets
@@ -92,8 +90,8 @@ Mobile (Expo RN)
 
 ```
 Mobile mic → POST /api/v1/voice/upload → R2 (audio stored)
-                                        → ARQ job enqueued
-ARQ worker → OpenRouter STT → OpenRouter LLM (extraction) → draft Transaction saved
+                                        → BackgroundTask scheduled
+Background job → OpenRouter STT → OpenRouter LLM (extraction) → draft Transaction saved
 Mobile polls → GET /api/v1/voice/{id} → completed → shows draft for user confirmation
 ```
 
@@ -116,7 +114,7 @@ Mobile polls → GET /api/v1/voice/{id} → completed → shows draft for user c
 ## Environment Variables
 
 Copy `backend/.env.example` → `backend/.env` and `mobile/.env.example` → `mobile/.env`.
-Backend key vars: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `REDIS_URL`,
+Backend key vars: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
 `R2_*`, `OPENROUTER_API_KEY`, `STT_MODEL`, `LLM_MODEL`, `RECEIPT_MODEL`. Mobile key vars:
 `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
 

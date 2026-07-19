@@ -5,10 +5,9 @@
 ## Commands (run from `backend/`)
 ```bash
 uv run uvicorn app.main:app --reload          # API server (port 8000)
-uv run arq app.workers.voice_processor.WorkerSettings  # voice worker
 uv run alembic upgrade head                   # apply DB migrations
 uv run alembic revision --autogenerate -m "describe change"  # new migration
-uv run pytest tests/unit/                     # unit tests (no DB/Redis needed)
+uv run pytest tests/unit/                     # unit tests (no DB needed)
 uv run pytest                                 # full suite (needs docker compose up -d)
 uv run ruff check . && uv run mypy app        # lint + types (run before every commit)
 uv run ruff format .                          # auto-format
@@ -81,8 +80,8 @@ so a token issued before `DELETE /users/me` still passes `CurrentUser` until its
 (~1h, Supabase default) even though the user no longer exists in Supabase or the DB. In that
 window, writes (e.g. `POST /accounts`) succeed with a `user_id` that matches no user. This is a
 standard stateless-JWT tradeoff, accepted as-is. If it ever needs closing: check `user_id` still
-exists at the write boundary (extra query per write), or blocklist the token/user in Redis on
-delete and check it in `CurrentUser`.
+exists at the write boundary (extra query per write), or blocklist the token/user in a Postgres
+table on delete and check it in `CurrentUser`.
 
 ---
 
@@ -160,7 +159,7 @@ against a scratch DB and fails CI if any table lacks RLS.
 
 ## AI Knowledge & Guardrails
 
-Prompts live co-located with their extractor, not in routers or workers:
+Prompts live co-located with their extractor, not in routers or jobs:
 - Chat: `app/domains/ai/router.py` (scope-restricted to finance only, refuses off-topic questions)
 - Voice extraction: `app/domains/finance/extractor.py`
 - Receipt extraction: `app/domains/finance/receipt_extractor.py`

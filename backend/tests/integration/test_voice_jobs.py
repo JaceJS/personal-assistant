@@ -1,4 +1,4 @@
-"""Integration tests: voice worker pipeline (STT + LLM are mocked)."""
+"""Integration tests: voice background job pipeline (STT + LLM are mocked)."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.domains.finance import repository as repo
 from app.domains.finance.extractor import ExtractedTransaction, ExtractedTransactionList
+from app.domains.finance.jobs import extract_voice, process_voice
 from app.domains.finance.models import AccountType, TransactionStatus, VoiceProcessingStatus
-from app.workers.voice_processor import extract_voice, process_voice
 
 pytestmark = pytest.mark.integration
 
@@ -48,17 +48,17 @@ async def test_process_voice_creates_draft_transaction(
     mock_r2 = AsyncMock()
     mock_r2.download = AsyncMock(return_value=b"fake-audio")
 
-    ctx: dict[str, object] = {"stt": mock_stt, "llm": mock_llm, "r2": mock_r2}
     test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
 
-    with patch("app.workers.voice_processor.SessionFactory", test_factory):
+    with patch("app.domains.finance.jobs.SessionFactory", test_factory):
         await process_voice(
-            ctx,
+            stt=mock_stt,
+            r2=mock_r2,
             voice_log_id=str(voice_log.id),
             account_id=str(account.id),
         )
         await extract_voice(
-            ctx,
+            llm=mock_llm,
             voice_log_id=str(voice_log.id),
             account_id=str(account.id),
             transcript="beli makan gocap di warung",
@@ -112,13 +112,14 @@ async def test_process_voice_creates_multiple_draft_transactions(
     mock_r2 = AsyncMock()
     mock_r2.download = AsyncMock(return_value=b"fake-audio")
 
-    ctx: dict[str, object] = {"stt": mock_stt, "llm": mock_llm, "r2": mock_r2}
     test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
 
-    with patch("app.workers.voice_processor.SessionFactory", test_factory):
-        await process_voice(ctx, voice_log_id=str(voice_log.id), account_id=str(account.id))
+    with patch("app.domains.finance.jobs.SessionFactory", test_factory):
+        await process_voice(
+            stt=mock_stt, r2=mock_r2, voice_log_id=str(voice_log.id), account_id=str(account.id)
+        )
         await extract_voice(
-            ctx,
+            llm=mock_llm,
             voice_log_id=str(voice_log.id),
             account_id=str(account.id),
             transcript=transcript,

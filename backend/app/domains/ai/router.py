@@ -7,7 +7,7 @@ import re
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.openrouter import OpenRouterLLM
@@ -131,10 +131,10 @@ async def get_session_messages(
 
 @router.get("/insight", response_model=ApiResponse[DailyInsight], dependencies=[_AI_INSIGHT_LIMIT])
 async def get_daily_insight(
-    request: Request, user_id: CurrentUser, session: DbSession
+    user_id: CurrentUser, session: DbSession
 ) -> ApiResponse[DailyInsight]:
     llm = OpenRouterLLM(get_settings(), max_tokens=150)
-    result = await service.get_daily_insight(user_id, session, request.app.state.redis, llm)
+    result = await service.get_daily_insight(user_id, session, llm)
     return ok(result)
 
 

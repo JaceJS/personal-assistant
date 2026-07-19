@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.finance import repository as repo
 from app.domains.finance.models import AccountType, CategoryType
-from app.main import app as fastapi_app
 
 pytestmark = pytest.mark.integration
 
@@ -392,9 +391,11 @@ async def test_import_rejects_payload_over_max_items(client: AsyncClient) -> Non
 
 
 async def test_import_rate_limited_after_10_requests(client: AsyncClient) -> None:
-    fastapi_app.state.redis.pipeline.return_value.execute.return_value = [None, 11]
-
     payload = {"accounts": [], "categories": [], "transactions": [], "budget": None}
+    for _ in range(10):
+        response = await client.post("/api/v1/sync/import", json=payload)
+        assert response.status_code == 200
+
     response = await client.post("/api/v1/sync/import", json=payload)
 
     assert response.status_code == 429

@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
-from arq.connections import ArqRedis
-from fastapi import UploadFile
+from fastapi import BackgroundTasks, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.llm.openrouter import OpenRouterLLM
+from app.ai.stt.factory import get_stt_provider
+from app.core.config import get_settings
 from app.core.exceptions import BadRequestError, ConflictError, ForbiddenError, NotFoundError
 from app.core.upload_utils import (
     AUDIO_EXT_MAP,
@@ -20,6 +22,7 @@ from app.core.upload_utils import (
     MAX_IMAGE_BYTES,
     read_and_validate_upload,
 )
+from app.domains.finance import jobs
 from app.domains.finance import repository as repo
 from app.domains.finance.models import (
     Account,
@@ -51,8 +54,13 @@ from app.domains.finance.schemas import (
     VoiceStatusRead,
     VoiceUploadResponse,
 )
-from app.shared.queue import RECEIPT_PROCESSING_JOB, VOICE_EXTRACTION_JOB, VOICE_PROCESSING_JOB
 from app.shared.storage import R2Storage
+
+# A voice/receipt job stuck in a non-terminal status past this long (e.g. its
+# BackgroundTask was lost to a process restart) is treated as failed the next
+# time its status is polled.
+_STUCK_JOB_TIMEOUT = timedelta(minutes=5)
+_TERMINAL_STATUSES = {VoiceProcessingStatus.completed, VoiceProcessingStatus.failed}
 
 # ── Savings Goals ─────────────────────────────────────────────────────────────
 
@@ -448,7 +456,7 @@ async def create_voice_upload(
     account_id: uuid.UUID,
     file: UploadFile,
     storage: R2Storage,
-    redis: ArqRedis,
+    background_tasks: BackgroundTasks,
 ) -> VoiceUploadResponse:
     await get_account_or_404(session, account_id, user_id)
 
@@ -467,8 +475,11 @@ async def create_voice_upload(
     )
     await session.flush()
 
-    await redis.enqueue_job(
-        VOICE_PROCESSING_JOB,
+    settings = get_settings()
+    background_tasks.add_task(
+        jobs.process_voice,
+        stt=get_stt_provider(settings),
+        r2=storage,
         voice_log_id=str(voice_log.id),
         account_id=str(account_id),
     )
@@ -494,6 +505,16 @@ async def get_voice_status(
     session: AsyncSession, user_id: uuid.UUID, voice_log_id: uuid.UUID
 ) -> VoiceStatusRead:
     voice_log = await get_voice_log_or_404(session, voice_log_id, user_id)
+    if (
+        voice_log.processing_status not in _TERMINAL_STATUSES
+        and datetime.now(UTC) - voice_log.updated_at > _STUCK_JOB_TIMEOUT
+    ):
+        voice_log = await repo.update_voice_log_status(
+            session,
+            voice_log,
+            VoiceProcessingStatus.failed,
+            error_message="Processing timed out",
+        )
     txs = await repo.get_transactions_by_voice_log(session, voice_log.id)
 
     return VoiceStatusRead(
@@ -512,7 +533,7 @@ async def extract_voice_transcript(
     voice_log_id: uuid.UUID,
     *,
     transcript: str,
-    redis: ArqRedis,
+    background_tasks: BackgroundTasks,
 ) -> VoiceExtractResponse:
     voice_log = await get_voice_log_or_404(session, voice_log_id, user_id)
     if voice_log.processing_status != VoiceProcessingStatus.transcribed:
@@ -520,15 +541,16 @@ async def extract_voice_transcript(
     if voice_log.account_id is None:
         raise BadRequestError("Voice log has no associated account")
 
-    # Flip status before enqueueing so a second request racing the same voice
-    # log (before the worker has picked up the first job) sees "extracting"
-    # instead of "transcribed" and is rejected above, rather than enqueuing a
-    # second paid LLM extraction job.
+    # Flip status before scheduling so a second request racing the same voice
+    # log (before the background task has picked up the first job) sees
+    # "extracting" instead of "transcribed" and is rejected above, rather than
+    # scheduling a second paid LLM extraction job.
     await repo.update_voice_log_status(session, voice_log, VoiceProcessingStatus.extracting)
     await session.flush()
 
-    await redis.enqueue_job(
-        VOICE_EXTRACTION_JOB,
+    background_tasks.add_task(
+        jobs.extract_voice,
+        llm=OpenRouterLLM(get_settings()),
         voice_log_id=str(voice_log_id),
         account_id=str(voice_log.account_id),
         transcript=transcript,
@@ -550,7 +572,7 @@ async def create_receipt_upload(
     account_id: uuid.UUID,
     file: UploadFile,
     storage: R2Storage,
-    redis: ArqRedis,
+    background_tasks: BackgroundTasks,
 ) -> ReceiptUploadResponse:
     await get_account_or_404(session, account_id, user_id)
 
@@ -569,8 +591,11 @@ async def create_receipt_upload(
     )
     await session.flush()
 
-    await redis.enqueue_job(
-        RECEIPT_PROCESSING_JOB,
+    settings = get_settings()
+    background_tasks.add_task(
+        jobs.process_receipt,
+        vision_llm=OpenRouterLLM(settings, model=settings.receipt_model),
+        r2=storage,
         receipt_log_id=str(receipt_log.id),
         account_id=str(account_id),
     )
@@ -596,6 +621,16 @@ async def get_receipt_status(
     session: AsyncSession, user_id: uuid.UUID, receipt_log_id: uuid.UUID
 ) -> ReceiptStatusRead:
     receipt_log = await get_receipt_log_or_404(session, receipt_log_id, user_id)
+    if (
+        receipt_log.processing_status not in _TERMINAL_STATUSES
+        and datetime.now(UTC) - receipt_log.updated_at > _STUCK_JOB_TIMEOUT
+    ):
+        receipt_log = await repo.update_receipt_log_status(
+            session,
+            receipt_log,
+            VoiceProcessingStatus.failed,
+            error_message="Processing timed out",
+        )
     txs = await repo.get_transactions_by_receipt_log(session, receipt_log.id)
 
     return ReceiptStatusRead(

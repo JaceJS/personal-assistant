@@ -1,4 +1,9 @@
-"""ARQ background workers: voice transcription, voice extraction, and receipt scanning.
+"""Background jobs: voice transcription/extraction, receipt OCR.
+
+Runs via FastAPI's `BackgroundTasks` in the same process as the API, scheduled
+from `service.py` after the triggering request commits. Each job opens its own
+DB session with `SessionFactory` since it runs after the request's session has
+already closed.
 
 Voice pipeline (two stages):
   Stage 1 (process_voice): download audio → STT → save transcript → status=transcribed
@@ -13,49 +18,25 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
-from typing import ClassVar
 
 import structlog
 
 from app.ai.llm.openrouter import OpenRouterLLM
-from app.ai.stt.factory import get_stt_provider
-from app.core.config import get_settings
+from app.ai.stt.base import STTProvider
 from app.core.database import SessionFactory
-from app.core.logging import configure_logging
 from app.domains.finance import repository as repo
 from app.domains.finance.extractor import extract_transactions
 from app.domains.finance.models import TransactionSource, TransactionStatus, VoiceProcessingStatus
 from app.domains.finance.receipt_extractor import extract_transactions_from_receipt
-from app.shared import model_registry  # noqa: F401
-from app.shared.queue import redis_settings
 from app.shared.storage import R2Storage
 
-_settings = get_settings()
 log = structlog.get_logger()
 
 
-async def startup(ctx: dict) -> None:  # type: ignore[type-arg]
-    configure_logging()
-    ctx["stt"] = get_stt_provider(_settings)
-    ctx["llm"] = OpenRouterLLM(_settings)
-    ctx["vision_llm"] = OpenRouterLLM(_settings, model=_settings.receipt_model)
-    ctx["r2"] = R2Storage(_settings)
-
-
-async def shutdown(ctx: dict) -> None:  # type: ignore[type-arg]
-    pass
-
-
 async def process_voice(
-    ctx: dict,  # type: ignore[type-arg]
-    *,
-    voice_log_id: str,
-    account_id: str,
+    *, stt: STTProvider, r2: R2Storage, voice_log_id: str, account_id: str
 ) -> None:
     """Stage 1: Transcribe audio and pause for user review."""
-    stt = ctx["stt"]
-    r2: R2Storage = ctx["r2"]
-
     log_id = uuid.UUID(voice_log_id)
 
     async with SessionFactory() as session:
@@ -110,15 +91,9 @@ async def process_voice(
 
 
 async def extract_voice(
-    ctx: dict,  # type: ignore[type-arg]
-    *,
-    voice_log_id: str,
-    account_id: str,
-    transcript: str,
+    *, llm: OpenRouterLLM, voice_log_id: str, account_id: str, transcript: str
 ) -> None:
     """Stage 2: Run LLM extraction on (possibly user-edited) transcript."""
-    llm = ctx["llm"]
-
     log_id = uuid.UUID(voice_log_id)
     acc_id = uuid.UUID(account_id)
 
@@ -183,15 +158,9 @@ async def extract_voice(
 
 
 async def process_receipt(
-    ctx: dict,  # type: ignore[type-arg]
-    *,
-    receipt_log_id: str,
-    account_id: str,
+    *, vision_llm: OpenRouterLLM, r2: R2Storage, receipt_log_id: str, account_id: str
 ) -> None:
     """Extract a transaction from a receipt image."""
-    vision_llm = ctx["vision_llm"]
-    r2: R2Storage = ctx["r2"]
-
     log_id = uuid.UUID(receipt_log_id)
     acc_id = uuid.UUID(account_id)
 
@@ -267,10 +236,3 @@ async def process_receipt(
                     receipt_log_id=receipt_log_id,
                     error=str(cleanup_exc),
                 )
-
-
-class WorkerSettings:
-    functions: ClassVar[list[object]] = [process_voice, extract_voice, process_receipt]
-    on_startup = startup
-    on_shutdown = shutdown
-    redis_settings = redis_settings(_settings)

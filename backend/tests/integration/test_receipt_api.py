@@ -31,14 +31,11 @@ async def test_upload_receipt_creates_log_and_enqueues_job(
     await db_session.commit()
 
     storage = AsyncMock()
-    redis = AsyncMock()
-    redis.close = AsyncMock()
+    mock_process_receipt = AsyncMock()
 
     with (
         patch("app.domains.finance.routers.receipt.R2Storage", return_value=storage),
-        patch(
-            "app.domains.finance.routers.receipt.create_redis_pool", AsyncMock(return_value=redis)
-        ),
+        patch("app.domains.finance.jobs.process_receipt", mock_process_receipt),
         patch("app.core.upload_utils.filetype.guess") as mock_guess,
     ):
         mock_guess.return_value.mime = "image/jpeg"
@@ -57,11 +54,11 @@ async def test_upload_receipt_creates_log_and_enqueues_job(
     assert receipt_log.user_id == test_user_id
 
     storage.upload.assert_awaited_once()
-    redis.enqueue_job.assert_awaited_once_with(
-        "process_receipt",
-        receipt_log_id=str(receipt_log.id),
-        account_id=str(account.id),
-    )
+    mock_process_receipt.assert_awaited_once()
+    call_kwargs = mock_process_receipt.await_args.kwargs
+    assert call_kwargs["receipt_log_id"] == str(receipt_log.id)
+    assert call_kwargs["account_id"] == str(account.id)
+    assert call_kwargs["r2"] is storage
 
 
 async def test_get_receipt_status_returns_404_for_missing_log(client: AsyncClient) -> None:

@@ -1,23 +1,22 @@
-"""Unit tests for the AI daily insight service (LLM and Redis are mocked)."""
+"""Unit tests for the AI daily insight service (LLM and cache repository are mocked)."""
 
 from __future__ import annotations
 
 import uuid
+from datetime import date
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from app.domains.ai import service as insight_service
+from app.domains.ai.models import DailyInsightCache
 from app.domains.ai.schemas import DailyInsight
 
 _USER_ID = uuid.uuid4()
 
 
-def _make_redis(*, cached_value: str | None = None) -> AsyncMock:
-    redis = AsyncMock()
-    redis.get = AsyncMock(return_value=cached_value)
-    redis.set = AsyncMock()
-    return redis
+def _make_cache_row(*, insight: str, generated_date: date) -> DailyInsightCache:
+    return DailyInsightCache(user_id=_USER_ID, insight=insight, generated_date=generated_date)
 
 
 def _make_llm(reply: str = "Spend less on coffee.") -> AsyncMock:
@@ -43,60 +42,80 @@ def dummy_context() -> dict:
 
 
 async def test_get_insight_generates_on_cache_miss(dummy_context: dict) -> None:
-    redis = _make_redis(cached_value=None)
     llm = _make_llm("You spent Rp 200,000 this month. Great job!")
     session = _make_session()
 
     mock_ctx = AsyncMock(return_value=dummy_context)
-    with patch.object(insight_service, "_fetch_financial_context", mock_ctx):
-        result = await insight_service.get_daily_insight(_USER_ID, session, redis, llm)
+    mock_get_cache = AsyncMock(return_value=None)
+    mock_upsert = AsyncMock()
+    with (
+        patch.object(insight_service, "_fetch_financial_context", mock_ctx),
+        patch.object(insight_service.repo, "get_daily_insight_cache", mock_get_cache),
+        patch.object(insight_service.repo, "upsert_daily_insight_cache", mock_upsert),
+    ):
+        result = await insight_service.get_daily_insight(_USER_ID, session, llm)
 
     assert isinstance(result, DailyInsight)
     assert result.insight == "You spent Rp 200,000 this month. Great job!"
     assert result.is_cached is False
     llm.chat_with_tools.assert_called_once()
-    redis.set.assert_called_once()
+    mock_upsert.assert_called_once()
 
 
-async def test_get_insight_returns_cached_result() -> None:
-    cached = "You are on track with your budget!"
-    redis = _make_redis(cached_value=cached)
+async def test_get_insight_returns_cached_result_from_today() -> None:
+    cached_row = _make_cache_row(
+        insight="You are on track with your budget!", generated_date=date.today()
+    )
     llm = _make_llm()
     session = _make_session()
+    mock_get_cache = AsyncMock(return_value=cached_row)
 
-    result = await insight_service.get_daily_insight(_USER_ID, session, redis, llm)
+    with patch.object(insight_service.repo, "get_daily_insight_cache", mock_get_cache):
+        result = await insight_service.get_daily_insight(_USER_ID, session, llm)
 
-    assert result.insight == cached
+    assert result.insight == cached_row.insight
     assert result.is_cached is True
     llm.chat_with_tools.assert_not_called()
-    redis.set.assert_not_called()
 
 
-async def test_insight_cache_key_scoped_to_user() -> None:
-    user_a = uuid.uuid4()
-    user_b = uuid.uuid4()
+async def test_stale_cache_from_previous_day_regenerates(dummy_context: dict) -> None:
+    stale_row = _make_cache_row(insight="yesterday's insight", generated_date=date(2020, 1, 1))
+    llm = _make_llm("Fresh insight today.")
+    session = _make_session()
 
-    key_a = insight_service._cache_key(user_a)
-    key_b = insight_service._cache_key(user_b)
+    mock_ctx = AsyncMock(return_value=dummy_context)
+    mock_get_cache = AsyncMock(return_value=stale_row)
+    mock_upsert = AsyncMock()
+    with (
+        patch.object(insight_service, "_fetch_financial_context", mock_ctx),
+        patch.object(insight_service.repo, "get_daily_insight_cache", mock_get_cache),
+        patch.object(insight_service.repo, "upsert_daily_insight_cache", mock_upsert),
+    ):
+        result = await insight_service.get_daily_insight(_USER_ID, session, llm)
 
-    assert key_a != key_b
-    assert str(user_a) in key_a
-    assert str(user_b) in key_b
+    assert result.insight == "Fresh insight today."
+    assert result.is_cached is False
+    mock_upsert.assert_called_once()
 
 
 async def test_get_insight_returns_fallback_on_llm_failure(dummy_context: dict) -> None:
-    redis = _make_redis(cached_value=None)
     llm = AsyncMock()
     llm.chat_with_tools = AsyncMock(side_effect=RuntimeError("LLM timeout"))
     session = _make_session()
 
     mock_ctx = AsyncMock(return_value=dummy_context)
-    with patch.object(insight_service, "_fetch_financial_context", mock_ctx):
-        result = await insight_service.get_daily_insight(_USER_ID, session, redis, llm)
+    mock_get_cache = AsyncMock(return_value=None)
+    mock_upsert = AsyncMock()
+    with (
+        patch.object(insight_service, "_fetch_financial_context", mock_ctx),
+        patch.object(insight_service.repo, "get_daily_insight_cache", mock_get_cache),
+        patch.object(insight_service.repo, "upsert_daily_insight_cache", mock_upsert),
+    ):
+        result = await insight_service.get_daily_insight(_USER_ID, session, llm)
 
     assert isinstance(result, DailyInsight)
     assert result.insight == insight_service._FALLBACK_INSIGHT
-    redis.set.assert_called_once()
+    mock_upsert.assert_called_once()
 
 
 def test_insight_system_prompt_in_bahasa_indonesia() -> None:
@@ -110,13 +129,18 @@ async def test_get_insight_no_transactions_returns_gracefully() -> None:
         "budget": {"has_budget": False},
         "categories": {"categories": []},
     }
-    redis = _make_redis(cached_value=None)
     llm = _make_llm("No transactions yet, start tracking your expenses!")
     session = _make_session()
 
     mock_ctx = AsyncMock(return_value=empty_context)
-    with patch.object(insight_service, "_fetch_financial_context", mock_ctx):
-        result = await insight_service.get_daily_insight(_USER_ID, session, redis, llm)
+    mock_get_cache = AsyncMock(return_value=None)
+    mock_upsert = AsyncMock()
+    with (
+        patch.object(insight_service, "_fetch_financial_context", mock_ctx),
+        patch.object(insight_service.repo, "get_daily_insight_cache", mock_get_cache),
+        patch.object(insight_service.repo, "upsert_daily_insight_cache", mock_upsert),
+    ):
+        result = await insight_service.get_daily_insight(_USER_ID, session, llm)
 
     assert isinstance(result, DailyInsight)
     assert len(result.insight) > 0

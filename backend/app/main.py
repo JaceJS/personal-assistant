@@ -22,7 +22,6 @@ from app.domains.finance.router import router as finance_router
 from app.domains.sync.router import router as sync_router
 from app.domains.users.router import router as users_router
 from app.shared import model_registry  # noqa: F401
-from app.shared.queue import create_redis_pool
 
 _settings = get_settings()
 
@@ -47,10 +46,8 @@ _openapi_tags = [
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     configure_logging()
-    _app.state.redis = await create_redis_pool(_settings)
     await _check_jwks()
     yield
-    await _app.state.redis.aclose()
     await engine.dispose()
 
 

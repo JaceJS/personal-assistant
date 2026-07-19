@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile
 
 from app.core.auth import CurrentUser
 from app.core.config import get_settings
@@ -15,7 +15,6 @@ from app.domains.finance.schemas import (
     VoiceStatusRead,
     VoiceUploadResponse,
 )
-from app.shared.queue import create_redis_pool
 from app.shared.storage import R2Storage
 
 router = APIRouter(tags=["Voice"])
@@ -33,22 +32,18 @@ _VOICE_EXTRACT_LIMIT = per_user_rate_limit("voice_extract", 30, 3600)
 async def upload_voice(
     user_id: CurrentUser,
     session: DbSession,
+    background_tasks: BackgroundTasks,
     account_id: Annotated[uuid.UUID, Form()],
     file: Annotated[UploadFile, File()],
 ) -> ApiResponse[VoiceUploadResponse]:
-    settings = get_settings()
-    redis = await create_redis_pool(settings)
-    try:
-        item = await service.create_voice_upload(
-            session,
-            user_id,
-            account_id=account_id,
-            file=file,
-            storage=R2Storage(settings),
-            redis=redis,
-        )
-    finally:
-        await redis.close()
+    item = await service.create_voice_upload(
+        session,
+        user_id,
+        account_id=account_id,
+        file=file,
+        storage=R2Storage(get_settings()),
+        background_tasks=background_tasks,
+    )
     return ok(item, message="created")
 
 
@@ -70,17 +65,13 @@ async def extract_voice(
     body: VoiceExtractRequest,
     user_id: CurrentUser,
     session: DbSession,
+    background_tasks: BackgroundTasks,
 ) -> ApiResponse[VoiceExtractResponse]:
-    settings = get_settings()
-    redis = await create_redis_pool(settings)
-    try:
-        item = await service.extract_voice_transcript(
-            session,
-            user_id,
-            voice_log_id,
-            transcript=body.transcript,
-            redis=redis,
-        )
-    finally:
-        await redis.close()
+    item = await service.extract_voice_transcript(
+        session,
+        user_id,
+        voice_log_id,
+        transcript=body.transcript,
+        background_tasks=background_tasks,
+    )
     return ok(item)

@@ -36,12 +36,11 @@ async def test_upload_voice_creates_log_and_enqueues_job(
     await db_session.commit()
 
     storage = AsyncMock()
-    redis = AsyncMock()
-    redis.close = AsyncMock()
+    mock_process_voice = AsyncMock()
 
     with (
         patch("app.domains.finance.routers.voice.R2Storage", return_value=storage),
-        patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
+        patch("app.domains.finance.jobs.process_voice", mock_process_voice),
         patch("app.core.upload_utils.filetype.guess") as mock_guess,
     ):
         mock_guess.return_value.mime = "audio/webm"
@@ -61,12 +60,11 @@ async def test_upload_voice_creates_log_and_enqueues_job(
     assert voice_log.audio_url.startswith(f"voice/{test_user_id}/")
 
     storage.upload.assert_awaited_once()
-    redis.enqueue_job.assert_awaited_once_with(
-        "process_voice",
-        voice_log_id=str(voice_log.id),
-        account_id=str(account.id),
-    )
-    redis.close.assert_awaited_once()
+    mock_process_voice.assert_awaited_once()
+    call_kwargs = mock_process_voice.await_args.kwargs
+    assert call_kwargs["voice_log_id"] == str(voice_log.id)
+    assert call_kwargs["account_id"] == str(account.id)
+    assert call_kwargs["r2"] is storage
 
 
 async def test_upload_voice_accepts_real_android_recording(
@@ -85,12 +83,10 @@ async def test_upload_voice_accepts_real_android_recording(
     await db_session.commit()
 
     storage = AsyncMock()
-    redis = AsyncMock()
-    redis.close = AsyncMock()
 
     with (
         patch("app.domains.finance.routers.voice.R2Storage", return_value=storage),
-        patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
+        patch("app.domains.finance.jobs.process_voice", AsyncMock()),
     ):
         response = await client.post(
             "/api/v1/voice/upload",
@@ -120,11 +116,10 @@ async def test_upload_voice_rejects_non_audio_file(
     )
     await db_session.commit()
 
-    redis = AsyncMock()
-    redis.close = AsyncMock()
+    mock_process_voice = AsyncMock()
 
     with (
-        patch("app.domains.finance.routers.voice.create_redis_pool", AsyncMock(return_value=redis)),
+        patch("app.domains.finance.jobs.process_voice", mock_process_voice),
         patch("app.core.upload_utils.filetype.guess", return_value=None),
     ):
         response = await client.post(
@@ -134,7 +129,7 @@ async def test_upload_voice_rejects_non_audio_file(
         )
 
     assert response.status_code == 400
-    redis.enqueue_job.assert_not_called()
+    mock_process_voice.assert_not_called()
 
 
 async def test_get_voice_status_returns_404_for_missing_log(client: AsyncClient) -> None:

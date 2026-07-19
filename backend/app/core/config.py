@@ -35,9 +35,6 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_service_role_key: str = ""
 
-    # Redis
-    redis_url: str = "redis://localhost:6379/0"
-
     # Cloudflare R2
     r2_account_id: str = ""
     r2_access_key_id: str = ""

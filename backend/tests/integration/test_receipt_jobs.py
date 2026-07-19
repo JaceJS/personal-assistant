@@ -1,4 +1,4 @@
-"""Integration tests: receipt worker pipeline (vision LLM is mocked)."""
+"""Integration tests: receipt background job pipeline (vision LLM is mocked)."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.domains.finance import repository as repo
 from app.domains.finance.extractor import ExtractedTransaction, ExtractedTransactionList
+from app.domains.finance.jobs import process_receipt
 from app.domains.finance.models import AccountType, TransactionStatus, VoiceProcessingStatus
-from app.workers.voice_processor import process_receipt
 
 pytestmark = pytest.mark.integration
 
@@ -42,12 +42,14 @@ async def test_process_receipt_creates_draft_transaction(
     mock_r2 = AsyncMock()
     mock_r2.download = AsyncMock(return_value=b"fake-image")
 
-    ctx: dict[str, object] = {"vision_llm": mock_llm, "r2": mock_r2}
     test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
 
-    with patch("app.workers.voice_processor.SessionFactory", test_factory):
+    with patch("app.domains.finance.jobs.SessionFactory", test_factory):
         await process_receipt(
-            ctx, receipt_log_id=str(receipt_log.id), account_id=str(account.id)
+            vision_llm=mock_llm,
+            r2=mock_r2,
+            receipt_log_id=str(receipt_log.id),
+            account_id=str(account.id),
         )
 
     await db_session.refresh(receipt_log)
@@ -90,12 +92,14 @@ async def test_process_receipt_creates_multiple_draft_transactions(
     mock_r2 = AsyncMock()
     mock_r2.download = AsyncMock(return_value=b"fake-image")
 
-    ctx: dict[str, object] = {"vision_llm": mock_llm, "r2": mock_r2}
     test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
 
-    with patch("app.workers.voice_processor.SessionFactory", test_factory):
+    with patch("app.domains.finance.jobs.SessionFactory", test_factory):
         await process_receipt(
-            ctx, receipt_log_id=str(receipt_log.id), account_id=str(account.id)
+            vision_llm=mock_llm,
+            r2=mock_r2,
+            receipt_log_id=str(receipt_log.id),
+            account_id=str(account.id),
         )
 
     txs = await repo.list_transactions(db_session, test_user_id)
@@ -127,12 +131,14 @@ async def test_process_receipt_marks_failed_when_no_confident_transaction(
     mock_r2 = AsyncMock()
     mock_r2.download = AsyncMock(return_value=b"blurry-image")
 
-    ctx: dict[str, object] = {"vision_llm": mock_llm, "r2": mock_r2}
     test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
 
-    with patch("app.workers.voice_processor.SessionFactory", test_factory):
+    with patch("app.domains.finance.jobs.SessionFactory", test_factory):
         await process_receipt(
-            ctx, receipt_log_id=str(receipt_log.id), account_id=str(account.id)
+            vision_llm=mock_llm,
+            r2=mock_r2,
+            receipt_log_id=str(receipt_log.id),
+            account_id=str(account.id),
         )
 
     await db_session.refresh(receipt_log)

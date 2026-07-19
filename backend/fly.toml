@@ -12,7 +12,6 @@ RECEIPT_MODEL = "google/gemini-2.5-flash-lite"
 
 [processes]
 app = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
-worker = "arq app.workers.voice_processor.WorkerSettings"
 
 [http_service]
 internal_port = 8000
@@ -25,4 +24,4 @@ processes = ["app"]
 [[vm]]
 size = "shared-cpu-1x"
 memory = "512mb"
-processes = ["app", "worker"]
+processes = ["app"]
