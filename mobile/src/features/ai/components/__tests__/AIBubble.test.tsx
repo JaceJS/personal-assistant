@@ -39,13 +39,15 @@ describe('AIBubble', () => {
     expect(onRetry).toHaveBeenCalledWith(failed);
   });
 
-  it('fires onLongPress with the message when long-pressed', async () => {
+  it('fires onLongPress with the message and touch position when long-pressed', async () => {
     const onLongPress = jest.fn();
     const resolved = resolveAIMessage(createAITypingMessage('halo'), 'Halo juga!');
     const { getByTestId } = await render(
       <AIBubble message={resolved} onLongPress={onLongPress} />,
     );
-    fireEvent(getByTestId('ai-bubble'), 'longPress');
-    expect(onLongPress).toHaveBeenCalledWith(resolved);
+    fireEvent(getByTestId('ai-bubble'), 'longPress', {
+      nativeEvent: { pageX: 60, pageY: 220 },
+    });
+    expect(onLongPress).toHaveBeenCalledWith(resolved, 60, 220);
   });
 });

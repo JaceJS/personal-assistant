@@ -11,14 +11,16 @@ describe('UserBubble', () => {
     expect(getByText('sate 20.000')).toBeTruthy();
   });
 
-  it('fires onLongPress with the message when long-pressed', async () => {
+  it('fires onLongPress with the message and touch position when long-pressed', async () => {
     const onLongPress = jest.fn();
     const message = createUserTextMessage('sate 20.000');
     const { getByTestId } = await render(
       <UserBubble message={message} onLongPress={onLongPress} />,
     );
-    fireEvent(getByTestId('user-bubble'), 'longPress');
-    expect(onLongPress).toHaveBeenCalledWith(message);
+    fireEvent(getByTestId('user-bubble'), 'longPress', {
+      nativeEvent: { pageX: 120, pageY: 340 },
+    });
+    expect(onLongPress).toHaveBeenCalledWith(message, 120, 340);
   });
 
   it('does not throw when onLongPress is not provided', async () => {

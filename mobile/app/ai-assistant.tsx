@@ -30,7 +30,7 @@ import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
 import { AIBubble } from "@/features/ai/components/AIBubble";
 import { ChatBubble } from "@/features/ai/components/ChatBubble";
 import { DraftTransactionCard } from "@/features/ai/components/DraftTransactionCard";
-import { MessageActionSheet } from "@/features/ai/components/MessageActionSheet";
+import { MessageActionMenu } from "@/features/ai/components/MessageActionMenu";
 import { UserBubble } from "@/features/ai/components/UserBubble";
 import { useCancelAiDraft } from "@/features/ai/hooks/useCancelAiDraft";
 import { useChat } from "@/features/ai/hooks/useChat";
@@ -107,9 +107,11 @@ export default function AIAssistantScreen() {
   const [transcriptVisible, setTranscriptVisible] = useState(false);
   const [receiptLogId, setReceiptLogId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState<DraftMessage | null>(null);
-  const [actionSheetMessage, setActionSheetMessage] = useState<
-    UserTextMessage | AIMessage | null
-  >(null);
+  const [actionMenu, setActionMenu] = useState<{
+    message: UserTextMessage | AIMessage;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const [inputText, setInputText] = useState("");
   const listRef = useRef<FlatList<Message>>(null);
@@ -270,23 +272,26 @@ export default function AIAssistantScreen() {
     ]);
   }, [clearChat, t]);
 
-  const handleMessageLongPress = useCallback((message: UserTextMessage | AIMessage) => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setActionSheetMessage(message);
-  }, []);
+  const handleMessageLongPress = useCallback(
+    (message: UserTextMessage | AIMessage, x: number, y: number) => {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setActionMenu({ message, x, y });
+    },
+    []
+  );
 
   const handleCopyMessage = useCallback(() => {
-    const message = actionSheetMessage;
-    setActionSheetMessage(null);
+    const message = actionMenu?.message;
+    setActionMenu(null);
     if (!message) return;
     const text = message.type === "user" ? message.content : (message.content ?? "");
     void Clipboard.setStringAsync(text);
     showToast(t("ai.messageActions.copiedToast"), "success");
-  }, [actionSheetMessage, showToast, t]);
+  }, [actionMenu, showToast, t]);
 
   const handleDeleteMessage = useCallback(() => {
-    const message = actionSheetMessage;
-    setActionSheetMessage(null);
+    const message = actionMenu?.message;
+    setActionMenu(null);
     if (!message) return;
     Alert.alert(
       t("ai.messageActions.deleteConfirmTitle"),
@@ -304,7 +309,7 @@ export default function AIAssistantScreen() {
         },
       ]
     );
-  }, [actionSheetMessage, deleteMessage, showToast, t]);
+  }, [actionMenu, deleteMessage, showToast, t]);
 
   const uploadVoiceFlow = useCallback(
     async (audioUri: string, accountId: string) => {
@@ -730,11 +735,13 @@ export default function AIAssistantScreen() {
         onDismiss={() => setEditingDraft(null)}
       />
 
-      <MessageActionSheet
-        isVisible={actionSheetMessage !== null}
+      <MessageActionMenu
+        visible={actionMenu !== null}
+        x={actionMenu?.x ?? 0}
+        y={actionMenu?.y ?? 0}
         onCopy={handleCopyMessage}
         onDelete={handleDeleteMessage}
-        onDismiss={() => setActionSheetMessage(null)}
+        onDismiss={() => setActionMenu(null)}
       />
       </>
       )}

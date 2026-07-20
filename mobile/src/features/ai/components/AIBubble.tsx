@@ -15,7 +15,7 @@ export function AIBubble({
 }: {
   message: AIMessage;
   onRetry?: (message: AIMessage) => void;
-  onLongPress?: (message: AIMessage) => void;
+  onLongPress?: (message: AIMessage, x: number, y: number) => void;
 }) {
   const { t } = useTranslation();
   const canRetry = !!message.failed && !!onRetry;
@@ -23,7 +23,11 @@ export function AIBubble({
   return (
     <Pressable
       testID="ai-bubble"
-      onLongPress={onLongPress ? () => onLongPress(message) : undefined}
+      onLongPress={
+        onLongPress
+          ? (e) => onLongPress(message, e.nativeEvent.pageX, e.nativeEvent.pageY)
+          : undefined
+      }
       delayLongPress={350}
     >
       <View style={styles.wrap}>

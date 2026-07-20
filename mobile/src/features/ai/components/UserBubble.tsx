@@ -8,12 +8,16 @@ export function UserBubble({
   onLongPress,
 }: {
   message: UserTextMessage;
-  onLongPress?: (message: UserTextMessage) => void;
+  onLongPress?: (message: UserTextMessage, x: number, y: number) => void;
 }) {
   return (
     <Pressable
       testID="user-bubble"
-      onLongPress={onLongPress ? () => onLongPress(message) : undefined}
+      onLongPress={
+        onLongPress
+          ? (e) => onLongPress(message, e.nativeEvent.pageX, e.nativeEvent.pageY)
+          : undefined
+      }
       delayLongPress={350}
     >
       <View style={styles.wrap}>
