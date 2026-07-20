@@ -251,6 +251,24 @@ describe('extractionToDraftTransactions', () => {
     expect(drafts).toHaveLength(1);
     expect(drafts[0].transaction_id).toBe('tx-1');
   });
+
+  it('turns 3 extracted items into 3 separate pending draft messages, one per transaction', () => {
+    const drafts = extractionToDraftTransactions(
+      [
+        item({ merchant: 'Kopi', amount: -15000 }),
+        item({ merchant: 'Parkiran', amount: -5000 }),
+        item({ merchant: 'Pertamina', amount: -20000 }),
+      ],
+      ['tx-1', 'tx-2', 'tx-3'],
+      'acc-1'
+    );
+    const msgs = createDraftMessages(drafts);
+
+    expect(msgs).toHaveLength(3);
+    expect(msgs.every((m) => m.type === 'draft' && m.state === 'pending')).toBe(true);
+    expect(msgs.map((m) => m.draft.merchant)).toEqual(['Kopi', 'Parkiran', 'Pertamina']);
+    expect(msgs.map((m) => m.id)).toEqual(['tx-1', 'tx-2', 'tx-3']);
+  });
 });
 
 describe('createUserTextMessage', () => {

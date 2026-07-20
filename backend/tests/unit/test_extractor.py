@@ -41,6 +41,25 @@ async def test_extract_returns_list_of_transactions(mock_llm: AsyncMock) -> None
     mock_llm.extract.assert_called_once()
 
 
+async def test_extract_returns_three_transactions_from_one_transcript(
+    mock_llm: AsyncMock,
+) -> None:
+    mock_llm.extract.return_value = ExtractedTransactionList(
+        transactions=[
+            _tx(amount=-15_000, merchant="Kopi"),
+            _tx(amount=-5_000, merchant="Parkiran"),
+            _tx(amount=-20_000, merchant="Pertamina"),
+        ]
+    )
+
+    result = await extract_transactions(
+        "beli kopi 15rb, parkir 5rb, sama bensin 20rb", mock_llm
+    )
+
+    assert len(result) == 3
+    assert [t.merchant for t in result] == ["Kopi", "Parkiran", "Pertamina"]
+
+
 async def test_extract_single_item_still_returns_list_of_one(mock_llm: AsyncMock) -> None:
     mock_llm.extract.return_value = ExtractedTransactionList(transactions=[_tx(amount=-10_000)])
 
