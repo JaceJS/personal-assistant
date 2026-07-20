@@ -93,3 +93,79 @@ describe("useAuth: guest-data merge prompt", () => {
     await waitFor(() => expect(useSyncPromptStore.getState().phase).toBe("pending"));
   });
 });
+
+describe("useAuth: query cache invalidation on identity change", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resetStores();
+    mockOnAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: mockUnsubscribe } } });
+    mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
+    mockGetLocalDataSummary.mockResolvedValue(null);
+  });
+
+  // Cold-start's own getSession()->enterGuestMode() resolves asynchronously
+  // and would otherwise clobber whatever "previous identity" a test seeds
+  // before firing the change — so mount and let it settle first, THEN seed
+  // the previous identity, THEN fire the onAuthStateChange callback.
+  async function fireAuthChange(
+    previousState: Partial<ReturnType<typeof useAuthStore.getState>>,
+    event: string,
+    session: unknown
+  ) {
+    renderHook(() => useAuth());
+    await waitFor(() => expect(useAuthStore.getState().initialized).toBe(true));
+    useAuthStore.setState(previousState);
+    const onChangeCallback = mockOnAuthStateChange.mock.calls[0][0] as (
+      event: string,
+      session: unknown
+    ) => void;
+    onChangeCallback(event, session);
+  }
+
+  function getMockQueryClient() {
+    return (jest.requireMock("@/lib/queryClient") as { queryClient: { clear: jest.Mock } })
+      .queryClient;
+  }
+
+  it("clears the query cache when a guest signs in", async () => {
+    await fireAuthChange({ isGuest: true, session: null, mode: "guest" }, "SIGNED_IN", SESSION);
+
+    expect(getMockQueryClient().clear).toHaveBeenCalled();
+  });
+
+  it("clears the query cache when switching to a different authenticated user", async () => {
+    await fireAuthChange(
+      { isGuest: false, mode: "authenticated", session: { user: { id: "user-1" } } as never },
+      "SIGNED_IN",
+      { user: { id: "user-2" } }
+    );
+
+    expect(getMockQueryClient().clear).toHaveBeenCalled();
+  });
+
+  it("does not clear the query cache on a token refresh for the same user", async () => {
+    await fireAuthChange(
+      { isGuest: false, mode: "authenticated", session: { user: { id: "user-1" } } as never },
+      "TOKEN_REFRESHED",
+      { user: { id: "user-1" } }
+    );
+
+    expect(getMockQueryClient().clear).not.toHaveBeenCalled();
+  });
+
+  it("clears the query cache when a previously authenticated session is lost", async () => {
+    await fireAuthChange(
+      { isGuest: false, mode: "authenticated", session: { user: { id: "user-1" } } as never },
+      "SIGNED_OUT",
+      null
+    );
+
+    expect(getMockQueryClient().clear).toHaveBeenCalled();
+  });
+
+  it("does not clear the query cache when already guest and staying guest", async () => {
+    await fireAuthChange({ isGuest: true, mode: "guest", session: null }, "SIGNED_OUT", null);
+
+    expect(getMockQueryClient().clear).not.toHaveBeenCalled();
+  });
+});

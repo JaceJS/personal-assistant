@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 
 import { supabase } from "@/lib/supabase";
+import { queryClient } from "@/lib/queryClient";
 import { useAuthStore } from "@/stores/auth";
 import { useSyncPromptStore } from "@/stores/syncPrompt";
 import { logger } from "@/lib/logger";
@@ -56,13 +57,27 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      const wasGuest = useAuthStore.getState().isGuest;
+      const previous = useAuthStore.getState();
+      const wasGuest = previous.isGuest;
+      const previousUserId = previous.session?.user.id;
       if (session) {
+        // Finance queries (accounts, transactions, budget, ...) are keyed by
+        // resource name only, not by user/repo — the repo they hit swaps
+        // between local SQLite (guest) and the API (authenticated) based on
+        // isGuest, but TanStack Query has no way to know that on its own. A
+        // real identity change (guest -> account, or account A -> account B)
+        // must wipe the cache, or the new identity's screens briefly (up to
+        // staleTime) show the previous identity's cached data — this was the
+        // "step 1 always looks done" bug in the setup checklist.
+        if (wasGuest || previousUserId !== session.user.id) {
+          queryClient.clear();
+        }
         setSession(session);
         if (event === "SIGNED_IN" && wasGuest) {
           void checkForLocalDataToMerge();
         }
       } else {
+        if (!wasGuest) queryClient.clear();
         enterGuestMode();
       }
       markInitialized();
