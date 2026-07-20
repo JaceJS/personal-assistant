@@ -174,7 +174,7 @@ Daftar ini adalah keputusan produk, bukan keterbatasan sementara. Setiap ide fit
 
 | # | Item | Status | Catatan |
 |---|---|---|---|
-| 1 | `mobile/eas.json` + konfigurasi EAS production build | ✅ Selesai | `eas.json` (profile development/preview/production) + project linked ke akun EAS `jaceee` (`app.json` `extra.eas.projectId`, `owner`) |
+| 1 | `mobile/eas.json` + konfigurasi EAS production build | ✅ Selesai | `eas.json` (profile development/staging/production) + project linked ke akun EAS `jaceee` (`app.json` `extra.eas.projectId`, `owner`) |
 | 2 | URL Privacy Policy & Terms nyata | ✅ Selesai | Site `web/` (Next.js) live di Vercel: `https://www.savyn.id` (landing + `/privacy` + `/terms`); URL di `settings/index.tsx` sudah diganti. Sisa: isi URL privacy policy di Play Console |
 | 3 | Data Safety form di Play Console | ❌ Di luar repo | Deklarasikan: data keuangan user, audio (voice), foto (struk/avatar), email; hapus-akun tersedia |
 | 4 | Backend produksi di Fly.io (API, single process — job/cache/rate-limit di Postgres) | ✅ Selesai | App `savyn-api` (region `sin`), `fly.toml` (process `app` saja, worker ARQ + Redis dihapus 19 Juli 2026), DB Supabase prod, semua migrasi (`alembic upgrade head`) sudah jalan. Health check `https://savyn-api.fly.dev/health` OK. Staging: app `savyn-api-staging` (`fly.staging.toml`) juga sudah deploy dengan pola yang sama. |
