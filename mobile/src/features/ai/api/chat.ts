@@ -14,6 +14,8 @@ export interface DraftTransaction {
 export interface ChatReply {
   reply: string;
   session_id: string;
+  user_message_id: string;
+  assistant_message_id: string;
   draft_transactions: DraftTransaction[];
 }
 
@@ -47,6 +49,12 @@ export async function getChatSessionMessages(sessionId: string): Promise<ChatSes
   return apiFetch<ApiResponse<ChatSessionHistory>>(
     `/api/v1/ai/sessions/${sessionId}/messages`,
   ).then((r) => r.data);
+}
+
+export async function deleteChatMessage(sessionId: string, messageId: string): Promise<void> {
+  await apiFetch(`/api/v1/ai/sessions/${sessionId}/messages/${messageId}`, {
+    method: 'DELETE',
+  });
 }
 
 export async function confirmAiDraft(

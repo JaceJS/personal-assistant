@@ -11,33 +11,41 @@ import { TypewriterText } from "./TypewriterText";
 export function AIBubble({
   message,
   onRetry,
+  onLongPress,
 }: {
   message: AIMessage;
   onRetry?: (message: AIMessage) => void;
+  onLongPress?: (message: AIMessage) => void;
 }) {
   const { t } = useTranslation();
   const canRetry = !!message.failed && !!onRetry;
 
   return (
-    <View style={styles.wrap}>
-      <View style={styles.bubble}>
-        {message.isTyping && !message.content ? (
-          <TypingIndicator />
-        ) : (
-          <TypewriterText text={message.content ?? ""} animate={!message.skipTypewriter} />
-        )}
-        {canRetry && (
-          <Pressable
-            onPress={() => onRetry!(message)}
-            style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.7 }]}
-            hitSlop={6}
-          >
-            <RotateCcw size={13} color={colors.accent.primary} strokeWidth={2} />
-            <Text style={styles.retryLabel}>{t("common.retry")}</Text>
-          </Pressable>
-        )}
+    <Pressable
+      testID="ai-bubble"
+      onLongPress={onLongPress ? () => onLongPress(message) : undefined}
+      delayLongPress={350}
+    >
+      <View style={styles.wrap}>
+        <View style={styles.bubble}>
+          {message.isTyping && !message.content ? (
+            <TypingIndicator />
+          ) : (
+            <TypewriterText text={message.content ?? ""} animate={!message.skipTypewriter} />
+          )}
+          {canRetry && (
+            <Pressable
+              onPress={() => onRetry!(message)}
+              style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.7 }]}
+              hitSlop={6}
+            >
+              <RotateCcw size={13} color={colors.accent.primary} strokeWidth={2} />
+              <Text style={styles.retryLabel}>{t("common.retry")}</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

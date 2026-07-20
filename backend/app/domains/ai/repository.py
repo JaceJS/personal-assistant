@@ -44,6 +44,15 @@ async def add_message(
     return msg
 
 
+async def get_message(db: AsyncSession, message_id: uuid.UUID) -> ChatMessage | None:
+    return await db.get(ChatMessage, message_id)
+
+
+async def delete_message(db: AsyncSession, message: ChatMessage) -> None:
+    await db.delete(message)
+    await db.flush()
+
+
 async def get_recent_messages(
     db: AsyncSession,
     session_id: uuid.UUID,

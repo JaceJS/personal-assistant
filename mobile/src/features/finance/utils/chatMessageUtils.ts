@@ -23,6 +23,10 @@ export type UserTextMessage = {
   type: 'user';
   content: string;
   createdAt: Date;
+  // The chat_messages row id on the backend. Undefined until the send this
+  // message belongs to resolves — only messages with a remoteId can be
+  // deleted server-side (see useChat's dispatch and deleteMessage).
+  remoteId?: string;
 };
 
 export type AIMessage = {
@@ -38,6 +42,8 @@ export type AIMessage = {
   // instantly instead of replaying the typewriter animation.
   skipTypewriter?: boolean;
   createdAt: Date;
+  // The chat_messages row id on the backend, see UserTextMessage.remoteId.
+  remoteId?: string;
 };
 
 export type DraftMessageState = 'pending' | 'saving' | 'saved' | 'cancelled';
@@ -126,8 +132,8 @@ export function createAITypingMessage(originalText: string): AIMessage {
   return { id: generateId(), type: 'ai', isTyping: true, originalText, createdAt: new Date() };
 }
 
-export function resolveAIMessage(msg: AIMessage, content: string): AIMessage {
-  return { ...msg, content, isTyping: false, failed: false };
+export function resolveAIMessage(msg: AIMessage, content: string, remoteId?: string): AIMessage {
+  return { ...msg, content, isTyping: false, failed: false, remoteId };
 }
 
 export function rejectAIMessage(msg: AIMessage, errorText: string): AIMessage {

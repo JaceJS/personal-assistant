@@ -195,7 +195,7 @@ async def chat(
         items = ", ".join(f"{tx.merchant or 'item'} (Rp{abs(tx.amount)})" for tx in pending_drafts)
         system_prompt += "\n\n" + _PENDING_DRAFTS_NOTICE_TEMPLATE.format(items=items)
 
-    await repo.add_message(session, chat_session.id, "user", body.message)
+    user_msg = await repo.add_message(session, chat_session.id, "user", body.message)
     loop_messages.append({"role": "user", "content": body.message})
 
     final_reply = ""
@@ -279,11 +279,23 @@ async def chat(
             )
         final_reply = final_reply.strip() or _FALLBACK_REPLY
 
-    await repo.add_message(session, chat_session.id, "assistant", final_reply)
+    assistant_msg = await repo.add_message(session, chat_session.id, "assistant", final_reply)
     return ok(
         ChatReply(
             reply=final_reply,
             session_id=chat_session.id,
+            user_message_id=user_msg.id,
+            assistant_message_id=assistant_msg.id,
             draft_transactions=draft_transactions,
         )
     )
+
+
+@router.delete("/sessions/{session_id}/messages/{message_id}", status_code=204)
+async def delete_session_message(
+    session_id: uuid.UUID,
+    message_id: uuid.UUID,
+    user_id: CurrentUser,
+    session: DbSession,
+) -> None:
+    await service.delete_chat_message(user_id, session_id, message_id, session)

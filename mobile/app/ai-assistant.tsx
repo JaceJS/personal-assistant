@@ -1,6 +1,8 @@
+import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { Camera, Mic, SendHorizontal, Square, Trash2 } from "lucide-react-native";
+import { Camera, Mic, SendHorizontal, Square, Trash2, Wallet } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -18,6 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Header } from "@/components/layout/Header";
+import { Gate } from "@/components/ui/Gate";
 import GuestGate from "@/components/ui/GuestGate";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ConfirmCard } from "@/components/voice/ConfirmCard";
@@ -27,6 +30,7 @@ import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
 import { AIBubble } from "@/features/ai/components/AIBubble";
 import { ChatBubble } from "@/features/ai/components/ChatBubble";
 import { DraftTransactionCard } from "@/features/ai/components/DraftTransactionCard";
+import { MessageActionSheet } from "@/features/ai/components/MessageActionSheet";
 import { UserBubble } from "@/features/ai/components/UserBubble";
 import { useCancelAiDraft } from "@/features/ai/hooks/useCancelAiDraft";
 import { useChat } from "@/features/ai/hooks/useChat";
@@ -51,6 +55,7 @@ import type {
   DraftMessage,
   DraftMessageState,
   Message,
+  UserTextMessage,
 } from "@/features/finance/utils/chatMessageUtils";
 import { QUICK_CHIPS, resolveQuickChipAction } from "@/features/ai/utils/quickChips";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
@@ -66,10 +71,17 @@ export default function AIAssistantScreen() {
   const { t } = useTranslation();
   const { isGuest } = useAuthStore();
   const showToast = useToastStore((s) => s.showToast);
-  const { data: accounts } = useAccounts();
+  const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
   const { data: categories } = useCategories();
-  const { messages, setMessages, sendMessage, retryMessage, isLoadingHistory, clearChat } =
-    useChat();
+  const {
+    messages,
+    setMessages,
+    sendMessage,
+    retryMessage,
+    deleteMessage,
+    isLoadingHistory,
+    clearChat,
+  } = useChat();
   const confirmAiDraftMutation = useConfirmAiDraft();
   const cancelAiDraftMutation = useCancelAiDraft();
 
@@ -95,6 +107,9 @@ export default function AIAssistantScreen() {
   const [transcriptVisible, setTranscriptVisible] = useState(false);
   const [receiptLogId, setReceiptLogId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState<DraftMessage | null>(null);
+  const [actionSheetMessage, setActionSheetMessage] = useState<
+    UserTextMessage | AIMessage | null
+  >(null);
 
   const [inputText, setInputText] = useState("");
   const listRef = useRef<FlatList<Message>>(null);
@@ -108,6 +123,7 @@ export default function AIAssistantScreen() {
     [accounts]
   );
   const defaultAccount = activeAccounts[0] ?? null;
+  const hasNoAccounts = !isGuest && !isLoadingAccounts && activeAccounts.length === 0;
 
   const isMicBusy = recorderProcessing || uploadAudio.isPending;
   const isCameraBusy = uploadReceipt.isPending;
@@ -253,6 +269,42 @@ export default function AIAssistantScreen() {
       { text: t("common.delete"), style: "destructive", onPress: () => void clearChat() },
     ]);
   }, [clearChat, t]);
+
+  const handleMessageLongPress = useCallback((message: UserTextMessage | AIMessage) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setActionSheetMessage(message);
+  }, []);
+
+  const handleCopyMessage = useCallback(() => {
+    const message = actionSheetMessage;
+    setActionSheetMessage(null);
+    if (!message) return;
+    const text = message.type === "user" ? message.content : (message.content ?? "");
+    void Clipboard.setStringAsync(text);
+    showToast(t("ai.messageActions.copiedToast"), "success");
+  }, [actionSheetMessage, showToast, t]);
+
+  const handleDeleteMessage = useCallback(() => {
+    const message = actionSheetMessage;
+    setActionSheetMessage(null);
+    if (!message) return;
+    Alert.alert(
+      t("ai.messageActions.deleteConfirmTitle"),
+      t("ai.messageActions.deleteConfirmMessage"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.delete"),
+          style: "destructive",
+          onPress: () => {
+            void deleteMessage(message).catch(() =>
+              showToast(t("ai.messageActions.deleteFailedToast"), "error")
+            );
+          },
+        },
+      ]
+    );
+  }, [actionSheetMessage, deleteMessage, showToast, t]);
 
   const uploadVoiceFlow = useCallback(
     async (audioUri: string, accountId: string) => {
@@ -451,9 +503,16 @@ export default function AIAssistantScreen() {
 
   const renderMessage = useCallback(
     ({ item }: { item: Message }) => {
-      if (item.type === "user") return <UserBubble message={item} />;
+      if (item.type === "user")
+        return <UserBubble message={item} onLongPress={handleMessageLongPress} />;
       if (item.type === "ai")
-        return <AIBubble message={item as AIMessage} onRetry={handleRetryAiMessage} />;
+        return (
+          <AIBubble
+            message={item as AIMessage}
+            onRetry={handleRetryAiMessage}
+            onLongPress={handleMessageLongPress}
+          />
+        );
       if (item.type === "draft")
         return (
           <DraftTransactionCard
@@ -465,7 +524,14 @@ export default function AIAssistantScreen() {
         );
       return <ChatBubble message={item as ChatMessage} onRetry={handleRetry} />;
     },
-    [handleDraftCancel, handleDraftEdit, handleDraftSave, handleRetry, handleRetryAiMessage]
+    [
+      handleDraftCancel,
+      handleDraftEdit,
+      handleDraftSave,
+      handleMessageLongPress,
+      handleRetry,
+      handleRetryAiMessage,
+    ]
   );
 
   const isSendMode = inputText.length > 0;
@@ -489,9 +555,17 @@ export default function AIAssistantScreen() {
         }
       />
 
-      {/* Guest gate */}
+      {/* Guest gate takes priority; then the no-account gate for signed-in users */}
       {isGuest ? (
         <GuestGate subtitle={t("ai.guestSubtitle")} />
+      ) : hasNoAccounts ? (
+        <Gate
+          icon={<Wallet size={48} color={colors.accent.primary} strokeWidth={1.5} />}
+          title={t("ai.accountGate.title")}
+          subtitle={t("ai.accountGate.subtitle")}
+          ctaLabel={t("ai.accountGate.cta")}
+          onCtaPress={() => router.push("/(app)/accounts")}
+        />
       ) : (
       <>
       <KeyboardAvoidingView style={styles.keyboardAvoider} behavior="padding">
@@ -654,6 +728,13 @@ export default function AIAssistantScreen() {
         isSaving={confirmAiDraftMutation.isPending}
         onSave={handleEditingDraftSave}
         onDismiss={() => setEditingDraft(null)}
+      />
+
+      <MessageActionSheet
+        isVisible={actionSheetMessage !== null}
+        onCopy={handleCopyMessage}
+        onDelete={handleDeleteMessage}
+        onDismiss={() => setActionSheetMessage(null)}
       />
       </>
       )}

@@ -8,8 +8,8 @@ import {
   rejectAIMessage,
   resolveAIMessage,
 } from "@/features/finance/utils/chatMessageUtils";
-import type { AIMessage, Message } from "@/features/finance/utils/chatMessageUtils";
-import { getChatSessionMessages, postChatMessage } from "@/features/ai/api/chat";
+import type { AIMessage, Message, UserTextMessage } from "@/features/finance/utils/chatMessageUtils";
+import { deleteChatMessage, getChatSessionMessages, postChatMessage } from "@/features/ai/api/chat";
 import { useAuthStore } from "@/stores/auth";
 
 const CHAT_SESSION_KEY = "chat_session_id";
@@ -47,6 +47,7 @@ export function useChat() {
                     type: "user" as const,
                     content: m.content,
                     createdAt: new Date(m.created_at),
+                    remoteId: m.id,
                   }
                 : {
                     id: m.id,
@@ -55,6 +56,7 @@ export function useChat() {
                     isTyping: false,
                     skipTypewriter: true,
                     createdAt: new Date(m.created_at),
+                    remoteId: m.id,
                   }
             ),
           ...createDraftMessages(draft_transactions),
@@ -71,15 +73,22 @@ export function useChat() {
   }, [isGuest]);
 
   const dispatch = useCallback(
-    async (text: string, aiMsg: AIMessage) => {
+    async (text: string, userMsgId: string, aiMsg: AIMessage) => {
       try {
-        const { reply, session_id, draft_transactions } = await postChatMessage(text, sessionId);
+        const { reply, session_id, draft_transactions, user_message_id, assistant_message_id } =
+          await postChatMessage(text, sessionId);
         setSessionId(session_id);
         await AsyncStorage.setItem(CHAT_SESSION_KEY, session_id);
+        const tagUserMsg = (m: Message) =>
+          m.id === userMsgId ? { ...(m as UserTextMessage), remoteId: user_message_id } : m;
         setMessages((prev) => [
           ...(reply
-            ? prev.map((m) => (m.id === aiMsg.id ? resolveAIMessage(m as AIMessage, reply) : m))
-            : prev.filter((m) => m.id !== aiMsg.id)),
+            ? prev.map((m) =>
+                m.id === aiMsg.id
+                  ? resolveAIMessage(m as AIMessage, reply, assistant_message_id)
+                  : tagUserMsg(m)
+              )
+            : prev.filter((m) => m.id !== aiMsg.id).map(tagUserMsg)),
           ...createDraftMessages(draft_transactions ?? []),
         ]);
       } catch {
@@ -100,7 +109,7 @@ export function useChat() {
       const userMsg = createUserTextMessage(text);
       const aiMsg = createAITypingMessage(text);
       setMessages((prev) => [...prev, userMsg, aiMsg]);
-      await dispatch(text, aiMsg);
+      await dispatch(text, userMsg.id, aiMsg);
     },
     [dispatch]
   );
@@ -108,12 +117,24 @@ export function useChat() {
   const retryMessage = useCallback(
     async (failedMsg: AIMessage) => {
       if (!failedMsg.originalText) return;
+      const idx = messages.findIndex((m) => m.id === failedMsg.id);
+      const precedingMsg = idx > 0 ? messages[idx - 1] : undefined;
+      const userMsgId =
+        precedingMsg && precedingMsg.type === "user" ? precedingMsg.id : failedMsg.id;
       const aiMsg = createAITypingMessage(failedMsg.originalText);
       setMessages((prev) => prev.map((m) => (m.id === failedMsg.id ? aiMsg : m)));
-      await dispatch(failedMsg.originalText, aiMsg);
+      await dispatch(failedMsg.originalText, userMsgId, aiMsg);
     },
-    [dispatch]
+    [dispatch, messages]
   );
+
+  const deleteMessage = useCallback(async (message: Message) => {
+    const remoteId = "remoteId" in message ? message.remoteId : undefined;
+    if (remoteId && sessionId) {
+      await deleteChatMessage(sessionId, remoteId);
+    }
+    setMessages((prev) => prev.filter((m) => m.id !== message.id));
+  }, [sessionId]);
 
   const clearChat = useCallback(async () => {
     setMessages([]);
@@ -121,5 +142,13 @@ export function useChat() {
     await AsyncStorage.removeItem(CHAT_SESSION_KEY);
   }, []);
 
-  return { messages, setMessages, sendMessage, retryMessage, isLoadingHistory, clearChat };
+  return {
+    messages,
+    setMessages,
+    sendMessage,
+    retryMessage,
+    deleteMessage,
+    isLoadingHistory,
+    clearChat,
+  };
 }

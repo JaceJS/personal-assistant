@@ -1,15 +1,27 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, radius, spacing, textStyles } from "@/theme";
 import type { UserTextMessage } from "@/features/finance/utils/chatMessageUtils";
 
-export function UserBubble({ message }: { message: UserTextMessage }) {
+export function UserBubble({
+  message,
+  onLongPress,
+}: {
+  message: UserTextMessage;
+  onLongPress?: (message: UserTextMessage) => void;
+}) {
   return (
-    <View style={styles.wrap}>
-      <View style={styles.bubble}>
-        <Text style={styles.text}>{message.content}</Text>
+    <Pressable
+      testID="user-bubble"
+      onLongPress={onLongPress ? () => onLongPress(message) : undefined}
+      delayLongPress={350}
+    >
+      <View style={styles.wrap}>
+        <View style={styles.bubble}>
+          <Text style={styles.text}>{message.content}</Text>
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

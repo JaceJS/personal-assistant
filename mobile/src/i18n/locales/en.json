@@ -381,6 +381,19 @@
       "alertMessage": "The entire chat history will be removed from this device."
     },
     "guestSubtitle": "Sign in to use the AI Assistant and see your financial data.",
+    "accountGate": {
+      "title": "No account yet",
+      "subtitle": "Create an account first so the AI Assistant can log your transactions.",
+      "cta": "Create Account"
+    },
+    "messageActions": {
+      "copy": "Copy",
+      "delete": "Delete",
+      "copiedToast": "Message copied.",
+      "deleteConfirmTitle": "Delete this message?",
+      "deleteConfirmMessage": "This message will be permanently deleted.",
+      "deleteFailedToast": "Couldn't delete the message. Please try again."
+    },
     "emptyTitle": "How can I help?",
     "emptySubtitle": "Type a message, record your voice, or snap a receipt photo.",
     "inputPlaceholder": "Type a message...",

@@ -99,6 +99,25 @@ async def get_session_messages(
     return messages, drafts
 
 
+async def delete_chat_message(
+    user_id: uuid.UUID,
+    session_id: uuid.UUID,
+    message_id: uuid.UUID,
+    db: AsyncSession,
+) -> None:
+    chat_session = await db.get(ChatSession, session_id)
+    if chat_session is None:
+        raise NotFoundError("Session not found")
+    if chat_session.user_id != user_id:
+        raise ForbiddenError("Access denied")
+
+    message = await repo.get_message(db, message_id)
+    if message is None or message.session_id != session_id:
+        raise NotFoundError("Message not found")
+
+    await repo.delete_message(db, message)
+
+
 async def get_daily_insight(
     user_id: uuid.UUID,
     session: AsyncSession,

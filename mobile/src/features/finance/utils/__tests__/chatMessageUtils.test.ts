@@ -334,6 +334,18 @@ describe('resolveAIMessage', () => {
     const resolved = resolveAIMessage(rejected, 'reply');
     expect(resolved.failed).toBe(false);
   });
+
+  it('attaches the server-issued message id when provided, so the message can be deleted later', () => {
+    const typing = createAITypingMessage('halo');
+    const resolved = resolveAIMessage(typing, 'Hello there', 'server-msg-id-1');
+    expect(resolved.remoteId).toBe('server-msg-id-1');
+  });
+
+  it('leaves remoteId undefined when not provided', () => {
+    const typing = createAITypingMessage('halo');
+    const resolved = resolveAIMessage(typing, 'Hello there');
+    expect(resolved.remoteId).toBeUndefined();
+  });
 });
 
 describe('rejectAIMessage', () => {

@@ -72,13 +72,23 @@ def _tool_call(name: str, arguments: dict | None = None) -> dict:
     return {"id": f"call_{uuid.uuid4().hex[:8]}", "name": name, "arguments": arguments or {}}
 
 
+def _added_message(*_args: object, **_kwargs: object) -> MagicMock:
+    """Stand-in for repo.add_message: each call returns a distinct persisted
+    row with a real UUID id, since the router now echoes these ids back in
+    ChatReply (needed so the mobile client can delete a message it just sent,
+    not only ones reloaded from history)."""
+    msg = MagicMock()
+    msg.id = uuid.uuid4()
+    return msg
+
+
 def _mock_repo() -> MagicMock:
     repo = MagicMock()
     chat_session = MagicMock()
     chat_session.id = _SESSION_ID
     repo.get_or_create_session = AsyncMock(return_value=chat_session)
     repo.get_recent_messages = AsyncMock(return_value=[])
-    repo.add_message = AsyncMock()
+    repo.add_message = AsyncMock(side_effect=_added_message)
     return repo
 
 
@@ -542,3 +552,25 @@ async def test_chat_system_prompt_falls_back_to_system_categories() -> None:
 
     system_prompt = llm.chat_with_tools.call_args_list[0].args[0]
     assert "Makan & Jajan" in system_prompt
+
+
+@pytest.mark.asyncio
+async def test_chat_reply_echoes_persisted_message_ids() -> None:
+    """The mobile client needs the id of the just-persisted user/assistant
+    chat_messages rows to be able to delete either one later in the same
+    session, without waiting for a history reload to learn the real id."""
+    llm = MagicMock()
+    llm.chat_with_tools = AsyncMock(return_value=("Halo!", []))
+    repo_mock = _mock_repo()
+
+    with (
+        patch("app.domains.ai.router.OpenRouterLLM", return_value=llm),
+        patch("app.domains.ai.router.get_settings", return_value=MagicMock()),
+        patch("app.domains.ai.router.repo", repo_mock),
+    ):
+        response = await chat(ChatRequest(message="halo"), _USER_ID, AsyncMock())
+
+    assert repo_mock.add_message.await_count == 2
+    assert response.data.user_message_id is not None
+    assert response.data.assistant_message_id is not None
+    assert response.data.user_message_id != response.data.assistant_message_id

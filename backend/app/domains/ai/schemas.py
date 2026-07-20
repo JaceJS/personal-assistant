@@ -26,6 +26,8 @@ class DraftTransaction(BaseModel):
 class ChatReply(BaseModel):
     reply: str
     session_id: uuid.UUID
+    user_message_id: uuid.UUID
+    assistant_message_id: uuid.UUID
     draft_transactions: list[DraftTransaction] = Field(default_factory=list)
 
 

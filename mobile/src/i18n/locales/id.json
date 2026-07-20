@@ -377,6 +377,19 @@
       "alertMessage": "Seluruh riwayat chat akan dihapus dari perangkat ini."
     },
     "guestSubtitle": "Masuk untuk menggunakan AI Assistant dan melihat data keuanganmu.",
+    "accountGate": {
+      "title": "Belum ada akun",
+      "subtitle": "Buat akun dulu supaya AI Assistant bisa mencatat transaksimu.",
+      "cta": "Buat Akun"
+    },
+    "messageActions": {
+      "copy": "Salin",
+      "delete": "Hapus",
+      "copiedToast": "Pesan disalin.",
+      "deleteConfirmTitle": "Hapus pesan ini?",
+      "deleteConfirmMessage": "Pesan ini akan dihapus secara permanen.",
+      "deleteFailedToast": "Gagal menghapus pesan. Coba lagi ya."
+    },
     "emptyTitle": "Ada yang bisa aku bantu?",
     "emptySubtitle": "Ketik pesan, rekam suara, atau foto struk belanjamu.",
     "inputPlaceholder": "Ketik pesan...",

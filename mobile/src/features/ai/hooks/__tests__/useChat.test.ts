@@ -7,6 +7,7 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 jest.mock('@/features/ai/api/chat', () => ({
   postChatMessage: jest.fn(),
   getChatSessionMessages: jest.fn(),
+  deleteChatMessage: jest.fn(),
 }));
 
 let mockIsGuest = false;
@@ -17,14 +18,19 @@ jest.mock('@/stores/auth', () => ({
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { getChatSessionMessages, postChatMessage } from '@/features/ai/api/chat';
+import { deleteChatMessage, getChatSessionMessages, postChatMessage } from '@/features/ai/api/chat';
 import { useChat } from '@/features/ai/hooks/useChat';
-import type { AIMessage, DraftMessage } from '@/features/finance/utils/chatMessageUtils';
+import type {
+  AIMessage,
+  DraftMessage,
+  UserTextMessage,
+} from '@/features/finance/utils/chatMessageUtils';
 
 const mockPostChatMessage = postChatMessage as jest.MockedFunction<typeof postChatMessage>;
 const mockGetChatSessionMessages = getChatSessionMessages as jest.MockedFunction<
   typeof getChatSessionMessages
 >;
+const mockDeleteChatMessage = deleteChatMessage as jest.MockedFunction<typeof deleteChatMessage>;
 const CHAT_SESSION_KEY = 'chat_session_id';
 
 describe('useChat', () => {
@@ -38,6 +44,8 @@ describe('useChat', () => {
     mockPostChatMessage.mockResolvedValueOnce({
       reply: 'Hello!',
       session_id: 'session-abc',
+      user_message_id: 'msg-user-1',
+      assistant_message_id: 'msg-ai-1',
       draft_transactions: [],
     });
 
@@ -59,11 +67,15 @@ describe('useChat', () => {
       .mockResolvedValueOnce({
         reply: 'First reply',
         session_id: 'session-abc',
+        user_message_id: 'msg-user-1',
+        assistant_message_id: 'msg-ai-1',
         draft_transactions: [],
       })
       .mockResolvedValueOnce({
         reply: 'Second reply',
         session_id: 'session-abc',
+        user_message_id: 'msg-user-2',
+        assistant_message_id: 'msg-ai-2',
         draft_transactions: [],
       });
 
@@ -103,6 +115,8 @@ describe('useChat', () => {
       .mockResolvedValueOnce({
         reply: 'Hello (retried)!',
         session_id: 'session-abc',
+        user_message_id: 'msg-user-retry',
+        assistant_message_id: 'msg-ai-retry',
         draft_transactions: [],
       });
 
@@ -153,6 +167,8 @@ describe('useChat', () => {
     mockPostChatMessage.mockResolvedValueOnce({
       reply: 'Draft dibuat, cek card di bawah.',
       session_id: 'session-abc',
+      user_message_id: 'msg-user-drafts',
+      assistant_message_id: 'msg-ai-drafts',
       draft_transactions: [
         {
           transaction_id: 'tx-123',
@@ -196,6 +212,8 @@ describe('useChat', () => {
     mockPostChatMessage.mockResolvedValueOnce({
       reply: '',
       session_id: 'session-abc',
+      user_message_id: 'msg-user-empty-reply',
+      assistant_message_id: 'msg-ai-empty-reply',
       draft_transactions: [
         {
           transaction_id: 'tx-123',
@@ -223,6 +241,8 @@ describe('useChat', () => {
     mockPostChatMessage.mockResolvedValueOnce({
       reply: 'Halo!',
       session_id: 'session-abc',
+      user_message_id: 'msg-user-halo',
+      assistant_message_id: 'msg-ai-halo',
       draft_transactions: [],
     });
 
@@ -239,6 +259,8 @@ describe('useChat', () => {
     mockPostChatMessage.mockResolvedValueOnce({
       reply: 'Saldo kamu Rp 500.000',
       session_id: 'session-abc',
+      user_message_id: 'msg-user-saldo',
+      assistant_message_id: 'msg-ai-saldo',
       draft_transactions: [],
     });
 
@@ -359,5 +381,178 @@ describe('useChat', () => {
     await act(async () => {});
 
     expect(result.current.messages.some((m) => m.type === 'draft')).toBe(false);
+  });
+
+  it('tags the user and AI bubbles with the server-issued message ids once the send resolves', async () => {
+    mockPostChatMessage.mockResolvedValueOnce({
+      reply: 'Hello!',
+      session_id: 'session-abc',
+      user_message_id: 'msg-user-1',
+      assistant_message_id: 'msg-ai-1',
+      draft_transactions: [],
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('Hi');
+    });
+
+    const userMsg = result.current.messages.find(
+      (m): m is UserTextMessage => m.type === 'user',
+    )!;
+    const aiMsg = result.current.messages.find((m): m is AIMessage => m.type === 'ai')!;
+    expect(userMsg.remoteId).toBe('msg-user-1');
+    expect(aiMsg.remoteId).toBe('msg-ai-1');
+  });
+
+  it('tags the user bubble with its remoteId even when the reply is empty (draft-only turn)', async () => {
+    mockPostChatMessage.mockResolvedValueOnce({
+      reply: '',
+      session_id: 'session-abc',
+      user_message_id: 'msg-user-empty',
+      assistant_message_id: 'msg-ai-empty',
+      draft_transactions: [
+        {
+          transaction_id: 'tx-123',
+          amount: -20000,
+          currency: 'IDR',
+          merchant: 'Sate',
+          category_name: 'Makan',
+          note: null,
+          account_id: 'acct-456',
+        },
+      ],
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('sate 20.000');
+    });
+
+    const userMsg = result.current.messages.find(
+      (m): m is UserTextMessage => m.type === 'user',
+    )!;
+    expect(userMsg.remoteId).toBe('msg-user-empty');
+  });
+
+  it('leaves remoteId unset on both bubbles when the send fails', async () => {
+    mockPostChatMessage.mockRejectedValueOnce(new Error('Network error'));
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('Hi');
+    });
+
+    const userMsg = result.current.messages.find(
+      (m): m is UserTextMessage => m.type === 'user',
+    )!;
+    expect(userMsg.remoteId).toBeUndefined();
+  });
+
+  it('carries the real backend id as remoteId for messages rehydrated from history', async () => {
+    await AsyncStorage.setItem(CHAT_SESSION_KEY, 'session-abc');
+    mockGetChatSessionMessages.mockResolvedValueOnce({
+      session_id: 'session-abc',
+      messages: [
+        { id: 'msg-1', role: 'user', content: 'sate 20.000', created_at: '2026-07-08T10:00:00Z' },
+        {
+          id: 'msg-2',
+          role: 'assistant',
+          content: 'Draft dibuat, cek card di bawah.',
+          created_at: '2026-07-08T10:00:01Z',
+        },
+      ],
+      draft_transactions: [],
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {});
+
+    const userMsg = result.current.messages.find(
+      (m): m is UserTextMessage => m.type === 'user',
+    )!;
+    const aiMsg = result.current.messages.find((m): m is AIMessage => m.type === 'ai')!;
+    expect(userMsg.remoteId).toBe('msg-1');
+    expect(aiMsg.remoteId).toBe('msg-2');
+  });
+
+  describe('deleteMessage', () => {
+    it('calls the delete API and removes the message on success when it has a remoteId', async () => {
+      mockPostChatMessage.mockResolvedValueOnce({
+        reply: 'Hello!',
+        session_id: 'session-abc',
+        user_message_id: 'msg-user-1',
+        assistant_message_id: 'msg-ai-1',
+        draft_transactions: [],
+      });
+      mockDeleteChatMessage.mockResolvedValueOnce(undefined);
+
+      const { result } = await renderHook(() => useChat());
+      await act(async () => {
+        await result.current.sendMessage('Hi');
+      });
+      const aiMsg = result.current.messages.find((m): m is AIMessage => m.type === 'ai')!;
+
+      await act(async () => {
+        await result.current.deleteMessage(aiMsg);
+      });
+
+      expect(mockDeleteChatMessage).toHaveBeenCalledWith('session-abc', 'msg-ai-1');
+      expect(result.current.messages.some((m) => m.id === aiMsg.id)).toBe(false);
+    });
+
+    it('removes a message with no remoteId purely from local state, without calling the API', async () => {
+      const { result } = await renderHook(() => useChat());
+      // A voice/receipt upload card is never persisted to chat_messages, so it
+      // never carries a remoteId — only its local id.
+      await act(async () => {
+        result.current.setMessages((prev) => [
+          ...prev,
+          {
+            id: 'voice-log-1',
+            type: 'voice',
+            status: 'pending',
+            createdAt: new Date(),
+          },
+        ]);
+      });
+      const localMsg = result.current.messages[0];
+
+      await act(async () => {
+        await result.current.deleteMessage(localMsg);
+      });
+
+      expect(mockDeleteChatMessage).not.toHaveBeenCalled();
+      expect(result.current.messages).toHaveLength(0);
+    });
+
+    it('keeps the message in place and rethrows when the delete API call fails', async () => {
+      mockPostChatMessage.mockResolvedValueOnce({
+        reply: 'Hello!',
+        session_id: 'session-abc',
+        user_message_id: 'msg-user-1',
+        assistant_message_id: 'msg-ai-1',
+        draft_transactions: [],
+      });
+      mockDeleteChatMessage.mockRejectedValueOnce(new Error('Network error'));
+
+      const { result } = await renderHook(() => useChat());
+      await act(async () => {
+        await result.current.sendMessage('Hi');
+      });
+      const aiMsg = result.current.messages.find((m): m is AIMessage => m.type === 'ai')!;
+
+      await expect(
+        act(async () => {
+          await result.current.deleteMessage(aiMsg);
+        }),
+      ).rejects.toThrow('Network error');
+
+      expect(result.current.messages.some((m) => m.id === aiMsg.id)).toBe(true);
+    });
   });
 });
