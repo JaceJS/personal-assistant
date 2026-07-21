@@ -13,6 +13,7 @@
     },
     "staging": {
       "distribution": "internal",
+      "environment": "preview",
       "android": {
         "buildType": "apk"
       },
@@ -21,11 +22,14 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://vesfuuvtsvtkqbytbgtx.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlc2Z1dXZ0c3Z0a3FieXRiZ3R4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNzgzNTgsImV4cCI6MjA5OTk1NDM1OH0.uZLct_hx3s9q_QtMIjmYw0Hj2lHAXYgQD2QFJKKUETM",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "566473915571-majtc5v63rmcms9m67pblb7ula1v5vbt.apps.googleusercontent.com",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "EXPO_PUBLIC_SENTRY_DSN": "https://a30e876d12b57d3c76b45ab367f2c9ff@o4511716374413312.ingest.us.sentry.io/4511773909319680",
+        "SENTRY_ORG": "salendah-labs",
+        "SENTRY_PROJECT": "savyn-mobile"
       }
     },
     "production": {
       "autoIncrement": true,
+      "environment": "production",
       "android": {
         "buildType": "app-bundle"
       },
@@ -34,7 +38,9 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://veiatjmazmgfzdmvcmor.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlaWF0am1hem1nZnpkbXZjbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDQwODgsImV4cCI6MjA5NTAyMDA4OH0.oPcTwXxErkZKBRqfxxYXgmzLUCaW4KMmM0UGWpNE5l0",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "566473915571-majtc5v63rmcms9m67pblb7ula1v5vbt.apps.googleusercontent.com",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "EXPO_PUBLIC_SENTRY_DSN": "https://a30e876d12b57d3c76b45ab367f2c9ff@o4511716374413312.ingest.us.sentry.io/4511773909319680",
+        "SENTRY_ORG": "salendah-labs",
+        "SENTRY_PROJECT": "savyn-mobile"
       }
     }
   },
