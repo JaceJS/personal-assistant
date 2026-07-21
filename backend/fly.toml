@@ -12,6 +12,7 @@ LOG_LEVEL = "INFO"
 STT_MODEL = "openai/whisper-1"
 LLM_MODEL = "google/gemini-2.5-flash-lite"
 RECEIPT_MODEL = "google/gemini-2.5-flash-lite"
+SENTRY_DSN = "https://56c6e895858774fab09880592b474df9@o4511716374413312.ingest.us.sentry.io/4511773920591872"
 
 [processes]
 app = "uvicorn app.main:app --host 0.0.0.0 --port 8000"

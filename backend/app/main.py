@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +25,15 @@ from app.domains.users.router import router as users_router
 from app.shared import model_registry  # noqa: F401
 
 _settings = get_settings()
+
+if _settings.sentry_dsn:
+    sentry_sdk.init(
+        dsn=_settings.sentry_dsn,
+        environment=_settings.app_env,
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+        include_local_variables=False,  # local vars can hold money/user data or JWTs
+    )
 
 # Largest per-field upload is voice audio (25MB); allow headroom for
 # multipart boundary/field overhead on top of that.

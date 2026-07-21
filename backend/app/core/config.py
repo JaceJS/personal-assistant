@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = "INFO"
 
+    # Sentry (error tracking). Empty string disables the SDK (it no-ops without a DSN).
+    sentry_dsn: str = ""
+
     @property
     def is_production(self) -> bool:
         """Whether the app is running in the production environment."""
