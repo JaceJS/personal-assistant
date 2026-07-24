@@ -23,20 +23,25 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
   const { t } = useTranslation();
   if (!budget) {
     return (
-      <View style={styles.card}>
-        <View style={styles.noBudgetRow}>
-          <View style={styles.noBudgetText}>
-            <Text style={styles.label}>{t('home.monthlyBudget.totalLabel')}</Text>
-            <Text style={styles.noBudgetHint}>{t('budget.noBudgetHint')}</Text>
+      <Pressable
+        onPress={onEdit}
+        accessibilityRole="button"
+        accessibilityLabel={t('budget.setMonthlyTitle')}
+      >
+        {({ pressed }) => (
+          <View style={[styles.card, pressed && styles.cardPressed]}>
+            <View style={styles.noBudgetRow}>
+              <View style={styles.noBudgetText}>
+                <Text style={styles.label}>{t('home.monthlyBudget.totalLabel')}</Text>
+                <Text style={styles.noBudgetHint}>{t('budget.noBudgetHint')}</Text>
+              </View>
+              <View style={styles.editBtn}>
+                <Pencil size={16} color={colors.accent.primary} strokeWidth={1.5} />
+              </View>
+            </View>
           </View>
-          <Pressable
-            style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
-            onPress={onEdit}
-          >
-            <Pencil size={16} color={colors.accent.primary} strokeWidth={1.5} />
-          </Pressable>
-        </View>
-      </View>
+        )}
+      </Pressable>
     );
   }
 
@@ -45,36 +50,41 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
   const barColor = getBudgetBarColor(barPct);
 
   return (
-    <View style={styles.card}>
-      <View style={styles.topRow}>
-        <View style={styles.topLeft}>
-          <Text style={styles.label}>{t('home.monthlyBudget.totalLabel')}</Text>
-          <Text style={styles.amount}>{formatMoney(budget.monthly_limit)}</Text>
+    <Pressable
+      onPress={onEdit}
+      accessibilityRole="button"
+      accessibilityLabel={t('budget.editTitle')}
+    >
+      {({ pressed }) => (
+        <View style={[styles.card, pressed && styles.cardPressed]}>
+          <View style={styles.topRow}>
+            <View style={styles.topLeft}>
+              <Text style={styles.label}>{t('home.monthlyBudget.totalLabel')}</Text>
+              <Text style={styles.amount}>{formatMoney(budget.monthly_limit)}</Text>
+            </View>
+            <View style={styles.editBtn}>
+              <Pencil size={16} color={colors.text.secondary} strokeWidth={1.5} />
+            </View>
+          </View>
+
+          <View style={styles.barTrack}>
+            <View
+              style={[
+                styles.barFill,
+                {
+                  width: `${Math.round(barPct * 100)}%` as `${number}%`,
+                  backgroundColor: barColor,
+                },
+              ]}
+            />
+          </View>
+
+          <Text style={[styles.pctText, { color: barColor }]}>
+            {t('budget.usedPctLabel', { pct: Math.round(displayPct * 100) })}
+          </Text>
         </View>
-        <Pressable
-          style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
-          onPress={onEdit}
-        >
-          <Pencil size={16} color={colors.text.secondary} strokeWidth={1.5} />
-        </Pressable>
-      </View>
-
-      <View style={styles.barTrack}>
-        <View
-          style={[
-            styles.barFill,
-            {
-              width: `${Math.round(barPct * 100)}%` as `${number}%`,
-              backgroundColor: barColor,
-            },
-          ]}
-        />
-      </View>
-
-      <Text style={[styles.pctText, { color: barColor }]}>
-        {t('budget.usedPctLabel', { pct: Math.round(displayPct * 100) })}
-      </Text>
-    </View>
+      )}
+    </Pressable>
   );
 }
 
@@ -87,6 +97,7 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 14,
   },
+  cardPressed: { opacity: 0.75 },
   topRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',

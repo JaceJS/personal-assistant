@@ -21,7 +21,7 @@ function IconButton({ icon: Icon, onPress, size = 32, accessibilityLabel, hitSlo
       hitSlop={hitSlop}
     >
       <View style={[styles.circle, { width: size, height: size }]}>
-        <Icon size={size * 0.55} color={colors.text.primary} strokeWidth={2.5} />
+        <Icon size={size * 0.55} color="#FFFFFF" strokeWidth={2.5} />
       </View>
     </Pressable>
   );

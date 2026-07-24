@@ -46,7 +46,11 @@ function UnallocatedChip({ unallocated }: { unallocated: number }) {
   const isOver = unallocated < 0;
   return (
     <View style={[styles.chip, isOver ? styles.chipOver : styles.chipOk]}>
-      <Text style={[styles.chipText, { color: isOver ? colors.danger.text : colors.success.text }]}>
+      <Text
+        style={[styles.chipText, { color: isOver ? colors.danger.text : colors.success.text }]}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
         {isOver
           ? t('budget.unallocatedOver', { amount: formatMoney(Math.abs(unallocated)) })
           : t('budget.unallocatedRemaining', { amount: formatMoney(unallocated) })}
@@ -210,18 +214,20 @@ export default function BudgetScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('budget.spendingLimitsTitle')}</Text>
+            <Text style={styles.sectionTitle} numberOfLines={1}>{t('budget.spendingLimitsTitle')}</Text>
             <View style={styles.sectionHeaderRight}>
               {budget && (bills.length > 0 || spending.length > 0) && (
                 <UnallocatedChip
                   unallocated={computeUnallocated(budget.monthly_limit, [...bills, ...spending])}
                 />
               )}
-              <IconButton
-                icon={Plus}
-                onPress={() => setAddSheetVisible(true)}
-                accessibilityLabel={t('budget.addLimitA11y')}
-              />
+              <View style={styles.addLimitBtn}>
+                <IconButton
+                  icon={Plus}
+                  onPress={() => setAddSheetVisible(true)}
+                  accessibilityLabel={t('budget.addLimitA11y')}
+                />
+              </View>
             </View>
           </View>
           {spending.length === 0 ? (
@@ -285,7 +291,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  sectionTitle: { ...StyleSheet.flatten(textStyles.h2), color: colors.text.primary },
+  sectionTitle: { ...StyleSheet.flatten(textStyles.h2), color: colors.text.primary, flexShrink: 1 },
   divider: {
     height: 1,
     backgroundColor: colors.border.subtle,
@@ -296,10 +302,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  addLimitBtn: { flexShrink: 0 },
   chip: {
     borderRadius: radius.full,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    flexShrink: 1,
+    maxWidth: 160,
   },
   chipOk: { backgroundColor: colors.success.bg },
   chipOver: { backgroundColor: colors.danger.bg },
