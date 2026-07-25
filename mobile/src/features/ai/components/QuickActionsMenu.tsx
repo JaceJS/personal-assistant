@@ -1,5 +1,19 @@
+import { useEffect } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { ChartBar, Plus, Receipt, TrendingDown, TrendingUp } from "lucide-react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import {
+  ChartBar,
+  ChevronDown,
+  ChevronUp,
+  Receipt,
+  TrendingDown,
+  TrendingUp,
+  Zap,
+} from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -11,6 +25,10 @@ const CHIP_ICONS: Record<string, React.ComponentType<{ size: number; color: stri
   logIncome: TrendingUp,
   analyze: ChartBar,
 };
+
+const CONTAINER_WIDTH = 240;
+const ROW_HEIGHT = 38;
+const HEADER_HEIGHT = 36;
 
 interface QuickActionsMenuProps {
   chips: QuickChip[];
@@ -28,13 +46,44 @@ export function QuickActionsMenu({
   busyChipId,
 }: QuickActionsMenuProps) {
   const { t } = useTranslation();
+  const openProgress = useSharedValue(0);
+
+  useEffect(() => {
+    openProgress.value = withTiming(visible ? 1 : 0, { duration: 200 });
+  }, [visible, openProgress]);
+
+  // Rows are only mounted while open, so the animated height just grows
+  // into their already-laid-out content (no manual measuring needed).
+  const rowsHeight = chips.length * ROW_HEIGHT + (chips.length - 1);
+  const rowsAnimatedStyle = useAnimatedStyle(() => ({
+    height: rowsHeight * openProgress.value,
+  }));
 
   return (
     <View style={styles.wrapper}>
       {visible && (
-        <>
-          <Pressable testID="quick-actions-backdrop" style={styles.backdrop} onPress={onToggle} />
-          <View style={styles.card}>
+        <Pressable testID="quick-actions-backdrop" style={styles.backdrop} onPress={onToggle} />
+      )}
+
+      <View style={styles.container}>
+        <Pressable testID="quick-actions-trigger" onPress={onToggle}>
+          {({ pressed }) => (
+            <View
+              style={[styles.header, visible && styles.headerConnected, pressed && styles.pressed]}
+            >
+              <Zap size={17} color={colors.accent.primary} strokeWidth={1.8} />
+              <Text style={styles.headerLabel}>{t("ai.quickActionsMenu.label")}</Text>
+              {visible ? (
+                <ChevronUp size={17} color={colors.text.muted} strokeWidth={1.8} />
+              ) : (
+                <ChevronDown size={17} color={colors.text.muted} strokeWidth={1.8} />
+              )}
+            </View>
+          )}
+        </Pressable>
+
+        {visible && (
+          <Animated.View style={[styles.rowsClip, rowsAnimatedStyle]}>
             {chips.map((chip, index) => {
               const isBusy = chip.id === busyChipId;
               const Icon = CHIP_ICONS[chip.id] ?? ChartBar;
@@ -59,17 +108,9 @@ export function QuickActionsMenu({
                 </Pressable>
               );
             })}
-          </View>
-        </>
-      )}
-
-      <Pressable testID="quick-actions-trigger" onPress={onToggle} hitSlop={8}>
-        {({ pressed }) => (
-          <View style={[styles.trigger, pressed && styles.pressed]}>
-            <Plus size={22} color={colors.accent.primary} strokeWidth={1.8} />
-          </View>
+          </Animated.View>
         )}
-      </Pressable>
+      </View>
     </View>
   );
 }
@@ -77,14 +118,20 @@ export function QuickActionsMenu({
 const styles = StyleSheet.create({
   wrapper: {
     position: "relative",
+    alignItems: "flex-end",
   },
-  trigger: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    alignItems: "center",
-    justifyContent: "center",
+  container: {
+    width: CONTAINER_WIDTH,
+    zIndex: 20,
+  },
+  rowsClip: {
+    overflow: "hidden",
     backgroundColor: colors.bg.surface,
+    borderBottomLeftRadius: radius.lg,
+    borderBottomRightRadius: radius.sm,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: colors.border.default,
   },
   pressed: {
     opacity: 0.7,
@@ -94,32 +141,37 @@ const styles = StyleSheet.create({
     top: -1000,
     left: -500,
     right: -500,
-    bottom: 44,
+    bottom: -1000,
     zIndex: 10,
   },
-  card: {
-    position: "absolute",
-    bottom: 52,
-    left: 0,
-    minWidth: 220,
-    backgroundColor: colors.bg.elevated,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    height: HEADER_HEIGHT,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,
+    borderBottomRightRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border.default,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 20,
-    overflow: "hidden",
+  },
+  headerConnected: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderBottomWidth: 0,
+  },
+  headerLabel: {
+    ...StyleSheet.flatten(textStyles.body),
+    color: colors.text.primary,
+    flex: 1,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    height: ROW_HEIGHT,
+    paddingHorizontal: spacing.md,
   },
   rowBorder: {
     borderTopWidth: 1,

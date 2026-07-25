@@ -399,6 +399,9 @@
       "logIncome": { "label": "💰 Catat pemasukan" },
       "analyze": { "label": "💡 Analisa keuanganku" }
     },
+    "quickActionsMenu": {
+      "label": "Aksi cepat"
+    },
     "toast": {
       "createAccountForScan": "Buat akun dulu sebelum scan struk.",
       "voiceUploadFailed": "Gagal mengunggah rekaman suara. Coba lagi ya.",

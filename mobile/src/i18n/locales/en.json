@@ -403,6 +403,9 @@
       "logIncome": { "label": "💰 Log income" },
       "analyze": { "label": "💡 Analyze my finances" }
     },
+    "quickActionsMenu": {
+      "label": "Quick actions"
+    },
     "toast": {
       "createAccountForScan": "Create an account before scanning a receipt.",
       "voiceUploadFailed": "Couldn't upload the recording. Try again.",

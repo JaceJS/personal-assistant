@@ -2,7 +2,7 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { Mic, SendHorizontal, Square, Trash2, Wallet } from "lucide-react-native";
+import { Camera, Mic, SendHorizontal, Square, Trash2, Wallet } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -74,6 +74,7 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 // this backstop only covers polling itself silently dying, so it must stay above that.
 const STUCK_JOB_TIMEOUT_MS = 5 * 60_000 + 30_000;
 const SCROLL_DEBOUNCE_MS = 100;
+const QUICK_ACTIONS_ANIM_MS = 200; // matches QuickActionsMenu's own open/close animation
 
 export default function AIAssistantScreen() {
   const router = useRouter();
@@ -280,6 +281,15 @@ export default function AIAssistantScreen() {
       listRef.current?.scrollToEnd({ animated: true });
     }, SCROLL_DEBOUNCE_MS);
   }, []);
+
+  // Re-pin to bottom after the accordion's own 200ms open/close animation settles.
+  useEffect(() => {
+    if (messages.length === 0) return;
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      listRef.current?.scrollToEnd({ animated: true });
+    }, QUICK_ACTIONS_ANIM_MS + SCROLL_DEBOUNCE_MS);
+  }, [quickActionsVisible, messages.length]);
 
   const handleSendText = useCallback(() => {
     const text = inputText.trim();
@@ -605,45 +615,74 @@ export default function AIAssistantScreen() {
       <>
       <KeyboardAvoidingView style={styles.keyboardAvoider} behavior="padding">
       {/* Chat area */}
-      {isLoadingHistory ? (
-        <View style={styles.historyLoader}>
-          <ActivityIndicator color={colors.accent.primary} />
-        </View>
-      ) : messages.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyGreeting}>
-            <Text style={styles.emptyTitle}>{t("ai.emptyTitle")}</Text>
-            <Text style={styles.emptySubtitle}>{t("ai.emptySubtitle")}</Text>
+      <View style={styles.chatArea}>
+        {isLoadingHistory ? (
+          <View style={styles.historyLoader}>
+            <ActivityIndicator color={colors.accent.primary} />
           </View>
-        </View>
-      ) : (
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMessage}
-          contentContainerStyle={styles.messageList}
-          onContentSizeChange={handleContentSizeChange}
-        />
-      )}
+        ) : messages.length === 0 ? (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyGreeting}>
+              <Text style={styles.emptyTitle}>{t("ai.emptyTitle")}</Text>
+              <Text style={styles.emptySubtitle}>{t("ai.emptySubtitle")}</Text>
+            </View>
+            <QuickActionsMenu
+              chips={QUICK_CHIPS}
+              visible={quickActionsVisible}
+              onToggle={() => setQuickActionsVisible((v) => !v)}
+              onSelect={handleQuickChip}
+              busyChipId={isCameraBusy ? "scanReceipt" : undefined}
+            />
+          </View>
+        ) : (
+          <FlatList
+            ref={listRef}
+            style={styles.messageListFlex}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={renderMessage}
+            contentContainerStyle={styles.messageList}
+            onContentSizeChange={handleContentSizeChange}
+            ListFooterComponent={
+              <QuickActionsMenu
+                chips={QUICK_CHIPS}
+                visible={quickActionsVisible}
+                onToggle={() => setQuickActionsVisible((v) => !v)}
+                onSelect={handleQuickChip}
+                busyChipId={isCameraBusy ? "scanReceipt" : undefined}
+              />
+            }
+          />
+        )}
 
-      {/* Recording indicator */}
-      {isRecording && (
-        <RecordingIndicator
-          durationMs={recordingDurationMs}
-          onCancel={() => void cancelRecording()}
-        />
-      )}
+        {/* Recording indicator */}
+        {isRecording && (
+          <RecordingIndicator
+            durationMs={recordingDurationMs}
+            onCancel={() => void cancelRecording()}
+          />
+        )}
+      </View>
 
       {/* Input bar */}
       <View style={styles.inputBar}>
-        <QuickActionsMenu
-          chips={QUICK_CHIPS}
-          visible={quickActionsVisible}
-          onToggle={() => setQuickActionsVisible((v) => !v)}
-          onSelect={handleQuickChip}
-          busyChipId={isCameraBusy ? "scanReceipt" : undefined}
-        />
+        <Pressable onPress={() => void handleCameraPress()} disabled={isCameraBusy} hitSlop={8}>
+          {({ pressed }) => (
+            <View
+              style={[
+                styles.inputBtn,
+                isCameraBusy && styles.inputBtnDisabled,
+                pressed && styles.btnPressed,
+              ]}
+            >
+              {isCameraBusy ? (
+                <ActivityIndicator size="small" color={colors.accent.primary} />
+              ) : (
+                <Camera size={22} color={colors.accent.primary} strokeWidth={1.8} />
+              )}
+            </View>
+          )}
+        </Pressable>
 
         <TextInput
           style={styles.textInput}
@@ -739,6 +778,10 @@ const styles = StyleSheet.create({
   keyboardAvoider: {
     flex: 1,
   },
+  chatArea: {
+    flex: 1,
+    position: "relative",
+  },
   historyLoader: {
     flex: 1,
     alignItems: "center",
@@ -764,6 +807,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.flatten(textStyles.body),
     color: colors.text.muted,
     textAlign: "center",
+  },
+  messageListFlex: {
+    flex: 1,
   },
   messageList: {
     padding: spacing.lg,
