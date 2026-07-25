@@ -65,4 +65,58 @@ describe('QuickActionsMenu', () => {
 
     expect(queryByTestId('quick-actions-backdrop')).toBeNull();
   });
+
+  it('shows a spinner on the busy chip instead of its icon', async () => {
+    const { getByTestId } = await render(
+      <QuickActionsMenu
+        chips={chips}
+        visible
+        onToggle={() => {}}
+        onSelect={() => {}}
+        busyChipId="scanReceipt"
+      />
+    );
+
+    expect(getByTestId('quick-action-busy-scanReceipt')).toBeTruthy();
+  });
+
+  it('does not fire onSelect when the busy chip is pressed', async () => {
+    const onSelect = jest.fn();
+    const { getByText } = await render(
+      <QuickActionsMenu
+        chips={chips}
+        visible
+        onToggle={() => {}}
+        onSelect={onSelect}
+        busyChipId="scanReceipt"
+      />
+    );
+
+    fireEvent.press(getByText('📷 Scan struk'));
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('still fires onSelect for other chips while one chip is busy', async () => {
+    const onSelect = jest.fn();
+    const { getByText } = await render(
+      <QuickActionsMenu
+        chips={chips}
+        visible
+        onToggle={() => {}}
+        onSelect={onSelect}
+        busyChipId="scanReceipt"
+      />
+    );
+
+    fireEvent.press(getByText('📝 Catat pengeluaran'));
+    expect(onSelect).toHaveBeenCalledWith(chips[0]);
+  });
+
+  it('does not show a spinner on any chip when busyChipId is undefined', async () => {
+    const { queryByTestId } = await render(
+      <QuickActionsMenu chips={chips} visible onToggle={() => {}} onSelect={() => {}} />
+    );
+
+    expect(queryByTestId('quick-action-busy-scanReceipt')).toBeNull();
+  });
 });

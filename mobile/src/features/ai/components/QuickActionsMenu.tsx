@@ -1,5 +1,5 @@
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { ChartBar, Plus, Receipt, TrendingDown, TrendingUp } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -17,9 +17,16 @@ interface QuickActionsMenuProps {
   visible: boolean;
   onToggle: () => void;
   onSelect: (chip: QuickChip) => void;
+  busyChipId?: string;
 }
 
-export function QuickActionsMenu({ chips, visible, onToggle, onSelect }: QuickActionsMenuProps) {
+export function QuickActionsMenu({
+  chips,
+  visible,
+  onToggle,
+  onSelect,
+  busyChipId,
+}: QuickActionsMenuProps) {
   const { t } = useTranslation();
 
   return (
@@ -29,15 +36,24 @@ export function QuickActionsMenu({ chips, visible, onToggle, onSelect }: QuickAc
           <Pressable testID="quick-actions-backdrop" style={styles.backdrop} onPress={onToggle} />
           <View style={styles.card}>
             {chips.map((chip, index) => {
+              const isBusy = chip.id === busyChipId;
               const Icon = CHIP_ICONS[chip.id] ?? ChartBar;
               return (
                 <Pressable
                   key={chip.id}
-                  onPress={() => onSelect(chip)}
-                  style={({ pressed }) => pressed && styles.pressed}
+                  onPress={() => !isBusy && onSelect(chip)}
+                  style={({ pressed }) => pressed && !isBusy && styles.pressed}
                 >
                   <View style={[styles.row, index > 0 && styles.rowBorder]}>
-                    <Icon size={17} color={colors.accent.primary} strokeWidth={1.8} />
+                    {isBusy ? (
+                      <ActivityIndicator
+                        testID={`quick-action-busy-${chip.id}`}
+                        size="small"
+                        color={colors.accent.primary}
+                      />
+                    ) : (
+                      <Icon size={17} color={colors.accent.primary} strokeWidth={1.8} />
+                    )}
                     <Text style={styles.label}>{t(chip.labelKey)}</Text>
                   </View>
                 </Pressable>

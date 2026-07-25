@@ -11,6 +11,7 @@ import {
   setDraftState,
   extractionToDraftTransactions,
   getActiveReceiptIds,
+  staleTrackedIds,
   updateMessageIfChanged,
 } from '../chatMessageUtils';
 import type { ChatMessage, DraftMessage, Message } from '../chatMessageUtils';
@@ -573,5 +574,25 @@ describe('updateMessageIfChanged', () => {
     const messages: Message[] = [other, createReceiptMessage('r1')];
     const next = updateMessageIfChanged(messages, 'r1', (m) => ({ ...m, status: 'extracting' }));
     expect(next[0]).toBe(other);
+  });
+});
+
+describe('staleTrackedIds', () => {
+  it('returns tracked ids no longer present in messages', () => {
+    const messages: Message[] = [createReceiptMessage('r1')];
+    expect(staleTrackedIds(['r1', 'r2', 'r3'], messages)).toEqual(['r2', 'r3']);
+  });
+
+  it('returns an empty array when every tracked id is still present', () => {
+    const messages: Message[] = [createReceiptMessage('r1'), createVoiceMessage('v1')];
+    expect(staleTrackedIds(['r1', 'v1'], messages)).toEqual([]);
+  });
+
+  it('returns an empty array for an empty tracked-id input', () => {
+    expect(staleTrackedIds([], [createReceiptMessage('r1')])).toEqual([]);
+  });
+
+  it('treats every tracked id as stale when messages is empty', () => {
+    expect(staleTrackedIds(['r1', 'v1'], [])).toEqual(['r1', 'v1']);
   });
 });

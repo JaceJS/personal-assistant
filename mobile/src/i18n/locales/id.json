@@ -413,7 +413,8 @@
       "draftCancelFailed": "Gagal membatalkan draft.",
       "voiceProcessingTimeout": "Pemrosesan suara kelamaan.",
       "receiptProcessingTimeout": "Pemrosesan struk kelamaan.",
-      "processingTimeoutInline": "Pemrosesan kelamaan. Coba lagi ya."
+      "processingTimeoutInline": "Pemrosesan kelamaan. Coba lagi ya.",
+      "voiceStillProcessing": "Tunggu rekaman sebelumnya selesai diproses dulu ya."
     },
     "confirmCard": {
       "amountLabel": "Jumlah",

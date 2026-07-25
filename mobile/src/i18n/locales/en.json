@@ -417,7 +417,8 @@
       "draftCancelFailed": "Couldn't cancel the draft.",
       "voiceProcessingTimeout": "Voice processing took too long.",
       "receiptProcessingTimeout": "Receipt processing took too long.",
-      "processingTimeoutInline": "Taking too long. Try again."
+      "processingTimeoutInline": "Taking too long. Try again.",
+      "voiceStillProcessing": "Wait for the previous recording to finish processing first."
     },
     "confirmCard": {
       "amountLabel": "Amount",

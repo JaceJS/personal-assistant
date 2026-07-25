@@ -49,9 +49,12 @@ import {
   extractionToDraftTransactions,
   getActiveReceiptIds,
   setDraftState,
+  staleTrackedIds,
   updateMessageIfChanged,
 } from "@/features/finance/utils/chatMessageUtils";
 import { persistPickedImage } from "@/features/finance/utils/persistPickedImage";
+import { persistRecordedAudio } from "@/features/finance/utils/persistRecordedAudio";
+import { clearPersistedMedia } from "@/features/finance/utils/persistToAppStorage";
 import type {
   AIMessage,
   ChatMessage,
@@ -61,12 +64,15 @@ import type {
   UserTextMessage,
 } from "@/features/finance/utils/chatMessageUtils";
 import { QUICK_CHIPS, resolveQuickChipAction } from "@/features/ai/utils/quickChips";
+import { useIdTimeoutBackstop } from "@/hooks/useIdTimeoutBackstop";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
-const PROCESSING_TIMEOUT_MS = 60_000;
+// Backend self-heals a stuck job after 5 minutes (service.py _STUCK_JOB_TIMEOUT);
+// this backstop only covers polling itself silently dying, so it must stay above that.
+const STUCK_JOB_TIMEOUT_MS = 5 * 60_000 + 30_000;
 const SCROLL_DEBOUNCE_MS = 100;
 
 export default function AIAssistantScreen() {
@@ -133,7 +139,7 @@ export default function AIAssistantScreen() {
   const defaultAccount = activeAccounts[0] ?? null;
   const hasNoAccounts = !isGuest && !isLoadingAccounts && activeAccounts.length === 0;
 
-  const isMicBusy = recorderProcessing || uploadAudio.isPending;
+  const isMicBusy = recorderProcessing || uploadAudio.isPending || voiceLogId !== null;
   const isCameraBusy = uploadReceipt.isPending;
 
   // Surface recorder errors (permission denied, too-short takes) as toasts
@@ -210,35 +216,63 @@ export default function AIAssistantScreen() {
     });
   }, [setMessages, showToast, receiptStatuses, activeReceiptIds, defaultAccount, t]);
 
-  // Auto-fail voice if worker never responds
-  useEffect(() => {
-    if (!voiceLogId) return;
-    const id = voiceLogId;
-    const timer = setTimeout(() => {
+  const handleReceiptTimeout = useCallback(
+    (id: string) => {
       setMessages((prev) =>
-        prev.map((m) =>
-          m.id === id
-            ? {
-                ...(m as ChatMessage),
-                status: "failed",
-                errorMessage: t("ai.toast.processingTimeoutInline"),
-              }
-            : m
-        )
+        updateMessageIfChanged(prev, id, (m) => ({
+          ...m,
+          status: "failed",
+          errorMessage: t("ai.toast.processingTimeoutInline"),
+        }))
+      );
+      showToast(t("ai.toast.receiptProcessingTimeout"), "error");
+    },
+    [setMessages, showToast, t]
+  );
+
+  useIdTimeoutBackstop(activeReceiptIds, STUCK_JOB_TIMEOUT_MS, handleReceiptTimeout);
+
+  const activeVoiceIds = useMemo(() => (voiceLogId ? [voiceLogId] : []), [voiceLogId]);
+
+  const handleVoiceTimeout = useCallback(
+    (id: string) => {
+      setMessages((prev) =>
+        updateMessageIfChanged(prev, id, (m) => ({
+          ...m,
+          status: "failed",
+          errorMessage: t("ai.toast.processingTimeoutInline"),
+        }))
       );
       setVoiceLogId(null);
       setTranscriptVisible(false);
       resetRecorder();
       showToast(t("ai.toast.voiceProcessingTimeout"), "error");
-    }, PROCESSING_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-  }, [voiceLogId, t]); // eslint-disable-line react-hooks/exhaustive-deps
+    },
+    [setMessages, showToast, resetRecorder, t]
+  );
+
+  useIdTimeoutBackstop(activeVoiceIds, STUCK_JOB_TIMEOUT_MS, handleVoiceTimeout);
 
   useEffect(() => {
     return () => {
       if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
     };
   }, []);
+
+  // Receipt/voice messages aren't restored from chat history, so any file
+  // persisted last session is already orphaned by the time this screen mounts.
+  useEffect(() => {
+    clearPersistedMedia();
+  }, []);
+
+  useEffect(() => {
+    for (const id of staleTrackedIds(handledReceiptIds.current, messages)) {
+      handledReceiptIds.current.delete(id);
+    }
+    for (const id of staleTrackedIds(receiptAccountIds.current.keys(), messages)) {
+      receiptAccountIds.current.delete(id);
+    }
+  }, [messages]);
 
   const handleContentSizeChange = useCallback(() => {
     if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
@@ -359,7 +393,11 @@ export default function AIAssistantScreen() {
   );
 
   const handleMicPressIn = useCallback(() => {
-    if (isMicBusy || isRecording) return;
+    if (isRecording) return;
+    if (isMicBusy) {
+      showToast(t("ai.toast.voiceStillProcessing"), "error");
+      return;
+    }
     if (!defaultAccount) {
       showToast(t("transaction.noAccountsPrompt"), "error");
       return;
@@ -372,7 +410,8 @@ export default function AIAssistantScreen() {
     void (async () => {
       const audioUri = await stopRecording();
       if (!audioUri) return;
-      await uploadVoiceFlow(audioUri, defaultAccount.id);
+      const persistedUri = persistRecordedAudio(audioUri);
+      await uploadVoiceFlow(persistedUri, defaultAccount.id);
     })();
   }, [defaultAccount, isRecording, stopRecording, uploadVoiceFlow]);
 
@@ -598,18 +637,13 @@ export default function AIAssistantScreen() {
 
       {/* Input bar */}
       <View style={styles.inputBar}>
-        {isCameraBusy ? (
-          <View style={[styles.inputBtn, styles.inputBtnDisabled]}>
-            <ActivityIndicator size="small" color={colors.accent.primary} />
-          </View>
-        ) : (
-          <QuickActionsMenu
-            chips={QUICK_CHIPS}
-            visible={quickActionsVisible}
-            onToggle={() => setQuickActionsVisible((v) => !v)}
-            onSelect={handleQuickChip}
-          />
-        )}
+        <QuickActionsMenu
+          chips={QUICK_CHIPS}
+          visible={quickActionsVisible}
+          onToggle={() => setQuickActionsVisible((v) => !v)}
+          onSelect={handleQuickChip}
+          busyChipId={isCameraBusy ? "scanReceipt" : undefined}
+        />
 
         <TextInput
           style={styles.textInput}

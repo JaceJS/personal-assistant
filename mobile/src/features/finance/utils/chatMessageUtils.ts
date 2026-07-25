@@ -182,6 +182,11 @@ export function getActiveReceiptIds(messages: Message[]): string[] {
     .map((m) => m.id);
 }
 
+export function staleTrackedIds(trackedIds: Iterable<string>, messages: Message[]): string[] {
+  const currentIds = new Set(messages.map((m) => m.id));
+  return Array.from(trackedIds).filter((id) => !currentIds.has(id));
+}
+
 // Returns the same array reference when nothing changed, so callers can skip re-rendering.
 export function updateMessageIfChanged(
   messages: Message[],
