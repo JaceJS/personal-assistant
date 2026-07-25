@@ -1,9 +1,14 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 
 import { getReceiptStatus, uploadReceipt } from "@/features/finance/api/receipt";
 import type { ReceiptStatusResponse } from "@/features/finance/api/receipt";
 
 const RECEIPT_QUERY_KEY = "receipt";
+
+function receiptRefetchInterval(query: { state: { data?: ReceiptStatusResponse } }) {
+  const status = query.state.data?.status;
+  return status === "completed" || status === "failed" ? false : 1500;
+}
 
 export function useUploadReceipt() {
   return useMutation({
@@ -18,11 +23,16 @@ export function useReceiptStatus(receiptLogId: string | null) {
     queryKey: [RECEIPT_QUERY_KEY, receiptLogId],
     queryFn: () => getReceiptStatus(receiptLogId as string),
     enabled: receiptLogId !== null,
-    refetchInterval: (query) => {
-      const data = query.state.data as ReceiptStatusResponse | undefined;
-      const status = data?.status;
-      if (status === "completed" || status === "failed") return false;
-      return 1500;
-    },
+    refetchInterval: receiptRefetchInterval,
+  });
+}
+
+export function useReceiptStatuses(receiptLogIds: string[]) {
+  return useQueries({
+    queries: receiptLogIds.map((id) => ({
+      queryKey: [RECEIPT_QUERY_KEY, id],
+      queryFn: () => getReceiptStatus(id),
+      refetchInterval: receiptRefetchInterval,
+    })),
   });
 }

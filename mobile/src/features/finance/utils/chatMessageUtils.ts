@@ -173,3 +173,35 @@ export function createDraftMessages(drafts: DraftTransaction[]): DraftMessage[] 
 export function setDraftState(msg: DraftMessage, state: DraftMessageState): DraftMessage {
   return { ...msg, state };
 }
+
+const TERMINAL_STATUSES: VoiceProcessingStatus[] = ['completed', 'failed'];
+
+export function getActiveReceiptIds(messages: Message[]): string[] {
+  return messages
+    .filter((m): m is ChatMessage => m.type === 'receipt' && !TERMINAL_STATUSES.includes(m.status))
+    .map((m) => m.id);
+}
+
+// Returns the same array reference when nothing changed, so callers can skip re-rendering.
+export function updateMessageIfChanged(
+  messages: Message[],
+  id: string,
+  updater: (msg: ChatMessage) => ChatMessage,
+): Message[] {
+  let changed = false;
+  const next = messages.map((m) => {
+    if (m.id !== id || (m.type !== 'receipt' && m.type !== 'voice')) return m;
+    const current = m as ChatMessage;
+    const updated = updater(current);
+    if (
+      updated.status !== current.status ||
+      updated.errorMessage !== current.errorMessage ||
+      updated.extractedData !== current.extractedData
+    ) {
+      changed = true;
+      return updated;
+    }
+    return m;
+  });
+  return changed ? next : messages;
+}

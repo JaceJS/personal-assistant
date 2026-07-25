@@ -10,8 +10,10 @@ import {
   createDraftMessages,
   setDraftState,
   extractionToDraftTransactions,
+  getActiveReceiptIds,
+  updateMessageIfChanged,
 } from '../chatMessageUtils';
-import type { DraftMessage } from '../chatMessageUtils';
+import type { ChatMessage, DraftMessage, Message } from '../chatMessageUtils';
 import type { ExtractedTransaction, VoiceStatusResponse } from '@/features/finance/api/voice';
 import type { ReceiptStatusResponse } from '@/features/finance/api/receipt';
 import type { DraftTransaction } from '@/features/ai/api/chat';
@@ -470,5 +472,106 @@ describe('applyReceiptStatus', () => {
     };
     applyReceiptStatus(original, status);
     expect(original.status).toBe('pending');
+  });
+});
+
+describe('getActiveReceiptIds', () => {
+  it('returns ids of receipt messages still pending or extracting', () => {
+    const messages: Message[] = [
+      createReceiptMessage('r1'),
+      { ...createReceiptMessage('r2'), status: 'extracting' },
+    ];
+    expect(getActiveReceiptIds(messages)).toEqual(['r1', 'r2']);
+  });
+
+  it('excludes receipt messages that reached a terminal status', () => {
+    const messages: Message[] = [
+      { ...createReceiptMessage('r1'), status: 'completed' },
+      { ...createReceiptMessage('r2'), status: 'failed' },
+      createReceiptMessage('r3'),
+    ];
+    expect(getActiveReceiptIds(messages)).toEqual(['r3']);
+  });
+
+  it('excludes voice messages even when non-terminal', () => {
+    const messages: Message[] = [createVoiceMessage('v1'), createReceiptMessage('r1')];
+    expect(getActiveReceiptIds(messages)).toEqual(['r1']);
+  });
+
+  it('excludes non-chat message types (user/ai/draft)', () => {
+    const messages: Message[] = [
+      createUserTextMessage('hi'),
+      createAITypingMessage('hi'),
+      createReceiptMessage('r1'),
+    ];
+    expect(getActiveReceiptIds(messages)).toEqual(['r1']);
+  });
+
+  it('returns an empty array when there are no messages', () => {
+    expect(getActiveReceiptIds([])).toEqual([]);
+  });
+
+  it('preserves message order', () => {
+    const messages: Message[] = [
+      createReceiptMessage('r-later'),
+      createReceiptMessage('r-earlier'),
+    ];
+    expect(getActiveReceiptIds(messages)).toEqual(['r-later', 'r-earlier']);
+  });
+});
+
+describe('updateMessageIfChanged', () => {
+  it('replaces the matching message when the updater changes it', () => {
+    const messages: Message[] = [createReceiptMessage('r1'), createReceiptMessage('r2')];
+    const next = updateMessageIfChanged(messages, 'r1', (m) => ({ ...m, status: 'extracting' }));
+    expect(next).not.toBe(messages);
+    expect((next[0] as ChatMessage).status).toBe('extracting');
+    expect(next[1]).toBe(messages[1]);
+  });
+
+  it('returns the same array reference when nothing actually changes', () => {
+    const messages: Message[] = [createReceiptMessage('r1')];
+    const next = updateMessageIfChanged(messages, 'r1', (m) => ({ ...m }));
+    expect(next).toBe(messages);
+  });
+
+  it('returns the same array reference when the id is not found', () => {
+    const messages: Message[] = [createReceiptMessage('r1')];
+    const next = updateMessageIfChanged(messages, 'missing', (m) => ({ ...m, status: 'failed' }));
+    expect(next).toBe(messages);
+  });
+
+  it('detects a change via errorMessage even when status is unchanged', () => {
+    const messages: Message[] = [{ ...createReceiptMessage('r1'), status: 'failed' }];
+    const next = updateMessageIfChanged(messages, 'r1', (m) => ({
+      ...m,
+      errorMessage: 'Vision model timeout',
+    }));
+    expect(next).not.toBe(messages);
+    expect((next[0] as ChatMessage).errorMessage).toBe('Vision model timeout');
+  });
+
+  it('detects a change via extractedData even when status is unchanged', () => {
+    const extractedData: ExtractedTransaction[] = [
+      {
+        amount: -1000,
+        currency: 'IDR',
+        merchant: null,
+        category_name: 'Lain-lain',
+        note: null,
+        confidence: 0.5,
+      },
+    ];
+    const messages: Message[] = [{ ...createReceiptMessage('r1'), status: 'completed' }];
+    const next = updateMessageIfChanged(messages, 'r1', (m) => ({ ...m, extractedData }));
+    expect(next).not.toBe(messages);
+    expect((next[0] as ChatMessage).extractedData).toEqual(extractedData);
+  });
+
+  it('leaves other messages in the array untouched', () => {
+    const other = createUserTextMessage('hello');
+    const messages: Message[] = [other, createReceiptMessage('r1')];
+    const next = updateMessageIfChanged(messages, 'r1', (m) => ({ ...m, status: 'extracting' }));
+    expect(next[0]).toBe(other);
   });
 });

@@ -2,14 +2,13 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { Camera, Mic, SendHorizontal, Square, Trash2, Wallet } from "lucide-react-native";
+import { Mic, SendHorizontal, Square, Trash2, Wallet } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   ActivityIndicator,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -31,24 +30,28 @@ import { AIBubble } from "@/features/ai/components/AIBubble";
 import { ChatBubble } from "@/features/ai/components/ChatBubble";
 import { DraftTransactionCard } from "@/features/ai/components/DraftTransactionCard";
 import { MessageActionMenu } from "@/features/ai/components/MessageActionMenu";
+import { QuickActionsMenu } from "@/features/ai/components/QuickActionsMenu";
 import { UserBubble } from "@/features/ai/components/UserBubble";
 import { useCancelAiDraft } from "@/features/ai/hooks/useCancelAiDraft";
 import { useChat } from "@/features/ai/hooks/useChat";
 import { useConfirmAiDraft } from "@/features/ai/hooks/useConfirmAiDraft";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCategories } from "@/features/finance/hooks/useCategories";
-import { useReceiptStatus, useUploadReceipt } from "@/features/finance/hooks/useReceipt";
+import { useReceiptStatuses, useUploadReceipt } from "@/features/finance/hooks/useReceipt";
 import { useExtractVoice, useUploadAudio, useVoiceStatus } from "@/features/finance/hooks/useVoice";
 import {
-  applyReceiptStatus,
   applyVoiceStatus,
+  applyReceiptStatus,
   createDraftMessages,
   createFailedUploadMessage,
   createReceiptMessage,
   createVoiceMessage,
   extractionToDraftTransactions,
+  getActiveReceiptIds,
   setDraftState,
+  updateMessageIfChanged,
 } from "@/features/finance/utils/chatMessageUtils";
+import { persistPickedImage } from "@/features/finance/utils/persistPickedImage";
 import type {
   AIMessage,
   ChatMessage,
@@ -105,8 +108,8 @@ export default function AIAssistantScreen() {
   // Processing state
   const [voiceLogId, setVoiceLogId] = useState<string | null>(null);
   const [transcriptVisible, setTranscriptVisible] = useState(false);
-  const [receiptLogId, setReceiptLogId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState<DraftMessage | null>(null);
+  const [quickActionsVisible, setQuickActionsVisible] = useState(false);
   const [actionMenu, setActionMenu] = useState<{
     message: UserTextMessage | AIMessage;
     x: number;
@@ -116,9 +119,12 @@ export default function AIAssistantScreen() {
   const [inputText, setInputText] = useState("");
   const listRef = useRef<FlatList<Message>>(null);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const receiptAccountIds = useRef<Map<string, string>>(new Map());
+  const handledReceiptIds = useRef<Set<string>>(new Set());
 
   const voiceStatus = useVoiceStatus(voiceLogId);
-  const receiptStatus = useReceiptStatus(receiptLogId);
+  const activeReceiptIds = useMemo(() => getActiveReceiptIds(messages), [messages]);
+  const receiptStatuses = useReceiptStatuses(activeReceiptIds);
 
   const activeAccounts = useMemo(
     () => accounts?.filter((a) => !a.is_archived) ?? [],
@@ -171,33 +177,38 @@ export default function AIAssistantScreen() {
     }
   }, [resetRecorder, setMessages, showToast, voiceLogId, voiceStatus.data, defaultAccount, t]);
 
-  // Update receipt message as status changes
+  // Tracks every in-flight receipt by id so a second scan can't orphan the first.
   useEffect(() => {
-    if (!receiptLogId || !receiptStatus.data) return;
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === receiptLogId ? applyReceiptStatus(m as ChatMessage, receiptStatus.data!) : m
-      )
-    );
-    if (receiptStatus.data.status === "completed") {
-      const { extracted_data, transaction_ids } = receiptStatus.data;
-      const accountId = defaultAccount?.id;
-      if (extracted_data.length > 0 && transaction_ids.length > 0 && accountId) {
-        setMessages((prev) => [
-          ...prev,
-          ...createDraftMessages(
-            extractionToDraftTransactions(extracted_data, transaction_ids, accountId)
-          ),
-        ]);
+    receiptStatuses.forEach((query, index) => {
+      const id = activeReceiptIds[index];
+      const data = query.data;
+      if (!id || !data) return;
+
+      setMessages((prev) => updateMessageIfChanged(prev, id, (m) => applyReceiptStatus(m, data)));
+
+      if (data.status !== "completed" && data.status !== "failed") return;
+      if (handledReceiptIds.current.has(id)) return;
+      handledReceiptIds.current.add(id);
+      const accountId = receiptAccountIds.current.get(id) ?? defaultAccount?.id;
+      receiptAccountIds.current.delete(id);
+
+      if (data.status === "completed") {
+        const { extracted_data, transaction_ids } = data;
+        if (extracted_data.length > 0 && transaction_ids.length > 0 && accountId) {
+          setMessages((prev) => [
+            ...prev,
+            ...createDraftMessages(
+              extractionToDraftTransactions(extracted_data, transaction_ids, accountId)
+            ),
+          ]);
+        } else {
+          showToast(t("ai.toast.noReceiptDraft"), "error");
+        }
       } else {
-        showToast(t("ai.toast.noReceiptDraft"), "error");
+        showToast(data.error_message ?? t("ai.toast.receiptProcessingFailed"), "error");
       }
-      setReceiptLogId(null);
-    } else if (receiptStatus.data.status === "failed") {
-      setReceiptLogId(null);
-      showToast(receiptStatus.data.error_message ?? t("ai.toast.receiptProcessingFailed"), "error");
-    }
-  }, [setMessages, showToast, receiptLogId, receiptStatus.data, defaultAccount, t]);
+    });
+  }, [setMessages, showToast, receiptStatuses, activeReceiptIds, defaultAccount, t]);
 
   // Auto-fail voice if worker never responds
   useEffect(() => {
@@ -222,28 +233,6 @@ export default function AIAssistantScreen() {
     }, PROCESSING_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [voiceLogId, t]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Auto-fail receipt if worker never responds
-  useEffect(() => {
-    if (!receiptLogId) return;
-    const id = receiptLogId;
-    const timer = setTimeout(() => {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === id
-            ? {
-                ...(m as ChatMessage),
-                status: "failed",
-                errorMessage: t("ai.toast.processingTimeoutInline"),
-              }
-            : m
-        )
-      );
-      setReceiptLogId(null);
-      showToast(t("ai.toast.receiptProcessingTimeout"), "error");
-    }, PROCESSING_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-  }, [receiptLogId, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     return () => {
@@ -336,11 +325,11 @@ export default function AIAssistantScreen() {
     async (imageUri: string, accountId: string) => {
       try {
         const response = await uploadReceipt.mutateAsync({ imageUri, accountId });
+        receiptAccountIds.current.set(response.receipt_log_id, accountId);
         setMessages((prev) => [
           ...prev,
           createReceiptMessage(response.receipt_log_id, imageUri, accountId),
         ]);
-        setReceiptLogId(response.receipt_log_id);
       } catch {
         setMessages((prev) => [
           ...prev,
@@ -398,11 +387,13 @@ export default function AIAssistantScreen() {
       allowsEditing: false,
     });
     if (result.canceled || !result.assets[0]) return;
-    await uploadReceiptFlow(result.assets[0].uri, defaultAccount.id);
+    const persistedUri = persistPickedImage(result.assets[0].uri);
+    await uploadReceiptFlow(persistedUri, defaultAccount.id);
   }, [defaultAccount, showToast, uploadReceiptFlow, t]);
 
   const handleQuickChip = useCallback(
     (chip: (typeof QUICK_CHIPS)[number]) => {
+      setQuickActionsVisible(false);
       const resolved = resolveQuickChipAction(chip);
       if (resolved.kind === "camera") void handleCameraPress();
       else void sendMessage(resolved.text);
@@ -585,24 +576,6 @@ export default function AIAssistantScreen() {
             <Text style={styles.emptyTitle}>{t("ai.emptyTitle")}</Text>
             <Text style={styles.emptySubtitle}>{t("ai.emptySubtitle")}</Text>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.chipsRow}
-            contentContainerStyle={styles.quickChips}
-          >
-            {QUICK_CHIPS.map((chip) => (
-              <Pressable
-                key={chip.id}
-                onPress={() => handleQuickChip(chip)}
-                style={({ pressed }) => pressed && { opacity: 0.7 }}
-              >
-                <View style={styles.chip}>
-                  <Text style={styles.chipLabel}>{t(chip.labelKey)}</Text>
-                </View>
-              </Pressable>
-            ))}
-          </ScrollView>
         </View>
       ) : (
         <FlatList
@@ -615,28 +588,6 @@ export default function AIAssistantScreen() {
         />
       )}
 
-      {/* Quick chips during conversation */}
-      {messages.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.chipsRow}
-          contentContainerStyle={styles.quickChips}
-        >
-          {QUICK_CHIPS.map((chip) => (
-            <Pressable
-              key={chip.id}
-              onPress={() => handleQuickChip(chip)}
-              style={({ pressed }) => pressed && { opacity: 0.7 }}
-            >
-              <View style={styles.chip}>
-                <Text style={styles.chipLabel}>{t(chip.labelKey)}</Text>
-              </View>
-            </Pressable>
-          ))}
-        </ScrollView>
-      )}
-
       {/* Recording indicator */}
       {isRecording && (
         <RecordingIndicator
@@ -647,23 +598,18 @@ export default function AIAssistantScreen() {
 
       {/* Input bar */}
       <View style={styles.inputBar}>
-        <Pressable onPress={() => void handleCameraPress()} disabled={isCameraBusy} hitSlop={8}>
-          {({ pressed }) => (
-            <View
-              style={[
-                styles.inputBtn,
-                isCameraBusy && styles.inputBtnDisabled,
-                pressed && styles.btnPressed,
-              ]}
-            >
-              {isCameraBusy ? (
-                <ActivityIndicator size="small" color={colors.accent.primary} />
-              ) : (
-                <Camera size={22} color={colors.accent.primary} strokeWidth={1.8} />
-              )}
-            </View>
-          )}
-        </Pressable>
+        {isCameraBusy ? (
+          <View style={[styles.inputBtn, styles.inputBtnDisabled]}>
+            <ActivityIndicator size="small" color={colors.accent.primary} />
+          </View>
+        ) : (
+          <QuickActionsMenu
+            chips={QUICK_CHIPS}
+            visible={quickActionsVisible}
+            onToggle={() => setQuickActionsVisible((v) => !v)}
+            onSelect={handleQuickChip}
+          />
+        )}
 
         <TextInput
           style={styles.textInput}
@@ -839,26 +785,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.danger.bg,
     borderWidth: 1,
     borderColor: `${colors.danger.text}80`,
-  },
-  chipsRow: {
-    flexShrink: 0,
-  },
-  quickChips: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xs,
-  },
-  chip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.bg.surface,
-  },
-  chipLabel: {
-    ...StyleSheet.flatten(textStyles.body),
-    color: colors.text.primary,
   },
 });
