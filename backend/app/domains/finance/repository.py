@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from datetime import date
-from typing import Any
+from typing import Any, cast
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -416,6 +417,45 @@ async def update_voice_log_status(
     return voice_log
 
 
+async def update_voice_log_status_if(
+    session: AsyncSession,
+    voice_log_id: uuid.UUID,
+    *,
+    expected_statuses: Sequence[VoiceProcessingStatus],
+    status: VoiceProcessingStatus,
+    transcript: str | None = None,
+    extracted_data: list[dict[str, Any]] | None = None,
+    confidence_score: float | None = None,
+    error_message: str | None = None,
+) -> bool:
+    """Update only if the row's current status is still in `expected_statuses`.
+
+    Does the check in the UPDATE's WHERE clause (not read-then-write), so a
+    losing concurrent writer gets `False` back instead of silently clobbering
+    whatever the winner wrote.
+    """
+    values: dict[str, Any] = {"processing_status": status}
+    if transcript is not None:
+        values["transcript"] = transcript
+    if extracted_data is not None:
+        values["extracted_data"] = extracted_data
+    if confidence_score is not None:
+        values["confidence_score"] = confidence_score
+    if error_message is not None:
+        values["error_message"] = error_message
+
+    result = cast(
+        "sa.CursorResult[Any]",
+        await session.execute(
+            sa.update(VoiceLog)
+            .where(VoiceLog.id == voice_log_id, VoiceLog.processing_status.in_(expected_statuses))
+            .values(**values)
+        ),
+    )
+    await session.flush()
+    return result.rowcount > 0
+
+
 # ── Receipt logs ──────────────────────────────────────────────────────────────
 
 
@@ -455,3 +495,40 @@ async def update_receipt_log_status(
     await session.flush()
     await session.refresh(receipt_log)
     return receipt_log
+
+
+async def update_receipt_log_status_if(
+    session: AsyncSession,
+    receipt_log_id: uuid.UUID,
+    *,
+    expected_statuses: Sequence[VoiceProcessingStatus],
+    status: VoiceProcessingStatus,
+    ocr_text: str | None = None,
+    extracted_data: list[dict[str, Any]] | None = None,
+    error_message: str | None = None,
+) -> bool:
+    """Update only if the row's current status is still in `expected_statuses`.
+
+    See `update_voice_log_status_if` for why this checks in the WHERE clause.
+    """
+    values: dict[str, Any] = {"processing_status": status}
+    if ocr_text is not None:
+        values["ocr_text"] = ocr_text
+    if extracted_data is not None:
+        values["extracted_data"] = extracted_data
+    if error_message is not None:
+        values["error_message"] = error_message
+
+    result = cast(
+        "sa.CursorResult[Any]",
+        await session.execute(
+            sa.update(ReceiptLog)
+            .where(
+                ReceiptLog.id == receipt_log_id,
+                ReceiptLog.processing_status.in_(expected_statuses),
+            )
+            .values(**values)
+        ),
+    )
+    await session.flush()
+    return result.rowcount > 0

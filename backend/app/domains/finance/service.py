@@ -509,12 +509,17 @@ async def get_voice_status(
         voice_log.processing_status not in _TERMINAL_STATUSES
         and datetime.now(UTC) - voice_log.updated_at > _STUCK_JOB_TIMEOUT
     ):
-        voice_log = await repo.update_voice_log_status(
+        # Guard against a job that finishes between our read and this write:
+        # only self-heal if the status is still exactly what we just read,
+        # then re-read so a winning job's real result isn't shadowed.
+        await repo.update_voice_log_status_if(
             session,
-            voice_log,
-            VoiceProcessingStatus.failed,
+            voice_log.id,
+            expected_statuses=[voice_log.processing_status],
+            status=VoiceProcessingStatus.failed,
             error_message="Processing timed out",
         )
+        voice_log = await repo.get_voice_log(session, voice_log.id) or voice_log
     txs = await repo.get_transactions_by_voice_log(session, voice_log.id)
 
     return VoiceStatusRead(
@@ -536,17 +541,20 @@ async def extract_voice_transcript(
     background_tasks: BackgroundTasks,
 ) -> VoiceExtractResponse:
     voice_log = await get_voice_log_or_404(session, voice_log_id, user_id)
-    if voice_log.processing_status != VoiceProcessingStatus.transcribed:
-        raise BadRequestError("Voice log is not in transcribed state")
     if voice_log.account_id is None:
         raise BadRequestError("Voice log has no associated account")
 
-    # Flip status before scheduling so a second request racing the same voice
-    # log (before the background task has picked up the first job) sees
-    # "extracting" instead of "transcribed" and is rejected above, rather than
-    # scheduling a second paid LLM extraction job.
-    await repo.update_voice_log_status(session, voice_log, VoiceProcessingStatus.extracting)
-    await session.flush()
+    # Atomic UPDATE ... WHERE status = 'transcribed' (not read-then-write) so
+    # two requests racing the same voice log can't both pass the check before
+    # either commits and both schedule a paid LLM extraction job.
+    claimed = await repo.update_voice_log_status_if(
+        session,
+        voice_log_id,
+        expected_statuses=[VoiceProcessingStatus.transcribed],
+        status=VoiceProcessingStatus.extracting,
+    )
+    if not claimed:
+        raise BadRequestError("Voice log is not in transcribed state")
 
     background_tasks.add_task(
         jobs.extract_voice,
@@ -625,12 +633,17 @@ async def get_receipt_status(
         receipt_log.processing_status not in _TERMINAL_STATUSES
         and datetime.now(UTC) - receipt_log.updated_at > _STUCK_JOB_TIMEOUT
     ):
-        receipt_log = await repo.update_receipt_log_status(
+        # Guard against a job that finishes between our read and this write:
+        # only self-heal if the status is still exactly what we just read,
+        # then re-read so a winning job's real result isn't shadowed.
+        await repo.update_receipt_log_status_if(
             session,
-            receipt_log,
-            VoiceProcessingStatus.failed,
+            receipt_log.id,
+            expected_statuses=[receipt_log.processing_status],
+            status=VoiceProcessingStatus.failed,
             error_message="Processing timed out",
         )
+        receipt_log = await repo.get_receipt_log(session, receipt_log.id) or receipt_log
     txs = await repo.get_transactions_by_receipt_log(session, receipt_log.id)
 
     return ReceiptStatusRead(

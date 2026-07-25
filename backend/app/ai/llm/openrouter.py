@@ -38,6 +38,8 @@ def _parse_tool_arguments(raw: str) -> dict[str, Any]:
 
 _OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 _APP_TITLE = "voice-finance-backend"
+_REQUEST_TIMEOUT_SECONDS = 60.0
+_MAX_RETRIES = 2
 
 # Low temperature keeps tool-calling and financial-figure reporting
 # deterministic; this is not a creative-writing use case.
@@ -54,6 +56,8 @@ class OpenRouterLLM(LLMProvider):
             api_key=settings.openrouter_api_key,
             base_url=_OPENROUTER_BASE_URL,
             default_headers={"X-Title": _APP_TITLE},
+            timeout=_REQUEST_TIMEOUT_SECONDS,
+            max_retries=_MAX_RETRIES,
         )
         self._client = instructor.from_openai(self._raw_client, mode=instructor.Mode.JSON)
         self._model = model if model is not None else settings.llm_model

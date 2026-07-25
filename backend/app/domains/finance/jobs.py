@@ -24,6 +24,7 @@ import structlog
 from app.ai.llm.openrouter import OpenRouterLLM
 from app.ai.stt.base import STTProvider
 from app.core.database import SessionFactory
+from app.core.upload_utils import IMAGE_EXT_MAP
 from app.domains.finance import repository as repo
 from app.domains.finance.extractor import extract_transactions
 from app.domains.finance.models import TransactionSource, TransactionStatus, VoiceProcessingStatus
@@ -32,20 +33,27 @@ from app.shared.storage import R2Storage
 
 log = structlog.get_logger()
 
+_EXT_TO_MIME = {ext: mime for mime, ext in IMAGE_EXT_MAP.items()}
+
+# Shown to the user as-is (ChatBubble renders it directly); the real
+# exception is only ever logged via structlog, never persisted to the DB.
+_GENERIC_FAILURE_MESSAGE = "Processing failed. Please try again."
+
 
 async def process_voice(
     *, stt: STTProvider, r2: R2Storage, voice_log_id: str, account_id: str
 ) -> None:
     """Stage 1: Transcribe audio and pause for user review."""
     log_id = uuid.UUID(voice_log_id)
+    voice_log = None
 
     async with SessionFactory() as session:
-        voice_log = await repo.get_voice_log(session, log_id)
-        if voice_log is None:
-            log.error("voice_log_not_found", voice_log_id=voice_log_id)
-            return
-
         try:
+            voice_log = await repo.get_voice_log(session, log_id)
+            if voice_log is None:
+                log.error("voice_log_not_found", voice_log_id=voice_log_id)
+                return
+
             await repo.update_voice_log_status(
                 session, voice_log, VoiceProcessingStatus.transcribing
             )
@@ -57,10 +65,18 @@ async def process_voice(
                 filename=Path(voice_log.audio_url).name,
             )
 
-            await repo.update_voice_log_status(
-                session, voice_log, VoiceProcessingStatus.transcribed, transcript=transcript
+            claimed = await repo.update_voice_log_status_if(
+                session,
+                voice_log.id,
+                expected_statuses=[VoiceProcessingStatus.transcribing],
+                status=VoiceProcessingStatus.transcribed,
+                transcript=transcript,
             )
-            await session.commit()
+            if claimed:
+                await session.commit()
+            else:
+                log.warning("voice_transcription_lost_race", voice_log_id=voice_log_id)
+                await session.rollback()
 
         except Exception as exc:
             log.error(
@@ -76,18 +92,19 @@ async def process_voice(
                         err_session,
                         vl,
                         VoiceProcessingStatus.failed,
-                        error_message=f"{type(exc).__name__}: {exc}",
+                        error_message=_GENERIC_FAILURE_MESSAGE,
                     )
                     await err_session.commit()
         finally:
-            try:
-                await r2.delete(voice_log.audio_url)
-            except Exception as cleanup_exc:
-                log.warning(
-                    "voice_audio_cleanup_failed",
-                    voice_log_id=voice_log_id,
-                    error=str(cleanup_exc),
-                )
+            if voice_log is not None:
+                try:
+                    await r2.delete(voice_log.audio_url)
+                except Exception as cleanup_exc:
+                    log.warning(
+                        "voice_audio_cleanup_failed",
+                        voice_log_id=voice_log_id,
+                        error=str(cleanup_exc),
+                    )
 
 
 async def extract_voice(
@@ -98,12 +115,12 @@ async def extract_voice(
     acc_id = uuid.UUID(account_id)
 
     async with SessionFactory() as session:
-        voice_log = await repo.get_voice_log(session, log_id)
-        if voice_log is None:
-            log.error("voice_log_not_found", voice_log_id=voice_log_id)
-            return
-
         try:
+            voice_log = await repo.get_voice_log(session, log_id)
+            if voice_log is None:
+                log.error("voice_log_not_found", voice_log_id=voice_log_id)
+                return
+
             await repo.update_voice_log_status(session, voice_log, VoiceProcessingStatus.extracting)
             await session.commit()
 
@@ -129,14 +146,19 @@ async def extract_voice(
 
             # Highest confidence across all extracted items, for the log's summary field.
             top_confidence = max(item.confidence for item in extracted_list)
-            await repo.update_voice_log_status(
+            claimed = await repo.update_voice_log_status_if(
                 session,
-                voice_log,
-                VoiceProcessingStatus.completed,
+                voice_log.id,
+                expected_statuses=[VoiceProcessingStatus.extracting],
+                status=VoiceProcessingStatus.completed,
                 extracted_data=extracted_data,
                 confidence_score=top_confidence,
             )
-            await session.commit()
+            if claimed:
+                await session.commit()
+            else:
+                log.warning("voice_extraction_lost_race", voice_log_id=voice_log_id)
+                await session.rollback()
 
         except Exception as exc:
             log.error(
@@ -152,7 +174,7 @@ async def extract_voice(
                         err_session,
                         vl,
                         VoiceProcessingStatus.failed,
-                        error_message=f"{type(exc).__name__}: {exc}",
+                        error_message=_GENERIC_FAILURE_MESSAGE,
                     )
                     await err_session.commit()
 
@@ -163,14 +185,15 @@ async def process_receipt(
     """Extract a transaction from a receipt image."""
     log_id = uuid.UUID(receipt_log_id)
     acc_id = uuid.UUID(account_id)
+    receipt_log = None
 
     async with SessionFactory() as session:
-        receipt_log = await repo.get_receipt_log(session, log_id)
-        if receipt_log is None:
-            log.error("receipt_log_not_found", receipt_log_id=receipt_log_id)
-            return
-
         try:
+            receipt_log = await repo.get_receipt_log(session, log_id)
+            if receipt_log is None:
+                log.error("receipt_log_not_found", receipt_log_id=receipt_log_id)
+                return
+
             await repo.update_receipt_log_status(
                 session, receipt_log, VoiceProcessingStatus.extracting
             )
@@ -178,7 +201,7 @@ async def process_receipt(
 
             image_bytes = await r2.download(receipt_log.image_url)
             suffix = Path(receipt_log.image_url).suffix.lower()
-            media_type = f"image/{suffix.lstrip('.') or 'jpeg'}"
+            media_type = _EXT_TO_MIME.get(suffix, "image/jpeg")
 
             extracted_list = await extract_transactions_from_receipt(
                 image_bytes, media_type, vision_llm
@@ -201,14 +224,19 @@ async def process_receipt(
                 )
                 extracted_data.append(extracted.model_dump())
 
-            await repo.update_receipt_log_status(
+            claimed = await repo.update_receipt_log_status_if(
                 session,
-                receipt_log,
-                VoiceProcessingStatus.completed,
+                receipt_log.id,
+                expected_statuses=[VoiceProcessingStatus.extracting],
+                status=VoiceProcessingStatus.completed,
                 ocr_text=extracted_list[0].note,
                 extracted_data=extracted_data,
             )
-            await session.commit()
+            if claimed:
+                await session.commit()
+            else:
+                log.warning("receipt_processing_lost_race", receipt_log_id=receipt_log_id)
+                await session.rollback()
 
         except Exception as exc:
             log.error(
@@ -224,15 +252,16 @@ async def process_receipt(
                         err_session,
                         rl,
                         VoiceProcessingStatus.failed,
-                        error_message=f"{type(exc).__name__}: {exc}",
+                        error_message=_GENERIC_FAILURE_MESSAGE,
                     )
                     await err_session.commit()
         finally:
-            try:
-                await r2.delete(receipt_log.image_url)
-            except Exception as cleanup_exc:
-                log.warning(
-                    "receipt_image_cleanup_failed",
-                    receipt_log_id=receipt_log_id,
-                    error=str(cleanup_exc),
-                )
+            if receipt_log is not None:
+                try:
+                    await r2.delete(receipt_log.image_url)
+                except Exception as cleanup_exc:
+                    log.warning(
+                        "receipt_image_cleanup_failed",
+                        receipt_log_id=receipt_log_id,
+                        error=str(cleanup_exc),
+                    )
