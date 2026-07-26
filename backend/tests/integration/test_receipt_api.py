@@ -7,9 +7,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.domains.finance import repository as repo
+from app.domains.finance.extractor import ExtractedTransaction, ExtractedTransactionList
 from app.domains.finance.models import (
     AccountType,
     TransactionSource,
@@ -59,6 +60,48 @@ async def test_upload_receipt_creates_log_and_enqueues_job(
     assert call_kwargs["receipt_log_id"] == str(receipt_log.id)
     assert call_kwargs["account_id"] == str(account.id)
     assert call_kwargs["r2"] is storage
+
+
+async def test_upload_receipt_job_finds_the_log_row_it_was_scheduled_for(
+    client: AsyncClient,
+    db_engine: AsyncEngine,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Wallet", type=AccountType.cash, currency="IDR"
+    )
+    await db_session.commit()
+
+    storage = AsyncMock()
+    storage.download = AsyncMock(return_value=b"fake-image")
+    mock_llm = AsyncMock()
+    mock_llm.extract_from_image = AsyncMock(
+        return_value=ExtractedTransactionList(
+            transactions=[
+                ExtractedTransaction(amount=-10_000, currency="IDR", confidence=0.9)
+            ]
+        )
+    )
+    test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+
+    with (
+        patch("app.domains.finance.routers.receipt.R2Storage", return_value=storage),
+        patch("app.domains.finance.service.OpenRouterLLM", return_value=mock_llm),
+        patch("app.domains.finance.jobs.SessionFactory", test_factory),
+        patch("app.core.upload_utils.filetype.guess") as mock_guess,
+    ):
+        mock_guess.return_value.mime = "image/jpeg"
+        response = await client.post(
+            "/api/v1/receipt/upload",
+            data={"account_id": str(account.id)},
+            files={"file": ("receipt.jpg", b"image", "image/jpeg")},
+        )
+
+    receipt_log_id = uuid.UUID(response.json()["data"]["receipt_log_id"])
+    receipt_log = await repo.get_receipt_log(db_session, receipt_log_id)
+    assert receipt_log is not None
+    assert receipt_log.processing_status == VoiceProcessingStatus.completed
 
 
 async def test_get_receipt_status_returns_404_for_missing_log(client: AsyncClient) -> None:

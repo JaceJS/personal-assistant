@@ -473,7 +473,7 @@ async def create_voice_upload(
     voice_log = await repo.create_voice_log(
         session, user_id, audio_url=object_key, account_id=account_id
     )
-    await session.flush()
+    await session.commit()
 
     settings = get_settings()
     background_tasks.add_task(
@@ -555,6 +555,7 @@ async def extract_voice_transcript(
     )
     if not claimed:
         raise BadRequestError("Voice log is not in transcribed state")
+    await session.commit()
 
     background_tasks.add_task(
         jobs.extract_voice,
@@ -597,7 +598,7 @@ async def create_receipt_upload(
     receipt_log = await repo.create_receipt_log(
         session, user_id, account_id=account_id, image_url=object_key
     )
-    await session.flush()
+    await session.commit()
 
     settings = get_settings()
     background_tasks.add_task(

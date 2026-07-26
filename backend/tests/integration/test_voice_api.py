@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.domains.finance import repository as repo
 from app.domains.finance.models import (
@@ -65,6 +65,42 @@ async def test_upload_voice_creates_log_and_enqueues_job(
     assert call_kwargs["voice_log_id"] == str(voice_log.id)
     assert call_kwargs["account_id"] == str(account.id)
     assert call_kwargs["r2"] is storage
+
+
+async def test_upload_voice_job_finds_the_log_row_it_was_scheduled_for(
+    client: AsyncClient,
+    db_engine: AsyncEngine,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Wallet", type=AccountType.cash, currency="IDR"
+    )
+    await db_session.commit()
+
+    storage = AsyncMock()
+    storage.download = AsyncMock(return_value=b"fake-audio")
+    mock_stt = AsyncMock()
+    mock_stt.transcribe = AsyncMock(return_value="halo")
+    test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+
+    with (
+        patch("app.domains.finance.routers.voice.R2Storage", return_value=storage),
+        patch("app.domains.finance.service.get_stt_provider", return_value=mock_stt),
+        patch("app.domains.finance.jobs.SessionFactory", test_factory),
+        patch("app.core.upload_utils.filetype.guess") as mock_guess,
+    ):
+        mock_guess.return_value.mime = "audio/webm"
+        response = await client.post(
+            "/api/v1/voice/upload",
+            data={"account_id": str(account.id)},
+            files={"file": ("recording.m4a", b"audio", "audio/m4a")},
+        )
+
+    voice_log_id = uuid.UUID(response.json()["data"]["voice_log_id"])
+    voice_log = await repo.get_voice_log(db_session, voice_log_id)
+    assert voice_log is not None
+    assert voice_log.processing_status == VoiceProcessingStatus.transcribed
 
 
 async def test_upload_voice_accepts_real_android_recording(
