@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import type { UserTextMessage } from "@/features/finance/utils/chatMessageUtils";
 
+import { MessageStatusIcon } from "./MessageStatusIcon";
+
 export function UserBubble({
   message,
   onLongPress,
@@ -24,6 +26,9 @@ export function UserBubble({
         <View style={styles.bubble}>
           <Text style={styles.text}>{message.content}</Text>
         </View>
+        <View style={styles.footer}>
+          <MessageStatusIcon status={message.status} />
+        </View>
       </View>
     </Pressable>
   );
@@ -43,5 +48,10 @@ const styles = StyleSheet.create({
   text: {
     ...StyleSheet.flatten(textStyles.body),
     color: "#FFFFFF",
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: spacing.xs,
   },
 });

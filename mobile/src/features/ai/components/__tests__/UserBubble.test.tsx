@@ -28,4 +28,26 @@ describe('UserBubble', () => {
     const { getByTestId } = await render(<UserBubble message={message} />);
     expect(() => fireEvent(getByTestId('user-bubble'), 'longPress')).not.toThrow();
   });
+
+  it('shows a sending indicator (icon only) while the message has not been sent yet', async () => {
+    const message = { ...createUserTextMessage('sate 20.000'), status: 'sending' as const };
+    const { getByTestId, queryByTestId } = await render(<UserBubble message={message} />);
+    expect(getByTestId('status-icon-sending')).toBeTruthy();
+    expect(queryByTestId('status-icon-sent')).toBeNull();
+    expect(queryByTestId('status-icon-failed')).toBeNull();
+  });
+
+  it('shows a sent indicator (icon only) once the message is confirmed sent', async () => {
+    const message = { ...createUserTextMessage('sate 20.000'), status: 'sent' as const };
+    const { getByTestId, queryByTestId } = await render(<UserBubble message={message} />);
+    expect(getByTestId('status-icon-sent')).toBeTruthy();
+    expect(queryByTestId('status-icon-sending')).toBeNull();
+  });
+
+  it('shows a failed indicator (icon only) when the message failed to send', async () => {
+    const message = { ...createUserTextMessage('sate 20.000'), status: 'failed' as const };
+    const { getByTestId, queryByTestId } = await render(<UserBubble message={message} />);
+    expect(getByTestId('status-icon-failed')).toBeTruthy();
+    expect(queryByTestId('status-icon-sent')).toBeNull();
+  });
 });

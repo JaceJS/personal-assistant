@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from unittest.mock import AsyncMock, patch
 
@@ -296,6 +297,46 @@ async def test_process_receipt_marks_failed_when_initial_fetch_raises(
     await db_session.refresh(receipt_log)
     assert receipt_log.processing_status == VoiceProcessingStatus.failed
     mock_r2.delete.assert_not_called()
+
+
+async def test_process_receipt_times_out_instead_of_hanging_past_the_deadline(
+    db_engine: AsyncEngine,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Wallet", type=AccountType.cash, currency="IDR"
+    )
+    receipt_log = await repo.create_receipt_log(
+        db_session, test_user_id, account_id=account.id, image_url="receipt/test.jpg"
+    )
+    await db_session.commit()
+
+    async def hang_forever(*args: object, **kwargs: object) -> ExtractedTransactionList:
+        await asyncio.sleep(10)
+        raise AssertionError("should have been cancelled by the deadline before waking up")
+
+    mock_llm = AsyncMock()
+    mock_llm.extract_from_image = AsyncMock(side_effect=hang_forever)
+    mock_r2 = AsyncMock()
+    mock_r2.download = AsyncMock(return_value=b"fake-image")
+
+    test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+
+    with (
+        patch("app.domains.finance.jobs.SessionFactory", test_factory),
+        patch("app.domains.finance.jobs.RECEIPT_EXTRACTION_DEADLINE_SECONDS", 0.05),
+    ):
+        await process_receipt(
+            vision_llm=mock_llm,
+            r2=mock_r2,
+            receipt_log_id=str(receipt_log.id),
+            account_id=str(account.id),
+        )
+
+    await db_session.refresh(receipt_log)
+    assert receipt_log.processing_status == VoiceProcessingStatus.failed
+    assert receipt_log.error_message == _GENERIC_FAILURE_MESSAGE
 
 
 async def test_process_receipt_does_not_overwrite_a_self_healed_failure(

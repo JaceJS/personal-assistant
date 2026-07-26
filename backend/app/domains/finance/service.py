@@ -59,7 +59,7 @@ from app.shared.storage import R2Storage
 # A voice/receipt job stuck in a non-terminal status past this long (e.g. its
 # BackgroundTask was lost to a process restart) is treated as failed the next
 # time its status is polled.
-_STUCK_JOB_TIMEOUT = timedelta(minutes=5)
+_STUCK_JOB_TIMEOUT = timedelta(seconds=75)
 _TERMINAL_STATUSES = {VoiceProcessingStatus.completed, VoiceProcessingStatus.failed}
 
 # ── Savings Goals ─────────────────────────────────────────────────────────────

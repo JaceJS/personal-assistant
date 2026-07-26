@@ -6,7 +6,12 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.ai.llm.openrouter import _CHAT_TEMPERATURE, OpenRouterLLM
+from app.ai.llm.openrouter import (
+    _CHAT_TEMPERATURE,
+    _MAX_RETRIES,
+    _REQUEST_TIMEOUT_SECONDS,
+    OpenRouterLLM,
+)
 
 
 def _make_llm() -> OpenRouterLLM:
@@ -92,6 +97,14 @@ async def test_chat_with_tools_force_text_disables_tool_choice() -> None:
     assert kwargs["tool_choice"] == "none"
     assert content == "Kamu punya Rp 1.000.000."
     assert tool_calls == []
+
+
+def test_client_disables_sdk_retries_to_avoid_timeout_multiplication() -> None:
+    assert _MAX_RETRIES == 0
+
+
+def test_client_request_timeout_leaves_room_under_the_60s_job_deadline() -> None:
+    assert _REQUEST_TIMEOUT_SECONDS < 60
 
 
 @pytest.mark.asyncio

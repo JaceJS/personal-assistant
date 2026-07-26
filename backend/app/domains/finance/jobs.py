@@ -16,6 +16,7 @@ Receipt pipeline (one stage):
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from pathlib import Path
 
@@ -38,6 +39,8 @@ _EXT_TO_MIME = {ext: mime for mime, ext in IMAGE_EXT_MAP.items()}
 # Shown to the user as-is (ChatBubble renders it directly); the real
 # exception is only ever logged via structlog, never persisted to the DB.
 _GENERIC_FAILURE_MESSAGE = "Processing failed. Please try again."
+
+RECEIPT_EXTRACTION_DEADLINE_SECONDS = 60
 
 
 async def process_voice(
@@ -203,8 +206,9 @@ async def process_receipt(
             suffix = Path(receipt_log.image_url).suffix.lower()
             media_type = _EXT_TO_MIME.get(suffix, "image/jpeg")
 
-            extracted_list = await extract_transactions_from_receipt(
-                image_bytes, media_type, vision_llm
+            extracted_list = await asyncio.wait_for(
+                extract_transactions_from_receipt(image_bytes, media_type, vision_llm),
+                timeout=RECEIPT_EXTRACTION_DEADLINE_SECONDS,
             )
 
             extracted_data: list[dict[str, object]] = []

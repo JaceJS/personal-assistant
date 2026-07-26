@@ -43,11 +43,10 @@ import {
   applyVoiceStatus,
   applyReceiptStatus,
   createDraftMessages,
-  createFailedUploadMessage,
-  createReceiptMessage,
-  createVoiceMessage,
+  createUploadingMessage,
   extractionToDraftTransactions,
   getActiveReceiptIds,
+  markMessageSent,
   setDraftState,
   staleTrackedIds,
   updateMessageIfChanged,
@@ -66,13 +65,14 @@ import type {
 import { QUICK_CHIPS, resolveQuickChipAction } from "@/features/ai/utils/quickChips";
 import { useIdTimeoutBackstop } from "@/hooks/useIdTimeoutBackstop";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import { generateId } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
-// Backend self-heals a stuck job after 5 minutes (service.py _STUCK_JOB_TIMEOUT);
+// Backend self-heals a stuck job after 75s (service.py _STUCK_JOB_TIMEOUT);
 // this backstop only covers polling itself silently dying, so it must stay above that.
-const STUCK_JOB_TIMEOUT_MS = 5 * 60_000 + 30_000;
+const STUCK_JOB_TIMEOUT_MS = 90_000;
 const SCROLL_DEBOUNCE_MS = 100;
 const QUICK_ACTIONS_ANIM_MS = 200; // matches QuickActionsMenu's own open/close animation
 
@@ -344,55 +344,88 @@ export default function AIAssistantScreen() {
     );
   }, [actionMenu, deleteMessage, showToast, t]);
 
-  const uploadVoiceFlow = useCallback(
-    async (audioUri: string, accountId: string) => {
+  const performVoiceUpload = useCallback(
+    async (audioUri: string, accountId: string, placeholderId: string) => {
       try {
         const response = await uploadAudio.mutateAsync({ audioUri, accountId });
-        setMessages((prev) => [
-          ...prev,
-          createVoiceMessage(response.voice_log_id, audioUri, accountId),
-        ]);
+        setMessages((prev) => markMessageSent(prev, placeholderId, response.voice_log_id));
         setVoiceLogId(response.voice_log_id);
       } catch {
         resetRecorder();
-        setMessages((prev) => [
-          ...prev,
-          createFailedUploadMessage("voice", audioUri, accountId, t("ai.toast.voiceUploadFailed")),
-        ]);
+        setMessages((prev) =>
+          updateMessageIfChanged(prev, placeholderId, (m) => ({
+            ...m,
+            status: "failed",
+            errorMessage: t("ai.toast.voiceUploadFailed"),
+          }))
+        );
         showToast(t("ai.toast.voiceUploadFailed"), "error");
       }
     },
     [resetRecorder, setMessages, showToast, uploadAudio, t]
   );
 
-  const uploadReceiptFlow = useCallback(
-    async (imageUri: string, accountId: string) => {
+  const performReceiptUpload = useCallback(
+    async (imageUri: string, accountId: string, placeholderId: string) => {
       try {
         const response = await uploadReceipt.mutateAsync({ imageUri, accountId });
         receiptAccountIds.current.set(response.receipt_log_id, accountId);
-        setMessages((prev) => [
-          ...prev,
-          createReceiptMessage(response.receipt_log_id, imageUri, accountId),
-        ]);
+        setMessages((prev) => markMessageSent(prev, placeholderId, response.receipt_log_id));
       } catch {
-        setMessages((prev) => [
-          ...prev,
-          createFailedUploadMessage("receipt", imageUri, accountId, t("ai.toast.receiptUploadFailed")),
-        ]);
+        setMessages((prev) =>
+          updateMessageIfChanged(prev, placeholderId, (m) => ({
+            ...m,
+            status: "failed",
+            errorMessage: t("ai.toast.receiptUploadFailed"),
+          }))
+        );
         showToast(t("ai.toast.receiptUploadFailed"), "error");
       }
     },
     [setMessages, showToast, uploadReceipt, t]
   );
 
+  const uploadVoiceFlow = useCallback(
+    async (audioUri: string, accountId: string) => {
+      const placeholderId = generateId();
+      setMessages((prev) => [
+        ...prev,
+        createUploadingMessage({ id: placeholderId, type: "voice", localUri: audioUri, accountId }),
+      ]);
+      await performVoiceUpload(audioUri, accountId, placeholderId);
+    },
+    [performVoiceUpload, setMessages]
+  );
+
+  const uploadReceiptFlow = useCallback(
+    async (imageUri: string, accountId: string) => {
+      const placeholderId = generateId();
+      setMessages((prev) => [
+        ...prev,
+        createUploadingMessage({ id: placeholderId, type: "receipt", localUri: imageUri, accountId }),
+      ]);
+      await performReceiptUpload(imageUri, accountId, placeholderId);
+    },
+    [performReceiptUpload, setMessages]
+  );
+
   const handleRetry = useCallback(
     (message: ChatMessage) => {
       if (!message.localUri || !message.accountId) return;
-      setMessages((prev) => prev.filter((m) => m.id !== message.id));
-      if (message.type === "voice") void uploadVoiceFlow(message.localUri, message.accountId);
-      else void uploadReceiptFlow(message.localUri, message.accountId);
+      setMessages((prev) =>
+        updateMessageIfChanged(prev, message.id, (m) => ({
+          ...m,
+          status: "uploading",
+          errorMessage: undefined,
+        }))
+      );
+      if (message.type === "voice") {
+        void performVoiceUpload(message.localUri, message.accountId, message.id);
+      } else {
+        void performReceiptUpload(message.localUri, message.accountId, message.id);
+      }
     },
-    [setMessages, uploadReceiptFlow, uploadVoiceFlow]
+    [performReceiptUpload, performVoiceUpload, setMessages]
   );
 
   const handleRetryAiMessage = useCallback(

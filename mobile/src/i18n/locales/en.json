@@ -452,7 +452,8 @@
     },
     "chatBubble": {
       "status": {
-        "pending": "Uploading...",
+        "uploading": "Sending...",
+        "pending": "Waiting to process...",
         "transcribing": "Converting speech to text...",
         "transcribed": "Check transcript",
         "extracting": "Reading transaction...",

@@ -38,8 +38,8 @@ def _parse_tool_arguments(raw: str) -> dict[str, Any]:
 
 _OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 _APP_TITLE = "voice-finance-backend"
-_REQUEST_TIMEOUT_SECONDS = 60.0
-_MAX_RETRIES = 2
+_REQUEST_TIMEOUT_SECONDS = 58.0
+_MAX_RETRIES = 0
 
 # Low temperature keeps tool-calling and financial-figure reporting
 # deterministic; this is not a creative-writing use case.

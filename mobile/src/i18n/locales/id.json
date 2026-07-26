@@ -448,7 +448,8 @@
     },
     "chatBubble": {
       "status": {
-        "pending": "Mengunggah...",
+        "uploading": "Mengirim...",
+        "pending": "Menunggu diproses...",
         "transcribing": "Mengubah suara jadi teks...",
         "transcribed": "Cek transkrip",
         "extracting": "Membaca transaksi...",

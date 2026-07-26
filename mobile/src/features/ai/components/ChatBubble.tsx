@@ -8,9 +8,12 @@ import { formatMoney } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import type { ChatMessage } from "@/features/finance/utils/chatMessageUtils";
 
+import { MessageStatusIcon } from "./MessageStatusIcon";
+
 // Literal key paths (see src/i18n/types.ts) so t() stays type-checked even
 // though the status used to index this map is a runtime string.
 const STATUS_LABEL_KEYS = {
+  uploading: "ai.chatBubble.status.uploading",
   pending: "ai.chatBubble.status.pending",
   transcribing: "ai.chatBubble.status.transcribing",
   transcribed: "ai.chatBubble.status.transcribed",
@@ -33,14 +36,16 @@ export function ChatBubble({
 }) {
   const { t } = useTranslation();
   const [hasImageError, setHasImageError] = useState(false);
+  const isUploading = message.status === "uploading";
   const isProcessing = message.status !== "completed" && message.status !== "failed";
   const isVoice = message.type === "voice";
   const canRetry = message.status === "failed" && !!message.localUri && !!onRetry;
   const showThumbnail = message.type === "receipt" && !!message.localUri && !hasImageError;
+  const sendStatus = isUploading ? "sending" : message.status === "failed" ? "failed" : "sent";
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.bubble}>
+      <View testID="chat-bubble" style={[styles.bubble, isUploading && styles.bubbleUploading]}>
         {showThumbnail && (
           <Image
             testID="receipt-thumbnail"
@@ -92,14 +97,17 @@ export function ChatBubble({
           </Pressable>
         )}
         <View style={styles.typeFooter}>
-          {isVoice ? (
-            <Mic size={12} color={colors.text.muted} strokeWidth={1.8} />
-          ) : (
-            <Camera size={12} color={colors.text.muted} strokeWidth={1.8} />
-          )}
-          <Text style={styles.typeLabel}>
-            {isVoice ? t("ai.chatBubble.typeVoice") : t("ai.chatBubble.typeReceipt")}
-          </Text>
+          <View style={styles.typeFooterLeft}>
+            {isVoice ? (
+              <Mic size={12} color={colors.text.muted} strokeWidth={1.8} />
+            ) : (
+              <Camera size={12} color={colors.text.muted} strokeWidth={1.8} />
+            )}
+            <Text style={styles.typeLabel}>
+              {isVoice ? t("ai.chatBubble.typeVoice") : t("ai.chatBubble.typeReceipt")}
+            </Text>
+          </View>
+          <MessageStatusIcon status={sendStatus} />
         </View>
       </View>
     </View>
@@ -119,6 +127,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     maxWidth: "80%",
     gap: spacing.xs,
+  },
+  bubbleUploading: {
+    opacity: 0.6,
   },
   thumbnail: {
     width: 160,
@@ -173,8 +184,13 @@ const styles = StyleSheet.create({
   typeFooter: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    justifyContent: "space-between",
     marginTop: spacing.xs,
+  },
+  typeFooterLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   typeLabel: {
     ...StyleSheet.flatten(textStyles.caption),

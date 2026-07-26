@@ -46,6 +46,7 @@ export function useChat() {
                     id: m.id,
                     type: "user" as const,
                     content: m.content,
+                    status: "sent" as const,
                     createdAt: new Date(m.created_at),
                     remoteId: m.id,
                   }
@@ -80,7 +81,9 @@ export function useChat() {
         setSessionId(session_id);
         await AsyncStorage.setItem(CHAT_SESSION_KEY, session_id);
         const tagUserMsg = (m: Message) =>
-          m.id === userMsgId ? { ...(m as UserTextMessage), remoteId: user_message_id } : m;
+          m.id === userMsgId
+            ? { ...(m as UserTextMessage), remoteId: user_message_id, status: "sent" as const }
+            : m;
         setMessages((prev) => [
           ...(reply
             ? prev.map((m) =>
@@ -93,11 +96,15 @@ export function useChat() {
         ]);
       } catch {
         setMessages((prev) =>
-          prev.map((m) =>
-            m.id === aiMsg.id
-              ? rejectAIMessage(m as AIMessage, "Could not get a response. Please try again.")
-              : m
-          )
+          prev.map((m) => {
+            if (m.id === aiMsg.id) {
+              return rejectAIMessage(m as AIMessage, "Could not get a response. Please try again.");
+            }
+            if (m.id === userMsgId) {
+              return { ...(m as UserTextMessage), status: "failed" as const };
+            }
+            return m;
+          })
         );
       }
     },
@@ -122,7 +129,13 @@ export function useChat() {
       const userMsgId =
         precedingMsg && precedingMsg.type === "user" ? precedingMsg.id : failedMsg.id;
       const aiMsg = createAITypingMessage(failedMsg.originalText);
-      setMessages((prev) => prev.map((m) => (m.id === failedMsg.id ? aiMsg : m)));
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id === failedMsg.id) return aiMsg;
+          if (m.id === userMsgId) return { ...(m as UserTextMessage), status: "sending" as const };
+          return m;
+        })
+      );
       await dispatch(failedMsg.originalText, userMsgId, aiMsg);
     },
     [dispatch, messages]

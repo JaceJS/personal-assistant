@@ -1,6 +1,8 @@
 import {
   createVoiceMessage,
   createReceiptMessage,
+  createUploadingMessage,
+  markMessageSent,
   applyVoiceStatus,
   applyReceiptStatus,
   createUserTextMessage,
@@ -119,6 +121,81 @@ describe('createReceiptMessage', () => {
   it('sets createdAt to a Date', () => {
     const msg = createReceiptMessage('receipt-id-456');
     expect(msg.createdAt).toBeInstanceOf(Date);
+  });
+});
+
+describe('createUploadingMessage', () => {
+  it('creates a receipt message with the given placeholder id and uploading status', () => {
+    const msg = createUploadingMessage({
+      id: 'local-1',
+      type: 'receipt',
+      localUri: 'file:///tmp/r.jpg',
+      accountId: 'acc-1',
+    });
+    expect(msg.id).toBe('local-1');
+    expect(msg.type).toBe('receipt');
+    expect(msg.status).toBe('uploading');
+    expect(msg.localUri).toBe('file:///tmp/r.jpg');
+    expect(msg.accountId).toBe('acc-1');
+  });
+
+  it('creates a voice message with the given placeholder id and uploading status', () => {
+    const msg = createUploadingMessage({
+      id: 'local-2',
+      type: 'voice',
+      localUri: 'file:///tmp/v.m4a',
+      accountId: 'acc-1',
+    });
+    expect(msg.type).toBe('voice');
+    expect(msg.status).toBe('uploading');
+  });
+
+  it('sets createdAt to a Date', () => {
+    const msg = createUploadingMessage({
+      id: 'local-3',
+      type: 'receipt',
+      localUri: 'file:///tmp/r.jpg',
+      accountId: 'acc-1',
+    });
+    expect(msg.createdAt).toBeInstanceOf(Date);
+  });
+});
+
+describe('markMessageSent', () => {
+  it('swaps the placeholder id for the real id and sets status to pending', () => {
+    const messages: Message[] = [
+      createUploadingMessage({
+        id: 'local-1',
+        type: 'receipt',
+        localUri: 'file:///tmp/r.jpg',
+        accountId: 'acc-1',
+      }),
+    ];
+    const next = markMessageSent(messages, 'local-1', 'receipt-real-id');
+    expect(next[0].id).toBe('receipt-real-id');
+    expect((next[0] as ChatMessage).status).toBe('pending');
+    expect((next[0] as ChatMessage).localUri).toBe('file:///tmp/r.jpg');
+  });
+
+  it('leaves other messages untouched', () => {
+    const other = createReceiptMessage('r-other');
+    const messages: Message[] = [
+      other,
+      createUploadingMessage({
+        id: 'local-1',
+        type: 'voice',
+        localUri: 'file:///tmp/v.m4a',
+        accountId: 'acc-1',
+      }),
+    ];
+    const next = markMessageSent(messages, 'local-1', 'voice-real-id');
+    expect(next[0]).toBe(other);
+  });
+
+  it('is a no-op when the placeholder id is not found', () => {
+    const messages: Message[] = [createReceiptMessage('r1')];
+    const next = markMessageSent(messages, 'missing', 'real-id');
+    expect(next[0].id).toBe('r1');
   });
 });
 
@@ -492,6 +569,19 @@ describe('getActiveReceiptIds', () => {
       createReceiptMessage('r3'),
     ];
     expect(getActiveReceiptIds(messages)).toEqual(['r3']);
+  });
+
+  it('excludes receipt messages still uploading (no server id to poll yet)', () => {
+    const messages: Message[] = [
+      createUploadingMessage({
+        id: 'local-1',
+        type: 'receipt',
+        localUri: 'file:///tmp/r.jpg',
+        accountId: 'acc-1',
+      }),
+      createReceiptMessage('r1'),
+    ];
+    expect(getActiveReceiptIds(messages)).toEqual(['r1']);
   });
 
   it('excludes voice messages even when non-terminal', () => {

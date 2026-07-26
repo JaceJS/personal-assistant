@@ -4,10 +4,12 @@ import type { ExtractedTransaction, VoiceProcessingStatus, VoiceStatusResponse }
 import type { ReceiptStatusResponse } from '@/features/finance/api/receipt';
 import type { DraftTransaction } from '@/features/ai/api/chat';
 
+export type ChatMessageStatus = VoiceProcessingStatus | 'uploading';
+
 export type ChatMessage = {
   id: string;
   type: 'voice' | 'receipt';
-  status: VoiceProcessingStatus;
+  status: ChatMessageStatus;
   transcript?: string;
   extractedData?: ExtractedTransaction[];
   errorMessage?: string;
@@ -18,10 +20,13 @@ export type ChatMessage = {
   createdAt: Date;
 };
 
+export type MessageSendStatus = 'sending' | 'sent' | 'failed';
+
 export type UserTextMessage = {
   id: string;
   type: 'user';
   content: string;
+  status: MessageSendStatus;
   createdAt: Date;
   // The chat_messages row id on the backend. Undefined until the send this
   // message belongs to resolves — only messages with a remoteId can be
@@ -88,21 +93,37 @@ export function createReceiptMessage(
   };
 }
 
-export function createFailedUploadMessage(
-  type: 'voice' | 'receipt',
-  localUri: string,
-  accountId: string,
-  errorMessage: string,
-): ChatMessage {
+export function createUploadingMessage({
+  id,
+  type,
+  localUri,
+  accountId,
+}: {
+  id: string;
+  type: 'voice' | 'receipt';
+  localUri: string;
+  accountId: string;
+}): ChatMessage {
   return {
-    id: generateId(),
+    id,
     type,
-    status: 'failed',
+    status: 'uploading',
     localUri,
     accountId,
-    errorMessage,
     createdAt: new Date(),
   };
+}
+
+export function markMessageSent(
+  messages: Message[],
+  placeholderId: string,
+  realId: string,
+): Message[] {
+  return messages.map((m) =>
+    m.id === placeholderId && (m.type === 'receipt' || m.type === 'voice')
+      ? { ...m, id: realId, status: 'pending' as const }
+      : m,
+  );
 }
 
 export function applyVoiceStatus(msg: ChatMessage, status: VoiceStatusResponse): ChatMessage {
@@ -125,7 +146,7 @@ export function applyReceiptStatus(msg: ChatMessage, status: ReceiptStatusRespon
 }
 
 export function createUserTextMessage(content: string): UserTextMessage {
-  return { id: generateId(), type: 'user', content, createdAt: new Date() };
+  return { id: generateId(), type: 'user', content, status: 'sending', createdAt: new Date() };
 }
 
 export function createAITypingMessage(originalText: string): AIMessage {
@@ -174,11 +195,13 @@ export function setDraftState(msg: DraftMessage, state: DraftMessageState): Draf
   return { ...msg, state };
 }
 
-const TERMINAL_STATUSES: VoiceProcessingStatus[] = ['completed', 'failed'];
+const NON_POLLABLE_STATUSES: ChatMessageStatus[] = ['uploading', 'completed', 'failed'];
 
 export function getActiveReceiptIds(messages: Message[]): string[] {
   return messages
-    .filter((m): m is ChatMessage => m.type === 'receipt' && !TERMINAL_STATUSES.includes(m.status))
+    .filter(
+      (m): m is ChatMessage => m.type === 'receipt' && !NON_POLLABLE_STATUSES.includes(m.status),
+    )
     .map((m) => m.id);
 }
 

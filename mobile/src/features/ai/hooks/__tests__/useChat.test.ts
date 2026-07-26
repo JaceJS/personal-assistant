@@ -383,6 +383,92 @@ describe('useChat', () => {
     expect(result.current.messages.some((m) => m.type === 'draft')).toBe(false);
   });
 
+  it('marks the user bubble as sent once the send resolves', async () => {
+    mockPostChatMessage.mockResolvedValueOnce({
+      reply: 'Hello!',
+      session_id: 'session-abc',
+      user_message_id: 'msg-user-1',
+      assistant_message_id: 'msg-ai-1',
+      draft_transactions: [],
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('Hi');
+    });
+
+    const userMsg = result.current.messages.find(
+      (m): m is UserTextMessage => m.type === 'user',
+    )!;
+    expect(userMsg.status).toBe('sent');
+  });
+
+  it('marks the user bubble as failed when the send fails', async () => {
+    mockPostChatMessage.mockRejectedValueOnce(new Error('Network error'));
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('Hi');
+    });
+
+    const userMsg = result.current.messages.find(
+      (m): m is UserTextMessage => m.type === 'user',
+    )!;
+    expect(userMsg.status).toBe('failed');
+  });
+
+  it('resets the user bubble to sent after a failed send is retried successfully', async () => {
+    mockPostChatMessage
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({
+        reply: 'Hello (retried)!',
+        session_id: 'session-abc',
+        user_message_id: 'msg-user-retry',
+        assistant_message_id: 'msg-ai-retry',
+        draft_transactions: [],
+      });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('Hi');
+    });
+    const failedMsg = result.current.messages.find(
+      (m): m is AIMessage => m.type === 'ai',
+    )!;
+
+    await act(async () => {
+      await result.current.retryMessage(failedMsg);
+    });
+
+    const userMsg = result.current.messages.find(
+      (m): m is UserTextMessage => m.type === 'user',
+    )!;
+    expect(userMsg.status).toBe('sent');
+  });
+
+  it('rehydrates history user messages as already sent', async () => {
+    await AsyncStorage.setItem(CHAT_SESSION_KEY, 'session-abc');
+    mockGetChatSessionMessages.mockResolvedValueOnce({
+      session_id: 'session-abc',
+      messages: [
+        { id: 'msg-1', role: 'user', content: 'sate 20.000', created_at: '2026-07-08T10:00:00Z' },
+      ],
+      draft_transactions: [],
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {});
+
+    const userMsg = result.current.messages.find(
+      (m): m is UserTextMessage => m.type === 'user',
+    )!;
+    expect(userMsg.status).toBe('sent');
+  });
+
   it('tags the user and AI bubbles with the server-issued message ids once the send resolves', async () => {
     mockPostChatMessage.mockResolvedValueOnce({
       reply: 'Hello!',
