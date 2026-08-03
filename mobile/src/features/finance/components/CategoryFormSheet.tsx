@@ -211,26 +211,28 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
                     {row.map((icon) => {
                       const isSelected = selectedIcon === icon;
                       return (
-                        <View
-                          key={icon}
-                          style={[
-                            styles.iconCell,
-                            isSelected
-                              ? {
-                                  backgroundColor: `${selectedColor ?? colors.accent.primary}33`,
-                                  borderColor: selectedColor ?? colors.accent.primary,
-                                }
-                              : styles.iconCellInactive,
-                          ]}
-                        >
-                          <Text style={styles.iconEmoji}>{icon}</Text>
+                        <View key={icon} style={styles.iconCellWrapper}>
                           <Pressable
                             onPress={() => setValue("icon", icon)}
                             style={({ pressed }) => [
-                              StyleSheet.absoluteFillObject,
-                              pressed && { backgroundColor: "rgba(255, 255, 255, 0.05)" },
+                              styles.iconCellPressable,
+                              pressed && { opacity: 0.7 },
                             ]}
-                          />
+                          >
+                            <View
+                              style={[
+                                styles.iconCell,
+                                isSelected
+                                  ? {
+                                      backgroundColor: `${selectedColor ?? colors.accent.primary}33`,
+                                      borderColor: selectedColor ?? colors.accent.primary,
+                                    }
+                                  : styles.iconCellInactive,
+                              ]}
+                            >
+                              <Text style={styles.iconEmoji}>{icon}</Text>
+                            </View>
+                          </Pressable>
                         </View>
                       );
                     })}
@@ -327,14 +329,15 @@ const styles = StyleSheet.create({
 
   iconGrid: { gap: spacing.sm, alignSelf: "stretch" },
   iconRow: { flexDirection: "row", gap: 6, width: "100%", alignSelf: "stretch" },
+  iconCellWrapper: { flex: 1 },
+  iconCellPressable: { width: "100%", alignItems: "center" },
   iconCell: {
+    width: "100%",
     height: 44,
-    flex: 1,
     borderRadius: radius.md,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
   },
   iconCellInactive: { backgroundColor: colors.bg.elevated, borderColor: colors.border.default },
   iconCellPlaceholder: { flex: 1, height: 44 },
