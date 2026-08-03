@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { supabase } from "@/lib/supabase";
 import { queryClient } from "@/lib/queryClient";
@@ -7,6 +8,7 @@ import { useSyncPromptStore } from "@/stores/syncPrompt";
 import { logger } from "@/lib/logger";
 import { LocalRepository } from "@/features/finance/repository";
 import { getLocalDataSummary } from "@/features/sync/syncService";
+import { CHAT_SESSION_KEY } from "@/features/ai/hooks/useChat";
 
 const localRepo = new LocalRepository();
 
@@ -71,6 +73,7 @@ export function useAuth() {
         // "step 1 always looks done" bug in the setup checklist.
         if (wasGuest || previousUserId !== session.user.id) {
           queryClient.clear();
+          void AsyncStorage.removeItem(CHAT_SESSION_KEY);
         }
         setSession(session);
         if (event === "SIGNED_IN" && wasGuest) {

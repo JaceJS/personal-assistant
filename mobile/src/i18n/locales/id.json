@@ -374,7 +374,8 @@
     "headerTitle": "AI Assistant",
     "clearChat": {
       "menuLabel": "Hapus Percakapan",
-      "alertMessage": "Seluruh riwayat chat akan dihapus dari perangkat ini."
+      "alertMessage": "Seluruh riwayat chat akan dihapus dari perangkat ini.",
+      "alertMessagePendingDrafts": "Seluruh riwayat chat akan dihapus dari perangkat ini. Ada transaksi yang belum dikonfirmasi dan akan ikut hilang."
     },
     "guestSubtitle": "Masuk untuk menggunakan AI Assistant dan melihat data keuanganmu.",
     "accountGate": {

@@ -44,6 +44,38 @@ async def test_create_transaction_updates_account_balance(
     assert account.balance == -50_000
 
 
+async def test_patch_status_cancelled_marks_draft_cancelled_without_deleting_it(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Dompet", type=AccountType.cash, currency="IDR"
+    )
+    tx = await repo.create_transaction(
+        db_session,
+        test_user_id,
+        account_id=account.id,
+        amount=-15_000,
+        currency="IDR",
+        occurred_at=datetime.now(UTC),
+        source=TransactionSource.manual,
+        status=TransactionStatus.draft,
+    )
+    tx_id = tx.id
+    await db_session.commit()
+
+    response = await client.patch(f"/api/v1/transactions/{tx_id}", json={"status": "cancelled"})
+
+    assert response.status_code == 200
+    assert response.json()["data"]["status"] == "cancelled"
+
+    db_session.expire_all()
+    still_there = await repo.get_transaction(db_session, tx_id)
+    assert still_there is not None
+    assert still_there.status == TransactionStatus.cancelled
+
+
 async def test_create_transaction_forbidden_for_other_users_account(
     client: AsyncClient,
     db_session: AsyncSession,

@@ -29,6 +29,7 @@ const makeDraft = (overrides: Partial<DraftTransaction> = {}): DraftTransaction 
   category_name: 'Makan',
   note: null,
   account_id: 'acc-1',
+  status: 'draft',
   ...overrides,
 });
 
@@ -57,6 +58,16 @@ describe('createDraftMessages', () => {
   it('sets createdAt to a Date', () => {
     const msgs = createDraftMessages([makeDraft()]);
     expect(msgs[0].createdAt).toBeInstanceOf(Date);
+  });
+
+  it('maps a confirmed draft transaction to the saved state', () => {
+    const msgs = createDraftMessages([makeDraft({ status: 'confirmed' })]);
+    expect(msgs[0].state).toBe('saved');
+  });
+
+  it('maps a cancelled draft transaction to the cancelled state', () => {
+    const msgs = createDraftMessages([makeDraft({ status: 'cancelled' })]);
+    expect(msgs[0].state).toBe('cancelled');
   });
 });
 
@@ -309,6 +320,7 @@ describe('extractionToDraftTransactions', () => {
         category_name: 'Makan',
         note: null,
         account_id: 'acc-1',
+        status: 'draft',
       },
       {
         transaction_id: 'tx-2',
@@ -318,6 +330,7 @@ describe('extractionToDraftTransactions', () => {
         category_name: 'Makan',
         note: null,
         account_id: 'acc-1',
+        status: 'draft',
       },
     ]);
   });

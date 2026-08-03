@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { deleteTransaction } from '@/features/finance/api/transactions';
+import { updateTransaction } from '@/features/finance/api/transactions';
 
 export function useCancelAiDraft() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (transactionId: string) => deleteTransaction(transactionId),
+    mutationFn: (transactionId: string) => updateTransaction(transactionId, { status: 'cancelled' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },

@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api/client';
-import type { ApiResponse } from '@/features/finance/types';
+import type { ApiResponse, TransactionStatus } from '@/features/finance/types';
 
 export interface DraftTransaction {
   transaction_id: string;
@@ -9,6 +9,7 @@ export interface DraftTransaction {
   category_name: string | null;
   note: string | null;
   account_id: string;
+  status: TransactionStatus;
 }
 
 export interface ChatReply {

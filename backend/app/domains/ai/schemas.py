@@ -7,6 +7,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.domains.finance.models import TransactionStatus
+
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
@@ -21,6 +23,7 @@ class DraftTransaction(BaseModel):
     category_name: str | None
     note: str | None
     account_id: uuid.UUID
+    status: TransactionStatus
 
 
 class ChatReply(BaseModel):

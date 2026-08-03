@@ -10,6 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.domains.finance import repository as repo
+from app.domains.finance.extractor import ExtractedTransaction
 from app.domains.finance.models import (
     AccountType,
     TransactionSource,
@@ -101,6 +102,55 @@ async def test_upload_voice_job_finds_the_log_row_it_was_scheduled_for(
     voice_log = await repo.get_voice_log(db_session, voice_log_id)
     assert voice_log is not None
     assert voice_log.processing_status == VoiceProcessingStatus.transcribed
+
+
+async def test_extract_voice_links_draft_to_chat_session(
+    client: AsyncClient,
+    db_engine: AsyncEngine,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Wallet", type=AccountType.cash, currency="IDR"
+    )
+    voice_log = await repo.create_voice_log(
+        db_session, test_user_id, audio_url="voice/user/recording.m4a", account_id=account.id
+    )
+    voice_log_id = voice_log.id
+    await repo.update_voice_log_status(
+        db_session, voice_log, VoiceProcessingStatus.transcribed, transcript="kopi 15rb"
+    )
+    await db_session.commit()
+
+    test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+    mock_llm = AsyncMock()
+
+    with (
+        patch("app.domains.finance.service.OpenRouterLLM", return_value=mock_llm),
+        patch("app.domains.finance.jobs.SessionFactory", test_factory),
+        patch(
+            "app.domains.finance.jobs.extract_transactions",
+            AsyncMock(
+                return_value=[ExtractedTransaction(amount=-15_000, currency="IDR", confidence=0.9)]
+            ),
+        ),
+    ):
+        response = await client.post(
+            f"/api/v1/voice/{voice_log_id}/extract",
+            json={"transcript": "kopi 15rb"},
+        )
+
+    assert response.status_code == 200
+    db_session.expire_all()
+    voice_log = await repo.get_voice_log(db_session, voice_log_id)
+    assert voice_log is not None
+    assert voice_log.processing_status == VoiceProcessingStatus.completed
+    txs = await repo.get_transactions_by_voice_log(db_session, voice_log_id)
+    assert len(txs) == 1
+    assert txs[0].chat_session_id is not None
+    pending = await repo.get_pending_draft_transactions(db_session, txs[0].chat_session_id)
+    assert len(pending) == 1
+    assert pending[0].id == txs[0].id
 
 
 async def test_upload_voice_accepts_real_android_recording(

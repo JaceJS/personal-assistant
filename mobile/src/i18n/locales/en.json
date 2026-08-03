@@ -378,7 +378,8 @@
     "headerTitle": "AI Assistant",
     "clearChat": {
       "menuLabel": "Clear Conversation",
-      "alertMessage": "The entire chat history will be removed from this device."
+      "alertMessage": "The entire chat history will be removed from this device.",
+      "alertMessagePendingDrafts": "The entire chat history will be removed from this device. You have unconfirmed transactions that will be lost too."
     },
     "guestSubtitle": "Sign in to use the AI Assistant and see your financial data.",
     "accountGate": {

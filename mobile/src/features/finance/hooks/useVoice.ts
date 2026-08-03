@@ -7,8 +7,15 @@ const VOICE_QUERY_KEY = "voice";
 
 export function useUploadAudio() {
   return useMutation({
-    mutationFn: ({ audioUri, accountId }: { audioUri: string; accountId: string }) =>
-      uploadAudio(audioUri, accountId),
+    mutationFn: ({
+      audioUri,
+      accountId,
+      chatSessionId,
+    }: {
+      audioUri: string;
+      accountId: string;
+      chatSessionId?: string;
+    }) => uploadAudio(audioUri, accountId, chatSessionId),
     retry: false,
   });
 }
@@ -30,8 +37,15 @@ export function useVoiceStatus(voiceLogId: string | null) {
 export function useExtractVoice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ voiceLogId, transcript }: { voiceLogId: string; transcript: string }) =>
-      extractVoice(voiceLogId, transcript),
+    mutationFn: ({
+      voiceLogId,
+      transcript,
+      chatSessionId,
+    }: {
+      voiceLogId: string;
+      transcript: string;
+      chatSessionId?: string;
+    }) => extractVoice(voiceLogId, transcript, chatSessionId),
     retry: false,
     onSuccess: (_data, { voiceLogId }) => {
       void queryClient.invalidateQueries({ queryKey: [VOICE_QUERY_KEY, voiceLogId] });

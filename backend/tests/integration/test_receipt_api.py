@@ -78,9 +78,7 @@ async def test_upload_receipt_job_finds_the_log_row_it_was_scheduled_for(
     mock_llm = AsyncMock()
     mock_llm.extract_from_image = AsyncMock(
         return_value=ExtractedTransactionList(
-            transactions=[
-                ExtractedTransaction(amount=-10_000, currency="IDR", confidence=0.9)
-            ]
+            transactions=[ExtractedTransaction(amount=-10_000, currency="IDR", confidence=0.9)]
         )
     )
     test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
@@ -102,6 +100,11 @@ async def test_upload_receipt_job_finds_the_log_row_it_was_scheduled_for(
     receipt_log = await repo.get_receipt_log(db_session, receipt_log_id)
     assert receipt_log is not None
     assert receipt_log.processing_status == VoiceProcessingStatus.completed
+
+    chat_session_id = uuid.UUID(response.json()["data"]["chat_session_id"])
+    txs = await repo.get_pending_draft_transactions(db_session, chat_session_id)
+    assert len(txs) == 1
+    assert txs[0].receipt_log_id == receipt_log_id
 
 
 async def test_get_receipt_status_returns_404_for_missing_log(client: AsyncClient) -> None:

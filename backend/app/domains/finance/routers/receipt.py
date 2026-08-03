@@ -33,6 +33,7 @@ async def upload_receipt(
     background_tasks: BackgroundTasks,
     account_id: Annotated[uuid.UUID, Form()],
     file: Annotated[UploadFile, File()],
+    chat_session_id: Annotated[uuid.UUID | None, Form()] = None,
 ) -> ApiResponse[ReceiptUploadResponse]:
     item = await service.create_receipt_upload(
         session,
@@ -41,6 +42,7 @@ async def upload_receipt(
         file=file,
         storage=R2Storage(get_settings()),
         background_tasks=background_tasks,
+        chat_session_id=chat_session_id,
     )
     return ok(item, message="created")
 

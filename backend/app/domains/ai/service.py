@@ -79,6 +79,7 @@ async def _to_draft_transaction(db: AsyncSession, tx: Transaction) -> DraftTrans
         category_name=category_name,
         note=tx.note,
         account_id=tx.account_id,
+        status=tx.status,
     )
 
 
@@ -94,8 +95,8 @@ async def get_session_messages(
         raise ForbiddenError("Access denied")
 
     messages = await repo.get_recent_messages(db, session_id, limit=20)
-    draft_rows = await finance_repo.get_pending_draft_transactions(db, session_id)
-    drafts = [await _to_draft_transaction(db, tx) for tx in draft_rows]
+    tx_rows = await finance_repo.get_session_transactions(db, session_id)
+    drafts = [await _to_draft_transaction(db, tx) for tx in tx_rows]
     return messages, drafts
 
 

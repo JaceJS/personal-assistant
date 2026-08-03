@@ -46,7 +46,11 @@ async def test_extract_claims_status_atomically_before_enqueue() -> None:
     background_tasks = BackgroundTasks()
     voice_log = _make_voice_log()
 
-    with patch("app.domains.finance.service.repo") as mock_repo:
+    with (
+        patch("app.domains.finance.service.repo") as mock_repo,
+        patch("app.domains.finance.service.ai_repo") as mock_ai_repo,
+    ):
+        mock_ai_repo.get_or_create_session = AsyncMock(return_value=MagicMock(id=uuid.uuid4()))
         mock_repo.get_voice_log = AsyncMock(return_value=voice_log)
         mock_repo.update_voice_log_status_if = AsyncMock(return_value=True)
 
@@ -73,7 +77,11 @@ async def test_extract_rejects_when_already_extracting() -> None:
     background_tasks = BackgroundTasks()
     voice_log = _make_voice_log(status=VoiceProcessingStatus.extracting)
 
-    with patch("app.domains.finance.service.repo") as mock_repo:
+    with (
+        patch("app.domains.finance.service.repo") as mock_repo,
+        patch("app.domains.finance.service.ai_repo") as mock_ai_repo,
+    ):
+        mock_ai_repo.get_or_create_session = AsyncMock(return_value=MagicMock(id=uuid.uuid4()))
         mock_repo.get_voice_log = AsyncMock(return_value=voice_log)
         mock_repo.update_voice_log_status_if = AsyncMock(return_value=False)
 
@@ -97,7 +105,11 @@ async def test_extract_rejects_when_a_concurrent_request_wins_the_race() -> None
     background_tasks = BackgroundTasks()
     voice_log = _make_voice_log(status=VoiceProcessingStatus.transcribed)
 
-    with patch("app.domains.finance.service.repo") as mock_repo:
+    with (
+        patch("app.domains.finance.service.repo") as mock_repo,
+        patch("app.domains.finance.service.ai_repo") as mock_ai_repo,
+    ):
+        mock_ai_repo.get_or_create_session = AsyncMock(return_value=MagicMock(id=uuid.uuid4()))
         mock_repo.get_voice_log = AsyncMock(return_value=voice_log)
         mock_repo.update_voice_log_status_if = AsyncMock(return_value=False)
 

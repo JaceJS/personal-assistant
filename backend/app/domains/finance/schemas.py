@@ -262,6 +262,7 @@ class TransactionRead(BaseModel):
 class VoiceUploadResponse(BaseModel):
     voice_log_id: uuid.UUID
     status: VoiceProcessingStatus
+    chat_session_id: uuid.UUID
 
 
 class VoiceExtractedData(BaseModel):
@@ -284,6 +285,7 @@ class VoiceStatusRead(BaseModel):
 
 class VoiceExtractRequest(BaseModel):
     transcript: str = Field(..., max_length=5000)
+    chat_session_id: uuid.UUID | None = None
 
     @field_validator("transcript")
     @classmethod
@@ -305,6 +307,7 @@ class VoiceExtractResponse(BaseModel):
 class ReceiptUploadResponse(BaseModel):
     receipt_log_id: uuid.UUID
     status: VoiceProcessingStatus
+    chat_session_id: uuid.UUID
 
 
 class ReceiptStatusRead(BaseModel):

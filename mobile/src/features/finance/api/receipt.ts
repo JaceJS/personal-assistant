@@ -5,6 +5,7 @@ import type { ExtractedTransaction, VoiceProcessingStatus } from "@/features/fin
 export interface ReceiptUploadResponse {
   receipt_log_id: string;
   status: VoiceProcessingStatus;
+  chat_session_id: string;
 }
 
 export interface ReceiptStatusResponse {
@@ -17,7 +18,8 @@ export interface ReceiptStatusResponse {
 
 export async function uploadReceipt(
   imageUri: string,
-  accountId: string
+  accountId: string,
+  chatSessionId?: string
 ): Promise<ReceiptUploadResponse> {
   const formData = new FormData();
   formData.append("file", {
@@ -26,6 +28,7 @@ export async function uploadReceipt(
     type: "image/jpeg",
   } as unknown as Blob);
   formData.append("account_id", accountId);
+  if (chatSessionId) formData.append("chat_session_id", chatSessionId);
 
   return apiFetch<ApiResponse<ReceiptUploadResponse>>("/api/v1/receipt/upload", {
     method: "POST",

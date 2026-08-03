@@ -33,7 +33,7 @@ _ENUM_DDL = [
     "CREATE TYPE account_type AS ENUM ('cash','bank','ewallet','credit')",
     "CREATE TYPE category_type AS ENUM ('expense','income')",
     "CREATE TYPE transaction_source AS ENUM ('voice','manual','import','receipt')",
-    "CREATE TYPE transaction_status AS ENUM ('draft','confirmed')",
+    "CREATE TYPE transaction_status AS ENUM ('draft','confirmed','cancelled')",
     "CREATE TYPE voice_processing_status "
     "AS ENUM ('pending','transcribing','transcribed','extracting','completed','failed')",
 ]

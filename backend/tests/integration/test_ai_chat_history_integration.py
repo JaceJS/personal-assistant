@@ -58,9 +58,10 @@ async def test_pending_draft_transaction_is_rehydrated_from_history(
     assert drafts[0]["merchant"] == "Sate"
     assert drafts[0]["amount"] == -20_000
     assert drafts[0]["category_name"] == "Makan"
+    assert drafts[0]["status"] == "draft"
 
 
-async def test_confirmed_transaction_is_not_returned_as_pending_draft(
+async def test_confirmed_transaction_is_returned_with_confirmed_status(
     client: AsyncClient, db_session: AsyncSession, test_user_id: uuid.UUID
 ) -> None:
     chat_session = await ai_repo.create_session(db_session, test_user_id)
@@ -84,4 +85,35 @@ async def test_confirmed_transaction_is_not_returned_as_pending_draft(
 
     response = await client.get(f"/api/v1/ai/sessions/{chat_session.id}/messages")
 
-    assert response.json()["data"]["draft_transactions"] == []
+    drafts = response.json()["data"]["draft_transactions"]
+    assert len(drafts) == 1
+    assert drafts[0]["status"] == "confirmed"
+
+
+async def test_cancelled_transaction_is_returned_with_cancelled_status(
+    client: AsyncClient, db_session: AsyncSession, test_user_id: uuid.UUID
+) -> None:
+    chat_session = await ai_repo.create_session(db_session, test_user_id)
+    account = await finance_repo.create_account(
+        db_session, test_user_id, name="Dompet", type=AccountType.cash, currency="IDR"
+    )
+    await db_session.flush()
+    await finance_repo.create_transaction(
+        db_session,
+        test_user_id,
+        account_id=account.id,
+        category_id=None,
+        amount=-20_000,
+        currency="IDR",
+        occurred_at=datetime.now(UTC),
+        source=TransactionSource.manual,
+        status=TransactionStatus.cancelled,
+        chat_session_id=chat_session.id,
+    )
+    await db_session.commit()
+
+    response = await client.get(f"/api/v1/ai/sessions/{chat_session.id}/messages")
+
+    drafts = response.json()["data"]["draft_transactions"]
+    assert len(drafts) == 1
+    assert drafts[0]["status"] == "cancelled"

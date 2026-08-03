@@ -12,7 +12,7 @@ import type { AIMessage, Message, UserTextMessage } from "@/features/finance/uti
 import { deleteChatMessage, getChatSessionMessages, postChatMessage } from "@/features/ai/api/chat";
 import { useAuthStore } from "@/stores/auth";
 
-const CHAT_SESSION_KEY = "chat_session_id";
+export const CHAT_SESSION_KEY = "chat_session_id";
 
 export function useChat() {
   const isGuest = useAuthStore((s) => s.isGuest);
@@ -73,13 +73,17 @@ export function useChat() {
     };
   }, [isGuest]);
 
+  const syncSessionId = useCallback(async (id: string) => {
+    setSessionId(id);
+    await AsyncStorage.setItem(CHAT_SESSION_KEY, id);
+  }, []);
+
   const dispatch = useCallback(
     async (text: string, userMsgId: string, aiMsg: AIMessage) => {
       try {
         const { reply, session_id, draft_transactions, user_message_id, assistant_message_id } =
           await postChatMessage(text, sessionId);
-        setSessionId(session_id);
-        await AsyncStorage.setItem(CHAT_SESSION_KEY, session_id);
+        await syncSessionId(session_id);
         const tagUserMsg = (m: Message) =>
           m.id === userMsgId
             ? { ...(m as UserTextMessage), remoteId: user_message_id, status: "sent" as const }
@@ -108,7 +112,7 @@ export function useChat() {
         );
       }
     },
-    [sessionId]
+    [sessionId, syncSessionId]
   );
 
   const sendMessage = useCallback(
@@ -158,6 +162,8 @@ export function useChat() {
   return {
     messages,
     setMessages,
+    sessionId,
+    syncSessionId,
     sendMessage,
     retryMessage,
     deleteMessage,

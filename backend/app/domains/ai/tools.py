@@ -460,6 +460,7 @@ async def _create_transaction(
         "category_name": category_name_resolved,
         "note": tx.note,
         "account_id": str(tx.account_id),
+        "status": tx.status,
     }
     if category_warning:
         result["category_warning"] = category_warning

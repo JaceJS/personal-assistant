@@ -17,6 +17,12 @@ jest.mock("@/lib/queryClient", () => ({ queryClient: { clear: jest.fn(), invalid
 jest.mock("@/features/finance/repository", () => ({
   LocalRepository: jest.fn().mockImplementation(() => ({})),
 }));
+jest.mock("@/features/ai/hooks/useChat", () => ({ CHAT_SESSION_KEY: "chat_session_id" }));
+
+const mockAsyncStorageRemoveItem = jest.fn();
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  removeItem: (...args: unknown[]) => mockAsyncStorageRemoveItem(...args),
+}));
 
 const mockGetLocalDataSummary = jest.fn();
 jest.mock("@/features/sync/syncService", () => ({
@@ -167,5 +173,56 @@ describe("useAuth: query cache invalidation on identity change", () => {
     await fireAuthChange({ isGuest: true, mode: "guest", session: null }, "SIGNED_OUT", null);
 
     expect(getMockQueryClient().clear).not.toHaveBeenCalled();
+  });
+});
+
+describe("useAuth: chat session cache on identity change", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resetStores();
+    mockOnAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: mockUnsubscribe } } });
+    mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
+    mockGetLocalDataSummary.mockResolvedValue(null);
+  });
+
+  async function fireAuthChange(
+    previousState: Partial<ReturnType<typeof useAuthStore.getState>>,
+    event: string,
+    session: unknown
+  ) {
+    renderHook(() => useAuth());
+    await waitFor(() => expect(useAuthStore.getState().initialized).toBe(true));
+    useAuthStore.setState(previousState);
+    const onChangeCallback = mockOnAuthStateChange.mock.calls[0][0] as (
+      event: string,
+      session: unknown
+    ) => void;
+    onChangeCallback(event, session);
+  }
+
+  it("clears the chat session key when switching to a different authenticated user", async () => {
+    await fireAuthChange(
+      { isGuest: false, mode: "authenticated", session: { user: { id: "user-1" } } as never },
+      "SIGNED_IN",
+      { user: { id: "user-2" } }
+    );
+
+    expect(mockAsyncStorageRemoveItem).toHaveBeenCalledWith("chat_session_id");
+  });
+
+  it("clears the chat session key when a guest signs in", async () => {
+    await fireAuthChange({ isGuest: true, session: null, mode: "guest" }, "SIGNED_IN", SESSION);
+
+    expect(mockAsyncStorageRemoveItem).toHaveBeenCalledWith("chat_session_id");
+  });
+
+  it("does not clear the chat session key on a token refresh for the same user", async () => {
+    await fireAuthChange(
+      { isGuest: false, mode: "authenticated", session: { user: { id: "user-1" } } as never },
+      "TOKEN_REFRESHED",
+      { user: { id: "user-1" } }
+    );
+
+    expect(mockAsyncStorageRemoveItem).not.toHaveBeenCalled();
   });
 });

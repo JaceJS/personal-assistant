@@ -178,6 +178,7 @@ describe('useChat', () => {
           category_name: 'Makan',
           note: null,
           account_id: 'acct-456',
+          status: 'draft',
         },
         {
           transaction_id: 'tx-124',
@@ -187,6 +188,7 @@ describe('useChat', () => {
           category_name: 'Makan',
           note: null,
           account_id: 'acct-456',
+          status: 'draft',
         },
       ],
     });
@@ -223,6 +225,7 @@ describe('useChat', () => {
           category_name: 'Makan',
           note: null,
           account_id: 'acct-456',
+          status: 'draft',
         },
       ],
     });
@@ -320,6 +323,7 @@ describe('useChat', () => {
           category_name: 'Makan',
           note: null,
           account_id: 'acct-456',
+          status: 'draft',
         },
       ],
     });
@@ -356,6 +360,7 @@ describe('useChat', () => {
           category_name: 'Makan',
           note: null,
           account_id: 'acct-456',
+          status: 'draft',
         },
       ],
     });
@@ -507,6 +512,7 @@ describe('useChat', () => {
           category_name: 'Makan',
           note: null,
           account_id: 'acct-456',
+          status: 'draft',
         },
       ],
     });

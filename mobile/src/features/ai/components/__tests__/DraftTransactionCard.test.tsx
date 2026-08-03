@@ -14,6 +14,7 @@ const makeDraft = (overrides: Partial<DraftTransaction> = {}): DraftTransaction 
   category_name: 'Makan',
   note: null,
   account_id: 'acc-1',
+  status: 'draft',
   ...overrides,
 });
 

@@ -36,6 +36,7 @@ class TransactionSource(enum.StrEnum):
 class TransactionStatus(enum.StrEnum):
     draft = "draft"
     confirmed = "confirmed"
+    cancelled = "cancelled"
 
 
 class VoiceProcessingStatus(enum.StrEnum):

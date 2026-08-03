@@ -1,7 +1,7 @@
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Camera, Mic, SendHorizontal, Square, Trash2, Wallet } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Header } from "@/components/layout/Header";
+import { CopiedHint } from "@/components/ui/CopiedHint";
 import { Gate } from "@/components/ui/Gate";
 import GuestGate from "@/components/ui/GuestGate";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
@@ -86,6 +87,8 @@ export default function AIAssistantScreen() {
   const {
     messages,
     setMessages,
+    sessionId,
+    syncSessionId,
     sendMessage,
     retryMessage,
     deleteMessage,
@@ -122,10 +125,12 @@ export default function AIAssistantScreen() {
     x: number;
     y: number;
   } | null>(null);
+  const [showCopiedHint, setShowCopiedHint] = useState(false);
 
   const [inputText, setInputText] = useState("");
   const listRef = useRef<FlatList<Message>>(null);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copiedHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const receiptAccountIds = useRef<Map<string, string>>(new Map());
   const handledReceiptIds = useRef<Set<string>>(new Set());
 
@@ -133,11 +138,40 @@ export default function AIAssistantScreen() {
   const activeReceiptIds = useMemo(() => getActiveReceiptIds(messages), [messages]);
   const receiptStatuses = useReceiptStatuses(activeReceiptIds);
 
+  const voiceLogIdRef = useRef(voiceLogId);
+  voiceLogIdRef.current = voiceLogId;
+  const voiceStatusRef = useRef(voiceStatus);
+  voiceStatusRef.current = voiceStatus;
+  const receiptStatusesRef = useRef(receiptStatuses);
+  receiptStatusesRef.current = receiptStatuses;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (voiceLogIdRef.current) void voiceStatusRef.current.refetch();
+      receiptStatusesRef.current.forEach((query) => void query.refetch());
+    }, [])
+  );
+
   const activeAccounts = useMemo(
     () => accounts?.filter((a) => !a.is_archived) ?? [],
     [accounts]
   );
   const defaultAccount = activeAccounts[0] ?? null;
+
+  const editingDraftData = useMemo(
+    () =>
+      editingDraft
+        ? {
+            amount: editingDraft.draft.amount,
+            currency: editingDraft.draft.currency,
+            merchant: editingDraft.draft.merchant,
+            category_name: editingDraft.draft.category_name,
+            note: editingDraft.draft.note,
+            confidence: 1.0,
+          }
+        : null,
+    [editingDraft]
+  );
   const hasNoAccounts = !isGuest && !isLoadingAccounts && activeAccounts.length === 0;
 
   const isMicBusy = recorderProcessing || uploadAudio.isPending || voiceLogId !== null;
@@ -257,6 +291,7 @@ export default function AIAssistantScreen() {
   useEffect(() => {
     return () => {
       if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      if (copiedHintTimerRef.current) clearTimeout(copiedHintTimerRef.current);
     };
   }, []);
 
@@ -299,11 +334,16 @@ export default function AIAssistantScreen() {
   }, [inputText, sendMessage]);
 
   const handleClearChat = useCallback(() => {
-    Alert.alert(t("ai.clearChat.menuLabel"), t("ai.clearChat.alertMessage"), [
-      { text: t("common.cancel"), style: "cancel" },
-      { text: t("common.delete"), style: "destructive", onPress: () => void clearChat() },
-    ]);
-  }, [clearChat, t]);
+    const hasPendingDraft = messages.some((m) => m.type === "draft" && m.state === "pending");
+    Alert.alert(
+      t("ai.clearChat.menuLabel"),
+      hasPendingDraft ? t("ai.clearChat.alertMessagePendingDrafts") : t("ai.clearChat.alertMessage"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("common.delete"), style: "destructive", onPress: () => void clearChat() },
+      ]
+    );
+  }, [clearChat, messages, t]);
 
   const handleMessageLongPress = useCallback(
     (message: UserTextMessage | AIMessage, x: number, y: number) => {
@@ -319,8 +359,10 @@ export default function AIAssistantScreen() {
     if (!message) return;
     const text = message.type === "user" ? message.content : (message.content ?? "");
     void Clipboard.setStringAsync(text);
-    showToast(t("ai.messageActions.copiedToast"), "success");
-  }, [actionMenu, showToast, t]);
+    setShowCopiedHint(true);
+    if (copiedHintTimerRef.current) clearTimeout(copiedHintTimerRef.current);
+    copiedHintTimerRef.current = setTimeout(() => setShowCopiedHint(false), 1200);
+  }, [actionMenu]);
 
   const handleDeleteMessage = useCallback(() => {
     const message = actionMenu?.message;
@@ -347,7 +389,8 @@ export default function AIAssistantScreen() {
   const performVoiceUpload = useCallback(
     async (audioUri: string, accountId: string, placeholderId: string) => {
       try {
-        const response = await uploadAudio.mutateAsync({ audioUri, accountId });
+        const response = await uploadAudio.mutateAsync({ audioUri, accountId, chatSessionId: sessionId });
+        void syncSessionId(response.chat_session_id);
         setMessages((prev) => markMessageSent(prev, placeholderId, response.voice_log_id));
         setVoiceLogId(response.voice_log_id);
       } catch {
@@ -362,13 +405,18 @@ export default function AIAssistantScreen() {
         showToast(t("ai.toast.voiceUploadFailed"), "error");
       }
     },
-    [resetRecorder, setMessages, showToast, uploadAudio, t]
+    [resetRecorder, setMessages, showToast, syncSessionId, sessionId, uploadAudio, t]
   );
 
   const performReceiptUpload = useCallback(
     async (imageUri: string, accountId: string, placeholderId: string) => {
       try {
-        const response = await uploadReceipt.mutateAsync({ imageUri, accountId });
+        const response = await uploadReceipt.mutateAsync({
+          imageUri,
+          accountId,
+          chatSessionId: sessionId,
+        });
+        void syncSessionId(response.chat_session_id);
         receiptAccountIds.current.set(response.receipt_log_id, accountId);
         setMessages((prev) => markMessageSent(prev, placeholderId, response.receipt_log_id));
       } catch {
@@ -382,7 +430,7 @@ export default function AIAssistantScreen() {
         showToast(t("ai.toast.receiptUploadFailed"), "error");
       }
     },
-    [setMessages, showToast, uploadReceipt, t]
+    [setMessages, showToast, syncSessionId, sessionId, uploadReceipt, t]
   );
 
   const uploadVoiceFlow = useCallback(
@@ -488,10 +536,10 @@ export default function AIAssistantScreen() {
       if (!voiceLogId) return;
       setTranscriptVisible(false);
       void extractVoice
-        .mutateAsync({ voiceLogId, transcript })
+        .mutateAsync({ voiceLogId, transcript, chatSessionId: sessionId })
         .catch(() => showToast(t("ai.toast.transcriptProcessFailed"), "error"));
     },
-    [extractVoice, showToast, voiceLogId, t]
+    [extractVoice, showToast, sessionId, voiceLogId, t]
   );
 
   const handleTranscriptDismiss = useCallback(() => {
@@ -767,18 +815,7 @@ export default function AIAssistantScreen() {
       />
 
       <ConfirmCard
-        data={
-          editingDraft
-            ? {
-                amount: editingDraft.draft.amount,
-                currency: editingDraft.draft.currency,
-                merchant: editingDraft.draft.merchant,
-                category_name: editingDraft.draft.category_name,
-                note: editingDraft.draft.note,
-                confidence: 1.0,
-              }
-            : null
-        }
+        data={editingDraftData}
         accounts={activeAccounts}
         defaultAccountId={editingDraft?.draft.account_id ?? defaultAccount?.id ?? null}
         isVisible={editingDraft !== null}
@@ -795,6 +832,8 @@ export default function AIAssistantScreen() {
         onDelete={handleDeleteMessage}
         onDismiss={() => setActionMenu(null)}
       />
+
+      <CopiedHint visible={showCopiedHint} label={t("ai.messageActions.copiedToast")} />
       </>
       )}
     </SafeAreaView>

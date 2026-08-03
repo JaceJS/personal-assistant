@@ -22,6 +22,7 @@ from app.core.upload_utils import (
     MAX_IMAGE_BYTES,
     read_and_validate_upload,
 )
+from app.domains.ai import repository as ai_repo
 from app.domains.finance import jobs
 from app.domains.finance import repository as repo
 from app.domains.finance.models import (
@@ -457,8 +458,10 @@ async def create_voice_upload(
     file: UploadFile,
     storage: R2Storage,
     background_tasks: BackgroundTasks,
+    chat_session_id: uuid.UUID | None = None,
 ) -> VoiceUploadResponse:
     await get_account_or_404(session, account_id, user_id)
+    chat_session = await ai_repo.get_or_create_session(session, user_id, chat_session_id)
 
     audio, detected_mime, object_ext = await read_and_validate_upload(
         file,
@@ -487,6 +490,7 @@ async def create_voice_upload(
     return VoiceUploadResponse(
         voice_log_id=voice_log.id,
         status=VoiceProcessingStatus.pending,
+        chat_session_id=chat_session.id,
     )
 
 
@@ -539,10 +543,12 @@ async def extract_voice_transcript(
     *,
     transcript: str,
     background_tasks: BackgroundTasks,
+    chat_session_id: uuid.UUID | None = None,
 ) -> VoiceExtractResponse:
     voice_log = await get_voice_log_or_404(session, voice_log_id, user_id)
     if voice_log.account_id is None:
         raise BadRequestError("Voice log has no associated account")
+    chat_session = await ai_repo.get_or_create_session(session, user_id, chat_session_id)
 
     # Atomic UPDATE ... WHERE status = 'transcribed' (not read-then-write) so
     # two requests racing the same voice log can't both pass the check before
@@ -563,6 +569,7 @@ async def extract_voice_transcript(
         voice_log_id=str(voice_log_id),
         account_id=str(voice_log.account_id),
         transcript=transcript,
+        chat_session_id=str(chat_session.id),
     )
 
     return VoiceExtractResponse(
@@ -582,8 +589,10 @@ async def create_receipt_upload(
     file: UploadFile,
     storage: R2Storage,
     background_tasks: BackgroundTasks,
+    chat_session_id: uuid.UUID | None = None,
 ) -> ReceiptUploadResponse:
     await get_account_or_404(session, account_id, user_id)
+    chat_session = await ai_repo.get_or_create_session(session, user_id, chat_session_id)
 
     image, detected_mime, object_ext = await read_and_validate_upload(
         file,
@@ -607,11 +616,13 @@ async def create_receipt_upload(
         r2=storage,
         receipt_log_id=str(receipt_log.id),
         account_id=str(account_id),
+        chat_session_id=str(chat_session.id),
     )
 
     return ReceiptUploadResponse(
         receipt_log_id=receipt_log.id,
         status=VoiceProcessingStatus.pending,
+        chat_session_id=chat_session.id,
     )
 
 

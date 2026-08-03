@@ -266,6 +266,18 @@ async def get_pending_draft_transactions(
     return list(result.scalars())
 
 
+async def get_session_transactions(
+    session: AsyncSession, chat_session_id: uuid.UUID, *, limit: int = 20
+) -> list[Transaction]:
+    result = await session.execute(
+        sa.select(Transaction)
+        .where(Transaction.chat_session_id == chat_session_id)
+        .order_by(Transaction.created_at.desc())
+        .limit(limit)
+    )
+    return list(reversed(result.scalars().all()))
+
+
 async def list_transactions(
     session: AsyncSession,
     user_id: uuid.UUID,

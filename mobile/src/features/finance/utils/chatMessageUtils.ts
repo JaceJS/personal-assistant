@@ -178,7 +178,14 @@ export function extractionToDraftTransactions(
     category_name: item.category_name,
     note: item.note,
     account_id: accountId,
+    status: 'draft' as const,
   }));
+}
+
+function draftStatusToMessageState(status: DraftTransaction['status']): DraftMessageState {
+  if (status === 'confirmed') return 'saved';
+  if (status === 'cancelled') return 'cancelled';
+  return 'pending';
 }
 
 export function createDraftMessages(drafts: DraftTransaction[]): DraftMessage[] {
@@ -186,7 +193,7 @@ export function createDraftMessages(drafts: DraftTransaction[]): DraftMessage[] 
     id: draft.transaction_id,
     type: 'draft' as const,
     draft,
-    state: 'pending' as const,
+    state: draftStatusToMessageState(draft.status),
     createdAt: new Date(),
   }));
 }

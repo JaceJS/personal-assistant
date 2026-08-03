@@ -111,11 +111,17 @@ async def process_voice(
 
 
 async def extract_voice(
-    *, llm: OpenRouterLLM, voice_log_id: str, account_id: str, transcript: str
+    *,
+    llm: OpenRouterLLM,
+    voice_log_id: str,
+    account_id: str,
+    transcript: str,
+    chat_session_id: str | None = None,
 ) -> None:
     """Stage 2: Run LLM extraction on (possibly user-edited) transcript."""
     log_id = uuid.UUID(voice_log_id)
     acc_id = uuid.UUID(account_id)
+    session_id = uuid.UUID(chat_session_id) if chat_session_id else None
 
     async with SessionFactory() as session:
         try:
@@ -144,6 +150,7 @@ async def extract_voice(
                     source=TransactionSource.voice,
                     status=TransactionStatus.draft,
                     voice_log_id=voice_log.id,
+                    chat_session_id=session_id,
                 )
                 extracted_data.append({**extracted.model_dump(), "note": note})
 
@@ -183,11 +190,17 @@ async def extract_voice(
 
 
 async def process_receipt(
-    *, vision_llm: OpenRouterLLM, r2: R2Storage, receipt_log_id: str, account_id: str
+    *,
+    vision_llm: OpenRouterLLM,
+    r2: R2Storage,
+    receipt_log_id: str,
+    account_id: str,
+    chat_session_id: str | None = None,
 ) -> None:
     """Extract a transaction from a receipt image."""
     log_id = uuid.UUID(receipt_log_id)
     acc_id = uuid.UUID(account_id)
+    session_id = uuid.UUID(chat_session_id) if chat_session_id else None
     receipt_log = None
 
     async with SessionFactory() as session:
@@ -225,6 +238,7 @@ async def process_receipt(
                     source=TransactionSource.receipt,
                     status=TransactionStatus.draft,
                     receipt_log_id=receipt_log.id,
+                    chat_session_id=session_id,
                 )
                 extracted_data.append(extracted.model_dump())
 

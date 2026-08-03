@@ -21,6 +21,7 @@ export type VoiceProcessingStatus =
 export interface VoiceUploadResponse {
   voice_log_id: string;
   status: VoiceProcessingStatus;
+  chat_session_id: string;
 }
 
 export interface VoiceStatusResponse {
@@ -34,7 +35,8 @@ export interface VoiceStatusResponse {
 
 export async function uploadAudio(
   audioUri: string,
-  accountId: string
+  accountId: string,
+  chatSessionId?: string
 ): Promise<VoiceUploadResponse> {
   const formData = new FormData();
   formData.append("file", {
@@ -43,6 +45,7 @@ export async function uploadAudio(
     type: "audio/mp4",
   } as unknown as Blob);
   formData.append("account_id", accountId);
+  if (chatSessionId) formData.append("chat_session_id", chatSessionId);
 
   return apiFetch<ApiResponse<VoiceUploadResponse>>("/api/v1/voice/upload", {
     method: "POST",
@@ -55,9 +58,13 @@ export async function getVoiceStatus(voiceLogId: string): Promise<VoiceStatusRes
     .then((r) => r.data);
 }
 
-export async function extractVoice(voiceLogId: string, transcript: string): Promise<void> {
+export async function extractVoice(
+  voiceLogId: string,
+  transcript: string,
+  chatSessionId?: string
+): Promise<void> {
   await apiFetch<ApiResponse<unknown>>(`/api/v1/voice/${voiceLogId}/extract`, {
     method: "POST",
-    body: JSON.stringify({ transcript }),
+    body: JSON.stringify({ transcript, chat_session_id: chatSessionId }),
   });
 }

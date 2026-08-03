@@ -12,8 +12,15 @@ function receiptRefetchInterval(query: { state: { data?: ReceiptStatusResponse }
 
 export function useUploadReceipt() {
   return useMutation({
-    mutationFn: ({ imageUri, accountId }: { imageUri: string; accountId: string }) =>
-      uploadReceipt(imageUri, accountId),
+    mutationFn: ({
+      imageUri,
+      accountId,
+      chatSessionId,
+    }: {
+      imageUri: string;
+      accountId: string;
+      chatSessionId?: string;
+    }) => uploadReceipt(imageUri, accountId, chatSessionId),
     retry: false,
   });
 }

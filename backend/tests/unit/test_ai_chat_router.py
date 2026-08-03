@@ -64,6 +64,7 @@ def _draft_result(merchant: str, amount: int) -> str:
             "category_name": "Makan",
             "note": None,
             "account_id": str(_ACCOUNT_ID),
+            "status": "draft",
         }
     )
 
@@ -146,9 +147,7 @@ async def test_chat_reminds_model_of_pending_drafts_to_avoid_duplicate_recording
     llm = MagicMock()
     llm.chat_with_tools = AsyncMock(return_value=("Halo!", []))
     finance_repo_mock = MagicMock(
-        get_pending_draft_transactions=AsyncMock(
-            return_value=[_pending_draft("sate", -20000)]
-        ),
+        get_pending_draft_transactions=AsyncMock(return_value=[_pending_draft("sate", -20000)]),
         list_categories=AsyncMock(return_value=[]),
         list_system_categories=AsyncMock(return_value=[]),
     )
