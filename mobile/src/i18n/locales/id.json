@@ -378,6 +378,8 @@
       "alertMessagePendingDrafts": "Seluruh riwayat chat akan dihapus dari perangkat ini. Ada transaksi yang belum dikonfirmasi dan akan ikut hilang."
     },
     "guestSubtitle": "Masuk untuk menggunakan AI Assistant dan melihat data keuanganmu.",
+    "guestQuotaExhaustedSubtitle": "Kamu udah pakai semua jatah chat AI gratis. Daftar buat lanjut ngobrol sama AI ya!",
+    "guestQuotaRemaining_other": "{{count}} chat AI gratis tersisa",
     "accountGate": {
       "title": "Belum ada akun",
       "subtitle": "Buat akun dulu supaya AI Assistant bisa mencatat transaksimu.",

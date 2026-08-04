@@ -10,6 +10,23 @@ jest.mock('@/features/ai/api/chat', () => ({
   deleteChatMessage: jest.fn(),
 }));
 
+jest.mock('@/features/ai/api/guestChat', () => ({
+  postGuestChatMessage: jest.fn(),
+  toGuestAccountSnapshots: jest.fn((accounts: unknown[]) => accounts),
+}));
+
+jest.mock('@/lib/guestDeviceId', () => ({
+  getOrCreateGuestDeviceId: jest.fn(() => Promise.resolve('device-abc')),
+}));
+
+// useChat imports ApiError from @/lib/api/client, which imports @/lib/supabase
+// at module scope — createClient() throws immediately without a real
+// Supabase URL, so it must be mocked even though nothing here calls apiFetch
+// directly (postGuestChatMessage/postChatMessage are both mocked above).
+jest.mock('@/lib/supabase', () => ({
+  supabase: { auth: { getSession: jest.fn().mockResolvedValue({ data: { session: null } }) } },
+}));
+
 let mockIsGuest = false;
 jest.mock('@/stores/auth', () => ({
   useAuthStore: (selector: (s: { isGuest: boolean }) => unknown) =>
@@ -19,7 +36,9 @@ jest.mock('@/stores/auth', () => ({
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { deleteChatMessage, getChatSessionMessages, postChatMessage } from '@/features/ai/api/chat';
+import { postGuestChatMessage } from '@/features/ai/api/guestChat';
 import { useChat } from '@/features/ai/hooks/useChat';
+import { ApiError } from '@/lib/api/client';
 import type {
   AIMessage,
   DraftMessage,
@@ -27,6 +46,9 @@ import type {
 } from '@/features/finance/utils/chatMessageUtils';
 
 const mockPostChatMessage = postChatMessage as jest.MockedFunction<typeof postChatMessage>;
+const mockPostGuestChatMessage = postGuestChatMessage as jest.MockedFunction<
+  typeof postGuestChatMessage
+>;
 const mockGetChatSessionMessages = getChatSessionMessages as jest.MockedFunction<
   typeof getChatSessionMessages
 >;
@@ -179,6 +201,7 @@ describe('useChat', () => {
           note: null,
           account_id: 'acct-456',
           status: 'draft',
+          created_at: new Date(Date.now() + 60_000).toISOString(),
         },
         {
           transaction_id: 'tx-124',
@@ -189,6 +212,7 @@ describe('useChat', () => {
           note: null,
           account_id: 'acct-456',
           status: 'draft',
+          created_at: new Date(Date.now() + 60_000).toISOString(),
         },
       ],
     });
@@ -226,6 +250,7 @@ describe('useChat', () => {
           note: null,
           account_id: 'acct-456',
           status: 'draft',
+          created_at: new Date(Date.now() + 60_000).toISOString(),
         },
       ],
     });
@@ -301,6 +326,92 @@ describe('useChat', () => {
     expect(await AsyncStorage.getItem(CHAT_SESSION_KEY)).toBeNull();
   });
 
+  it('for a guest, sends the message via the guest endpoint with device id and account snapshot', async () => {
+    mockIsGuest = true;
+    mockPostGuestChatMessage.mockResolvedValueOnce({
+      reply: 'Halo!',
+      draft_transactions: [],
+      remaining_quota: 2,
+    });
+
+    const accounts = [{ id: 'acc-1', name: 'Dompet', type: 'cash', currency: 'IDR', balance: 0 }];
+    const { result } = await renderHook(() => useChat(accounts as never));
+
+    await act(async () => {
+      await result.current.sendMessage('halo');
+    });
+
+    expect(mockPostGuestChatMessage).toHaveBeenCalledWith(
+      'halo',
+      'device-abc',
+      accounts,
+      expect.any(Array)
+    );
+    expect(mockPostChatMessage).not.toHaveBeenCalled();
+  });
+
+  it('for a guest, exposes remaining_quota from the reply', async () => {
+    mockIsGuest = true;
+    mockPostGuestChatMessage.mockResolvedValueOnce({
+      reply: 'Halo!',
+      draft_transactions: [],
+      remaining_quota: 1,
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('halo');
+    });
+
+    expect(result.current.guestQuota).toBe(1);
+  });
+
+  it('for a guest, adds draft messages chronologically merged from the guest reply', async () => {
+    mockIsGuest = true;
+    mockPostGuestChatMessage.mockResolvedValueOnce({
+      reply: '',
+      draft_transactions: [
+        {
+          transaction_id: 'tx-1',
+          amount: -20000,
+          currency: 'IDR',
+          merchant: 'Sate',
+          category_name: 'Makan',
+          note: null,
+          account_id: 'acc-1',
+          status: 'draft',
+          created_at: new Date().toISOString(),
+        },
+      ],
+      remaining_quota: 2,
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('sate 20.000');
+    });
+
+    const draft = result.current.messages.find((m): m is DraftMessage => m.type === 'draft');
+    expect(draft?.draft.merchant).toBe('Sate');
+  });
+
+  it('for a guest, sets quota to 0 and fails the AI bubble when the trial is exhausted (429)', async () => {
+    mockIsGuest = true;
+    mockPostGuestChatMessage.mockRejectedValueOnce(new ApiError(429, 'quota exceeded'));
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('halo');
+    });
+
+    expect(result.current.guestQuota).toBe(0);
+    const aiMessages = result.current.messages.filter((m) => m.type === 'ai');
+    expect((aiMessages[0] as { failed?: boolean }).failed).toBe(true);
+  });
+
   it('rehydrates pending draft cards left over from a previous session', async () => {
     await AsyncStorage.setItem(CHAT_SESSION_KEY, 'session-abc');
     mockGetChatSessionMessages.mockResolvedValueOnce({
@@ -324,6 +435,7 @@ describe('useChat', () => {
           note: null,
           account_id: 'acct-456',
           status: 'draft',
+          created_at: new Date(Date.now() + 60_000).toISOString(),
         },
       ],
     });
@@ -361,6 +473,7 @@ describe('useChat', () => {
           note: null,
           account_id: 'acct-456',
           status: 'draft',
+          created_at: new Date(Date.now() + 60_000).toISOString(),
         },
       ],
     });
@@ -513,6 +626,7 @@ describe('useChat', () => {
           note: null,
           account_id: 'acct-456',
           status: 'draft',
+          created_at: new Date(Date.now() + 60_000).toISOString(),
         },
       ],
     });

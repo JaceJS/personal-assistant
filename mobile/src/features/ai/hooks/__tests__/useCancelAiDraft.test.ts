@@ -7,6 +7,12 @@ jest.mock('@/features/finance/api/transactions', () => ({
   deleteTransaction: jest.fn(),
 }));
 
+let mockIsGuest = false;
+jest.mock('@/stores/auth', () => ({
+  useAuthStore: (selector: (s: { isGuest: boolean }) => unknown) =>
+    selector({ isGuest: mockIsGuest }),
+}));
+
 import { deleteTransaction, updateTransaction } from '@/features/finance/api/transactions';
 import { useCancelAiDraft } from '@/features/ai/hooks/useCancelAiDraft';
 
@@ -23,7 +29,24 @@ function makeWrapper() {
 }
 
 describe('useCancelAiDraft', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockIsGuest = false;
+  });
+
+  it('for a guest, does not call the backend at all (nothing was ever persisted)', async () => {
+    mockIsGuest = true;
+
+    const { result } = await renderHook(() => useCancelAiDraft(), { wrapper: makeWrapper() });
+
+    await act(async () => {
+      await result.current.mutateAsync('local-draft-1');
+    });
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockDelete).not.toHaveBeenCalled();
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
 
   it('marks the draft transaction as cancelled instead of deleting it', async () => {
     mockUpdate.mockResolvedValueOnce({} as never);

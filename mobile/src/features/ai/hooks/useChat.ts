@@ -5,20 +5,33 @@ import {
   createAITypingMessage,
   createDraftMessages,
   createUserTextMessage,
+  mergeMessagesSorted,
   rejectAIMessage,
   resolveAIMessage,
 } from "@/features/finance/utils/chatMessageUtils";
 import type { AIMessage, Message, UserTextMessage } from "@/features/finance/utils/chatMessageUtils";
 import { deleteChatMessage, getChatSessionMessages, postChatMessage } from "@/features/ai/api/chat";
+import { postGuestChatMessage, toGuestAccountSnapshots } from "@/features/ai/api/guestChat";
+import type { GuestChatHistoryItem } from "@/features/ai/api/guestChat";
+import type { Account } from "@/features/finance/types";
+import { ApiError } from "@/lib/api/client";
+import { getOrCreateGuestDeviceId } from "@/lib/guestDeviceId";
 import { useAuthStore } from "@/stores/auth";
 
 export const CHAT_SESSION_KEY = "chat_session_id";
 
-export function useChat() {
+// Guest trial size is enforced server-side (see backend ai/router.py
+// _GUEST_AI_LIFETIME_LIMIT) — this is only a local starting value so the UI
+// has something to show before the first guest message resolves.
+const GUEST_QUOTA_UNKNOWN = null;
+
+export function useChat(accounts: Account[] = []) {
   const isGuest = useAuthStore((s) => s.isGuest);
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [guestDeviceId, setGuestDeviceId] = useState<string | null>(null);
+  const [guestQuota, setGuestQuota] = useState<number | null>(GUEST_QUOTA_UNKNOWN);
 
   useEffect(() => {
     if (isGuest) {
@@ -26,6 +39,7 @@ export function useChat() {
       setMessages([]);
       setSessionId(undefined);
       void AsyncStorage.removeItem(CHAT_SESSION_KEY);
+      void getOrCreateGuestDeviceId().then(setGuestDeviceId);
       return;
     }
 
@@ -37,31 +51,29 @@ export function useChat() {
         setSessionId(storedId);
         const { messages: history, draft_transactions } = await getChatSessionMessages(storedId);
         if (cancelled) return;
-        setMessages([
-          ...history
-            .filter((m) => m.role === "user" || m.content.length > 0)
-            .map((m) =>
-              m.role === "user"
-                ? {
-                    id: m.id,
-                    type: "user" as const,
-                    content: m.content,
-                    status: "sent" as const,
-                    createdAt: new Date(m.created_at),
-                    remoteId: m.id,
-                  }
-                : {
-                    id: m.id,
-                    type: "ai" as const,
-                    content: m.content,
-                    isTyping: false,
-                    skipTypewriter: true,
-                    createdAt: new Date(m.created_at),
-                    remoteId: m.id,
-                  }
-            ),
-          ...createDraftMessages(draft_transactions),
-        ]);
+        const textMessages: Message[] = history
+          .filter((m) => m.role === "user" || m.content.length > 0)
+          .map((m) =>
+            m.role === "user"
+              ? {
+                  id: m.id,
+                  type: "user" as const,
+                  content: m.content,
+                  status: "sent" as const,
+                  createdAt: new Date(m.created_at),
+                  remoteId: m.id,
+                }
+              : {
+                  id: m.id,
+                  type: "ai" as const,
+                  content: m.content,
+                  isTyping: false,
+                  skipTypewriter: true,
+                  createdAt: new Date(m.created_at),
+                  remoteId: m.id,
+                }
+          );
+        setMessages(mergeMessagesSorted(textMessages, createDraftMessages(draft_transactions)));
       } catch {
         // history not critical, start fresh
       } finally {
@@ -78,8 +90,63 @@ export function useChat() {
     await AsyncStorage.setItem(CHAT_SESSION_KEY, id);
   }, []);
 
+  // Nothing is persisted server-side for a guest turn, so there's no session
+  // to replay from — the recent in-memory history is resent every time
+  // instead (bounded, since it's included in every request body).
+  const GUEST_HISTORY_TURNS = 10;
+
+  const dispatchGuest = useCallback(
+    async (text: string, userMsgId: string, aiMsg: AIMessage) => {
+      const tagUserMsg = (m: Message) =>
+        m.id === userMsgId ? { ...(m as UserTextMessage), status: "sent" as const } : m;
+      try {
+        if (!guestDeviceId) throw new Error("Guest device id not ready yet");
+        const history: GuestChatHistoryItem[] = messages
+          .filter((m): m is UserTextMessage | AIMessage => m.type === "user" || m.type === "ai")
+          .slice(-GUEST_HISTORY_TURNS)
+          .map((m) => ({
+            role: m.type === "user" ? ("user" as const) : ("assistant" as const),
+            content: m.type === "user" ? m.content : (m.content ?? ""),
+          }));
+
+        const { reply, draft_transactions, remaining_quota } = await postGuestChatMessage(
+          text,
+          guestDeviceId,
+          toGuestAccountSnapshots(accounts),
+          history
+        );
+        setGuestQuota(remaining_quota);
+        setMessages((prev) =>
+          mergeMessagesSorted(
+            reply
+              ? prev.map((m) =>
+                  m.id === aiMsg.id ? resolveAIMessage(m as AIMessage, reply) : tagUserMsg(m)
+                )
+              : prev.filter((m) => m.id !== aiMsg.id).map(tagUserMsg),
+            createDraftMessages(draft_transactions ?? [])
+          )
+        );
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 429) setGuestQuota(0);
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id === aiMsg.id) {
+              return rejectAIMessage(m as AIMessage, "Could not get a response. Please try again.");
+            }
+            if (m.id === userMsgId) {
+              return { ...(m as UserTextMessage), status: "failed" as const };
+            }
+            return m;
+          })
+        );
+      }
+    },
+    [accounts, guestDeviceId, messages]
+  );
+
   const dispatch = useCallback(
     async (text: string, userMsgId: string, aiMsg: AIMessage) => {
+      if (isGuest) return dispatchGuest(text, userMsgId, aiMsg);
       try {
         const { reply, session_id, draft_transactions, user_message_id, assistant_message_id } =
           await postChatMessage(text, sessionId);
@@ -88,16 +155,18 @@ export function useChat() {
           m.id === userMsgId
             ? { ...(m as UserTextMessage), remoteId: user_message_id, status: "sent" as const }
             : m;
-        setMessages((prev) => [
-          ...(reply
-            ? prev.map((m) =>
-                m.id === aiMsg.id
-                  ? resolveAIMessage(m as AIMessage, reply, assistant_message_id)
-                  : tagUserMsg(m)
-              )
-            : prev.filter((m) => m.id !== aiMsg.id).map(tagUserMsg)),
-          ...createDraftMessages(draft_transactions ?? []),
-        ]);
+        setMessages((prev) =>
+          mergeMessagesSorted(
+            reply
+              ? prev.map((m) =>
+                  m.id === aiMsg.id
+                    ? resolveAIMessage(m as AIMessage, reply, assistant_message_id)
+                    : tagUserMsg(m)
+                )
+              : prev.filter((m) => m.id !== aiMsg.id).map(tagUserMsg),
+            createDraftMessages(draft_transactions ?? [])
+          )
+        );
       } catch {
         setMessages((prev) =>
           prev.map((m) => {
@@ -112,7 +181,7 @@ export function useChat() {
         );
       }
     },
-    [sessionId, syncSessionId]
+    [isGuest, dispatchGuest, sessionId, syncSessionId]
   );
 
   const sendMessage = useCallback(
@@ -169,5 +238,6 @@ export function useChat() {
     deleteMessage,
     isLoadingHistory,
     clearChat,
+    guestQuota,
   };
 }

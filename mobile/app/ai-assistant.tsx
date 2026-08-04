@@ -48,6 +48,7 @@ import {
   extractionToDraftTransactions,
   getActiveReceiptIds,
   markMessageSent,
+  mergeMessagesSorted,
   setDraftState,
   staleTrackedIds,
   updateMessageIfChanged,
@@ -94,7 +95,8 @@ export default function AIAssistantScreen() {
     deleteMessage,
     isLoadingHistory,
     clearChat,
-  } = useChat();
+    guestQuota,
+  } = useChat(accounts ?? []);
   const confirmAiDraftMutation = useConfirmAiDraft();
   const cancelAiDraftMutation = useCancelAiDraft();
 
@@ -201,12 +203,14 @@ export default function AIAssistantScreen() {
       const { extracted_data, transaction_ids } = voiceStatus.data;
       const accountId = defaultAccount?.id;
       if (extracted_data.length > 0 && transaction_ids.length > 0 && accountId) {
-        setMessages((prev) => [
-          ...prev,
-          ...createDraftMessages(
-            extractionToDraftTransactions(extracted_data, transaction_ids, accountId)
-          ),
-        ]);
+        setMessages((prev) =>
+          mergeMessagesSorted(
+            prev,
+            createDraftMessages(
+              extractionToDraftTransactions(extracted_data, transaction_ids, accountId)
+            )
+          )
+        );
       } else {
         showToast(t("ai.toast.noVoiceDraft"), "error");
       }
@@ -236,12 +240,14 @@ export default function AIAssistantScreen() {
       if (data.status === "completed") {
         const { extracted_data, transaction_ids } = data;
         if (extracted_data.length > 0 && transaction_ids.length > 0 && accountId) {
-          setMessages((prev) => [
-            ...prev,
-            ...createDraftMessages(
-              extractionToDraftTransactions(extracted_data, transaction_ids, accountId)
-            ),
-          ]);
+          setMessages((prev) =>
+            mergeMessagesSorted(
+              prev,
+              createDraftMessages(
+                extractionToDraftTransactions(extracted_data, transaction_ids, accountId)
+              )
+            )
+          );
         } else {
           showToast(t("ai.toast.noReceiptDraft"), "error");
         }
@@ -681,9 +687,10 @@ export default function AIAssistantScreen() {
         }
       />
 
-      {/* Guest gate takes priority; then the no-account gate for signed-in users */}
-      {isGuest ? (
-        <GuestGate subtitle={t("ai.guestSubtitle")} />
+      {/* Guest only gates once the free trial quota runs out; before that
+          they get the full chat, same as a signed-in user. */}
+      {isGuest && guestQuota === 0 ? (
+        <GuestGate subtitle={t("ai.guestQuotaExhaustedSubtitle")} />
       ) : hasNoAccounts ? (
         <Gate
           icon={<Wallet size={48} color={colors.accent.primary} strokeWidth={1.5} />}
@@ -742,6 +749,16 @@ export default function AIAssistantScreen() {
             durationMs={recordingDurationMs}
             onCancel={() => void cancelRecording()}
           />
+        )}
+
+        {/* Floating, persistent reminder of the free trial's remaining
+            messages — not a toast, doesn't auto-hide or push layout. */}
+        {isGuest && guestQuota !== null && guestQuota > 0 && (
+          <View pointerEvents="none" style={styles.guestQuotaPill}>
+            <Text style={styles.guestQuotaPillText}>
+              {t("ai.guestQuotaRemaining", { count: guestQuota })}
+            </Text>
+          </View>
         )}
       </View>
 
@@ -886,6 +903,27 @@ const styles = StyleSheet.create({
   messageList: {
     padding: spacing.lg,
     gap: spacing.md,
+  },
+  guestQuotaPill: {
+    position: "absolute",
+    top: spacing.sm,
+    alignSelf: "center",
+    zIndex: 10,
+    backgroundColor: colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  guestQuotaPillText: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
   },
   inputBar: {
     flexDirection: "row",

@@ -382,6 +382,8 @@
       "alertMessagePendingDrafts": "The entire chat history will be removed from this device. You have unconfirmed transactions that will be lost too."
     },
     "guestSubtitle": "Sign in to use the AI Assistant and see your financial data.",
+    "guestQuotaExhaustedSubtitle": "You've used up your free AI trial. Sign up to keep chatting!",
+    "guestQuotaRemaining_other": "{{count}} free AI chats left",
     "accountGate": {
       "title": "No account yet",
       "subtitle": "Create an account first so the AI Assistant can log your transactions.",
