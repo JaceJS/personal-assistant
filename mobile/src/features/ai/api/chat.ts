@@ -10,6 +10,7 @@ export interface DraftTransaction {
   note: string | null;
   account_id: string;
   status: TransactionStatus;
+  created_at: string;
 }
 
 export interface ChatReply {

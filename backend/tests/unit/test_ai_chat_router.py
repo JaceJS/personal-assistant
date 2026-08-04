@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -65,6 +66,7 @@ def _draft_result(merchant: str, amount: int) -> str:
             "note": None,
             "account_id": str(_ACCOUNT_ID),
             "status": "draft",
+            "created_at": datetime.now(UTC).isoformat(),
         }
     )
 

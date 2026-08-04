@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -36,6 +37,7 @@ def _make_draft_transaction_row(
     tx.account_id = uuid.uuid4()
     tx.category_id = category_id
     tx.status = status
+    tx.created_at = datetime.now(UTC)
     return tx
 
 

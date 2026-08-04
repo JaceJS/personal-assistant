@@ -461,6 +461,7 @@ async def _create_transaction(
         "note": tx.note,
         "account_id": str(tx.account_id),
         "status": tx.status,
+        "created_at": tx.created_at.isoformat(),
     }
     if category_warning:
         result["category_warning"] = category_warning

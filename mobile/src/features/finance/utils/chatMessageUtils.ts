@@ -170,6 +170,7 @@ export function extractionToDraftTransactions(
   transactionIds: string[],
   accountId: string,
 ): DraftTransaction[] {
+  const now = new Date().toISOString();
   return items.slice(0, transactionIds.length).map((item, i) => ({
     transaction_id: transactionIds[i],
     amount: item.amount,
@@ -179,6 +180,7 @@ export function extractionToDraftTransactions(
     note: item.note,
     account_id: accountId,
     status: 'draft' as const,
+    created_at: now,
   }));
 }
 
@@ -194,8 +196,18 @@ export function createDraftMessages(drafts: DraftTransaction[]): DraftMessage[] 
     type: 'draft' as const,
     draft,
     state: draftStatusToMessageState(draft.status),
-    createdAt: new Date(),
+    createdAt: new Date(draft.created_at),
   }));
+}
+
+// Chat history loads text messages and draft transactions as two separate
+// arrays; voice/receipt completion appends new drafts to the tail of the
+// current list. Neither is safe to just concatenate — every Message variant
+// carries createdAt, so re-sorting after merging keeps drafts interleaved at
+// their true chronological position instead of piling up wherever they were
+// appended.
+export function mergeMessagesSorted(prev: Message[], incoming: Message[]): Message[] {
+  return [...prev, ...incoming].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 }
 
 export function setDraftState(msg: DraftMessage, state: DraftMessageState): DraftMessage {

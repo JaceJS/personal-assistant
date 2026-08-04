@@ -80,6 +80,7 @@ async def _to_draft_transaction(db: AsyncSession, tx: Transaction) -> DraftTrans
         note=tx.note,
         account_id=tx.account_id,
         status=tx.status,
+        created_at=tx.created_at,
     )
 
 

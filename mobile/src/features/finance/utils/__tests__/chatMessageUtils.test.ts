@@ -15,6 +15,7 @@ import {
   getActiveReceiptIds,
   staleTrackedIds,
   updateMessageIfChanged,
+  mergeMessagesSorted,
 } from '../chatMessageUtils';
 import type { ChatMessage, DraftMessage, Message } from '../chatMessageUtils';
 import type { ExtractedTransaction, VoiceStatusResponse } from '@/features/finance/api/voice';
@@ -30,6 +31,7 @@ const makeDraft = (overrides: Partial<DraftTransaction> = {}): DraftTransaction 
   note: null,
   account_id: 'acc-1',
   status: 'draft',
+  created_at: '2026-01-01T00:00:00.000Z',
   ...overrides,
 });
 
@@ -55,9 +57,9 @@ describe('createDraftMessages', () => {
     expect(createDraftMessages([])).toEqual([]);
   });
 
-  it('sets createdAt to a Date', () => {
-    const msgs = createDraftMessages([makeDraft()]);
-    expect(msgs[0].createdAt).toBeInstanceOf(Date);
+  it('sets createdAt to the draft transaction\'s actual creation time, not now', () => {
+    const msgs = createDraftMessages([makeDraft({ created_at: '2020-01-01T00:00:00.000Z' })]);
+    expect(msgs[0].createdAt).toEqual(new Date('2020-01-01T00:00:00.000Z'));
   });
 
   it('maps a confirmed draft transaction to the saved state', () => {
@@ -321,6 +323,7 @@ describe('extractionToDraftTransactions', () => {
         note: null,
         account_id: 'acc-1',
         status: 'draft',
+        created_at: expect.any(String),
       },
       {
         transaction_id: 'tx-2',
@@ -331,8 +334,18 @@ describe('extractionToDraftTransactions', () => {
         note: null,
         account_id: 'acc-1',
         status: 'draft',
+        created_at: expect.any(String),
       },
     ]);
+  });
+
+  it('stamps every draft in the same call with the same created_at', () => {
+    const drafts = extractionToDraftTransactions(
+      [item({ merchant: 'Kopi' }), item({ merchant: 'Parkir' })],
+      ['tx-1', 'tx-2'],
+      'acc-1'
+    );
+    expect(drafts[0].created_at).toBe(drafts[1].created_at);
   });
 
   it('returns empty array when there are no extracted items', () => {
@@ -677,6 +690,52 @@ describe('updateMessageIfChanged', () => {
     const messages: Message[] = [other, createReceiptMessage('r1')];
     const next = updateMessageIfChanged(messages, 'r1', (m) => ({ ...m, status: 'extracting' }));
     expect(next[0]).toBe(other);
+  });
+});
+
+describe('mergeMessagesSorted', () => {
+  const at = (iso: string): Date => new Date(iso);
+
+  it('interleaves an incoming draft between existing text messages by createdAt, not appended at the end', () => {
+    const earlierText = { ...createUserTextMessage('halo'), createdAt: at('2026-01-01T10:00:00Z') };
+    const laterText = { ...createUserTextMessage('makasih'), createdAt: at('2026-01-01T10:05:00Z') };
+    const oldDraft = createDraftMessages([
+      makeDraft({ transaction_id: 'tx-old', created_at: '2026-01-01T10:02:00Z' }),
+    ])[0];
+
+    const merged = mergeMessagesSorted([earlierText, laterText], [oldDraft]);
+
+    expect(merged.map((m) => m.id)).toEqual([earlierText.id, oldDraft.id, laterText.id]);
+  });
+
+  it('keeps chronological order for a full chat history reload (text + drafts mixed)', () => {
+    const t1 = { ...createUserTextMessage('a'), createdAt: at('2026-01-01T10:00:00Z') };
+    const t2 = { ...createUserTextMessage('b'), createdAt: at('2026-01-01T10:03:00Z') };
+    const d1 = createDraftMessages([
+      makeDraft({ transaction_id: 'tx-1', created_at: '2026-01-01T10:01:00Z' }),
+    ])[0];
+    const d2 = createDraftMessages([
+      makeDraft({ transaction_id: 'tx-2', created_at: '2026-01-01T10:04:00Z' }),
+    ])[0];
+
+    const merged = mergeMessagesSorted([t1, t2], [d1, d2]);
+
+    expect(merged.map((m) => m.id)).toEqual([t1.id, d1.id, t2.id, d2.id]);
+  });
+
+  it('appends a brand new draft after all existing messages when it is the newest', () => {
+    const t1 = { ...createUserTextMessage('a'), createdAt: at('2026-01-01T10:00:00Z') };
+    const freshDraft = createDraftMessages([
+      makeDraft({ transaction_id: 'tx-fresh', created_at: '2026-01-01T11:00:00Z' }),
+    ])[0];
+
+    const merged = mergeMessagesSorted([t1], [freshDraft]);
+
+    expect(merged.map((m) => m.id)).toEqual([t1.id, freshDraft.id]);
+  });
+
+  it('returns an empty array when both inputs are empty', () => {
+    expect(mergeMessagesSorted([], [])).toEqual([]);
   });
 });
 
