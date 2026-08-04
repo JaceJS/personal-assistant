@@ -7,17 +7,19 @@ import re
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.openrouter import OpenRouterLLM
 from app.core.auth import CurrentUser
 from app.core.config import get_settings
 from app.core.database import get_session
-from app.core.rate_limit import per_user_rate_limit
+from app.core.exceptions import BadRequestError
+from app.core.rate_limit import increment_counter, per_ip_rate_limit, per_user_rate_limit
 from app.core.response import ApiResponse, ok
 from app.domains.ai import repository as repo
 from app.domains.ai import service
+from app.domains.ai.guest_tools import GUEST_TOOLS, execute_guest_tool
 from app.domains.ai.prompts import CHAT_BEHAVIOR_RULES, TONE_RULES
 from app.domains.ai.schemas import (
     ChatMessageOut,
@@ -25,6 +27,8 @@ from app.domains.ai.schemas import (
     ChatRequest,
     DailyInsight,
     DraftTransaction,
+    GuestChatReply,
+    GuestChatRequest,
     SessionHistoryResponse,
 )
 from app.domains.ai.tools import TOOLS, execute_tool
@@ -35,6 +39,19 @@ router = APIRouter(prefix="/ai", tags=["AI"])
 
 _AI_CHAT_LIMIT = per_user_rate_limit("ai_chat", 60, 3600)
 _AI_INSIGHT_LIMIT = per_user_rate_limit("ai_insight", 30, 3600)
+
+# Guest chat has no user_id to key a normal per-user limit on, so it's
+# protected by two independent layers instead: a coarse per-IP burst limit
+# (defense-in-depth against one source hammering the endpoint with many
+# fake device ids — kept well above the lifetime limit so a household on
+# shared wifi with a few devices never trips it during normal use) and a
+# per-device lifetime quota (the actual product limit — "20 free messages,
+# ever"). _GUEST_AI_LIFETIME_WINDOW_SECONDS is ~100 years specifically so
+# the counter never resets — reusing the same increment_counter primitive
+# as a de-facto lifetime cap rather than a real rate limit.
+_GUEST_AI_IP_LIMIT = per_ip_rate_limit("guest_ai_chat_ip", 100, 3600)
+_GUEST_AI_LIFETIME_LIMIT = 20
+_GUEST_AI_LIFETIME_WINDOW_SECONDS = 100 * 365 * 24 * 3600
 
 _MAX_TOOL_ITERATIONS = 5
 _FALLBACK_REPLY = "Maaf, aku belum bisa jawab itu sekarang. Coba tanya lagi dengan cara lain ya."
@@ -110,6 +127,30 @@ _SYSTEM_PROMPT = (
     "was created, changed, or deleted unless a tool result THIS turn actually confirms it — "
     "you have no delete capability at all, so never say anything was deleted, hapus, or "
     "dihapus under any circumstance. "
+    "If the user asks about anything outside personal finance, politely decline and "
+    "redirect them to a finance-related question. "
+    f"{TONE_RULES} {CHAT_BEHAVIOR_RULES}"
+)
+
+_GUEST_SYSTEM_PROMPT = (
+    "You are a personal finance assistant for an Indonesian budgeting app, currently "
+    "helping an anonymous guest who hasn't signed in. Your ONLY role is to help them "
+    "record expenses using the accounts they already have on this device. "
+    "Always call get_accounts first to find a valid account_id before creating a transaction. "
+    "If get_accounts returns an empty list, tell the user they need to add an account first. "
+    "When the user sends items in the shorthand format '<name> <price>' (e.g. 'sate 20.000' "
+    "or 'kopi 15rb'), treat each item as an expense to record immediately: call "
+    "create_transaction once per item without asking follow-up questions. "
+    "Indonesian number format: dots are thousand separators ('20.000' = 20000 rupiah, "
+    "'15rb'/'15k' = 15000). Expenses are negative amounts. "
+    "category_name is the important field — always pick the closest matching category for "
+    "what the money was for. merchant is optional. "
+    "Do NOT call create_transaction on a guess. It requires both a specific amount AND a "
+    "clear purpose. If unclear, ask a short clarifying question instead. "
+    "After successfully calling create_transaction, do not add any confirmation text — the "
+    "app already shows a review card for each draft. "
+    "You have no access to budgets, past transactions, or spending breakdowns for this guest — "
+    "if asked, say that requires signing in. "
     "If the user asks about anything outside personal finance, politely decline and "
     "redirect them to a finance-related question. "
     f"{TONE_RULES} {CHAT_BEHAVIOR_RULES}"
@@ -287,6 +328,131 @@ async def chat(
             user_message_id=user_msg.id,
             assistant_message_id=assistant_msg.id,
             draft_transactions=draft_transactions,
+        )
+    )
+
+
+@router.post(
+    "/guest-chat",
+    response_model=ApiResponse[GuestChatReply],
+    dependencies=[_GUEST_AI_IP_LIMIT],
+)
+async def guest_chat(
+    body: GuestChatRequest,
+    session: DbSession,
+    x_device_id: Annotated[str, Header(alias="X-Device-Id")],
+) -> ApiResponse[GuestChatReply]:
+    """Anonymous chat for guests who haven't signed in.
+
+    Nothing here is persisted: no chat_session, no chat_messages, no
+    Postgres transaction row. The client resends its own recent history each
+    turn and applies any confirmed draft to its own local storage — this
+    endpoint's only side effect is the lifetime quota counter, keyed by the
+    device id the client generates and stores itself (see guest_tools.py for
+    why create_transaction never touches Postgres either).
+    """
+    try:
+        device_id = uuid.UUID(x_device_id)
+    except ValueError as exc:
+        raise BadRequestError("X-Device-Id header must be a valid UUID") from exc
+
+    settings = get_settings()
+    llm = OpenRouterLLM(settings, max_tokens=1000)
+
+    count = await increment_counter(
+        session,
+        f"guest_ai_chat_lifetime:{device_id}",
+        _GUEST_AI_LIFETIME_LIMIT,
+        _GUEST_AI_LIFETIME_WINDOW_SECONDS,
+    )
+    remaining_quota = max(_GUEST_AI_LIFETIME_LIMIT - count, 0)
+
+    system_prompt = _GUEST_SYSTEM_PROMPT
+    system_categories = await finance_repo.list_system_categories(session)
+    if system_categories:
+        expense_names = ", ".join(
+            c.name for c in system_categories if c.type == CategoryType.expense
+        )
+        income_names = ", ".join(
+            c.name for c in system_categories if c.type == CategoryType.income
+        )
+        system_prompt += "\n\n" + _CATEGORY_LIST_TEMPLATE.format(
+            expense=expense_names or "-", income=income_names or "-"
+        )
+
+    loop_messages: list[dict[str, Any]] = [
+        {"role": h.role, "content": h.content or _EMPTY_ASSISTANT_TURN_PLACEHOLDER}
+        for h in body.history
+    ]
+    loop_messages.append({"role": "user", "content": body.message})
+
+    final_reply = ""
+    draft_transactions: list[DraftTransaction] = []
+    max_drafts = _count_amount_mentions(body.message)
+    for i in range(_MAX_TOOL_ITERATIONS):
+        content, tool_calls = await llm.chat_with_tools(
+            system_prompt, loop_messages, GUEST_TOOLS, require_tool=(i < 2)
+        )
+        final_reply = content
+
+        if not tool_calls:
+            break
+
+        loop_messages.append(
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": tc["id"],
+                        "type": "function",
+                        "function": {
+                            "name": tc["name"],
+                            "arguments": json.dumps(tc["arguments"]),
+                        },
+                    }
+                    for tc in tool_calls
+                ],
+            }
+        )
+        for tc in tool_calls:
+            if tc["name"] == "create_transaction" and len(draft_transactions) >= max_drafts:
+                result = json.dumps(
+                    {
+                        "error": (
+                            "No amount left unaccounted for in the user's message. Ask what "
+                            "it was for and how much instead of guessing another one."
+                        )
+                    }
+                )
+            else:
+                result = await execute_guest_tool(
+                    tc["name"], tc["arguments"], session, body.accounts
+                )
+            loop_messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
+            if tc["name"] == "create_transaction":
+                result_data = json.loads(result)
+                result_data.pop("category_warning", None)
+                if "transaction_id" in result_data:
+                    draft_transactions.append(DraftTransaction(**result_data))
+
+    if draft_transactions:
+        final_reply = ""
+    else:
+        if not final_reply.strip():
+            final_reply, _ = await llm.chat_with_tools(
+                system_prompt + "\n\n" + _INCOMPLETE_ACTION_NOTICE,
+                loop_messages,
+                GUEST_TOOLS,
+                force_text=True,
+            )
+        final_reply = final_reply.strip() or _FALLBACK_REPLY
+
+    return ok(
+        GuestChatReply(
+            reply=final_reply,
+            draft_transactions=draft_transactions,
+            remaining_quota=remaining_quota,
         )
     )
 
