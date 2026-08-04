@@ -32,15 +32,17 @@ export default function HomeFirstRunChecklist({ state }: Props) {
 
   const doneFlags = [hasAccount, hasFirstTransaction, hasBudget];
   const completedCount = doneFlags.filter(Boolean).length;
-  // Endowed progress: minimum 1/3 so first-time users don't see an empty bar
-  const progressPct = Math.max(completedCount / 3, 1 / 3);
+  const progressPct = completedCount / 3;
 
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{t("home.firstRunChecklist.title")}</Text>
 
       <View style={styles.barTrack}>
-        <View style={[styles.barFill, { width: `${Math.round(progressPct * 100)}%` as `${number}%` }]} />
+        <View
+          testID="firstRunProgressBarFill"
+          style={[styles.barFill, { width: `${Math.round(progressPct * 100)}%` as `${number}%` }]}
+        />
       </View>
       <Text style={styles.progressLabel}>
         {t("home.firstRunChecklist.progressLabel", { count: completedCount })}
