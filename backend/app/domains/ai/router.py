@@ -54,6 +54,8 @@ _GUEST_AI_LIFETIME_LIMIT = 20
 _GUEST_AI_LIFETIME_WINDOW_SECONDS = 100 * 365 * 24 * 3600
 
 _MAX_TOOL_ITERATIONS = 5
+# LLM context only — replayed into the prompt every turn (token-cost knob).
+_LLM_CONTEXT_MESSAGE_LIMIT = 20
 _FALLBACK_REPLY = "Maaf, aku belum bisa jawab itu sekarang. Coba tanya lagi dengan cara lain ya."
 _INCOMPLETE_ACTION_NOTICE = (
     "You were unable to finish gathering data or completing the requested action within "
@@ -194,7 +196,9 @@ async def chat(
 
     chat_session = await repo.get_or_create_session(session, user_id, body.session_id)
 
-    history = await repo.get_recent_messages(session, chat_session.id, limit=20)
+    history = await repo.get_recent_messages(
+        session, chat_session.id, limit=_LLM_CONTEXT_MESSAGE_LIMIT
+    )
     # A bare empty assistant turn (the "no filler text" behavior below, for a
     # successful create_transaction) reads to the model as "I never actually
     # responded to that" — it then re-attempts the earlier item on the next

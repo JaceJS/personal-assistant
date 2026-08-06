@@ -24,6 +24,9 @@ from app.domains.finance.models import Transaction
 
 _FALLBACK_INSIGHT = "Terus catat transaksimu untuk mendapatkan insight keuangan yang personal!"
 
+# History view limit — separate from router.py's smaller LLM-context limit.
+_HISTORY_MESSAGE_LIMIT = 200
+
 _INSIGHT_SYSTEM = (
     "Kamu adalah asisten keuangan pribadi untuk aplikasi budgeting di Indonesia. "
     "Berdasarkan ringkasan keuangan pengguna hari ini, tulis satu insight yang singkat "
@@ -95,7 +98,7 @@ async def get_session_messages(
     if chat_session.user_id != user_id:
         raise ForbiddenError("Access denied")
 
-    messages = await repo.get_recent_messages(db, session_id, limit=20)
+    messages = await repo.get_recent_messages(db, session_id, limit=_HISTORY_MESSAGE_LIMIT)
     tx_rows = await finance_repo.get_session_transactions(db, session_id)
     drafts = [await _to_draft_transaction(db, tx) for tx in tx_rows]
     return messages, drafts

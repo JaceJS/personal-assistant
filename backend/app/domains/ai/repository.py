@@ -59,7 +59,7 @@ async def get_recent_messages(
     *,
     limit: int = 20,
 ) -> list[ChatMessage]:
-    """Return last `limit` messages ordered oldest-first for LLM context."""
+    """Return last `limit` messages ordered oldest-first."""
     subq = (
         sa.select(ChatMessage)
         .where(ChatMessage.session_id == session_id)
