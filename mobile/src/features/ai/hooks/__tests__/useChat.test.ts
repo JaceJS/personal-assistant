@@ -317,13 +317,16 @@ describe('useChat', () => {
     expect(result.current.isLoadingHistory).toBe(false);
   });
 
-  it('clears a stale session id left over from a previous account when entering guest mode', async () => {
+  it('leaves a leftover session id from a previous account untouched when entering guest mode', async () => {
+    // Guest mode never reads/writes this key, and the backend scopes it by
+    // owner — clearing it here used to also wipe a still-valid session for
+    // the same user cycling through a brief guest window on sign-out/sign-in.
     await AsyncStorage.setItem(CHAT_SESSION_KEY, 'session-from-a-previous-account');
     mockIsGuest = true;
 
     await renderHook(() => useChat());
 
-    expect(await AsyncStorage.getItem(CHAT_SESSION_KEY)).toBeNull();
+    expect(await AsyncStorage.getItem(CHAT_SESSION_KEY)).toBe('session-from-a-previous-account');
   });
 
   it('for a guest, sends the message via the guest endpoint with device id and account snapshot', async () => {

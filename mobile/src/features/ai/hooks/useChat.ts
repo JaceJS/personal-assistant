@@ -38,7 +38,6 @@ export function useChat(accounts: Account[] = []) {
       setIsLoadingHistory(false);
       setMessages([]);
       setSessionId(undefined);
-      void AsyncStorage.removeItem(CHAT_SESSION_KEY);
       void getOrCreateGuestDeviceId().then(setGuestDeviceId);
       return;
     }

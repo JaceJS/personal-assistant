@@ -1,5 +1,4 @@
 import { useCallback, useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { supabase } from "@/lib/supabase";
 import { queryClient } from "@/lib/queryClient";
@@ -8,7 +7,6 @@ import { useSyncPromptStore } from "@/stores/syncPrompt";
 import { logger } from "@/lib/logger";
 import { LocalRepository } from "@/features/finance/repository";
 import { getLocalDataSummary } from "@/features/sync/syncService";
-import { CHAT_SESSION_KEY } from "@/features/ai/hooks/useChat";
 
 const localRepo = new LocalRepository();
 
@@ -18,8 +16,7 @@ export function useAuth() {
   const enterGuestMode = useAuthStore((s) => s.enterGuestMode);
   const showSyncPrompt = useSyncPromptStore((s) => s.showPrompt);
 
-  // Never syncs silently: this only surfaces the merge-confirmation prompt.
-  // The actual import runs when the user confirms it (see GuestDataMergeSheet).
+  // Only surfaces the prompt; actual merge happens on user confirm (GuestDataMergeSheet).
   const checkForLocalDataToMerge = useCallback(async () => {
     try {
       const summary = await getLocalDataSummary(localRepo);
@@ -30,57 +27,31 @@ export function useAuth() {
   }, [showSyncPrompt]);
 
   useEffect(() => {
-    const initSession = async () => {
-      try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
-        if (error) logger.error("getSession failed", error);
-        if (session) {
-          setSession(session);
-          // Cold start with an authenticated session: re-check in case the
-          // user previously dismissed the prompt ("Nanti Dulu") and local
-          // guest data is still sitting unsynced.
-          void checkForLocalDataToMerge();
-        } else {
-          enterGuestMode();
-        }
-      } catch (err) {
-        logger.error("getSession threw", err);
-        enterGuestMode();
-      } finally {
-        markInitialized();
-      }
-    };
-
-    initSession();
-
+    // Single source of truth: fires once on subscribe with the existing
+    // session (cold start), then again on every real change.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       const previous = useAuthStore.getState();
       const wasGuest = previous.isGuest;
       const previousUserId = previous.session?.user.id;
+      // Cold start has no prior identity to compare against — never treat it as a change.
+      const isColdStart = !previous.initialized;
+      const isIdentityChange =
+        !isColdStart && (session ? wasGuest || previousUserId !== session.user.id : !wasGuest);
+
       if (session) {
-        // Finance queries (accounts, transactions, budget, ...) are keyed by
-        // resource name only, not by user/repo — the repo they hit swaps
-        // between local SQLite (guest) and the API (authenticated) based on
-        // isGuest, but TanStack Query has no way to know that on its own. A
-        // real identity change (guest -> account, or account A -> account B)
-        // must wipe the cache, or the new identity's screens briefly (up to
-        // staleTime) show the previous identity's cached data — this was the
-        // "step 1 always looks done" bug in the setup checklist.
-        if (wasGuest || previousUserId !== session.user.id) {
-          queryClient.clear();
-          void AsyncStorage.removeItem(CHAT_SESSION_KEY);
-        }
+        // Identity actually changed: finance queries swap local/API repo by
+        // isGuest but TanStack Query doesn't know, so stale cache must be wiped.
+        // Chat session id is left alone — the backend already scopes it by
+        // owner (self-heals a stale/foreign one on the next send).
+        if (isIdentityChange) queryClient.clear();
         setSession(session);
-        if (event === "SIGNED_IN" && wasGuest) {
+        if (isColdStart || (event === "SIGNED_IN" && wasGuest)) {
           void checkForLocalDataToMerge();
         }
       } else {
-        if (!wasGuest) queryClient.clear();
+        if (isIdentityChange) queryClient.clear();
         enterGuestMode();
       }
       markInitialized();
