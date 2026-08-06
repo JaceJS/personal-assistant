@@ -1,22 +1,29 @@
-import React, { useEffect } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import React, { useEffect } from "react";
+import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, radius } from '@/theme';
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors, radius } from "@/theme";
 
 interface BottomSheetProps {
   isVisible: boolean;
   onDismiss?: () => void;
   children: React.ReactNode;
+  /** Caps sheet height so tall/scrollable content doesn't grow past the screen. */
+  maxHeightPercent?: number;
 }
 
-export function BottomSheet({ isVisible, onDismiss, children }: BottomSheetProps) {
+export function BottomSheet({
+  isVisible,
+  onDismiss,
+  children,
+  maxHeightPercent,
+}: BottomSheetProps) {
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(600);
   const backdropOpacity = useSharedValue(0);
@@ -49,12 +56,19 @@ export function BottomSheet({ isVisible, onDismiss, children }: BottomSheetProps
     >
       <Animated.View
         style={[StyleSheet.absoluteFillObject, styles.backdrop, backdropStyle]}
-        pointerEvents={isVisible ? 'auto' : 'none'}
+        pointerEvents={isVisible ? "auto" : "none"}
       >
         <Pressable style={StyleSheet.absoluteFillObject} onPress={onDismiss} />
       </Animated.View>
 
-      <Animated.View style={[styles.sheet, sheetStyle, { paddingBottom: insets.bottom + 16 }]}>
+      <Animated.View
+        style={[
+          styles.sheet,
+          sheetStyle,
+          { paddingBottom: insets.bottom + 16 },
+          maxHeightPercent != null && { maxHeight: `${maxHeightPercent}%` },
+        ]}
+      >
         <View style={styles.handle} />
         <KeyboardAvoidingView behavior="padding">{children}</KeyboardAvoidingView>
       </Animated.View>
@@ -64,10 +78,10 @@ export function BottomSheet({ isVisible, onDismiss, children }: BottomSheetProps
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
   sheet: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
@@ -76,7 +90,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.xl,
   },
   handle: {
-    alignSelf: 'center',
+    alignSelf: "center",
     width: 40,
     height: 4,
     borderRadius: radius.full,

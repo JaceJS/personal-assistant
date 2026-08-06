@@ -1,18 +1,12 @@
-import React, { useCallback } from 'react';
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { X } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
+import React, { useCallback } from "react";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { X } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
-import type { Category } from '@/features/finance/types';
-import CategoryCard from '@/features/finance/components/CategoryCard';
-import { colors, radius, spacing, textStyles } from '@/theme';
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import type { Category } from "@/features/finance/types";
+import CategoryCard from "@/features/finance/components/CategoryCard";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 interface AddSpendingLimitSheetProps {
   categories: Category[];
@@ -21,85 +15,59 @@ interface AddSpendingLimitSheetProps {
   onSelect: (category: Category) => void;
 }
 
-function AddSpendingLimitSheet({ categories, isVisible, onDismiss, onSelect }: AddSpendingLimitSheetProps) {
+function AddSpendingLimitSheet({
+  categories,
+  isVisible,
+  onDismiss,
+  onSelect,
+}: AddSpendingLimitSheetProps) {
   const { t } = useTranslation();
-  const renderItem = useCallback(({ item }: { item: Category }) => (
-    <CategoryCard category={item} onPress={onSelect} />
-  ), [onSelect]);
+  const renderItem = useCallback(
+    ({ item }: { item: Category }) => <CategoryCard category={item} onPress={onSelect} />,
+    [onSelect]
+  );
 
   const keyExtractor = useCallback((item: Category) => item.id, []);
 
   return (
-    <Modal
-      visible={isVisible}
-      transparent
-      animationType="slide"
-      onRequestClose={onDismiss}
-    >
-      <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onDismiss} />
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>{t('budget.addLimit.title')}</Text>
-            <Pressable
-              style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
-              onPress={onDismiss}
-            >
-              <X size={16} color={colors.text.secondary} strokeWidth={1.5} />
-            </Pressable>
-          </View>
-          <Text style={styles.subtitle}>{t('budget.addLimit.subtitle')}</Text>
-
-          {categories.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>{t('budget.addLimit.allSetText')}</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={categories}
-              keyExtractor={keyExtractor}
-              renderItem={renderItem}
-              numColumns={3}
-              columnWrapperStyle={styles.columnWrapper}
-              style={styles.list}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
-            />
-          )}
-        </View>
+    <BottomSheet isVisible={isVisible} onDismiss={onDismiss} maxHeightPercent={75}>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{t("budget.addLimit.title")}</Text>
+        <Pressable
+          style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
+          onPress={onDismiss}
+        >
+          <X size={16} color={colors.text.secondary} strokeWidth={1.5} />
+        </Pressable>
       </View>
-    </Modal>
+      <Text style={styles.subtitle}>{t("budget.addLimit.subtitle")}</Text>
+
+      {categories.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>{t("budget.addLimit.allSetText")}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={categories}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          numColumns={3}
+          columnWrapperStyle={styles.columnWrapper}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  sheet: {
-    backgroundColor: colors.bg.elevated,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingBottom: 32,
-    maxHeight: '75%',
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: radius.full,
-    backgroundColor: colors.border.default,
-    marginTop: 12,
-    marginBottom: 8,
-  },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing['2xl'],
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing["2xl"],
     paddingTop: spacing.md,
     marginBottom: 4,
   },
@@ -112,13 +80,13 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: radius.full,
     backgroundColor: colors.bg.hover,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   subtitle: {
     ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing["2xl"],
     marginBottom: spacing.md,
   },
   list: { flexShrink: 1 },
@@ -129,13 +97,13 @@ const styles = StyleSheet.create({
   },
   columnWrapper: { gap: 8 },
   empty: {
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: spacing['2xl'],
+    paddingHorizontal: spacing["2xl"],
+    paddingVertical: spacing["2xl"],
   },
   emptyText: {
     ...StyleSheet.flatten(textStyles.body),
     color: colors.text.muted,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
 

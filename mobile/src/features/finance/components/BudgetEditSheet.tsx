@@ -1,18 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { X } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
+import React, { useCallback, useEffect, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { X } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
-import Button from '@/components/ui/Button';
-import RupiahInput from '@/components/ui/RupiahInput';
-import { colors, radius, spacing, textStyles } from '@/theme';
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import Button from "@/components/ui/Button";
+import RupiahInput from "@/components/ui/RupiahInput";
+import { colors, radius, spacing, textStyles } from "@/theme";
 
 interface BudgetEditSheetProps {
   isVisible: boolean;
@@ -47,87 +41,50 @@ function BudgetEditSheet({
   }, [amount, onSave]);
 
   return (
-    <Modal
-      visible={isVisible}
-      transparent
-      animationType="slide"
-      onRequestClose={onDismiss}
-    >
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior="padding"
-      >
-        <Pressable style={styles.backdrop} onPress={onDismiss} />
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <View style={styles.content}>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>
-                {isUpdate ? t('budget.editTitle') : t('budget.setMonthlyTitle')}
-              </Text>
-              <Pressable
-                style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
-                onPress={onDismiss}
-              >
-                <X size={16} color={colors.text.secondary} strokeWidth={1.5} />
-              </Pressable>
-            </View>
-
-            <RupiahInput
-              label={t('transaction.amountLabel')}
-              value={amount}
-              onChange={setAmount}
-              placeholder={t('budget.amountPlaceholder')}
-              autoFocus
-            />
-
-            <Button
-              label={isPending ? t('budget.savingEllipsis') : t('budget.saveCta')}
-              onPress={handleSave}
-              variant="primary"
-              disabled={!hasValidInput || isPending}
-              fullWidth
-            />
-          </View>
+    <BottomSheet isVisible={isVisible} onDismiss={onDismiss}>
+      <View style={styles.content}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>
+            {isUpdate ? t("budget.editTitle") : t("budget.setMonthlyTitle")}
+          </Text>
+          <Pressable
+            style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
+            onPress={onDismiss}
+          >
+            <X size={16} color={colors.text.secondary} strokeWidth={1.5} />
+          </Pressable>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+
+        <RupiahInput
+          label={t("transaction.amountLabel")}
+          value={amount}
+          onChange={setAmount}
+          placeholder={t("budget.amountPlaceholder")}
+          autoFocus
+        />
+
+        <Button
+          label={isPending ? t("budget.savingEllipsis") : t("budget.saveCta")}
+          onPress={handleSave}
+          variant="primary"
+          disabled={!hasValidInput || isPending}
+          fullWidth
+        />
+      </View>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  sheet: {
-    backgroundColor: colors.bg.elevated,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingBottom: 32,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: radius.full,
-    backgroundColor: colors.border.default,
-    marginTop: 12,
-    marginBottom: 8,
-  },
   content: {
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing["2xl"],
     paddingTop: spacing.md,
     gap: spacing.md,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.xs,
   },
   title: {
@@ -139,8 +96,8 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: radius.full,
     backgroundColor: colors.bg.hover,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

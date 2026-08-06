@@ -1,13 +1,5 @@
 import React, { useCallback, useEffect, useMemo } from "react";
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,6 +7,7 @@ import { X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { PRESET_COLORS, PRESET_ICONS } from "@/features/finance/constants";
@@ -115,7 +108,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
       } catch {
         showToast(
           editingCategory ? t("categories.form.updateError") : t("categories.form.createError"),
-          "error",
+          "error"
         );
       }
     },
@@ -125,172 +118,147 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
   const isPending = editingCategory ? updateCategory.isPending : createCategory.isPending;
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      statusBarTranslucent
-      onRequestClose={onDismiss}
-    >
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior="padding"
+    <BottomSheet isVisible={visible} onDismiss={onDismiss} maxHeightPercent={90}>
+      <ScrollView
+        contentContainerStyle={styles.sheetContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Pressable style={styles.backdrop} onPress={onDismiss} />
-        <ScrollView
-          style={styles.sheet}
-          contentContainerStyle={styles.sheetContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {editingCategory ? t("categories.form.editTitle") : t("categories.form.newTitle")}
-            </Text>
-            <Pressable onPress={onDismiss} style={({ pressed }) => pressed && { opacity: 0.6 }}>
-              <X size={22} color={colors.text.muted} />
-            </Pressable>
-          </View>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>
+            {editingCategory ? t("categories.form.editTitle") : t("categories.form.newTitle")}
+          </Text>
+          <Pressable onPress={onDismiss} style={({ pressed }) => pressed && { opacity: 0.6 }}>
+            <X size={22} color={colors.text.muted} />
+          </Pressable>
+        </View>
 
-          <View style={styles.modalForm}>
+        <View style={styles.modalForm}>
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                label={t("categories.form.nameLabel")}
+                value={value}
+                onChangeText={onChange}
+                placeholder={t("categories.form.namePlaceholder")}
+                error={errors.name?.message}
+                autoFocus
+              />
+            )}
+          />
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{t("categories.form.typeLabel")}</Text>
             <Controller
               control={control}
-              name="name"
+              name="type"
               render={({ field: { onChange, value } }) => (
-                <Input
-                  label={t("categories.form.nameLabel")}
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder={t("categories.form.namePlaceholder")}
-                  error={errors.name?.message}
-                  autoFocus
-                />
-              )}
-            />
-
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t("categories.form.typeLabel")}</Text>
-              <Controller
-                control={control}
-                name="type"
-                render={({ field: { onChange, value } }) => (
-                  <View style={styles.typeRow}>
-                    {CATEGORY_TYPES.map((opt) => {
-                      const isSelected = value === opt.value;
-                      return (
-                        <Pressable
-                          key={opt.value}
-                          onPress={() => onChange(opt.value)}
+                <View style={styles.typeRow}>
+                  {CATEGORY_TYPES.map((opt) => {
+                    const isSelected = value === opt.value;
+                    return (
+                      <Pressable
+                        key={opt.value}
+                        onPress={() => onChange(opt.value)}
+                        style={[
+                          styles.typeBtn,
+                          isSelected ? styles.typeBtnActive : styles.typeBtnInactive,
+                        ]}
+                      >
+                        <Text style={styles.typeEmoji}>{opt.emoji}</Text>
+                        <Text
                           style={[
-                            styles.typeBtn,
-                            isSelected ? styles.typeBtnActive : styles.typeBtnInactive,
+                            styles.typeBtnLabel,
+                            isSelected ? styles.typeBtnLabelActive : styles.typeBtnLabelInactive,
                           ]}
                         >
-                          <Text style={styles.typeEmoji}>{opt.emoji}</Text>
-                          <Text
-                            style={[
-                              styles.typeBtnLabel,
-                              isSelected ? styles.typeBtnLabelActive : styles.typeBtnLabelInactive,
-                            ]}
-                          >
-                            {t(opt.labelKey)}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                )}
-              />
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t("goals.form.iconLabel")}</Text>
-              <View style={styles.iconGrid}>
-                {iconRows.map((row, rowIdx) => (
-                  <View key={rowIdx} style={styles.iconRow}>
-                    {row.map((icon) => {
-                      const isSelected = selectedIcon === icon;
-                      return (
-                        <View key={icon} style={styles.iconCellWrapper}>
-                          <Pressable
-                            onPress={() => setValue("icon", icon)}
-                            style={({ pressed }) => [
-                              styles.iconCellPressable,
-                              pressed && { opacity: 0.7 },
-                            ]}
-                          >
-                            <View
-                              style={[
-                                styles.iconCell,
-                                isSelected
-                                  ? {
-                                      backgroundColor: `${selectedColor ?? colors.accent.primary}33`,
-                                      borderColor: selectedColor ?? colors.accent.primary,
-                                    }
-                                  : styles.iconCellInactive,
-                              ]}
-                            >
-                              <Text style={styles.iconEmoji}>{icon}</Text>
-                            </View>
-                          </Pressable>
-                        </View>
-                      );
-                    })}
-                    {row.length < ICON_COLS &&
-                      Array.from({ length: ICON_COLS - row.length }).map((_, j) => (
-                        <View key={`pad-${j}`} style={styles.iconCellPlaceholder} />
-                      ))}
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t("categories.form.colorLabel")}</Text>
-              <View style={styles.colorRow}>
-                {PRESET_COLORS.map((color) => {
-                  const isSelected = selectedColor === color;
-                  return (
-                    <Pressable
-                      key={color}
-                      onPress={() => setValue("color", color)}
-                      style={[
-                        styles.colorDot,
-                        { backgroundColor: color },
-                        isSelected && styles.colorDotSelected,
-                      ]}
-                    />
-                  );
-                })}
-              </View>
-            </View>
-
-            <Button
-              label={editingCategory ? t("common.save") : t("categories.form.createCta")}
-              onPress={handleSubmit(onSubmit)}
-              loading={isPending}
-              fullWidth
+                          {t(opt.labelKey)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
             />
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Modal>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{t("goals.form.iconLabel")}</Text>
+            <View style={styles.iconGrid}>
+              {iconRows.map((row, rowIdx) => (
+                <View key={rowIdx} style={styles.iconRow}>
+                  {row.map((icon) => {
+                    const isSelected = selectedIcon === icon;
+                    return (
+                      <View key={icon} style={styles.iconCellWrapper}>
+                        <Pressable
+                          onPress={() => setValue("icon", icon)}
+                          style={({ pressed }) => [
+                            styles.iconCellPressable,
+                            pressed && { opacity: 0.7 },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.iconCell,
+                              isSelected
+                                ? {
+                                    backgroundColor: `${selectedColor ?? colors.accent.primary}33`,
+                                    borderColor: selectedColor ?? colors.accent.primary,
+                                  }
+                                : styles.iconCellInactive,
+                            ]}
+                          >
+                            <Text style={styles.iconEmoji}>{icon}</Text>
+                          </View>
+                        </Pressable>
+                      </View>
+                    );
+                  })}
+                  {row.length < ICON_COLS &&
+                    Array.from({ length: ICON_COLS - row.length }).map((_, j) => (
+                      <View key={`pad-${j}`} style={styles.iconCellPlaceholder} />
+                    ))}
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{t("categories.form.colorLabel")}</Text>
+            <View style={styles.colorRow}>
+              {PRESET_COLORS.map((color) => {
+                const isSelected = selectedColor === color;
+                return (
+                  <Pressable
+                    key={color}
+                    onPress={() => setValue("color", color)}
+                    style={[
+                      styles.colorDot,
+                      { backgroundColor: color },
+                      isSelected && styles.colorDotSelected,
+                    ]}
+                  />
+                );
+              })}
+            </View>
+          </View>
+
+          <Button
+            label={editingCategory ? t("common.save") : t("categories.form.createCta")}
+            onPress={handleSubmit(onSubmit)}
+            loading={isPending}
+            fullWidth
+          />
+        </View>
+      </ScrollView>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: "flex-end" },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  sheet: {
-    backgroundColor: colors.bg.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    maxHeight: "90%",
-    alignSelf: "stretch",
-  },
   sheetContent: {
     padding: spacing["2xl"],
     paddingBottom: 40,
