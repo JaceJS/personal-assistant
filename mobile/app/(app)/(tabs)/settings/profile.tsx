@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { useTranslation } from "react-i18next";
 
 import { Header } from "@/components/layout/Header";
@@ -16,6 +17,8 @@ import { useDisplayName } from "@/hooks/useDisplayName";
 import { useAvatarUrl } from "@/hooks/useAvatarUrl";
 import { spacing, textStyles, colors } from "@/theme";
 import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
+
+const AVATAR_MAX_DIMENSION = 512;
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -36,9 +39,15 @@ export default function ProfileScreen() {
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!result.canceled && result.assets[0]) {
-      setPickedAvatarUri(result.assets[0].uri);
-    }
+    if (result.canceled || !result.assets[0]) return;
+    // `quality` above only sets JPEG compression, not pixel dimensions — an
+    // uncapped square crop from a modern phone camera can still be several
+    // MB, which is what made saving feel slow.
+    const resized = await ImageManipulator.manipulate(result.assets[0].uri)
+      .resize({ width: AVATAR_MAX_DIMENSION })
+      .renderAsync();
+    const saved = await resized.saveAsync({ compress: 0.8, format: SaveFormat.JPEG });
+    setPickedAvatarUri(saved.uri);
   }, []);
 
   const handleSave = useCallback(() => {
