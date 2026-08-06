@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { Budget } from '@/features/finance/types';
 import { formatMoney } from '@/lib/format';
-import { colors, radius, textStyles } from '@/theme';
+import { colors, radius, textStyles, toReadableTextColor } from '@/theme';
 
 function getBudgetBarColor(pct: number): string {
   if (pct >= 1) return colors.danger.text;
@@ -79,7 +79,7 @@ function BudgetHeroCard({ budget, totalSpent, onEdit }: BudgetHeroCardProps) {
             />
           </View>
 
-          <Text style={[styles.pctText, { color: barColor }]}>
+          <Text style={[styles.pctText, { color: toReadableTextColor(barColor) }]}>
             {t('budget.usedPctLabel', { pct: Math.round(displayPct * 100) })}
           </Text>
         </View>

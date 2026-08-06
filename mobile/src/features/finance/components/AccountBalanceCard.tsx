@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   },
   promptArrow: {
     ...StyleSheet.flatten(textStyles.body),
-    color: colors.accent.primary,
+    color: colors.accent.text,
   },
   pressed: {
     opacity: 0.7,

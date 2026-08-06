@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   label: {
     ...StyleSheet.flatten(textStyles.overline),
     fontSize: 10,
-    color: colors.accent.primary,
+    color: colors.accent.text,
     letterSpacing: 1.2,
   },
   body: {

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useBudget } from '@/features/finance/hooks/useBudget';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { formatMoney } from '@/lib/format';
-import { colors, radius, spacing, textStyles } from '@/theme';
+import { colors, radius, spacing, textStyles, toReadableTextColor } from '@/theme';
 
 function getBudgetColor(pct: number): string {
   if (pct >= 1) return colors.danger.text;
@@ -66,7 +66,7 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
             <Text style={styles.budgetAmount}>{formatMoney(monthlyLimit)}</Text>
           </View>
           <View style={[styles.pctBadge, { borderColor: barColor + '44' }]}>
-            <Text style={[styles.pctText, { color: barColor }]}>{Math.round(displayPct * 100)}%</Text>
+            <Text style={[styles.pctText, { color: toReadableTextColor(barColor) }]}>{Math.round(displayPct * 100)}%</Text>
           </View>
         </View>
 
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
 
   promptRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
   promptText: { ...StyleSheet.flatten(textStyles.body), color: colors.text.secondary },
-  promptArrow: { ...StyleSheet.flatten(textStyles.body), color: colors.accent.primary },
+  promptArrow: { ...StyleSheet.flatten(textStyles.body), color: colors.accent.text },
 
   topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 },
   topLeft: { flex: 1, gap: 4 },

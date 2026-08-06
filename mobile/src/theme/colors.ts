@@ -12,7 +12,7 @@ export const colors = {
   },
   text: {
     primary: '#201810',
-    secondary: '#6E6147',
+    secondary: '#564A36',
     muted: '#746650',
     disabled: '#C9BCA0',
   },
@@ -49,3 +49,7 @@ export const colors = {
     bg: '#E1EEF1',
   },
 } as const;
+
+export function toReadableTextColor(fillColor: string): string {
+  return fillColor === colors.accent.primary ? colors.accent.text : fillColor;
+}

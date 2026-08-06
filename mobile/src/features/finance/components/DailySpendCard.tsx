@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useBudget } from "@/features/finance/hooks/useBudget";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { formatMoney } from "@/lib/format";
-import { colors, radius, spacing, textStyles } from "@/theme";
+import { colors, radius, spacing, textStyles, toReadableTextColor } from "@/theme";
 
 const RING_R = 36;
 const RING_STROKE = 7;
@@ -54,12 +54,12 @@ export default function DailySpendCard() {
     <View style={styles.card}>
       <View style={styles.left}>
         <Text style={styles.overline}>{t("home.dailySpend.overline")}</Text>
-        <Text style={[styles.spend, { color: ringColor }]}>{formatMoney(todaySpend)}</Text>
+        <Text style={[styles.spend, { color: toReadableTextColor(ringColor) }]}>{formatMoney(todaySpend)}</Text>
         <Text style={styles.limitLabel}>
           {t("home.dailySpend.ofLimit", { limit: formatMoney(limit) })}
         </Text>
         <View style={[styles.remainingChip, { borderColor: ringColor + "44" }]}>
-          <Text style={[styles.remainingText, { color: ringColor }]}>
+          <Text style={[styles.remainingText, { color: toReadableTextColor(ringColor) }]}>
             {t("home.dailySpend.remaining", { amount: formatMoney(remaining) })}
           </Text>
         </View>
@@ -90,7 +90,7 @@ export default function DailySpendCard() {
           />
         </Svg>
         <View style={styles.ringCenter}>
-          <Text style={[styles.pct, { color: ringColor }]}>{Math.round(displayPct * 100)}%</Text>
+          <Text style={[styles.pct, { color: toReadableTextColor(ringColor) }]}>{Math.round(displayPct * 100)}%</Text>
           <Text style={styles.usedLabel}>{t("home.dailySpend.usedLabel")}</Text>
         </View>
       </View>
