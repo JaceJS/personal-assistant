@@ -17,6 +17,7 @@
     "selectItemPlaceholder": "Pilih item",
     "selectPrefix": "Pilih {{label}}",
     "doneCta": "Selesai",
+    "gotIt": "Mengerti",
     "minutesAgo_other": "{{count}} menit lalu",
     "hoursAgo_other": "{{count}} jam lalu",
     "daysAgo_other": "{{count}} hari lalu",
@@ -118,6 +119,20 @@
     "dismissBotCoachmarkA11y": "Tutup tips: coba chat, ucapin, atau foto struk di sini",
     "botCoachmarkText": "Coba chat, ucapin, atau foto struk di sini ✨",
     "openAiA11y": "Buka asisten AI"
+  },
+  "coachmark": {
+    "homeAccountText": "Mulai dari sini: buat akun buat mulai catat keuangan 👛",
+    "dismissHomeAccountA11y": "Tutup tips: buat akun",
+    "homeTransactionText": "Catat transaksi pertamamu di sini 📝",
+    "dismissHomeTransactionA11y": "Tutup tips: catat transaksi pertama",
+    "homeBudgetText": "Terakhir, atur budget bulananmu di sini 🎯",
+    "dismissHomeBudgetA11y": "Tutup tips: atur budget",
+    "budgetText": "Atur limit bulanan biar Savyn bisa ingetin kalau pengeluaran mendekati batas",
+    "dismissBudgetA11y": "Tutup tips: atur limit bulanan",
+    "addTransactionText": "Isi nominal & pilih akun, transaksimu otomatis kesimpen di sini",
+    "dismissAddTransactionA11y": "Tutup tips: isi nominal transaksi",
+    "aiChatText": "Ketik atau rekam suara buat catat transaksi otomatis lewat AI",
+    "dismissAiChatA11y": "Tutup tips: chat AI"
   },
   "finance": {
     "budgetSectionTitle": "Anggaran Bulanan",

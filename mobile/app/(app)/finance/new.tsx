@@ -11,6 +11,7 @@ import type { TFunction } from "i18next";
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
 import Button from "@/components/ui/Button";
+import { Coachmark, useCoachmarkAnchor } from "@/components/ui/Coachmark";
 import DatePicker from "@/components/ui/DatePicker";
 import Input from "@/components/ui/Input";
 import RupiahInput from "@/components/ui/RupiahInput";
@@ -24,11 +25,10 @@ import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { formatMoney } from "@/lib/format";
 import { useNotificationPermissionGate } from "@/features/finance/hooks/useNotificationPermissionGate";
 import { NotificationPermissionSheet } from "@/features/finance/components/NotificationPermissionSheet";
+import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
-// Module-scope Zod schemas evaluate error messages at import time (before
-// i18n has a language) — factory + useMemo(() => ..., [t]) keeps them reactive.
 function makeSchema(t: TFunction) {
   return z.object({
     account_id: z.string().min(1, t("transaction.validation.accountRequired")),
@@ -71,11 +71,15 @@ export default function NewTransactionScreen() {
       (monthTxData?.items ?? [])
         .filter((t) => t.amount < 0)
         .reduce((s, t) => s + Math.abs(t.amount), 0),
-    [monthTxData],
+    [monthTxData]
   );
 
   const [txType, setTxType] = useState<"expense" | "income">("expense");
   const [showMore, setShowMore] = useState(false);
+
+  const showCoachmark = !useOnboardingStore((s) => s.dismissedCoachmarks.addTransaction);
+  const dismissCoachmark = useOnboardingStore((s) => s.dismissCoachmark);
+  const headerAnchor = useCoachmarkAnchor();
 
   const handleBack = useBackNavigation();
 
@@ -100,7 +104,7 @@ export default function NewTransactionScreen() {
 
   const availableCategories = useMemo(
     () => categoriesData?.filter((c) => c.type === txType && !c.is_archived) ?? [],
-    [categoriesData, txType],
+    [categoriesData, txType]
   );
 
   useEffect(() => {
@@ -108,7 +112,6 @@ export default function NewTransactionScreen() {
     if (firstId && !selectedAccountId) setValue("account_id", firstId);
   }, [accountsData, selectedAccountId, setValue]);
 
-  // Reset category when switching between income/expense
   useEffect(() => {
     setValue("category_id", null);
   }, [txType, setValue]);
@@ -145,12 +148,12 @@ export default function NewTransactionScreen() {
             if (catAlert.level === "critical") {
               showToast(
                 t("transaction.budgetCategoryOver", { category: cat!.name, amount: remaining }),
-                "error",
+                "error"
               );
             } else {
               showToast(
                 t("transaction.budgetCategoryWarning", { category: cat!.name, amount: remaining }),
-                "warning",
+                "warning"
               );
             }
           } else if (monthAlert) {
@@ -184,7 +187,7 @@ export default function NewTransactionScreen() {
       categoriesData,
       promptIfNeeded,
       t,
-    ],
+    ]
   );
 
   const handlePermissionSheetAccept = useCallback(() => {
@@ -199,198 +202,240 @@ export default function NewTransactionScreen() {
 
   return (
     <Screen>
-      <Header title={t("transaction.newTitle")} onBack={handleBack} />
+      <View ref={headerAnchor.ref} onLayout={headerAnchor.onLayout}>
+        <Header title={t("transaction.newTitle")} onBack={handleBack} />
+      </View>
+      <Coachmark
+        visible={showCoachmark}
+        anchor={headerAnchor.rect}
+        text={t("coachmark.addTransactionText")}
+        onDismiss={() => void dismissCoachmark("addTransaction")}
+        dismissA11yLabel={t("coachmark.dismissAddTransactionA11y")}
+        gap={300}
+      />
 
       <KeyboardAvoidingView style={styles.scroll} behavior="padding">
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {noAccounts ? (
-          <View style={styles.emptyWrap}>
-            <Text style={styles.emptyText}>{t("transaction.noAccountsPrompt")}</Text>
-            <Button
-              label={t("accounts.createCta")}
-              onPress={() => router.replace("/(app)/accounts")}
-              variant="secondary"
-            />
-          </View>
-        ) : (
-          <View style={styles.form}>
-            {/* Transaction Type Segmented Toggle */}
-            <View style={styles.toggleContainer}>
-              <Pressable
-                onPress={() => setTxType("expense")}
-                style={styles.togglePressable}
-              >
-                <View style={txType === "expense" ? [styles.toggleBtn, styles.toggleBtnActive] : styles.toggleBtn}>
-                  <Text style={txType === "expense" ? [styles.toggleText, styles.toggleTextActive] : styles.toggleText}>
-                    {t("transaction.expense")}
-                  </Text>
-                </View>
-              </Pressable>
-              <Pressable
-                onPress={() => setTxType("income")}
-                style={styles.togglePressable}
-              >
-                <View style={txType === "income" ? [styles.toggleBtn, styles.toggleBtnActive] : styles.toggleBtn}>
-                  <Text style={txType === "income" ? [styles.toggleText, styles.toggleTextActive] : styles.toggleText}>
-                    {t("transaction.income")}
-                  </Text>
-                </View>
-              </Pressable>
-            </View>
-
-            {/* Date Picker */}
-            <Controller
-              control={control}
-              name="occurred_at"
-              render={({ field: { onChange, value } }) => (
-                <DatePicker
-                  label={t("transaction.dateLabel")}
-                  value={value}
-                  onChange={onChange}
-                />
-              )}
-            />
-
-            {/* Amount input using RupiahInput */}
-            <Controller
-              control={control}
-              name="amount"
-              render={({ field: { onChange, value } }) => (
-                <RupiahInput
-                  label={t("transaction.amountLabel")}
-                  placeholder="0"
-                  value={value}
-                  onChange={onChange}
-                  error={errors.amount?.message}
-                  autoFocus
-                />
-              )}
-            />
-
-            {/* Category selection using SearchableDropdown */}
-            <Controller
-              control={control}
-              name="category_id"
-              render={({ field: { onChange, value } }) => (
-                <SearchableDropdown
-                  label={t("transaction.categoryLabel")}
-                  placeholder={t("transaction.categoryPlaceholder")}
-                  items={availableCategories.map((c) => ({
-                    id: c.id,
-                    name: c.name,
-                    icon: c.icon ?? undefined,
-                  }))}
-                  selectedId={value ?? null}
-                  onSelect={onChange}
-                  error={errors.category_id?.message}
-                />
-              )}
-            />
-
-            {/* Account Selector */}
-            {accountsData && accountsData.length === 1 && (
-              <View style={styles.accountSection}>
-                <Text style={styles.accountLabel}>{t("transaction.accountLabelSingle")}</Text>
-                <View style={styles.singleAccountRow}>
-                  <Text style={styles.singleAccountName}>{accountsData[0].name}</Text>
-                </View>
-              </View>
-            )}
-            {accountsData && accountsData.length > 1 && (
-              <View style={styles.accountSection}>
-                <Text style={styles.accountLabel}>{t("transaction.accountLabelMulti")}</Text>
-                <Controller
-                  control={control}
-                  name="account_id"
-                  render={({ field: { onChange } }) => (
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.accountRow}
-                    >
-                      {accountsData.map((acc) => {
-                        const active = selectedAccountId === acc.id;
-                        return (
-                          <Pressable
-                            key={acc.id}
-                            onPress={() => onChange(acc.id)}
-                            style={({ pressed }) => pressed && { opacity: 0.8 }}
-                          >
-                            <View style={active ? [styles.accountPill, styles.accountPillActive] : styles.accountPill}>
-                              <Text
-                                style={active ? [styles.accountPillText, styles.accountPillTextActive] : styles.accountPillText}
-                              >
-                                {acc.name}
-                              </Text>
-                            </View>
-                          </Pressable>
-                        );
-                      })}
-                    </ScrollView>
-                  )}
-                />
-              </View>
-            )}
-
-            {/* Collapsible toggle for merchant & notes */}
-            <Pressable
-              onPress={() => setShowMore((prev) => !prev)}
-              style={styles.moreTogglePressable}
-            >
-              <View style={styles.moreToggleBtn}>
-                <Text style={styles.moreToggleText}>
-                  {showMore ? t("transaction.hideMoreDetails") : t("transaction.showMoreDetails")}
-                </Text>
-              </View>
-            </Pressable>
-
-            {showMore && (
-              <View style={styles.moreFields}>
-                <Controller
-                  control={control}
-                  name="merchant"
-                  render={({ field: { onChange, value } }) => (
-                    <Input
-                      label={t("transaction.merchantLabel")}
-                      value={value}
-                      onChangeText={onChange}
-                      placeholder={t("transaction.merchantPlaceholder")}
-                    />
-                  )}
-                />
-
-                <Controller
-                  control={control}
-                  name="note"
-                  render={({ field: { onChange, value } }) => (
-                    <Input
-                      label={t("transaction.noteLabel")}
-                      value={value}
-                      onChangeText={onChange}
-                      placeholder={t("transaction.notePlaceholder")}
-                      multiline
-                    />
-                  )}
-                />
-              </View>
-            )}
-
-            {errors.account_id ? (
-              <Text style={styles.fieldError}>{errors.account_id.message}</Text>
-            ) : null}
-
-            <View style={styles.submitWrap}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {noAccounts ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyText}>{t("transaction.noAccountsPrompt")}</Text>
               <Button
-                label={t("transaction.saveCta")}
-                onPress={handleSubmit(onSubmit)}
-                loading={createTransaction.isPending}
-                disabled={accountsLoading}
-                fullWidth
+                label={t("accounts.createCta")}
+                onPress={() => router.replace("/(app)/accounts")}
+                variant="secondary"
               />
             </View>
-          </View>
-        )}
-      </ScrollView>
+          ) : (
+            <View style={styles.form}>
+              {/* Transaction Type Segmented Toggle */}
+              <View style={styles.toggleContainer}>
+                <Pressable onPress={() => setTxType("expense")} style={styles.togglePressable}>
+                  <View
+                    style={
+                      txType === "expense"
+                        ? [styles.toggleBtn, styles.toggleBtnActive]
+                        : styles.toggleBtn
+                    }
+                  >
+                    <Text
+                      style={
+                        txType === "expense"
+                          ? [styles.toggleText, styles.toggleTextActive]
+                          : styles.toggleText
+                      }
+                    >
+                      {t("transaction.expense")}
+                    </Text>
+                  </View>
+                </Pressable>
+                <Pressable onPress={() => setTxType("income")} style={styles.togglePressable}>
+                  <View
+                    style={
+                      txType === "income"
+                        ? [styles.toggleBtn, styles.toggleBtnActive]
+                        : styles.toggleBtn
+                    }
+                  >
+                    <Text
+                      style={
+                        txType === "income"
+                          ? [styles.toggleText, styles.toggleTextActive]
+                          : styles.toggleText
+                      }
+                    >
+                      {t("transaction.income")}
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+
+              {/* Date Picker */}
+              <Controller
+                control={control}
+                name="occurred_at"
+                render={({ field: { onChange, value } }) => (
+                  <DatePicker
+                    label={t("transaction.dateLabel")}
+                    value={value}
+                    onChange={onChange}
+                  />
+                )}
+              />
+
+              {/* Amount input using RupiahInput */}
+              <Controller
+                control={control}
+                name="amount"
+                render={({ field: { onChange, value } }) => (
+                  <RupiahInput
+                    label={t("transaction.amountLabel")}
+                    placeholder="0"
+                    value={value}
+                    onChange={onChange}
+                    error={errors.amount?.message}
+                    autoFocus
+                  />
+                )}
+              />
+
+              {/* Category selection using SearchableDropdown */}
+              <Controller
+                control={control}
+                name="category_id"
+                render={({ field: { onChange, value } }) => (
+                  <SearchableDropdown
+                    label={t("transaction.categoryLabel")}
+                    placeholder={t("transaction.categoryPlaceholder")}
+                    items={availableCategories.map((c) => ({
+                      id: c.id,
+                      name: c.name,
+                      icon: c.icon ?? undefined,
+                    }))}
+                    selectedId={value ?? null}
+                    onSelect={onChange}
+                    error={errors.category_id?.message}
+                  />
+                )}
+              />
+
+              {/* Account Selector */}
+              {accountsData && accountsData.length === 1 && (
+                <View style={styles.accountSection}>
+                  <Text style={styles.accountLabel}>{t("transaction.accountLabelSingle")}</Text>
+                  <View style={styles.singleAccountRow}>
+                    <Text style={styles.singleAccountName}>{accountsData[0].name}</Text>
+                  </View>
+                </View>
+              )}
+              {accountsData && accountsData.length > 1 && (
+                <View style={styles.accountSection}>
+                  <Text style={styles.accountLabel}>{t("transaction.accountLabelMulti")}</Text>
+                  <Controller
+                    control={control}
+                    name="account_id"
+                    render={({ field: { onChange } }) => (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.accountRow}
+                      >
+                        {accountsData.map((acc) => {
+                          const active = selectedAccountId === acc.id;
+                          return (
+                            <Pressable
+                              key={acc.id}
+                              onPress={() => onChange(acc.id)}
+                              style={({ pressed }) => pressed && { opacity: 0.8 }}
+                            >
+                              <View
+                                style={
+                                  active
+                                    ? [styles.accountPill, styles.accountPillActive]
+                                    : styles.accountPill
+                                }
+                              >
+                                <Text
+                                  style={
+                                    active
+                                      ? [styles.accountPillText, styles.accountPillTextActive]
+                                      : styles.accountPillText
+                                  }
+                                >
+                                  {acc.name}
+                                </Text>
+                              </View>
+                            </Pressable>
+                          );
+                        })}
+                      </ScrollView>
+                    )}
+                  />
+                </View>
+              )}
+
+              {/* Collapsible toggle for merchant & notes */}
+              <Pressable
+                onPress={() => setShowMore((prev) => !prev)}
+                style={styles.moreTogglePressable}
+              >
+                <View style={styles.moreToggleBtn}>
+                  <Text style={styles.moreToggleText}>
+                    {showMore ? t("transaction.hideMoreDetails") : t("transaction.showMoreDetails")}
+                  </Text>
+                </View>
+              </Pressable>
+
+              {showMore && (
+                <View style={styles.moreFields}>
+                  <Controller
+                    control={control}
+                    name="merchant"
+                    render={({ field: { onChange, value } }) => (
+                      <Input
+                        label={t("transaction.merchantLabel")}
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder={t("transaction.merchantPlaceholder")}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    control={control}
+                    name="note"
+                    render={({ field: { onChange, value } }) => (
+                      <Input
+                        label={t("transaction.noteLabel")}
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder={t("transaction.notePlaceholder")}
+                        multiline
+                      />
+                    )}
+                  />
+                </View>
+              )}
+
+              {errors.account_id ? (
+                <Text style={styles.fieldError}>{errors.account_id.message}</Text>
+              ) : null}
+
+              <View style={styles.submitWrap}>
+                <Button
+                  label={t("transaction.saveCta")}
+                  onPress={handleSubmit(onSubmit)}
+                  loading={createTransaction.isPending}
+                  disabled={accountsLoading}
+                  fullWidth
+                />
+              </View>
+            </View>
+          )}
+        </ScrollView>
       </KeyboardAvoidingView>
 
       <NotificationPermissionSheet
@@ -404,9 +449,13 @@ export default function NewTransactionScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: spacing['2xl'], paddingBottom: 32 },
-  emptyWrap: { marginTop: 64, alignItems: 'center', gap: spacing.md },
-  emptyText: { ...StyleSheet.flatten(textStyles.body), color: colors.text.muted, textAlign: 'center' },
+  scrollContent: { paddingHorizontal: spacing["2xl"], paddingBottom: 32 },
+  emptyWrap: { marginTop: 64, alignItems: "center", gap: spacing.md },
+  emptyText: {
+    ...StyleSheet.flatten(textStyles.body),
+    color: colors.text.muted,
+    textAlign: "center",
+  },
   form: { gap: spacing.lg, paddingTop: spacing.sm },
   fieldError: { ...StyleSheet.flatten(textStyles.caption), color: colors.danger.text },
   submitWrap: { marginTop: spacing.lg },

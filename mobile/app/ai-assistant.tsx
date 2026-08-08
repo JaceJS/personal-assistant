@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Header } from "@/components/layout/Header";
+import { Coachmark, useCoachmarkAnchor } from "@/components/ui/Coachmark";
 import { CopiedHint } from "@/components/ui/CopiedHint";
 import { Gate } from "@/components/ui/Gate";
 import GuestGate from "@/components/ui/GuestGate";
@@ -69,6 +70,7 @@ import { useIdTimeoutBackstop } from "@/hooks/useIdTimeoutBackstop";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { generateId } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
+import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
@@ -83,6 +85,9 @@ export default function AIAssistantScreen() {
   const { t } = useTranslation();
   const { isGuest } = useAuthStore();
   const showToast = useToastStore((s) => s.showToast);
+  const showCoachmark = !useOnboardingStore((s) => s.dismissedCoachmarks.aiChat);
+  const dismissCoachmark = useOnboardingStore((s) => s.dismissCoachmark);
+  const inputBarAnchor = useCoachmarkAnchor();
   const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
   const { data: categories } = useCategories();
   const {
@@ -154,10 +159,7 @@ export default function AIAssistantScreen() {
     }, [])
   );
 
-  const activeAccounts = useMemo(
-    () => accounts?.filter((a) => !a.is_archived) ?? [],
-    [accounts]
-  );
+  const activeAccounts = useMemo(() => accounts?.filter((a) => !a.is_archived) ?? [], [accounts]);
   const defaultAccount = activeAccounts[0] ?? null;
 
   const editingDraftData = useMemo(
@@ -343,7 +345,9 @@ export default function AIAssistantScreen() {
     const hasPendingDraft = messages.some((m) => m.type === "draft" && m.state === "pending");
     Alert.alert(
       t("ai.clearChat.menuLabel"),
-      hasPendingDraft ? t("ai.clearChat.alertMessagePendingDrafts") : t("ai.clearChat.alertMessage"),
+      hasPendingDraft
+        ? t("ai.clearChat.alertMessagePendingDrafts")
+        : t("ai.clearChat.alertMessage"),
       [
         { text: t("common.cancel"), style: "cancel" },
         { text: t("common.delete"), style: "destructive", onPress: () => void clearChat() },
@@ -395,7 +399,11 @@ export default function AIAssistantScreen() {
   const performVoiceUpload = useCallback(
     async (audioUri: string, accountId: string, placeholderId: string) => {
       try {
-        const response = await uploadAudio.mutateAsync({ audioUri, accountId, chatSessionId: sessionId });
+        const response = await uploadAudio.mutateAsync({
+          audioUri,
+          accountId,
+          chatSessionId: sessionId,
+        });
         void syncSessionId(response.chat_session_id);
         setMessages((prev) => markMessageSent(prev, placeholderId, response.voice_log_id));
         setVoiceLogId(response.voice_log_id);
@@ -456,7 +464,12 @@ export default function AIAssistantScreen() {
       const placeholderId = generateId();
       setMessages((prev) => [
         ...prev,
-        createUploadingMessage({ id: placeholderId, type: "receipt", localUri: imageUri, accountId }),
+        createUploadingMessage({
+          id: placeholderId,
+          type: "receipt",
+          localUri: imageUri,
+          accountId,
+        }),
       ]);
       await performReceiptUpload(imageUri, accountId, placeholderId);
     },
@@ -568,9 +581,8 @@ export default function AIAssistantScreen() {
     (msg: DraftMessage) => {
       const { draft } = msg;
       const categoryId =
-        categories?.find(
-          (c) => c.name.toLowerCase() === (draft.category_name ?? "").toLowerCase()
-        )?.id ?? null;
+        categories?.find((c) => c.name.toLowerCase() === (draft.category_name ?? "").toLowerCase())
+          ?.id ?? null;
       updateDraftMessage(msg.id, "saving");
       void confirmAiDraftMutation
         .mutateAsync({
@@ -700,158 +712,175 @@ export default function AIAssistantScreen() {
           onCtaPress={() => router.push("/(app)/accounts")}
         />
       ) : (
-      <>
-      <KeyboardAvoidingView style={styles.keyboardAvoider} behavior="padding">
-      {/* Chat area */}
-      <View style={styles.chatArea}>
-        {isLoadingHistory ? (
-          <View style={styles.historyLoader}>
-            <ActivityIndicator color={colors.accent.primary} />
-          </View>
-        ) : messages.length === 0 ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyGreeting}>
-              <Text style={styles.emptyTitle}>{t("ai.emptyTitle")}</Text>
-              <Text style={styles.emptySubtitle}>{t("ai.emptySubtitle")}</Text>
-            </View>
-            <QuickActionsMenu
-              chips={QUICK_CHIPS}
-              visible={quickActionsVisible}
-              onToggle={() => setQuickActionsVisible((v) => !v)}
-              onSelect={handleQuickChip}
-              busyChipId={isCameraBusy ? "scanReceipt" : undefined}
-            />
-          </View>
-        ) : (
-          <FlatList
-            ref={listRef}
-            style={styles.messageListFlex}
-            data={messages}
-            keyExtractor={(item) => item.id}
-            renderItem={renderMessage}
-            contentContainerStyle={styles.messageList}
-            onContentSizeChange={handleContentSizeChange}
-            ListFooterComponent={
-              <QuickActionsMenu
-                chips={QUICK_CHIPS}
-                visible={quickActionsVisible}
-                onToggle={() => setQuickActionsVisible((v) => !v)}
-                onSelect={handleQuickChip}
-                busyChipId={isCameraBusy ? "scanReceipt" : undefined}
-              />
-            }
+        <>
+          <Coachmark
+            visible={showCoachmark}
+            anchor={inputBarAnchor.rect}
+            text={t("coachmark.aiChatText")}
+            onDismiss={() => void dismissCoachmark("aiChat")}
+            dismissA11yLabel={t("coachmark.dismissAiChatA11y")}
+            placement="above"
+            gap={18}
           />
-        )}
+          <KeyboardAvoidingView style={styles.keyboardAvoider} behavior="padding">
+            {/* Chat area */}
+            <View style={styles.chatArea}>
+              {isLoadingHistory ? (
+                <View style={styles.historyLoader}>
+                  <ActivityIndicator color={colors.accent.primary} />
+                </View>
+              ) : messages.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <View style={styles.emptyGreeting}>
+                    <Text style={styles.emptyTitle}>{t("ai.emptyTitle")}</Text>
+                    <Text style={styles.emptySubtitle}>{t("ai.emptySubtitle")}</Text>
+                  </View>
+                  <QuickActionsMenu
+                    chips={QUICK_CHIPS}
+                    visible={quickActionsVisible}
+                    onToggle={() => setQuickActionsVisible((v) => !v)}
+                    onSelect={handleQuickChip}
+                    busyChipId={isCameraBusy ? "scanReceipt" : undefined}
+                  />
+                </View>
+              ) : (
+                <FlatList
+                  ref={listRef}
+                  style={styles.messageListFlex}
+                  data={messages}
+                  keyExtractor={(item) => item.id}
+                  renderItem={renderMessage}
+                  contentContainerStyle={styles.messageList}
+                  onContentSizeChange={handleContentSizeChange}
+                  ListFooterComponent={
+                    <QuickActionsMenu
+                      chips={QUICK_CHIPS}
+                      visible={quickActionsVisible}
+                      onToggle={() => setQuickActionsVisible((v) => !v)}
+                      onSelect={handleQuickChip}
+                      busyChipId={isCameraBusy ? "scanReceipt" : undefined}
+                    />
+                  }
+                />
+              )}
 
-        {/* Recording indicator */}
-        {isRecording && (
-          <RecordingIndicator
-            durationMs={recordingDurationMs}
-            onCancel={() => void cancelRecording()}
-          />
-        )}
+              {/* Recording indicator */}
+              {isRecording && (
+                <RecordingIndicator
+                  durationMs={recordingDurationMs}
+                  onCancel={() => void cancelRecording()}
+                />
+              )}
 
-        {/* Floating, persistent reminder of the free trial's remaining
+              {/* Floating, persistent reminder of the free trial's remaining
             messages — not a toast, doesn't auto-hide or push layout. */}
-        {isGuest && guestQuota !== null && guestQuota > 0 && (
-          <View pointerEvents="none" style={styles.guestQuotaPill}>
-            <Text style={styles.guestQuotaPillText}>
-              {t("ai.guestQuotaRemaining", { count: guestQuota })}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Input bar */}
-      <View style={styles.inputBar}>
-        <Pressable onPress={() => void handleCameraPress()} disabled={isCameraBusy} hitSlop={8}>
-          {({ pressed }) => (
-            <View
-              style={[
-                styles.inputBtn,
-                isCameraBusy && styles.inputBtnDisabled,
-                pressed && styles.btnPressed,
-              ]}
-            >
-              {isCameraBusy ? (
-                <ActivityIndicator size="small" color={colors.accent.primary} />
-              ) : (
-                <Camera size={22} color={colors.accent.primary} strokeWidth={1.8} />
+              {isGuest && guestQuota !== null && guestQuota > 0 && (
+                <View pointerEvents="none" style={styles.guestQuotaPill}>
+                  <Text style={styles.guestQuotaPillText}>
+                    {t("ai.guestQuotaRemaining", { count: guestQuota })}
+                  </Text>
+                </View>
               )}
             </View>
-          )}
-        </Pressable>
 
-        <TextInput
-          style={styles.textInput}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder={t("ai.inputPlaceholder")}
-          placeholderTextColor={colors.text.muted}
-          returnKeyType="send"
-          onSubmitEditing={handleSendText}
-          blurOnSubmit={false}
-          maxLength={2000}
-        />
-
-        <Pressable
-          onPressIn={isSendMode ? undefined : handleMicPressIn}
-          onPressOut={isSendMode ? undefined : handleMicPressOut}
-          onPress={isSendMode ? handleSendText : undefined}
-          disabled={!isSendMode && isMicBusy && !isRecording}
-          hitSlop={8}
-        >
-          {({ pressed }) => (
+            {/* Input bar */}
             <View
-              style={[
-                styles.micBtn,
-                isRecording && styles.micBtnRecording,
-                pressed && styles.btnPressed,
-              ]}
+              style={styles.inputBar}
+              ref={inputBarAnchor.ref}
+              onLayout={inputBarAnchor.onLayout}
             >
-              {isMicBusy && !isRecording && !isSendMode ? (
-                <ActivityIndicator color={colors.accent.primary} />
-              ) : isRecording ? (
-                <Square size={22} color={colors.danger.text} fill={colors.danger.text} />
-              ) : isSendMode ? (
-                <SendHorizontal size={22} color={colors.accent.primary} strokeWidth={2} />
-              ) : (
-                <Mic size={22} color={colors.accent.primary} strokeWidth={2} />
-              )}
+              <Pressable
+                onPress={() => void handleCameraPress()}
+                disabled={isCameraBusy}
+                hitSlop={8}
+              >
+                {({ pressed }) => (
+                  <View
+                    style={[
+                      styles.inputBtn,
+                      isCameraBusy && styles.inputBtnDisabled,
+                      pressed && styles.btnPressed,
+                    ]}
+                  >
+                    {isCameraBusy ? (
+                      <ActivityIndicator size="small" color={colors.accent.primary} />
+                    ) : (
+                      <Camera size={22} color={colors.accent.primary} strokeWidth={1.8} />
+                    )}
+                  </View>
+                )}
+              </Pressable>
+
+              <TextInput
+                style={styles.textInput}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder={t("ai.inputPlaceholder")}
+                placeholderTextColor={colors.text.muted}
+                returnKeyType="send"
+                onSubmitEditing={handleSendText}
+                blurOnSubmit={false}
+                maxLength={2000}
+              />
+
+              <Pressable
+                onPressIn={isSendMode ? undefined : handleMicPressIn}
+                onPressOut={isSendMode ? undefined : handleMicPressOut}
+                onPress={isSendMode ? handleSendText : undefined}
+                disabled={!isSendMode && isMicBusy && !isRecording}
+                hitSlop={8}
+              >
+                {({ pressed }) => (
+                  <View
+                    style={[
+                      styles.micBtn,
+                      isRecording && styles.micBtnRecording,
+                      pressed && styles.btnPressed,
+                    ]}
+                  >
+                    {isMicBusy && !isRecording && !isSendMode ? (
+                      <ActivityIndicator color={colors.accent.primary} />
+                    ) : isRecording ? (
+                      <Square size={22} color={colors.danger.text} fill={colors.danger.text} />
+                    ) : isSendMode ? (
+                      <SendHorizontal size={22} color={colors.accent.primary} strokeWidth={2} />
+                    ) : (
+                      <Mic size={22} color={colors.accent.primary} strokeWidth={2} />
+                    )}
+                  </View>
+                )}
+              </Pressable>
             </View>
-          )}
-        </Pressable>
-      </View>
-      </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
 
-      <TranscriptSheet
-        transcript={voiceStatus.data?.transcript ?? null}
-        isVisible={transcriptVisible}
-        onProcess={handleTranscriptProcess}
-        onDismiss={handleTranscriptDismiss}
-      />
+          <TranscriptSheet
+            transcript={voiceStatus.data?.transcript ?? null}
+            isVisible={transcriptVisible}
+            onProcess={handleTranscriptProcess}
+            onDismiss={handleTranscriptDismiss}
+          />
 
-      <ConfirmCard
-        data={editingDraftData}
-        accounts={activeAccounts}
-        defaultAccountId={editingDraft?.draft.account_id ?? defaultAccount?.id ?? null}
-        isVisible={editingDraft !== null}
-        isSaving={confirmAiDraftMutation.isPending}
-        onSave={handleEditingDraftSave}
-        onDismiss={() => setEditingDraft(null)}
-      />
+          <ConfirmCard
+            data={editingDraftData}
+            accounts={activeAccounts}
+            defaultAccountId={editingDraft?.draft.account_id ?? defaultAccount?.id ?? null}
+            isVisible={editingDraft !== null}
+            isSaving={confirmAiDraftMutation.isPending}
+            onSave={handleEditingDraftSave}
+            onDismiss={() => setEditingDraft(null)}
+          />
 
-      <MessageActionMenu
-        visible={actionMenu !== null}
-        x={actionMenu?.x ?? 0}
-        y={actionMenu?.y ?? 0}
-        onCopy={handleCopyMessage}
-        onDelete={handleDeleteMessage}
-        onDismiss={() => setActionMenu(null)}
-      />
+          <MessageActionMenu
+            visible={actionMenu !== null}
+            x={actionMenu?.x ?? 0}
+            y={actionMenu?.y ?? 0}
+            onCopy={handleCopyMessage}
+            onDelete={handleDeleteMessage}
+            onDismiss={() => setActionMenu(null)}
+          />
 
-      <CopiedHint visible={showCopiedHint} label={t("ai.messageActions.copiedToast")} />
-      </>
+          <CopiedHint visible={showCopiedHint} label={t("ai.messageActions.copiedToast")} />
+        </>
       )}
     </SafeAreaView>
   );

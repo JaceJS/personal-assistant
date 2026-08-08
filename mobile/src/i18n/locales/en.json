@@ -17,6 +17,7 @@
     "selectItemPlaceholder": "Select item",
     "selectPrefix": "Select {{label}}",
     "doneCta": "Done",
+    "gotIt": "Got it",
     "minutesAgo_one": "{{count}} min ago",
     "minutesAgo_other": "{{count}} mins ago",
     "hoursAgo_one": "{{count}} hour ago",
@@ -122,6 +123,20 @@
     "dismissBotCoachmarkA11y": "Dismiss tip: try chat, voice, or photo a receipt here",
     "botCoachmarkText": "Try chat, voice, or snap a receipt here ✨",
     "openAiA11y": "Open AI assistant"
+  },
+  "coachmark": {
+    "homeAccountText": "Start here: create an account to begin tracking your money 👛",
+    "dismissHomeAccountA11y": "Dismiss tip: create an account",
+    "homeTransactionText": "Log your first transaction here 📝",
+    "dismissHomeTransactionA11y": "Dismiss tip: log your first transaction",
+    "homeBudgetText": "Last step, set your monthly budget here 🎯",
+    "dismissHomeBudgetA11y": "Dismiss tip: set your budget",
+    "budgetText": "Set a monthly limit so Savyn can warn you as spending gets close to it",
+    "dismissBudgetA11y": "Dismiss tip: set monthly limit",
+    "addTransactionText": "Enter the amount & pick an account, your transaction is saved here automatically",
+    "dismissAddTransactionA11y": "Dismiss tip: enter transaction amount",
+    "aiChatText": "Type or record a voice note to log transactions automatically with AI",
+    "dismissAiChatA11y": "Dismiss tip: AI chat"
   },
   "finance": {
     "budgetSectionTitle": "Monthly Budget",

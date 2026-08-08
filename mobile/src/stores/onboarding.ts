@@ -3,51 +3,73 @@ import { create } from "zustand";
 
 const STORAGE_KEY = "onboarding_v1_complete";
 const GUEST_NAME_KEY = "onboarding_v1_guest_name";
-const BOT_COACHMARK_KEY = "onboarding_v1_bot_coachmark_dismissed";
-const GOAL_COACHMARK_KEY = "onboarding_v1_goal_coachmark_dismissed";
+
+export type CoachmarkId =
+  | "bot"
+  | "goal"
+  | "homeAccount"
+  | "homeTransaction"
+  | "homeBudget"
+  | "budget"
+  | "addTransaction"
+  | "aiChat";
+
+const COACHMARK_STORAGE_KEYS: Record<CoachmarkId, string> = {
+  bot: "onboarding_v1_bot_coachmark_dismissed",
+  goal: "onboarding_v1_goal_coachmark_dismissed",
+  homeAccount: "onboarding_v1_coachmark_homeAccount_dismissed",
+  homeTransaction: "onboarding_v1_coachmark_homeTransaction_dismissed",
+  homeBudget: "onboarding_v1_coachmark_homeBudget_dismissed",
+  budget: "onboarding_v1_coachmark_budget_dismissed",
+  addTransaction: "onboarding_v1_coachmark_addTransaction_dismissed",
+  aiChat: "onboarding_v1_coachmark_aiChat_dismissed",
+};
+
+const COACHMARK_IDS = Object.keys(COACHMARK_STORAGE_KEYS) as CoachmarkId[];
+
+function allCoachmarksHidden(): Record<CoachmarkId, boolean> {
+  return Object.fromEntries(COACHMARK_IDS.map((id) => [id, false])) as Record<CoachmarkId, boolean>;
+}
 
 interface OnboardingState {
   isComplete: boolean;
   initialized: boolean;
   guestName: string;
-  dismissedBotCoachmark: boolean;
-  dismissedGoalCoachmark: boolean;
+  dismissedCoachmarks: Record<CoachmarkId, boolean>;
   initialize: () => Promise<void>;
   complete: () => Promise<void>;
   reset: () => Promise<void>;
   setGuestName: (name: string) => Promise<void>;
-  dismissBotCoachmark: () => Promise<void>;
-  dismissGoalCoachmark: () => Promise<void>;
+  dismissCoachmark: (id: CoachmarkId) => Promise<void>;
 }
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
   isComplete: false,
   initialized: false,
   guestName: "",
-  dismissedBotCoachmark: false,
-  dismissedGoalCoachmark: false,
+  dismissedCoachmarks: allCoachmarksHidden(),
 
   initialize: async () => {
     try {
-      const [complete, guestName, botCoachmarkDismissed, goalCoachmarkDismissed] = await Promise.all([
+      const [complete, guestName, coachmarkValues] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEY),
         AsyncStorage.getItem(GUEST_NAME_KEY),
-        AsyncStorage.getItem(BOT_COACHMARK_KEY),
-        AsyncStorage.getItem(GOAL_COACHMARK_KEY),
+        Promise.all(COACHMARK_IDS.map((id) => AsyncStorage.getItem(COACHMARK_STORAGE_KEYS[id]))),
       ]);
+      const dismissedCoachmarks = Object.fromEntries(
+        COACHMARK_IDS.map((id, i) => [id, coachmarkValues[i] === "true"])
+      ) as Record<CoachmarkId, boolean>;
       set({
         isComplete: complete === "true",
         guestName: guestName ?? "",
-        dismissedBotCoachmark: botCoachmarkDismissed === "true",
-        dismissedGoalCoachmark: goalCoachmarkDismissed === "true",
+        dismissedCoachmarks,
         initialized: true,
       });
     } catch {
       set({
         isComplete: false,
         guestName: "",
-        dismissedBotCoachmark: false,
-        dismissedGoalCoachmark: false,
+        dismissedCoachmarks: allCoachmarksHidden(),
         initialized: true,
       });
     }
@@ -68,13 +90,8 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
     set({ guestName: name });
   },
 
-  dismissBotCoachmark: async () => {
-    await AsyncStorage.setItem(BOT_COACHMARK_KEY, "true");
-    set({ dismissedBotCoachmark: true });
-  },
-
-  dismissGoalCoachmark: async () => {
-    await AsyncStorage.setItem(GOAL_COACHMARK_KEY, "true");
-    set({ dismissedGoalCoachmark: true });
+  dismissCoachmark: async (id: CoachmarkId) => {
+    await AsyncStorage.setItem(COACHMARK_STORAGE_KEYS[id], "true");
+    set((s) => ({ dismissedCoachmarks: { ...s.dismissedCoachmarks, [id]: true } }));
   },
 }));

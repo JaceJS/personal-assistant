@@ -15,10 +15,10 @@ import { useTranslation } from "react-i18next";
 
 import { colors, radius, textStyles } from "@/theme";
 import { useOnboardingStore } from "@/stores/onboarding";
+import { useActiveCoachmark } from "@/hooks/useActiveCoachmark";
+import { Coachmark, useCoachmarkAnchor } from "./Coachmark";
 import { handleTabPress } from "./tabPressUtils";
 
-// Scroll content on any screen under the (tabs) group must reserve this much
-// bottom space so it isn't hidden behind the floating pill + FAB.
 export const TAB_BAR_CLEARANCE = 160;
 
 const TAB_ICONS: Record<string, typeof Home> = {
@@ -28,8 +28,10 @@ const TAB_ICONS: Record<string, typeof Home> = {
   settings: User,
 };
 
-// Literal key paths (see src/i18n/types.ts) so t() stays type-checked.
-const TAB_LABEL_KEYS: Record<string, "tabs.home" | "tabs.history" | "tabs.goals" | "tabs.settings"> = {
+const TAB_LABEL_KEYS: Record<
+  string,
+  "tabs.home" | "tabs.history" | "tabs.goals" | "tabs.settings"
+> = {
   "(home)": "tabs.home",
   history: "tabs.history",
   goals: "tabs.goals",
@@ -40,11 +42,10 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const dismissedBotCoachmark = useOnboardingStore((s) => s.dismissedBotCoachmark);
-  const dismissBotCoachmark = useOnboardingStore((s) => s.dismissBotCoachmark);
-  const dismissedGoalCoachmark = useOnboardingStore((s) => s.dismissedGoalCoachmark);
-  const dismissGoalCoachmark = useOnboardingStore((s) => s.dismissGoalCoachmark);
-  const activeCoachmark = !dismissedBotCoachmark ? "bot" : !dismissedGoalCoachmark ? "goal" : null;
+  const dismissCoachmark = useOnboardingStore((s) => s.dismissCoachmark);
+  const activeCoachmark = useActiveCoachmark();
+  const botAnchor = useCoachmarkAnchor();
+  const goalAnchor = useCoachmarkAnchor();
 
   const fabScale = useSharedValue(1);
   const animatedFabStyle = useAnimatedStyle(() => ({
@@ -55,9 +56,8 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
       withTiming(0.88, { duration: 80 }),
       withSpring(1, { damping: 8, stiffness: 300 })
     );
-    void dismissBotCoachmark();
     router.push("/ai-assistant");
-  }, [fabScale, router, dismissBotCoachmark]);
+  }, [fabScale, router]);
 
   const visibleRoutes = state.routes.filter((r) => TAB_ICONS[r.name]);
   const left = visibleRoutes.slice(0, 2);
@@ -70,21 +70,13 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
     const isGoalTab = route.name === "goals";
 
     return (
-      <View key={route.key} style={styles.tabWrap}>
-        {isGoalTab && activeCoachmark === "goal" && (
-          <Pressable
-            onPress={() => void dismissGoalCoachmark()}
-            style={styles.goalCoachmark}
-            accessibilityRole="button"
-            accessibilityLabel={t("tabBar.dismissGoalCoachmarkA11y")}
-          >
-            <Text style={styles.coachmarkText}>{t("tabBar.goalCoachmarkText")}</Text>
-            <View style={styles.goalCoachmarkArrow} />
-          </Pressable>
-        )}
+      <View
+        key={route.key}
+        ref={isGoalTab ? goalAnchor.ref : undefined}
+        onLayout={isGoalTab ? goalAnchor.onLayout : undefined}
+      >
         <Pressable
           onPress={() => {
-            if (isGoalTab) void dismissGoalCoachmark();
             handleTabPress({
               focused,
               routeName: route.name,
@@ -114,29 +106,31 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <Fragment>
-      {activeCoachmark && (
-        <Pressable
-          style={styles.dimOverlay}
-          onPress={() =>
-            void (activeCoachmark === "bot" ? dismissBotCoachmark() : dismissGoalCoachmark())
-          }
-        />
-      )}
+      <Coachmark
+        visible={activeCoachmark === "bot"}
+        anchor={botAnchor.rect}
+        text={t("tabBar.botCoachmarkText")}
+        onDismiss={() => void dismissCoachmark("bot")}
+        dismissA11yLabel={t("tabBar.dismissBotCoachmarkA11y")}
+        placement="above"
+        gap={-5}
+      />
+      <Coachmark
+        visible={activeCoachmark === "goal"}
+        anchor={goalAnchor.rect}
+        text={t("tabBar.goalCoachmarkText")}
+        onDismiss={() => void dismissCoachmark("goal")}
+        dismissA11yLabel={t("tabBar.dismissGoalCoachmarkA11y")}
+        placement="above"
+        gap={-5}
+      />
       <View style={[styles.outer, { paddingBottom: insets.bottom + 8 }]}>
-        <View style={styles.fabWrap} pointerEvents="box-none">
-          {activeCoachmark === "bot" && (
-            <Pressable
-              onPress={() => void dismissBotCoachmark()}
-              style={styles.coachmark}
-              accessibilityRole="button"
-              accessibilityLabel={t("tabBar.dismissBotCoachmarkA11y")}
-            >
-              <Text style={styles.coachmarkText}>
-                {t("tabBar.botCoachmarkText")}
-              </Text>
-              <View style={styles.coachmarkArrow} />
-            </Pressable>
-          )}
+        <View
+          style={styles.fabWrap}
+          pointerEvents="box-none"
+          ref={botAnchor.ref}
+          onLayout={botAnchor.onLayout}
+        >
           <Pressable
             onPress={handleBotPress}
             style={styles.fabPressable}
@@ -161,14 +155,6 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
 }
 
 const styles = StyleSheet.create({
-  dimOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.45)",
-  },
   outer: {
     position: "absolute",
     bottom: 0,
@@ -182,42 +168,6 @@ const styles = StyleSheet.create({
     top: -32,
     alignSelf: "center",
     zIndex: 10,
-  },
-  coachmark: {
-    position: "absolute",
-    bottom: 80,
-    left: "50%",
-    transform: [{ translateX: -110 }],
-    width: 220,
-    backgroundColor: colors.accent.primary,
-    borderRadius: radius.lg,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    shadowColor: colors.accent.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  coachmarkText: {
-    ...StyleSheet.flatten(textStyles.caption),
-    color: "#fff",
-    textAlign: "center",
-    lineHeight: 16,
-  },
-  coachmarkArrow: {
-    position: "absolute",
-    bottom: -6,
-    left: "50%",
-    transform: [{ translateX: -6 }],
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 6,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderTopColor: colors.accent.primary,
   },
   fabPressable: {
     width: 64,
@@ -258,40 +208,6 @@ const styles = StyleSheet.create({
   },
   gap: {
     width: 64,
-  },
-  tabWrap: {
-    position: "relative",
-  },
-  goalCoachmark: {
-    position: "absolute",
-    bottom: "100%",
-    marginBottom: 10,
-    left: "50%",
-    transform: [{ translateX: -45 }],
-    width: 170,
-    backgroundColor: colors.accent.primary,
-    borderRadius: radius.lg,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    shadowColor: colors.accent.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  goalCoachmarkArrow: {
-    position: "absolute",
-    bottom: -6,
-    left: "50%",
-    transform: [{ translateX: -46 }],
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 6,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderTopColor: colors.accent.primary,
   },
   tab: {
     alignItems: "center",

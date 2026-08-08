@@ -1,41 +1,42 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { Plus, Wallet } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
-import IconButton from '@/components/ui/IconButton';
-import { computeUnallocated } from '@/features/finance/utils/budgetBucketUtils';
-import { splitBudgetCategories } from '@/features/finance/utils/budgetCategoryUtils';
-import { useBackNavigation } from '@/hooks/useBackNavigation';
+import React, { useCallback, useMemo, useState } from "react";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Plus, Wallet } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import IconButton from "@/components/ui/IconButton";
+import { computeUnallocated } from "@/features/finance/utils/budgetBucketUtils";
+import { splitBudgetCategories } from "@/features/finance/utils/budgetCategoryUtils";
+import { useBackNavigation } from "@/hooks/useBackNavigation";
 
-import { Header } from '@/components/layout/Header';
-import { Screen } from '@/components/layout/Screen';
-import { SectionHeader } from '@/components/ui/SectionHeader';
-import Card from '@/components/ui/Card';
-import EmptyState from '@/components/ui/EmptyState';
-import { SkeletonCard } from '@/components/ui/Skeleton';
-import AddSpendingLimitSheet from '@/features/finance/components/AddSpendingLimitSheet';
-import BudgetBucketItem from '@/features/finance/components/BudgetBucketItem';
-import BudgetEditSheet from '@/features/finance/components/BudgetEditSheet';
-import BudgetHeroCard from '@/features/finance/components/BudgetHeroCard';
-import CategoryBudgetSheet from '@/features/finance/components/CategoryBudgetSheet';
-import FixedExpenseItem from '@/features/finance/components/FixedExpenseItem';
-import YearlyPerformanceSection from '@/features/finance/components/YearlyPerformanceSection';
-import { useBudget, useUpsertBudget } from '@/features/finance/hooks/useBudget';
-import { useCategories } from '@/features/finance/hooks/useCategories';
-import type { Category } from '@/features/finance/types';
-import { useTransactions } from '@/features/finance/hooks/useTransactions';
-import { formatMoney } from '@/lib/format';
-import { useToastStore } from '@/stores/toast';
-import { colors, radius, spacing, textStyles } from '@/theme';
-import { TAB_BAR_CLEARANCE } from '@/components/ui/FloatingTabBar';
+import { Header } from "@/components/layout/Header";
+import { Screen } from "@/components/layout/Screen";
+import { Coachmark, useCoachmarkAnchor } from "@/components/ui/Coachmark";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import Card from "@/components/ui/Card";
+import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonCard } from "@/components/ui/Skeleton";
+import AddSpendingLimitSheet from "@/features/finance/components/AddSpendingLimitSheet";
+import BudgetBucketItem from "@/features/finance/components/BudgetBucketItem";
+import BudgetEditSheet from "@/features/finance/components/BudgetEditSheet";
+import BudgetHeroCard from "@/features/finance/components/BudgetHeroCard";
+import CategoryBudgetSheet from "@/features/finance/components/CategoryBudgetSheet";
+import FixedExpenseItem from "@/features/finance/components/FixedExpenseItem";
+import YearlyPerformanceSection from "@/features/finance/components/YearlyPerformanceSection";
+import { useBudget, useUpsertBudget } from "@/features/finance/hooks/useBudget";
+import { useCategories } from "@/features/finance/hooks/useCategories";
+import type { Category } from "@/features/finance/types";
+import { useTransactions } from "@/features/finance/hooks/useTransactions";
+import { formatMoney } from "@/lib/format";
+import { useOnboardingStore } from "@/stores/onboarding";
+import { useToastStore } from "@/stores/toast";
+import { colors, radius, spacing, textStyles } from "@/theme";
+import { TAB_BAR_CLEARANCE } from "@/components/ui/FloatingTabBar";
 
-const CARD_STYLE = { padding: 0, overflow: 'hidden' as const, borderWidth: 1, borderColor: colors.border.default };
+const CARD_STYLE = {
+  padding: 0,
+  overflow: "hidden" as const,
+  borderWidth: 1,
+  borderColor: colors.border.default,
+};
 
 function Divider() {
   return <View style={styles.divider} />;
@@ -52,8 +53,8 @@ function UnallocatedChip({ unallocated }: { unallocated: number }) {
         ellipsizeMode="tail"
       >
         {isOver
-          ? t('budget.unallocatedOver', { amount: formatMoney(Math.abs(unallocated)) })
-          : t('budget.unallocatedRemaining', { amount: formatMoney(unallocated) })}
+          ? t("budget.unallocatedOver", { amount: formatMoney(Math.abs(unallocated)) })
+          : t("budget.unallocatedRemaining", { amount: formatMoney(unallocated) })}
       </Text>
     </View>
   );
@@ -70,12 +71,20 @@ export default function BudgetScreen() {
   const [addSheetVisible, setAddSheetVisible] = useState(false);
   const [categoryToAdd, setCategoryToAdd] = useState<Category | null>(null);
 
+  const showCoachmark = !useOnboardingStore((s) => s.dismissedCoachmarks.budget);
+  const dismissCoachmark = useOnboardingStore((s) => s.dismissCoachmark);
+  const headerAnchor = useCoachmarkAnchor();
+
   const { data: budget, isLoading: budgetLoading, refetch: refetchBudget } = useBudget();
   const { data: categories } = useCategories();
   const { mutate: saveBudget, isPending } = useUpsertBudget();
-  const showToast = useToastStore(s => s.showToast);
+  const showToast = useToastStore((s) => s.showToast);
 
-  const { data: currentYearData, isLoading: txLoading, refetch: refetchTx } = useTransactions({
+  const {
+    data: currentYearData,
+    isLoading: txLoading,
+    refetch: refetchTx,
+  } = useTransactions({
     dateFrom: `${currentYear}-01-01`,
     dateTo: `${currentYear}-12-31`,
     limit: 1000,
@@ -92,7 +101,7 @@ export default function BudgetScreen() {
 
   const currentMonthSpent = useMemo(() => {
     return currentYearTransactions
-      .filter(t => {
+      .filter((t) => {
         const d = new Date(t.occurred_at);
         return d.getFullYear() === currentYear && d.getMonth() === currentMonth && t.amount < 0;
       })
@@ -102,11 +111,11 @@ export default function BudgetScreen() {
   const categorySpending = useMemo(() => {
     const map = new Map<string, number>();
     currentYearTransactions
-      .filter(t => {
+      .filter((t) => {
         const d = new Date(t.occurred_at);
         return d.getFullYear() === currentYear && d.getMonth() === currentMonth && t.amount < 0;
       })
-      .forEach(t => {
+      .forEach((t) => {
         if (t.category_id) {
           map.set(t.category_id, (map.get(t.category_id) ?? 0) + Math.abs(t.amount));
         }
@@ -115,16 +124,19 @@ export default function BudgetScreen() {
   }, [currentYearTransactions, currentYear, currentMonth]);
 
   const { bills, spending } = useMemo(
-    () => splitBudgetCategories(
-      (categories ?? []).sort((a, b) => (categorySpending.get(b.id) ?? 0) - (categorySpending.get(a.id) ?? 0)),
-    ),
-    [categories, categorySpending],
+    () =>
+      splitBudgetCategories(
+        (categories ?? []).sort(
+          (a, b) => (categorySpending.get(b.id) ?? 0) - (categorySpending.get(a.id) ?? 0)
+        )
+      ),
+    [categories, categorySpending]
   );
 
   const available = useMemo(() => {
-    const budgetedIds = new Set([...bills.map(c => c.id), ...spending.map(c => c.id)]);
+    const budgetedIds = new Set([...bills.map((c) => c.id), ...spending.map((c) => c.id)]);
     return (categories ?? []).filter(
-      c => c.type === 'expense' && !c.is_archived && !budgetedIds.has(c.id),
+      (c) => c.type === "expense" && !c.is_archived && !budgetedIds.has(c.id)
     );
   }, [categories, bills, spending]);
 
@@ -135,15 +147,18 @@ export default function BudgetScreen() {
 
   const handleOpenEdit = useCallback(() => setEditVisible(true), []);
 
-  const handleSave = useCallback((amount: number) => {
-    saveBudget(
-      { monthly_limit: amount },
-      {
-        onSuccess: () => setEditVisible(false),
-        onError: () => showToast(t('budget.saveError'), 'error'),
-      }
-    );
-  }, [saveBudget, showToast, t]);
+  const handleSave = useCallback(
+    (amount: number) => {
+      saveBudget(
+        { monthly_limit: amount },
+        {
+          onSuccess: () => setEditVisible(false),
+          onError: () => showToast(t("budget.saveError"), "error"),
+        }
+      );
+    },
+    [saveBudget, showToast, t]
+  );
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([refetchBudget(), refetchTx()]);
@@ -153,9 +168,16 @@ export default function BudgetScreen() {
 
   return (
     <Screen>
-      <Header
-        title={t('budget.headerTitle')}
-        onBack={handleBack}
+      <View ref={headerAnchor.ref} onLayout={headerAnchor.onLayout}>
+        <Header title={t("budget.headerTitle")} onBack={handleBack} />
+      </View>
+      <Coachmark
+        visible={showCoachmark}
+        anchor={headerAnchor.rect}
+        text={t("coachmark.budgetText")}
+        onDismiss={() => void dismissCoachmark("budget")}
+        dismissA11yLabel={t("coachmark.dismissBudgetA11y")}
+        gap={150}
       />
 
       <ScrollView
@@ -188,23 +210,18 @@ export default function BudgetScreen() {
         />
 
         <View style={styles.section}>
-          <SectionHeader title={t('budget.regularBillsTitle')} />
+          <SectionHeader title={t("budget.regularBillsTitle")} />
           {bills.length === 0 ? (
             <Card style={CARD_STYLE}>
               <View style={styles.emptyFixed}>
-                <Text style={styles.emptyFixedText}>
-                  {t('budget.emptyBillsText')}
-                </Text>
+                <Text style={styles.emptyFixedText}>{t("budget.emptyBillsText")}</Text>
               </View>
             </Card>
           ) : (
             <Card style={CARD_STYLE}>
               {bills.map((cat, idx) => (
                 <React.Fragment key={cat.id}>
-                  <FixedExpenseItem
-                    category={cat}
-                    spent={categorySpending.get(cat.id) ?? 0}
-                  />
+                  <FixedExpenseItem category={cat} spent={categorySpending.get(cat.id) ?? 0} />
                   {idx < bills.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
@@ -214,7 +231,9 @@ export default function BudgetScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle} numberOfLines={1}>{t('budget.spendingLimitsTitle')}</Text>
+            <Text style={styles.sectionTitle} numberOfLines={1}>
+              {t("budget.spendingLimitsTitle")}
+            </Text>
             <View style={styles.sectionHeaderRight}>
               {budget && (bills.length > 0 || spending.length > 0) && (
                 <UnallocatedChip
@@ -225,7 +244,7 @@ export default function BudgetScreen() {
                 <IconButton
                   icon={Plus}
                   onPress={() => setAddSheetVisible(true)}
-                  accessibilityLabel={t('budget.addLimitA11y')}
+                  accessibilityLabel={t("budget.addLimitA11y")}
                 />
               </View>
             </View>
@@ -233,17 +252,14 @@ export default function BudgetScreen() {
           {spending.length === 0 ? (
             <EmptyState
               icon={Wallet}
-              title={t('budget.emptyLimitsTitle')}
-              subtitle={t('budget.emptyLimitsSubtitle')}
+              title={t("budget.emptyLimitsTitle")}
+              subtitle={t("budget.emptyLimitsSubtitle")}
             />
           ) : (
             <Card style={CARD_STYLE}>
               {spending.map((cat, idx) => (
                 <React.Fragment key={cat.id}>
-                  <BudgetBucketItem
-                    category={cat}
-                    spent={categorySpending.get(cat.id) ?? 0}
-                  />
+                  <BudgetBucketItem category={cat} spent={categorySpending.get(cat.id) ?? 0} />
                   {idx < spending.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
@@ -280,15 +296,15 @@ export default function BudgetScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing["2xl"],
     paddingBottom: TAB_BAR_CLEARANCE,
     gap: 8,
   },
   section: { marginTop: 24 },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   sectionTitle: { ...StyleSheet.flatten(textStyles.h2), color: colors.text.primary, flexShrink: 1 },
@@ -298,8 +314,8 @@ const styles = StyleSheet.create({
     marginLeft: 76,
   },
   sectionHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   addLimitBtn: { flexShrink: 0 },
@@ -312,7 +328,7 @@ const styles = StyleSheet.create({
   },
   chipOk: { backgroundColor: colors.success.bg },
   chipOver: { backgroundColor: colors.danger.bg },
-  chipText: { fontSize: 11, fontWeight: '600' },
+  chipText: { fontSize: 11, fontWeight: "600" },
   emptyFixed: { paddingHorizontal: 16, paddingVertical: 20 },
   emptyFixedText: { fontSize: 13, color: colors.text.muted, lineHeight: 20 },
 });

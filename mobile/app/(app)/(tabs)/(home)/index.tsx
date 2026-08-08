@@ -43,11 +43,11 @@ export default function HomeScreen() {
   const { dateFrom, dateTo } = useMemo(() => {
     const now = new Date();
     const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const m = String(now.getMonth() + 1).padStart(2, "0");
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     return {
       dateFrom: `${y}-${m}-01`,
-      dateTo: `${y}-${m}-${String(lastDay).padStart(2, '0')}`,
+      dateTo: `${y}-${m}-${String(lastDay).padStart(2, "0")}`,
     };
   }, []);
 
