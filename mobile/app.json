@@ -35,7 +35,7 @@
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
       "package": "com.salendah_labs.savyn",
-      "versionCode": 7
+      "versionCode": 8
     },
     "web": {
       "bundler": "metro",
