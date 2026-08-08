@@ -2,7 +2,7 @@ import i18n from "@/i18n";
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from "@/i18n/registry";
 
 const BCP47_BY_CODE: Record<string, string> = Object.fromEntries(
-  SUPPORTED_LANGUAGES.map((lang) => [lang.code, lang.bcp47]),
+  SUPPORTED_LANGUAGES.map((lang) => [lang.code, lang.bcp47])
 );
 const DEFAULT_BCP47 = BCP47_BY_CODE[DEFAULT_LANGUAGE];
 
@@ -90,6 +90,27 @@ export function formatDateLabel(dateStr: string): string {
   if (dateStr === toYmd(now)) return `${i18n.t("common.today")} - ${fullDate}`;
   if (dateStr === toYmd(yesterday)) return `${i18n.t("common.yesterday")} - ${fullDate}`;
   return fullDate;
+}
+
+const RECENT_DAY_WINDOW = 7;
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/** Pemisah tanggal chat ala WhatsApp: "Hari ini"/"Kemarin"/nama hari untuk
+ * <1 minggu, tanggal penuh setelahnya. Dibanding per hari kalender, bukan
+ * jendela 24 jam, jadi jam 00:05 tetap terhitung "hari ini". */
+export function formatChatDaySeparator(date: Date): string {
+  const diffDays = Math.round(
+    (startOfDay(new Date()).getTime() - startOfDay(date).getTime()) / 86_400_000
+  );
+  if (diffDays === 0) return i18n.t("common.today");
+  if (diffDays === 1) return i18n.t("common.yesterday");
+  if (diffDays < RECENT_DAY_WINDOW) {
+    return new Intl.DateTimeFormat(activeLocale(), { weekday: "long" }).format(date);
+  }
+  return formatDate(date);
 }
 
 /** Compact axis label for money charts: 1_500_000 → "1.5jt"/"1.5M", 2_000 → "2k". */

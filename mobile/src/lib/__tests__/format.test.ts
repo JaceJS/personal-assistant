@@ -1,5 +1,6 @@
 import i18n from "@/i18n";
 import {
+  formatChatDaySeparator,
   formatDateLabel,
   formatMoney,
   formatRelativeTime,
@@ -77,6 +78,45 @@ describe("format helpers", () => {
       const label = formatDateLabel("2026-01-05");
       expect(label).not.toMatch(/Hari ini|Kemarin/);
       expect(label).toContain("Januari");
+    });
+  });
+
+  describe("formatChatDaySeparator", () => {
+    function daysAgo(n: number): Date {
+      const d = new Date();
+      d.setDate(d.getDate() - n);
+      return d;
+    }
+
+    it("labels today in Indonesian", async () => {
+      await i18n.changeLanguage("id");
+      expect(formatChatDaySeparator(daysAgo(0))).toBe("Hari ini");
+    });
+
+    it("labels yesterday in Indonesian", async () => {
+      await i18n.changeLanguage("id");
+      expect(formatChatDaySeparator(daysAgo(1))).toBe("Kemarin");
+    });
+
+    it("uses a bare weekday name for 2-6 days ago", async () => {
+      await i18n.changeLanguage("id");
+      const label = formatChatDaySeparator(daysAgo(3));
+      expect(label).not.toMatch(/Hari ini|Kemarin/);
+      expect(label).toMatch(/^(Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu)$/);
+    });
+
+    it("uses the full date for 7+ days ago", async () => {
+      await i18n.changeLanguage("id");
+      const label = formatChatDaySeparator(daysAgo(10));
+      expect(label).not.toMatch(/^(Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu)$/);
+      expect(label).toMatch(/\d{4}/);
+    });
+
+    it("treats calendar-day boundaries correctly, not 24h windows", async () => {
+      await i18n.changeLanguage("id");
+      const justAfterMidnight = new Date();
+      justAfterMidnight.setHours(0, 5, 0, 0);
+      expect(formatChatDaySeparator(justAfterMidnight)).toBe("Hari ini");
     });
   });
 

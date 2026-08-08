@@ -31,6 +31,7 @@ import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
 import { AIBubble } from "@/features/ai/components/AIBubble";
 import { ChatBubble } from "@/features/ai/components/ChatBubble";
 import { ChatHistorySkeleton } from "@/features/ai/components/ChatHistorySkeleton";
+import { DateSeparator } from "@/features/ai/components/DateSeparator";
 import { DraftTransactionCard } from "@/features/ai/components/DraftTransactionCard";
 import { MessageActionMenu } from "@/features/ai/components/MessageActionMenu";
 import { QuickActionsMenu } from "@/features/ai/components/QuickActionsMenu";
@@ -54,16 +55,17 @@ import {
   setDraftState,
   staleTrackedIds,
   updateMessageIfChanged,
+  withDateSeparators,
 } from "@/features/finance/utils/chatMessageUtils";
 import { persistPickedImage } from "@/features/finance/utils/persistPickedImage";
 import { persistRecordedAudio } from "@/features/finance/utils/persistRecordedAudio";
 import { clearPersistedMedia } from "@/features/finance/utils/persistToAppStorage";
 import type {
   AIMessage,
+  ChatListItem,
   ChatMessage,
   DraftMessage,
   DraftMessageState,
-  Message,
   UserTextMessage,
 } from "@/features/finance/utils/chatMessageUtils";
 import { QUICK_CHIPS, resolveQuickChipAction } from "@/features/ai/utils/quickChips";
@@ -136,7 +138,7 @@ export default function AIAssistantScreen() {
   const [showCopiedHint, setShowCopiedHint] = useState(false);
 
   const [inputText, setInputText] = useState("");
-  const listRef = useRef<FlatList<Message>>(null);
+  const listRef = useRef<FlatList<ChatListItem>>(null);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copiedHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const receiptAccountIds = useRef<Map<string, string>>(new Map());
@@ -145,6 +147,7 @@ export default function AIAssistantScreen() {
   const voiceStatus = useVoiceStatus(voiceLogId);
   const activeReceiptIds = useMemo(() => getActiveReceiptIds(messages), [messages]);
   const receiptStatuses = useReceiptStatuses(activeReceiptIds);
+  const listItems = useMemo(() => withDateSeparators(messages), [messages]);
 
   const voiceLogIdRef = useRef(voiceLogId);
   voiceLogIdRef.current = voiceLogId;
@@ -647,7 +650,8 @@ export default function AIAssistantScreen() {
   );
 
   const renderMessage = useCallback(
-    ({ item }: { item: Message }) => {
+    ({ item }: { item: ChatListItem }) => {
+      if (item.type === "dateSeparator") return <DateSeparator date={item.date} />;
       if (item.type === "user")
         return <UserBubble message={item} onLongPress={handleMessageLongPress} />;
       if (item.type === "ai")
@@ -746,7 +750,7 @@ export default function AIAssistantScreen() {
                 <FlatList
                   ref={listRef}
                   style={styles.messageListFlex}
-                  data={messages}
+                  data={listItems}
                   keyExtractor={(item) => item.id}
                   renderItem={renderMessage}
                   contentContainerStyle={styles.messageList}

@@ -1,14 +1,18 @@
-import { generateId } from '@/lib/utils';
+import { generateId } from "@/lib/utils";
 
-import type { ExtractedTransaction, VoiceProcessingStatus, VoiceStatusResponse } from '@/features/finance/api/voice';
-import type { ReceiptStatusResponse } from '@/features/finance/api/receipt';
-import type { DraftTransaction } from '@/features/ai/api/chat';
+import type {
+  ExtractedTransaction,
+  VoiceProcessingStatus,
+  VoiceStatusResponse,
+} from "@/features/finance/api/voice";
+import type { ReceiptStatusResponse } from "@/features/finance/api/receipt";
+import type { DraftTransaction } from "@/features/ai/api/chat";
 
-export type ChatMessageStatus = VoiceProcessingStatus | 'uploading';
+export type ChatMessageStatus = VoiceProcessingStatus | "uploading";
 
 export type ChatMessage = {
   id: string;
-  type: 'voice' | 'receipt';
+  type: "voice" | "receipt";
   status: ChatMessageStatus;
   transcript?: string;
   extractedData?: ExtractedTransaction[];
@@ -20,11 +24,11 @@ export type ChatMessage = {
   createdAt: Date;
 };
 
-export type MessageSendStatus = 'sending' | 'sent' | 'failed';
+export type MessageSendStatus = "sending" | "sent" | "failed";
 
 export type UserTextMessage = {
   id: string;
-  type: 'user';
+  type: "user";
   content: string;
   status: MessageSendStatus;
   createdAt: Date;
@@ -36,7 +40,7 @@ export type UserTextMessage = {
 
 export type AIMessage = {
   id: string;
-  type: 'ai';
+  type: "ai";
   content?: string;
   isTyping: boolean;
   failed?: boolean;
@@ -51,11 +55,11 @@ export type AIMessage = {
   remoteId?: string;
 };
 
-export type DraftMessageState = 'pending' | 'saving' | 'saved' | 'cancelled';
+export type DraftMessageState = "pending" | "saving" | "saved" | "cancelled";
 
 export type DraftMessage = {
   id: string;
-  type: 'draft';
+  type: "draft";
   draft: DraftTransaction;
   state: DraftMessageState;
   createdAt: Date;
@@ -66,12 +70,12 @@ export type Message = ChatMessage | UserTextMessage | AIMessage | DraftMessage;
 export function createVoiceMessage(
   voiceLogId: string,
   localUri?: string,
-  accountId?: string,
+  accountId?: string
 ): ChatMessage {
   return {
     id: voiceLogId,
-    type: 'voice',
-    status: 'pending',
+    type: "voice",
+    status: "pending",
     localUri,
     accountId,
     createdAt: new Date(),
@@ -81,12 +85,12 @@ export function createVoiceMessage(
 export function createReceiptMessage(
   receiptLogId: string,
   localUri?: string,
-  accountId?: string,
+  accountId?: string
 ): ChatMessage {
   return {
     id: receiptLogId,
-    type: 'receipt',
-    status: 'pending',
+    type: "receipt",
+    status: "pending",
     localUri,
     accountId,
     createdAt: new Date(),
@@ -100,14 +104,14 @@ export function createUploadingMessage({
   accountId,
 }: {
   id: string;
-  type: 'voice' | 'receipt';
+  type: "voice" | "receipt";
   localUri: string;
   accountId: string;
 }): ChatMessage {
   return {
     id,
     type,
-    status: 'uploading',
+    status: "uploading",
     localUri,
     accountId,
     createdAt: new Date(),
@@ -117,12 +121,12 @@ export function createUploadingMessage({
 export function markMessageSent(
   messages: Message[],
   placeholderId: string,
-  realId: string,
+  realId: string
 ): Message[] {
   return messages.map((m) =>
-    m.id === placeholderId && (m.type === 'receipt' || m.type === 'voice')
-      ? { ...m, id: realId, status: 'pending' as const }
-      : m,
+    m.id === placeholderId && (m.type === "receipt" || m.type === "voice")
+      ? { ...m, id: realId, status: "pending" as const }
+      : m
   );
 }
 
@@ -146,11 +150,11 @@ export function applyReceiptStatus(msg: ChatMessage, status: ReceiptStatusRespon
 }
 
 export function createUserTextMessage(content: string): UserTextMessage {
-  return { id: generateId(), type: 'user', content, status: 'sending', createdAt: new Date() };
+  return { id: generateId(), type: "user", content, status: "sending", createdAt: new Date() };
 }
 
 export function createAITypingMessage(originalText: string): AIMessage {
-  return { id: generateId(), type: 'ai', isTyping: true, originalText, createdAt: new Date() };
+  return { id: generateId(), type: "ai", isTyping: true, originalText, createdAt: new Date() };
 }
 
 export function resolveAIMessage(msg: AIMessage, content: string, remoteId?: string): AIMessage {
@@ -168,7 +172,7 @@ export function rejectAIMessage(msg: AIMessage, errorText: string): AIMessage {
 export function extractionToDraftTransactions(
   items: ExtractedTransaction[],
   transactionIds: string[],
-  accountId: string,
+  accountId: string
 ): DraftTransaction[] {
   const now = new Date().toISOString();
   return items.slice(0, transactionIds.length).map((item, i) => ({
@@ -179,21 +183,21 @@ export function extractionToDraftTransactions(
     category_name: item.category_name,
     note: item.note,
     account_id: accountId,
-    status: 'draft' as const,
+    status: "draft" as const,
     created_at: now,
   }));
 }
 
-function draftStatusToMessageState(status: DraftTransaction['status']): DraftMessageState {
-  if (status === 'confirmed') return 'saved';
-  if (status === 'cancelled') return 'cancelled';
-  return 'pending';
+function draftStatusToMessageState(status: DraftTransaction["status"]): DraftMessageState {
+  if (status === "confirmed") return "saved";
+  if (status === "cancelled") return "cancelled";
+  return "pending";
 }
 
 export function createDraftMessages(drafts: DraftTransaction[]): DraftMessage[] {
   return drafts.map((draft) => ({
     id: draft.transaction_id,
-    type: 'draft' as const,
+    type: "draft" as const,
     draft,
     state: draftStatusToMessageState(draft.status),
     createdAt: new Date(draft.created_at),
@@ -214,12 +218,40 @@ export function setDraftState(msg: DraftMessage, state: DraftMessageState): Draf
   return { ...msg, state };
 }
 
-const NON_POLLABLE_STATUSES: ChatMessageStatus[] = ['uploading', 'completed', 'failed'];
+export interface DateSeparatorItem {
+  id: string;
+  type: "dateSeparator";
+  date: Date;
+}
+
+export type ChatListItem = Message | DateSeparatorItem;
+
+function dateKey(date: Date): string {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+// messages is already sorted ascending (mergeMessagesSorted), so a single
+// pass catches every day change.
+export function withDateSeparators(messages: Message[]): ChatListItem[] {
+  const result: ChatListItem[] = [];
+  let lastKey: string | null = null;
+  for (const message of messages) {
+    const key = dateKey(message.createdAt);
+    if (key !== lastKey) {
+      result.push({ id: `date-${key}`, type: "dateSeparator", date: message.createdAt });
+      lastKey = key;
+    }
+    result.push(message);
+  }
+  return result;
+}
+
+const NON_POLLABLE_STATUSES: ChatMessageStatus[] = ["uploading", "completed", "failed"];
 
 export function getActiveReceiptIds(messages: Message[]): string[] {
   return messages
     .filter(
-      (m): m is ChatMessage => m.type === 'receipt' && !NON_POLLABLE_STATUSES.includes(m.status),
+      (m): m is ChatMessage => m.type === "receipt" && !NON_POLLABLE_STATUSES.includes(m.status)
     )
     .map((m) => m.id);
 }
@@ -233,11 +265,11 @@ export function staleTrackedIds(trackedIds: Iterable<string>, messages: Message[
 export function updateMessageIfChanged(
   messages: Message[],
   id: string,
-  updater: (msg: ChatMessage) => ChatMessage,
+  updater: (msg: ChatMessage) => ChatMessage
 ): Message[] {
   let changed = false;
   const next = messages.map((m) => {
-    if (m.id !== id || (m.type !== 'receipt' && m.type !== 'voice')) return m;
+    if (m.id !== id || (m.type !== "receipt" && m.type !== "voice")) return m;
     const current = m as ChatMessage;
     const updated = updater(current);
     if (
