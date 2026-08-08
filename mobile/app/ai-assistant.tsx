@@ -30,6 +30,7 @@ import { RecordingIndicator } from "@/components/voice/RecordingIndicator";
 import { TranscriptSheet } from "@/components/voice/TranscriptSheet";
 import { AIBubble } from "@/features/ai/components/AIBubble";
 import { ChatBubble } from "@/features/ai/components/ChatBubble";
+import { ChatHistorySkeleton } from "@/features/ai/components/ChatHistorySkeleton";
 import { DraftTransactionCard } from "@/features/ai/components/DraftTransactionCard";
 import { MessageActionMenu } from "@/features/ai/components/MessageActionMenu";
 import { QuickActionsMenu } from "@/features/ai/components/QuickActionsMenu";
@@ -726,9 +727,7 @@ export default function AIAssistantScreen() {
             {/* Chat area */}
             <View style={styles.chatArea}>
               {isLoadingHistory ? (
-                <View style={styles.historyLoader}>
-                  <ActivityIndicator color={colors.accent.primary} />
-                </View>
+                <ChatHistorySkeleton />
               ) : messages.length === 0 ? (
                 <View style={styles.emptyState}>
                   <View style={styles.emptyGreeting}>
@@ -899,11 +898,6 @@ const styles = StyleSheet.create({
   chatArea: {
     flex: 1,
     position: "relative",
-  },
-  historyLoader: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
   emptyState: {
     flex: 1,

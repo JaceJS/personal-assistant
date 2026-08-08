@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { RotateCcw } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
+import { formatTime } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import type { AIMessage } from "@/features/finance/utils/chatMessageUtils";
 
@@ -48,6 +49,9 @@ export function AIBubble({
             </Pressable>
           )}
         </View>
+        {!(message.isTyping && !message.content) && (
+          <Text style={styles.timestamp}>{formatTime(message.createdAt)}</Text>
+        )}
       </View>
     </Pressable>
   );
@@ -56,6 +60,11 @@ export function AIBubble({
 const styles = StyleSheet.create({
   wrap: {
     alignItems: "flex-start",
+  },
+  timestamp: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
+    marginTop: spacing.xs,
   },
   bubble: {
     backgroundColor: colors.bg.surface,

@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useEffect } from "react";
+import { StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
-} from 'react-native-reanimated';
-import { colors, radius } from '@/theme';
+} from "react-native-reanimated";
+import { colors, radius } from "@/theme";
 
 interface SkeletonCardProps {
   height?: number;
@@ -17,7 +17,7 @@ interface SkeletonTextProps {
   height?: number;
 }
 
-function usePulse() {
+export function usePulse() {
   const opacity = useSharedValue(0.4);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function SkeletonCard({ height = 64 }: SkeletonCardProps) {
   );
 }
 
-export function SkeletonText({ width = '60%', height = 14 }: SkeletonTextProps) {
+export function SkeletonText({ width = "60%", height = 14 }: SkeletonTextProps) {
   const animStyle = usePulse();
   return (
     <Animated.View

@@ -4,7 +4,7 @@ import { Camera, Mic, RotateCcw } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatTime } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import type { ChatMessage } from "@/features/finance/utils/chatMessageUtils";
 
@@ -68,23 +68,23 @@ export function ChatBubble({
             {message.transcript}
           </Text>
         )}
-        {message.extractedData && message.extractedData.length === 1 && message.status === "completed" && (
-          <Text style={styles.amount}>
-            {formatMoney(message.extractedData[0].amount, message.extractedData[0].currency)}
-          </Text>
-        )}
-        {message.extractedData && message.extractedData.length > 1 && message.status === "completed" && (
-          <Text style={styles.amount}>
-            {t("ai.chatBubble.itemsExtracted", { count: message.extractedData.length })}
-          </Text>
-        )}
+        {message.extractedData &&
+          message.extractedData.length === 1 &&
+          message.status === "completed" && (
+            <Text style={styles.amount}>
+              {formatMoney(message.extractedData[0].amount, message.extractedData[0].currency)}
+            </Text>
+          )}
+        {message.extractedData &&
+          message.extractedData.length > 1 &&
+          message.status === "completed" && (
+            <Text style={styles.amount}>
+              {t("ai.chatBubble.itemsExtracted", { count: message.extractedData.length })}
+            </Text>
+          )}
         {message.errorMessage && <Text style={styles.error}>{message.errorMessage}</Text>}
         {isProcessing && (
-          <ActivityIndicator
-            size="small"
-            color={colors.accent.primary}
-            style={styles.spinner}
-          />
+          <ActivityIndicator size="small" color={colors.accent.primary} style={styles.spinner} />
         )}
         {canRetry && (
           <Pressable
@@ -107,7 +107,10 @@ export function ChatBubble({
               {isVoice ? t("ai.chatBubble.typeVoice") : t("ai.chatBubble.typeReceipt")}
             </Text>
           </View>
-          <MessageStatusIcon status={sendStatus} />
+          <View style={styles.typeFooterRight}>
+            <Text style={styles.timestamp}>{formatTime(message.createdAt)}</Text>
+            <MessageStatusIcon status={sendStatus} />
+          </View>
         </View>
       </View>
     </View>
@@ -193,6 +196,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   typeLabel: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
+  },
+  typeFooterRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  timestamp: {
     ...StyleSheet.flatten(textStyles.caption),
     color: colors.text.muted,
   },

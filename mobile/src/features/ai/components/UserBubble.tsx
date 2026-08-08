@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { formatTime } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import type { UserTextMessage } from "@/features/finance/utils/chatMessageUtils";
 
@@ -27,6 +28,7 @@ export function UserBubble({
           <Text style={styles.text}>{message.content}</Text>
         </View>
         <View style={styles.footer}>
+          <Text style={styles.timestamp}>{formatTime(message.createdAt)}</Text>
           <MessageStatusIcon status={message.status} />
         </View>
       </View>
@@ -51,7 +53,13 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "flex-end",
+    gap: 4,
     marginTop: spacing.xs,
+  },
+  timestamp: {
+    ...StyleSheet.flatten(textStyles.caption),
+    color: colors.text.muted,
   },
 });
