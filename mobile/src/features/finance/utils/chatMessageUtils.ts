@@ -218,6 +218,10 @@ export function setDraftState(msg: DraftMessage, state: DraftMessageState): Draf
   return { ...msg, state };
 }
 
+export function applyDraftEdit(msg: DraftMessage, edits: Partial<DraftTransaction>): DraftMessage {
+  return { ...msg, draft: { ...msg.draft, ...edits } };
+}
+
 export interface DateSeparatorItem {
   id: string;
   type: "dateSeparator";

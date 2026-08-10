@@ -11,6 +11,7 @@ import {
   rejectAIMessage,
   createDraftMessages,
   setDraftState,
+  applyDraftEdit,
   extractionToDraftTransactions,
   getActiveReceiptIds,
   staleTrackedIds,
@@ -125,6 +126,37 @@ describe("setDraftState", () => {
     const msg = base();
     setDraftState(msg, "saved");
     expect(msg.state).toBe("pending");
+  });
+});
+
+describe("applyDraftEdit", () => {
+  const base = (): DraftMessage => createDraftMessages([makeDraft()])[0];
+
+  it("merges the given fields into draft", () => {
+    const msg = base();
+    const edited = applyDraftEdit(msg, { amount: -9999, merchant: "Warkop" });
+    expect(edited.draft.amount).toBe(-9999);
+    expect(edited.draft.merchant).toBe("Warkop");
+  });
+
+  it("leaves fields not passed in untouched", () => {
+    const msg = base();
+    const edited = applyDraftEdit(msg, { amount: -9999 });
+    expect(edited.draft.category_name).toBe(msg.draft.category_name);
+    expect(edited.draft.note).toBe(msg.draft.note);
+  });
+
+  it("does not touch state or id", () => {
+    const msg = { ...base(), state: "saving" as const };
+    const edited = applyDraftEdit(msg, { amount: -1 });
+    expect(edited.state).toBe("saving");
+    expect(edited.id).toBe(msg.id);
+  });
+
+  it("does not mutate the original message", () => {
+    const msg = base();
+    applyDraftEdit(msg, { amount: -1 });
+    expect(msg.draft.amount).toBe(-20000);
   });
 });
 

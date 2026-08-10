@@ -44,6 +44,7 @@ import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useReceiptStatuses, useUploadReceipt } from "@/features/finance/hooks/useReceipt";
 import { useExtractVoice, useUploadAudio, useVoiceStatus } from "@/features/finance/hooks/useVoice";
 import {
+  applyDraftEdit,
   applyVoiceStatus,
   applyReceiptStatus,
   createDraftMessages,
@@ -77,11 +78,9 @@ import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
-// Backend self-heals a stuck job after 75s (service.py _STUCK_JOB_TIMEOUT);
-// this backstop only covers polling itself silently dying, so it must stay above that.
 const STUCK_JOB_TIMEOUT_MS = 90_000;
 const SCROLL_DEBOUNCE_MS = 100;
-const QUICK_ACTIONS_ANIM_MS = 200; // matches QuickActionsMenu's own open/close animation
+const QUICK_ACTIONS_ANIM_MS = 200;
 
 export default function AIAssistantScreen() {
   const router = useRouter();
@@ -185,14 +184,12 @@ export default function AIAssistantScreen() {
   const isMicBusy = recorderProcessing || uploadAudio.isPending || voiceLogId !== null;
   const isCameraBusy = uploadReceipt.isPending;
 
-  // Surface recorder errors (permission denied, too-short takes) as toasts
   useEffect(() => {
     if (!recordingError) return;
     showToast(recordingError, "error");
     resetRecorder();
   }, [recordingError, resetRecorder, showToast]);
 
-  // Update voice message as status changes
   useEffect(() => {
     if (!voiceLogId || !voiceStatus.data) return;
     setMessages((prev) =>
@@ -634,7 +631,23 @@ export default function AIAssistantScreen() {
       if (!editingDraft) return;
       const id = editingDraft.id;
       setEditingDraft(null);
-      updateDraftMessage(id, "saving");
+      const categoryName = categories?.find((c) => c.id === payload.categoryId)?.name ?? null;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === id && m.type === "draft"
+            ? setDraftState(
+                applyDraftEdit(m, {
+                  amount: payload.amount,
+                  merchant: payload.merchant,
+                  note: payload.note,
+                  category_name: categoryName,
+                  account_id: payload.accountId ?? m.draft.account_id,
+                }),
+                "saving"
+              )
+            : m
+        )
+      );
       void confirmAiDraftMutation
         .mutateAsync({ transactionId: editingDraft.draft.transaction_id, payload })
         .then(() => {
@@ -646,7 +659,15 @@ export default function AIAssistantScreen() {
           showToast(t("ai.toast.transactionSaveFailed"), "error");
         });
     },
-    [confirmAiDraftMutation, editingDraft, showToast, updateDraftMessage, t]
+    [
+      categories,
+      confirmAiDraftMutation,
+      editingDraft,
+      setMessages,
+      showToast,
+      updateDraftMessage,
+      t,
+    ]
   );
 
   const renderMessage = useCallback(
@@ -704,8 +725,6 @@ export default function AIAssistantScreen() {
         }
       />
 
-      {/* Guest only gates once the free trial quota runs out; before that
-          they get the full chat, same as a signed-in user. */}
       {isGuest && guestQuota === 0 ? (
         <GuestGate subtitle={t("ai.guestQuotaExhaustedSubtitle")} />
       ) : hasNoAccounts ? (

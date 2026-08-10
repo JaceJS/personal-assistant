@@ -77,7 +77,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
   };
 
   return (
-    <BottomSheet isVisible={isVisible} onDismiss={onDismiss}>
+    <BottomSheet isVisible={isVisible} onDismiss={onDismiss} maxHeightPercent={85}>
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.sectionLabel}>{t("ai.confirmCard.amountLabel")}</Text>
         <TextInput
