@@ -1,6 +1,7 @@
 import "../global.css";
 
 import * as Sentry from "@sentry/react-native";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -24,6 +25,7 @@ import { logger } from "@/lib/logger";
 import { Toast } from "@/components/ui/Toast";
 import { GuestDataMergeSheet } from "@/features/sync/components/GuestDataMergeSheet";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthStore } from "@/stores/auth";
 import { useLanguageStore } from "@/stores/language";
 import { useOnboardingStore } from "@/stores/onboarding";
 
@@ -41,6 +43,7 @@ focusManager.setEventListener((handleFocus) => {
   return () => subscription.remove();
 });
 
+void SplashScreen.preventAutoHideAsync();
 
 function RootLayoutInner() {
   const [fontsLoaded] = useFonts({
@@ -52,13 +55,13 @@ function RootLayoutInner() {
   const [dbReady, setDbReady] = useState(false);
 
   useAuth();
+  const authInitialized = useAuthStore((s) => s.initialized);
   const initializeOnboarding = useOnboardingStore((s) => s.initialize);
   const initializeLanguage = useLanguageStore((s) => s.initialize);
 
   useEffect(() => {
     async function setup() {
       try {
-        // Migrasi SQLite tidak bergantung pada onboarding/bahasa — jalan paralel.
         await Promise.all([runMigrations(), initializeOnboarding(), initializeLanguage()]);
       } catch (e) {
         logger.error("[startup] setup failed", e);
@@ -69,7 +72,11 @@ function RootLayoutInner() {
     void setup();
   }, [initializeOnboarding, initializeLanguage]);
 
-  if (!fontsLoaded || !dbReady) return null;
+  useEffect(() => {
+    if (fontsLoaded && dbReady && authInitialized) void SplashScreen.hideAsync();
+  }, [fontsLoaded, dbReady, authInitialized]);
+
+  if (!fontsLoaded || !dbReady || !authInitialized) return null;
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
