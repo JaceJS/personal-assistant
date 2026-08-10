@@ -2,10 +2,13 @@ import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useBudget } from "@/features/finance/hooks/useBudget";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { formatMoney } from "@/lib/format";
 import { colors, radius, spacing, textStyles, toReadableTextColor } from "@/theme";
+
+const CARD_HEIGHT = 132;
 
 const RING_R = 36;
 const RING_STROKE = 7;
@@ -23,7 +26,7 @@ export default function DailySpendCard() {
   ].join("-");
 
   const { data: budget, isLoading: budgetLoading } = useBudget();
-  const { data } = useTransactions({ dateFrom: today, dateTo: today, limit: 100 });
+  const { data, isLoading: txLoading } = useTransactions({ dateFrom: today, dateTo: today, limit: 100 });
 
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const dailyLimit =
@@ -33,7 +36,15 @@ export default function DailySpendCard() {
     .filter((t) => t.amount < 0)
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-  if (!budgetLoading && dailyLimit === null) {
+  if (budgetLoading || txLoading) {
+    return (
+      <View testID="daily-spend-skeleton">
+        <SkeletonCard height={CARD_HEIGHT} />
+      </View>
+    );
+  }
+
+  if (dailyLimit === null) {
     return (
       <View style={[styles.card, styles.cardEmpty]}>
         <Text style={styles.emptyTitle}>{t("home.dailySpend.emptyTitle")}</Text>

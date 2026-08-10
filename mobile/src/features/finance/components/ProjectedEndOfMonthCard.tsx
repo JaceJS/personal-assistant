@@ -2,9 +2,12 @@ import { StyleSheet, Text, View } from 'react-native';
 import { TrendingDown, TrendingUp } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { formatMoney } from '@/lib/format';
 import { colors, radius, spacing, textStyles } from '@/theme';
+
+const CARD_HEIGHT = 150;
 
 function getMonthRange(year: number, month: number) {
   const from = [
@@ -27,8 +30,8 @@ export default function ProjectedEndOfMonthCard() {
   const curr = getMonthRange(now.getFullYear(), now.getMonth());
   const last = getMonthRange(now.getFullYear(), now.getMonth() - 1);
 
-  const { data: currData } = useTransactions({ dateFrom: curr.from, dateTo: curr.to, limit: 200 });
-  const { data: lastData } = useTransactions({ dateFrom: last.from, dateTo: last.to, limit: 200 });
+  const { data: currData, isLoading: currLoading } = useTransactions({ dateFrom: curr.from, dateTo: curr.to, limit: 200 });
+  const { data: lastData, isLoading: lastLoading } = useTransactions({ dateFrom: last.from, dateTo: last.to, limit: 200 });
 
   const currItems = currData?.items ?? [];
   const currIncome = currItems.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
@@ -45,6 +48,14 @@ export default function ProjectedEndOfMonthCard() {
   const isHigher = pctChange >= 0;
   const TrendIcon = isHigher ? TrendingUp : TrendingDown;
   const trendColor = isHigher ? colors.success.text : colors.danger.text;
+
+  if (currLoading || lastLoading) {
+    return (
+      <View testID="projected-eom-skeleton">
+        <SkeletonCard height={CARD_HEIGHT} />
+      </View>
+    );
+  }
 
   if (currItems.length === 0) {
     return (

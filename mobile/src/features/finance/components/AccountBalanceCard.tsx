@@ -3,6 +3,7 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-nativ
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 
+import { SkeletonBalanceCard } from "@/components/ui/Skeleton";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { formatMoney } from "@/lib/format";
@@ -11,8 +12,8 @@ import { colors, radius, spacing, textStyles } from "@/theme";
 export default function AccountBalanceCard() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { data } = useAccounts();
-  const { data: txData } = useTransactions({ limit: 1 });
+  const { data, isLoading: accountsLoading } = useAccounts();
+  const { data: txData, isLoading: txLoading } = useTransactions({ limit: 1 });
   const accounts = (data ?? []).filter((a) => !a.is_archived);
   const totalBalance = accounts.reduce((sum, a: { balance: number }) => sum + a.balance, 0);
   const hasFirstTransaction = (txData?.items ?? []).length > 0;
@@ -38,6 +39,14 @@ export default function AccountBalanceCard() {
   // onboarding), but a real balance genuinely at Rp 0 (post-transaction) is
   // shown plainly below, not treated as empty.
   const isEmpty = accounts.length === 0 || (totalBalance === 0 && !hasFirstTransaction);
+
+  if (accountsLoading || txLoading) {
+    return (
+      <View testID="account-balance-skeleton">
+        <SkeletonBalanceCard />
+      </View>
+    );
+  }
 
   if (isEmpty) {
     const hasAccounts = accounts.length > 0;
