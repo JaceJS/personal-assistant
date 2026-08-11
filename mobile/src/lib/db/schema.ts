@@ -80,9 +80,17 @@ export const voiceQueue = sqliteTable("voice_queue", {
   created_at: text("created_at").notNull(),
 });
 
+export const guestChatMessages = sqliteTable("guest_chat_messages", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  created_at: text("created_at").notNull(),
+  payload: text("payload").notNull(),
+});
+
 export type DbAccount = typeof accounts.$inferSelect;
 export type DbCategory = typeof categories.$inferSelect;
 export type DbTransaction = typeof transactions.$inferSelect;
 export type DbBudget = typeof budgets.$inferSelect;
 export type DbSavingsGoal = typeof savingsGoals.$inferSelect;
 export type DbVoiceQueueItem = typeof voiceQueue.$inferSelect;
+export type DbGuestChatMessage = typeof guestChatMessages.$inferSelect;

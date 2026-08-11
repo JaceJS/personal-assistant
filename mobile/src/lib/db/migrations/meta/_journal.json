@@ -22,6 +22,13 @@
       "when": 1782629341225,
       "tag": "0002_woozy_marauders",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1786463310278,
+      "tag": "0003_public_network",
+      "breakpoints": true
     }
   ]
 }

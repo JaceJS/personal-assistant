@@ -13,6 +13,11 @@ import type { AIMessage, Message, UserTextMessage } from "@/features/finance/uti
 import { deleteChatMessage, getChatSessionMessages, postChatMessage } from "@/features/ai/api/chat";
 import { postGuestChatMessage, toGuestAccountSnapshots } from "@/features/ai/api/guestChat";
 import type { GuestChatHistoryItem } from "@/features/ai/api/guestChat";
+import {
+  clearGuestChatMessages,
+  loadGuestChatMessages,
+  saveGuestChatMessages,
+} from "@/features/ai/repository/guestChatStorage";
 import type { Account } from "@/features/finance/types";
 import { ApiError } from "@/lib/api/client";
 import { getOrCreateGuestDeviceId } from "@/lib/guestDeviceId";
@@ -36,11 +41,13 @@ export function useChat(accounts: Account[] = []) {
   useEffect(() => {
     if (isGuest) {
       setIsLoadingHistory(false);
-      setMessages([]);
+      setMessages(loadGuestChatMessages());
       setSessionId(undefined);
       void getOrCreateGuestDeviceId().then(setGuestDeviceId);
       return;
     }
+
+    clearGuestChatMessages();
 
     let cancelled = false;
     (async () => {
@@ -83,6 +90,11 @@ export function useChat(accounts: Account[] = []) {
       cancelled = true;
     };
   }, [isGuest]);
+
+  useEffect(() => {
+    if (!isGuest) return;
+    saveGuestChatMessages(messages);
+  }, [isGuest, messages]);
 
   const syncSessionId = useCallback(async (id: string) => {
     setSessionId(id);

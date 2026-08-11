@@ -19,6 +19,12 @@ jest.mock('@/lib/guestDeviceId', () => ({
   getOrCreateGuestDeviceId: jest.fn(() => Promise.resolve('device-abc')),
 }));
 
+jest.mock('@/features/ai/repository/guestChatStorage', () => ({
+  loadGuestChatMessages: jest.fn(() => []),
+  saveGuestChatMessages: jest.fn(),
+  clearGuestChatMessages: jest.fn(),
+}));
+
 // useChat imports ApiError from @/lib/api/client, which imports @/lib/supabase
 // at module scope — createClient() throws immediately without a real
 // Supabase URL, so it must be mocked even though nothing here calls apiFetch
@@ -37,8 +43,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { deleteChatMessage, getChatSessionMessages, postChatMessage } from '@/features/ai/api/chat';
 import { postGuestChatMessage } from '@/features/ai/api/guestChat';
+import {
+  clearGuestChatMessages,
+  loadGuestChatMessages,
+  saveGuestChatMessages,
+} from '@/features/ai/repository/guestChatStorage';
 import { useChat } from '@/features/ai/hooks/useChat';
 import { ApiError } from '@/lib/api/client';
+import { createUserTextMessage } from '@/features/finance/utils/chatMessageUtils';
 import type {
   AIMessage,
   DraftMessage,
@@ -53,6 +65,15 @@ const mockGetChatSessionMessages = getChatSessionMessages as jest.MockedFunction
   typeof getChatSessionMessages
 >;
 const mockDeleteChatMessage = deleteChatMessage as jest.MockedFunction<typeof deleteChatMessage>;
+const mockLoadGuestChatMessages = loadGuestChatMessages as jest.MockedFunction<
+  typeof loadGuestChatMessages
+>;
+const mockSaveGuestChatMessages = saveGuestChatMessages as jest.MockedFunction<
+  typeof saveGuestChatMessages
+>;
+const mockClearGuestChatMessages = clearGuestChatMessages as jest.MockedFunction<
+  typeof clearGuestChatMessages
+>;
 const CHAT_SESSION_KEY = 'chat_session_id';
 
 describe('useChat', () => {
@@ -315,6 +336,59 @@ describe('useChat', () => {
 
     expect(mockGetChatSessionMessages).not.toHaveBeenCalled();
     expect(result.current.isLoadingHistory).toBe(false);
+  });
+
+  it('restores a guest chat previously saved to local storage', async () => {
+    mockIsGuest = true;
+    const saved = createUserTextMessage('halo dari sebelumnya');
+    mockLoadGuestChatMessages.mockReturnValueOnce([saved]);
+
+    const { result } = await renderHook(() => useChat());
+
+    expect(result.current.messages).toEqual([saved]);
+  });
+
+  it('persists guest messages to local storage whenever they change', async () => {
+    mockIsGuest = true;
+    mockPostGuestChatMessage.mockResolvedValueOnce({
+      reply: 'Halo!',
+      draft_transactions: [],
+      remaining_quota: 2,
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('halo');
+    });
+
+    expect(mockSaveGuestChatMessages).toHaveBeenLastCalledWith(result.current.messages);
+  });
+
+  it('does not persist to local storage for an authenticated user', async () => {
+    mockPostChatMessage.mockResolvedValueOnce({
+      reply: 'Halo!',
+      session_id: 'session-abc',
+      user_message_id: 'msg-user-1',
+      assistant_message_id: 'msg-ai-1',
+      draft_transactions: [],
+    });
+
+    const { result } = await renderHook(() => useChat());
+
+    await act(async () => {
+      await result.current.sendMessage('halo');
+    });
+
+    expect(mockSaveGuestChatMessages).not.toHaveBeenCalled();
+  });
+
+  it('clears the local guest chat cache once authenticated', async () => {
+    mockIsGuest = false;
+
+    await renderHook(() => useChat());
+
+    expect(mockClearGuestChatMessages).toHaveBeenCalled();
   });
 
   it('leaves a leftover session id from a previous account untouched when entering guest mode', async () => {
