@@ -4,6 +4,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import Button from "@/components/ui/Button";
+import { SearchableDropdown } from "@/components/ui/SearchableDropdown";
 import type { ExtractedTransaction } from "@/features/finance/api/voice";
 import { useCategories } from "@/features/finance/hooks/useCategories";
 import type { Account, Category } from "@/features/finance/types";
@@ -122,22 +123,17 @@ export const ConfirmCard = React.memo(function ConfirmCard({
 
         {categories.length > 0 && (
           <View style={styles.field}>
-            <Text style={styles.sectionLabel}>{t("ai.confirmCard.categoryLabel")}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
-              {categories.map((cat) => (
-                <Pressable
-                  key={cat.id}
-                  onPress={() => setCategoryId(cat.id === categoryId ? null : cat.id)}
-                  style={[styles.chip, cat.id === categoryId && styles.chipSelected]}
-                >
-                  <Text
-                    style={[styles.chipLabel, cat.id === categoryId && styles.chipLabelSelected]}
-                  >
-                    {cat.name}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
+            <SearchableDropdown
+              label={t("ai.confirmCard.categoryLabel")}
+              placeholder={t("transaction.categoryPlaceholder")}
+              items={categories.map((cat) => ({
+                id: cat.id,
+                name: cat.name,
+                icon: cat.icon ?? undefined,
+              }))}
+              selectedId={categoryId}
+              onSelect={setCategoryId}
+            />
           </View>
         )}
 

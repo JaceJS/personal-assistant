@@ -186,7 +186,13 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
 
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>{t("goals.form.iconLabel")}</Text>
-            <View style={styles.iconGrid}>
+            <ScrollView
+              style={styles.iconScroll}
+              contentContainerStyle={styles.iconGrid}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator
+              persistentScrollbar
+            >
               {iconRows.map((row, rowIdx) => (
                 <View key={rowIdx} style={styles.iconRow}>
                   {row.map((icon) => {
@@ -223,7 +229,7 @@ function CategoryFormSheet({ visible, editingCategory, onDismiss }: CategoryForm
                     ))}
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
 
           <View style={styles.section}>
@@ -295,6 +301,7 @@ const styles = StyleSheet.create({
   typeBtnLabelActive: { color: colors.bg.canvas },
   typeBtnLabelInactive: { color: colors.text.muted },
 
+  iconScroll: { maxHeight: 260, alignSelf: "stretch" },
   iconGrid: { gap: spacing.sm, alignSelf: "stretch" },
   iconRow: { flexDirection: "row", gap: 6, width: "100%", alignSelf: "stretch" },
   iconCellWrapper: { flex: 1 },

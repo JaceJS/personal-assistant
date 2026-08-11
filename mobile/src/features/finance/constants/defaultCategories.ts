@@ -31,7 +31,7 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   { id: "default-cat-debt",        name: "Cicilan & Utang",       type: "expense", icon: "💳", color: "#EB2F06" },
   { id: "default-cat-tax",         name: "Pajak",                 type: "expense", icon: "🧾", color: "#576574" },
   { id: "default-cat-gift",        name: "Hadiah & Donasi",       type: "expense", icon: "🎗️", color: "#F368E0" },
-  { id: "default-cat-zakat",       name: "Zakat & Charity",       type: "expense", icon: "🕌", color: "#10AC84" },
+  { id: "default-cat-zakat",       name: "Zakat & Charity",       type: "expense", icon: "🤝", color: "#10AC84" },
   { id: "default-cat-savings",     name: "Nabung & Savings",      type: "expense", icon: "🐷", color: "#786FA6" },
   // ── Income (8) ────────────────────────────────────────────────────────────
   { id: "default-cat-salary",      name: "Gaji",                  type: "income",  icon: "💼", color: "#F6B93B" },
