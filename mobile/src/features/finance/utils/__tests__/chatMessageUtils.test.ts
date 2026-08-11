@@ -18,6 +18,7 @@ import {
   updateMessageIfChanged,
   mergeMessagesSorted,
   withDateSeparators,
+  isScrolledAwayFromBottom,
 } from "../chatMessageUtils";
 import type { ChatMessage, DraftMessage, Message } from "../chatMessageUtils";
 import type { ExtractedTransaction, VoiceStatusResponse } from "@/features/finance/api/voice";
@@ -801,6 +802,34 @@ describe("mergeMessagesSorted", () => {
 
   it("returns an empty array when both inputs are empty", () => {
     expect(mergeMessagesSorted([], [])).toEqual([]);
+  });
+});
+
+describe("isScrolledAwayFromBottom", () => {
+  const makeEvent = (offsetY: number, contentHeight = 2000, layoutHeight = 800) => ({
+    contentOffset: { x: 0, y: offsetY },
+    contentSize: { width: 400, height: contentHeight },
+    layoutMeasurement: { width: 400, height: layoutHeight },
+  });
+
+  it("is false when scrolled all the way to the bottom", () => {
+    expect(isScrolledAwayFromBottom(makeEvent(1200))).toBe(false);
+  });
+
+  it("is false within the threshold distance from the bottom", () => {
+    expect(isScrolledAwayFromBottom(makeEvent(1100))).toBe(false);
+  });
+
+  it("is true once scrolled further up than the threshold", () => {
+    expect(isScrolledAwayFromBottom(makeEvent(500))).toBe(true);
+  });
+
+  it("respects a custom threshold", () => {
+    expect(isScrolledAwayFromBottom(makeEvent(1100), 50)).toBe(true);
+  });
+
+  it("is false when content is shorter than the viewport (nothing to scroll)", () => {
+    expect(isScrolledAwayFromBottom(makeEvent(0, 400, 800))).toBe(false);
   });
 });
 

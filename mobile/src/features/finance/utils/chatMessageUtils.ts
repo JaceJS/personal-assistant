@@ -250,6 +250,23 @@ export function withDateSeparators(messages: Message[]): ChatListItem[] {
   return result;
 }
 
+export const SCROLL_BOTTOM_THRESHOLD = 150;
+
+interface ScrollMetrics {
+  contentOffset: { y: number };
+  contentSize: { height: number };
+  layoutMeasurement: { height: number };
+}
+
+export function isScrolledAwayFromBottom(
+  event: ScrollMetrics,
+  threshold = SCROLL_BOTTOM_THRESHOLD
+): boolean {
+  const distanceFromBottom =
+    event.contentSize.height - event.contentOffset.y - event.layoutMeasurement.height;
+  return distanceFromBottom > threshold;
+}
+
 const NON_POLLABLE_STATUSES: ChatMessageStatus[] = ["uploading", "completed", "failed"];
 
 export function getActiveReceiptIds(messages: Message[]): string[] {

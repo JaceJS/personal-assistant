@@ -411,6 +411,7 @@
     "emptyTitle": "Ada yang bisa aku bantu?",
     "emptySubtitle": "Ketik pesan, rekam suara, atau foto struk belanjamu.",
     "inputPlaceholder": "Ketik pesan...",
+    "scrollToBottomA11y": "Gulir ke pesan terbaru",
     "quickChips": {
       "logExpense": { "label": "📝 Catat pengeluaran" },
       "scanReceipt": { "label": "📷 Scan struk" },

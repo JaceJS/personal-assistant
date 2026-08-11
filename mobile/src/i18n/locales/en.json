@@ -415,6 +415,7 @@
     "emptyTitle": "How can I help?",
     "emptySubtitle": "Type a message, record your voice, or snap a receipt photo.",
     "inputPlaceholder": "Type a message...",
+    "scrollToBottomA11y": "Scroll to latest message",
     "quickChips": {
       "logExpense": { "label": "📝 Log an expense" },
       "scanReceipt": { "label": "📷 Scan receipt" },
