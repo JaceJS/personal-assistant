@@ -101,6 +101,10 @@ export function useDraftActions({ setMessages, categories, showToast, t }: UseDr
 
   const dismissDraftEdit = useCallback(() => setEditingDraft(null), []);
 
+  // Editing only updates the draft's fields locally and hands control back to
+  // the chat card — it must NOT confirm the transaction to the backend. The
+  // user still has to press "Save" on the card to actually persist it, same
+  // as any other pending draft.
   const handleEditingDraftSave = useCallback(
     (payload: ConfirmPayload) => {
       if (!editingDraft) return;
@@ -118,23 +122,14 @@ export function useDraftActions({ setMessages, categories, showToast, t }: UseDr
                   category_name: categoryName,
                   account_id: payload.accountId ?? m.draft.account_id,
                 }),
-                "saving"
+                "pending"
               )
             : m
         )
       );
-      void confirmAiDraftMutation
-        .mutateAsync({ transactionId: editingDraft.draft.transaction_id, payload })
-        .then(() => {
-          updateDraftMessage(id, "saved");
-          showToast(t("ai.toast.transactionSaved"), "success");
-        })
-        .catch(() => {
-          updateDraftMessage(id, "pending");
-          showToast(t("ai.toast.transactionSaveFailed"), "error");
-        });
+      showToast(t("ai.toast.draftUpdated"), "success");
     },
-    [categories, confirmAiDraftMutation, editingDraft, setMessages, showToast, updateDraftMessage, t]
+    [categories, editingDraft, setMessages, showToast, t]
   );
 
   return {

@@ -150,7 +150,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
         </View>
 
         <View style={styles.actions}>
-          <Button label={t("transaction.saveCta")} onPress={handleSave} loading={isSaving} fullWidth />
+          <Button label={t("ai.confirmCard.applyCta")} onPress={handleSave} loading={isSaving} fullWidth />
           <Button label={t("common.cancel")} onPress={onDismiss} variant="secondary" fullWidth />
         </View>
       </ScrollView>

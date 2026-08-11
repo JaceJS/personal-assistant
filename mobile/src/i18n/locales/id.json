@@ -432,6 +432,7 @@
       "transcriptProcessFailed": "Gagal memproses transkrip.",
       "transactionSaved": "Transaksi tersimpan.",
       "transactionSaveFailed": "Gagal menyimpan transaksi.",
+      "draftUpdated": "Draft diperbarui. Tap Simpan untuk menyimpan.",
       "draftCancelFailed": "Gagal membatalkan draft.",
       "voiceProcessingTimeout": "Pemrosesan suara kelamaan.",
       "receiptProcessingTimeout": "Pemrosesan struk kelamaan.",
@@ -444,7 +445,8 @@
       "merchantPlaceholder": "misal: Indomaret",
       "categoryLabel": "Kategori",
       "noteLabel": "Catatan",
-      "notePlaceholder": "Catatan opsional"
+      "notePlaceholder": "Catatan opsional",
+      "applyCta": "Terapkan Perubahan"
     },
     "transcriptSheet": {
       "title": "Tadi ngomong apa?",

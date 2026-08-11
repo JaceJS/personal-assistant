@@ -436,6 +436,7 @@
       "transcriptProcessFailed": "Couldn't process the transcript.",
       "transactionSaved": "Transaction saved.",
       "transactionSaveFailed": "Couldn't save the transaction.",
+      "draftUpdated": "Draft updated. Tap Save to save it.",
       "draftCancelFailed": "Couldn't cancel the draft.",
       "voiceProcessingTimeout": "Voice processing took too long.",
       "receiptProcessingTimeout": "Receipt processing took too long.",
@@ -448,7 +449,8 @@
       "merchantPlaceholder": "e.g. Starbucks",
       "categoryLabel": "Category",
       "noteLabel": "Note",
-      "notePlaceholder": "Optional note"
+      "notePlaceholder": "Optional note",
+      "applyCta": "Apply Changes"
     },
     "transcriptSheet": {
       "title": "What did you say?",

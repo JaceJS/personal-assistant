@@ -123,9 +123,9 @@ describe('useDraftActions', () => {
     expect(showToast).toHaveBeenCalledWith('ai.toast.transactionSaveFailed', 'error');
   });
 
-  it('handleEditingDraftSave merges the payload into the message before confirming', async () => {
-    mockConfirm.mockResolvedValueOnce(undefined as never);
-    const { result, setMessages } = await makeHook();
+  it('handleEditingDraftSave applies the edit locally without confirming to the API', async () => {
+    const showToast = jest.fn();
+    const { result, setMessages } = await makeHook(showToast);
     const msg = createDraftMessages([makeDraft()])[0];
     await act(async () => result.current.handleDraftEdit(msg));
 
@@ -139,20 +139,17 @@ describe('useDraftActions', () => {
       })
     );
 
-    expect(mockConfirm).toHaveBeenCalledWith('tx-1', {
-      amount: -9999,
-      account_id: 'acc-2',
-      category_id: 'cat-1',
-      merchant: 'Warkop',
-      note: 'edited',
-    });
-    // the first setMessages call applies the edit + "saving" state
+    // edit merely updates the draft; the user must still press Save on the
+    // card to actually commit it, so no confirm call happens here.
+    expect(mockConfirm).not.toHaveBeenCalled();
     const updater = setMessages.mock.calls[0][0] as (prev: Message[]) => Message[];
     const [updated] = updater([msg]) as DraftMessage[];
     expect(updated.draft.amount).toBe(-9999);
     expect(updated.draft.merchant).toBe('Warkop');
-    expect(updated.state).toBe('saving');
+    expect(updated.draft.category_name).toBe('Makan');
+    expect(updated.state).toBe('pending');
     expect(result.current.editingDraft).toBeNull();
+    expect(showToast).toHaveBeenCalledWith('ai.toast.draftUpdated', 'success');
   });
 
   it('handleDraftCancel cancels via the API and marks the draft cancelled', async () => {
