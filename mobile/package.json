@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "lint": "eslint .",
     "gen:api": "openapi-typescript http://localhost:8000/openapi.json -o src/lib/api/generated.ts",
-    "test": "jest",
+    "test": "jest --forceExit",
     "postinstall": "patch-package"
   },
   "jest": {
