@@ -13,6 +13,7 @@ import CategoryFormSheet from "@/features/finance/components/CategoryFormSheet";
 import { SkeletonBase } from "@/components/ui/Skeleton";
 import { useArchiveCategory, useCategories } from "@/features/finance/hooks/useCategories";
 import { useBackNavigation } from "@/hooks/useBackNavigation";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { useToastStore } from "@/stores/toast";
 import type { Category, CategoryType } from "@/features/finance/types";
 import { colors, radius, spacing } from "@/theme";
@@ -35,6 +36,7 @@ export default function CategoriesScreen() {
   const handleBack = useBackNavigation();
 
   const { data, isLoading, isRefetching, refetch } = useCategories();
+  const showSkeleton = useDelayedLoading(isLoading);
   const archiveCategory = useArchiveCategory();
   const { showToast } = useToastStore();
 
@@ -124,7 +126,7 @@ export default function CategoriesScreen() {
         ))}
       </View>
 
-      {isLoading ? (
+      {showSkeleton ? (
         <View style={styles.gridContent}>
           {Array.from({ length: 3 }).map((_, r) => (
             <View key={r} style={styles.gridRow}>

@@ -10,6 +10,7 @@ import Fab from "@/components/ui/Fab";
 import FilterPill from "@/components/ui/FilterPill";
 import CashFlowChart from "@/features/finance/components/CashFlowChart";
 import { SkeletonList } from "@/components/ui/Skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
 import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
 import TransactionCard from "@/features/finance/components/TransactionCard";
@@ -56,6 +57,7 @@ export default function FinanceDashboard() {
     ...(selectedAccountId ? { accountId: selectedAccountId } : {}),
   });
   const items = useMemo(() => data?.items ?? [], [data]);
+  const showSkeleton = useDelayedLoading(isLoading);
 
   const totalExpense = useMemo(
     () => items.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0),
@@ -153,7 +155,7 @@ export default function FinanceDashboard() {
           }
         />
         <View style={styles.transactionsCard}>
-          {isLoading ? (
+          {showSkeleton ? (
             <View style={styles.transactionsSkeleton}>
               <SkeletonList count={RECENT_COUNT} />
             </View>

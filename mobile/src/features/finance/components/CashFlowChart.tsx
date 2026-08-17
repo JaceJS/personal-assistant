@@ -5,6 +5,7 @@ import { Bar, CartesianChart, useChartPressState } from "victory-native";
 import { useTranslation } from "react-i18next";
 
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import type { Transaction } from "@/features/finance/types";
 import { useChartFont } from "@/hooks/useChartFont";
@@ -79,7 +80,8 @@ export default function CashFlowChart() {
     ),
   }));
 
-  if (isLoading) {
+  const showSkeleton = useDelayedLoading(isLoading);
+  if (showSkeleton) {
     return (
       <View style={styles.card}>
         <SkeletonCard height={CHART_HEIGHT} />

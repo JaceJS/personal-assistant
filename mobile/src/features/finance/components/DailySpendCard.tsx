@@ -3,6 +3,7 @@ import Svg, { Circle } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { useBudget } from "@/features/finance/hooks/useBudget";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { formatMoney } from "@/lib/format";
@@ -36,7 +37,8 @@ export default function DailySpendCard() {
     .filter((t) => t.amount < 0)
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-  if (budgetLoading || txLoading) {
+  const showSkeleton = useDelayedLoading(budgetLoading || txLoading);
+  if (showSkeleton) {
     return (
       <View testID="daily-spend-skeleton" style={styles.skeletonWrapper}>
         <SkeletonCard height={CARD_HEIGHT} />

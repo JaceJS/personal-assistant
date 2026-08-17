@@ -3,6 +3,7 @@ import { TrendingDown, TrendingUp } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import { formatMoney } from '@/lib/format';
 import { colors, radius, spacing, textStyles } from '@/theme';
@@ -49,7 +50,8 @@ export default function ProjectedEndOfMonthCard() {
   const TrendIcon = isHigher ? TrendingUp : TrendingDown;
   const trendColor = isHigher ? colors.success.text : colors.danger.text;
 
-  if (currLoading || lastLoading) {
+  const showSkeleton = useDelayedLoading(currLoading || lastLoading);
+  if (showSkeleton) {
     return (
       <View testID="projected-eom-skeleton" style={styles.skeletonWrapper}>
         <SkeletonCard height={CARD_HEIGHT} />

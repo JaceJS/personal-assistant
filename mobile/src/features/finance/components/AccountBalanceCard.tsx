@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 import { SkeletonBalanceCard } from "@/components/ui/Skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import { formatMoney } from "@/lib/format";
@@ -40,7 +41,8 @@ export default function AccountBalanceCard() {
   // shown plainly below, not treated as empty.
   const isEmpty = accounts.length === 0 || (totalBalance === 0 && !hasFirstTransaction);
 
-  if (accountsLoading || txLoading) {
+  const showSkeleton = useDelayedLoading(accountsLoading || txLoading);
+  if (showSkeleton) {
     return (
       <View testID="account-balance-skeleton" style={styles.skeletonWrapper}>
         <SkeletonBalanceCard />
