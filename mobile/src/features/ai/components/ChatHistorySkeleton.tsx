@@ -1,8 +1,7 @@
 import { StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
 
-import { usePulse } from "@/components/ui/Skeleton";
-import { colors, radius, spacing } from "@/theme";
+import { SkeletonBase } from "@/components/ui/Skeleton";
+import { radius, spacing } from "@/theme";
 
 const ROWS: { align: "left" | "right"; width: `${number}%`; height: number }[] = [
   { align: "left", width: "55%", height: 44 },
@@ -13,10 +12,9 @@ const ROWS: { align: "left" | "right"; width: `${number}%`; height: number }[] =
 ];
 
 function SkeletonBubble({ align, width, height }: (typeof ROWS)[number]) {
-  const animStyle = usePulse();
   return (
     <View style={[styles.row, align === "right" && styles.rowRight]}>
-      <Animated.View style={[styles.bubble, { width, height }, animStyle]} />
+      <SkeletonBase style={[styles.bubble, { width, height }]} />
     </View>
   );
 }
@@ -45,6 +43,5 @@ const styles = StyleSheet.create({
   },
   bubble: {
     borderRadius: radius.lg,
-    backgroundColor: colors.bg.elevated,
   },
 });

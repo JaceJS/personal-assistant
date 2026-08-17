@@ -9,6 +9,7 @@ import { Screen } from "@/components/layout/Screen";
 import Fab from "@/components/ui/Fab";
 import FilterPill from "@/components/ui/FilterPill";
 import CashFlowChart from "@/features/finance/components/CashFlowChart";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import MonthlyBudgetCard from "@/features/finance/components/MonthlyBudgetCard";
 import ProjectedEndOfMonthCard from "@/features/finance/components/ProjectedEndOfMonthCard";
 import TransactionCard from "@/features/finance/components/TransactionCard";
@@ -48,7 +49,7 @@ export default function FinanceDashboard() {
   );
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
-  const { data, isRefetching, refetch } = useTransactions({
+  const { data, isLoading, isRefetching, refetch } = useTransactions({
     dateFrom,
     dateTo,
     limit: 200,
@@ -152,7 +153,11 @@ export default function FinanceDashboard() {
           }
         />
         <View style={styles.transactionsCard}>
-          {recentItems.length === 0 ? (
+          {isLoading ? (
+            <View style={styles.transactionsSkeleton}>
+              <SkeletonList count={RECENT_COUNT} />
+            </View>
+          ) : recentItems.length === 0 ? (
             <Text style={styles.emptyText}>{t("home.projectedEndOfMonth.emptyText")}</Text>
           ) : (
             recentItems.map((tx, idx) => {
@@ -270,6 +275,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   divider: { height: 1, backgroundColor: colors.border.default, marginHorizontal: 16 },
+  transactionsSkeleton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
   emptyText: {
     fontSize: 13,
     color: colors.text.muted,

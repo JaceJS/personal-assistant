@@ -4,6 +4,7 @@ import { useAnimatedReaction, useAnimatedStyle, runOnJS } from "react-native-rea
 import { Bar, CartesianChart, useChartPressState } from "victory-native";
 import { useTranslation } from "react-i18next";
 
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import type { Transaction } from "@/features/finance/types";
 import { useChartFont } from "@/hooks/useChartFont";
@@ -50,7 +51,7 @@ export default function CashFlowChart() {
   ].join('-');
   const chartFont = useChartFont();
 
-  const { data } = useTransactions({ dateFrom: yearStart, dateTo: today, limit: 1000 });
+  const { data, isLoading } = useTransactions({ dateFrom: yearStart, dateTo: today, limit: 1000 });
   const buckets = useMemo(() => buildCashFlowBuckets(data?.items ?? [], monthNames), [data, monthNames]);
   const hasData = buckets.some((b) => b.income > 0 || b.expense > 0);
 
@@ -77,6 +78,14 @@ export default function CashFlowChart() {
       Math.min(state.y.income.position.value, state.y.expense.position.value) - TOOLTIP_OFFSET_Y,
     ),
   }));
+
+  if (isLoading) {
+    return (
+      <View style={styles.card}>
+        <SkeletonCard height={CHART_HEIGHT} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.card}>

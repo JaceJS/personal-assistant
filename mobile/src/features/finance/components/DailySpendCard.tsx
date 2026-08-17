@@ -38,7 +38,7 @@ export default function DailySpendCard() {
 
   if (budgetLoading || txLoading) {
     return (
-      <View testID="daily-spend-skeleton">
+      <View testID="daily-spend-skeleton" style={styles.skeletonWrapper}>
         <SkeletonCard height={CARD_HEIGHT} />
       </View>
     );
@@ -110,6 +110,10 @@ export default function DailySpendCard() {
 }
 
 const styles = StyleSheet.create({
+  skeletonWrapper: {
+    marginHorizontal: spacing["2xl"],
+    marginBottom: spacing.lg,
+  },
   card: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,

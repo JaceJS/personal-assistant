@@ -42,7 +42,7 @@ export default function AccountBalanceCard() {
 
   if (accountsLoading || txLoading) {
     return (
-      <View testID="account-balance-skeleton">
+      <View testID="account-balance-skeleton" style={styles.skeletonWrapper}>
         <SkeletonBalanceCard />
       </View>
     );
@@ -91,6 +91,10 @@ export default function AccountBalanceCard() {
 }
 
 const styles = StyleSheet.create({
+  skeletonWrapper: {
+    marginHorizontal: spacing["2xl"],
+    marginBottom: spacing.lg,
+  },
   card: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,

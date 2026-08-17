@@ -51,7 +51,7 @@ export default function ProjectedEndOfMonthCard() {
 
   if (currLoading || lastLoading) {
     return (
-      <View testID="projected-eom-skeleton">
+      <View testID="projected-eom-skeleton" style={styles.skeletonWrapper}>
         <SkeletonCard height={CARD_HEIGHT} />
       </View>
     );
@@ -103,6 +103,10 @@ export default function ProjectedEndOfMonthCard() {
 }
 
 const styles = StyleSheet.create({
+  skeletonWrapper: {
+    marginHorizontal: spacing['2xl'],
+    marginBottom: spacing.lg,
+  },
   card: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.lg,

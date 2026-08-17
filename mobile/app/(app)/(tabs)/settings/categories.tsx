@@ -10,6 +10,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import CategoryActionSheet from "@/features/finance/components/CategoryActionSheet";
 import CategoryCard from "@/features/finance/components/CategoryCard";
 import CategoryFormSheet from "@/features/finance/components/CategoryFormSheet";
+import { SkeletonBase } from "@/components/ui/Skeleton";
 import { useArchiveCategory, useCategories } from "@/features/finance/hooks/useCategories";
 import { useBackNavigation } from "@/hooks/useBackNavigation";
 import { useToastStore } from "@/stores/toast";
@@ -128,7 +129,7 @@ export default function CategoriesScreen() {
           {Array.from({ length: 3 }).map((_, r) => (
             <View key={r} style={styles.gridRow}>
               {Array.from({ length: GRID_COLS }).map((_, c) => (
-                <View key={c} style={styles.skeletonCard} />
+                <SkeletonBase key={c} style={styles.skeletonCard} />
               ))}
             </View>
           ))}
@@ -224,7 +225,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     height: 90,
     borderRadius: radius.xl,
-    backgroundColor: colors.bg.elevated,
-    opacity: 0.5,
   },
 });
