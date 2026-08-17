@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Animated, {
   Easing,
@@ -10,11 +10,15 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, radius } from "@/theme";
 
+export const DEFAULT_MAX_HEIGHT_PERCENT = 90;
+// Leaves headroom for a sheet nested inside another sheet (e.g. SearchableDropdown in ConfirmCard).
+export const NESTED_SHEET_MAX_HEIGHT_PERCENT = 80;
+
 interface BottomSheetProps {
   isVisible: boolean;
   onDismiss?: () => void;
   children: React.ReactNode;
-  /** Caps sheet height so tall/scrollable content doesn't grow past the screen. */
+  /** Caps sheet height so tall/scrollable content doesn't grow past the screen. Defaults to 90. */
   maxHeightPercent?: number;
 }
 
@@ -66,11 +70,17 @@ export function BottomSheet({
           styles.sheet,
           sheetStyle,
           { paddingBottom: insets.bottom + 16 },
-          maxHeightPercent != null && { maxHeight: `${maxHeightPercent}%` },
+          { maxHeight: `${maxHeightPercent ?? DEFAULT_MAX_HEIGHT_PERCENT}%` },
         ]}
       >
         <View style={styles.handle} />
-        <KeyboardAvoidingView behavior="padding">{children}</KeyboardAvoidingView>
+        {/* "padding" doesn't reliably push a nested sheet above the keyboard on Android. */}
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoider}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          {children}
+        </KeyboardAvoidingView>
       </Animated.View>
     </Modal>
   );
@@ -97,5 +107,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border.default,
     marginTop: 12,
     marginBottom: 8,
+  },
+  keyboardAvoider: {
+    flexShrink: 1,
   },
 });

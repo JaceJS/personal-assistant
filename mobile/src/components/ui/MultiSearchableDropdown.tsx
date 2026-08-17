@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { BottomSheet } from "./BottomSheet";
+import { BottomSheet, NESTED_SHEET_MAX_HEIGHT_PERCENT } from "./BottomSheet";
 import Button from "./Button";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
@@ -91,6 +91,7 @@ export function MultiSearchableDropdown({
           setIsOpen(false);
           setSearchQuery("");
         }}
+        maxHeightPercent={NESTED_SHEET_MAX_HEIGHT_PERCENT}
       >
         <View style={styles.sheetContent}>
           {label && <Text style={styles.sheetTitle}>{t("common.selectPrefix", { label })}</Text>}
@@ -196,7 +197,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing["2xl"],
     paddingTop: spacing.xs,
     gap: spacing.md,
-    maxHeight: 400,
+    flexShrink: 1,
   },
   sheetTitle: {
     ...StyleSheet.flatten(textStyles.h2),
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
   },
   list: {
     marginTop: spacing.sm,
-    maxHeight: 220,
+    flexShrink: 1,
   },
   emptyText: {
     ...StyleSheet.flatten(textStyles.caption),
