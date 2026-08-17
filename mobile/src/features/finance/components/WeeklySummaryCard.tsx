@@ -3,12 +3,14 @@ import { TrendingDown, TrendingUp } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useWeeklySummary } from "@/features/finance/hooks/useWeeklySummary";
 import { SkeletonText } from "@/components/ui/Skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { formatMoney, getMonthNames } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 export default function WeeklySummaryCard() {
   const { t } = useTranslation();
   const { income, expense, net, hasTransactions, isLoading, dateFrom, dateTo } = useWeeklySummary();
+  const showSkeleton = useDelayedLoading(isLoading);
 
   const formattedRange = (() => {
     const months = getMonthNames("short");
@@ -28,7 +30,7 @@ export default function WeeklySummaryCard() {
         <Text style={styles.range}>{formattedRange}</Text>
       </View>
 
-      {isLoading ? (
+      {showSkeleton ? (
         <View style={styles.skeletonRow}>
           <SkeletonText width={100} height={18} />
           <SkeletonText width={100} height={18} />

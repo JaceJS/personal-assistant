@@ -17,6 +17,7 @@ import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useDeleteTransaction, useTransaction, useUpdateTransaction } from "@/features/finance/hooks/useTransactions";
 import { useBackNavigation } from "@/hooks/useBackNavigation";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { useToastStore } from "@/stores/toast";
 import { formatDate, formatMoney, formatTime } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -128,7 +129,8 @@ export default function TransactionDetailScreen() {
     ]);
   }, [deleteTransaction, id, handleBack, showToast, t]);
 
-  if (isLoading) {
+  const showSkeleton = useDelayedLoading(isLoading);
+  if (showSkeleton) {
     return (
       <Screen>
         <Header title={t("transaction.detailTitle")} onBack={handleBack} />

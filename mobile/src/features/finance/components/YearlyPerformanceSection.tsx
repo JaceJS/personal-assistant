@@ -6,6 +6,7 @@ import { Check, ChevronDown } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import type { Transaction } from '@/features/finance/types';
 import { useChartFont } from '@/hooks/useChartFont';
 import { formatChartAxisValue, formatMoney, getMonthNames } from '@/lib/format';
@@ -220,6 +221,8 @@ function YearlyPerformanceSection({
     return activeCount > 0 ? Math.round(total / activeCount) : 0;
   }, [buckets]);
 
+  const showSkeleton = useDelayedLoading(isLoading ?? false);
+
   return (
     <View style={styles.section}>
       <View style={styles.header}>
@@ -228,7 +231,7 @@ function YearlyPerformanceSection({
       </View>
 
       <View style={styles.card}>
-        {isLoading ? (
+        {showSkeleton ? (
           <SkeletonCard height={CHART_HEIGHT} />
         ) : (
           <ChartContent buckets={buckets} year={year} chartFont={chartFont} />

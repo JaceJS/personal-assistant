@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import EmptyState from '@/components/ui/EmptyState';
 import { SkeletonList } from '@/components/ui/Skeleton';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import CategorySpendRow from '@/features/finance/components/CategorySpendRow';
 import { useCategories } from '@/features/finance/hooks/useCategories';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
@@ -55,6 +56,7 @@ export default function TopCategoriesCard() {
   const { data: categoriesData, isLoading: catLoading } = useCategories();
 
   const isLoading = txLoading || catLoading;
+  const showSkeleton = useDelayedLoading(isLoading);
 
   const { rows } = useMemo(
     () =>
@@ -79,7 +81,7 @@ export default function TopCategoriesCard() {
         </View>
       </View>
 
-      {isLoading ? (
+      {showSkeleton ? (
         <SkeletonList count={3} />
       ) : txError ? (
         <EmptyState

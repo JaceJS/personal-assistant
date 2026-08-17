@@ -6,6 +6,7 @@ import IconButton from "@/components/ui/IconButton";
 import { computeUnallocated } from "@/features/finance/utils/budgetBucketUtils";
 import { splitBudgetCategories } from "@/features/finance/utils/budgetCategoryUtils";
 import { useBackNavigation } from "@/hooks/useBackNavigation";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 
 import { Header } from "@/components/layout/Header";
 import { Screen } from "@/components/layout/Screen";
@@ -165,6 +166,7 @@ export default function BudgetScreen() {
   }, [refetchBudget, refetchTx]);
 
   const handleBack = useBackNavigation();
+  const showBudgetSkeleton = useDelayedLoading(budgetLoading);
 
   return (
     <Screen>
@@ -192,7 +194,7 @@ export default function BudgetScreen() {
           />
         }
       >
-        {budgetLoading ? (
+        {showBudgetSkeleton ? (
           <SkeletonCard height={120} />
         ) : (
           <BudgetHeroCard

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 
 jest.mock('@/features/ai/hooks/useAIInsight', () => ({
   useAIInsight: jest.fn(),
@@ -15,7 +15,11 @@ import { AIInsightCard } from '@/features/ai/components/AIInsightCard';
 const mockUseAIInsight = useAIInsight as jest.MockedFunction<typeof useAIInsight>;
 
 describe('AIInsightCard', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+  afterEach(() => jest.useRealTimers());
 
   it('renders insight text when data is available', async () => {
     mockUseAIInsight.mockReturnValue({
@@ -37,6 +41,7 @@ describe('AIInsightCard', () => {
     } as ReturnType<typeof useAIInsight>);
 
     const { queryByText, getByTestId } = await render(<AIInsightCard />);
+    await act(async () => jest.advanceTimersByTime(200));
 
     expect(queryByText(/budget|spend|insight/i)).toBeNull();
     expect(getByTestId('ai-insight-skeleton')).toBeTruthy();

@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { useAIInsight } from "@/features/ai/hooks/useAIInsight";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
@@ -10,7 +11,8 @@ export function AIInsightCard() {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useAIInsight();
 
-  if (isLoading) {
+  const showSkeleton = useDelayedLoading(isLoading);
+  if (showSkeleton) {
     return (
       <View testID="ai-insight-skeleton" style={styles.skeletonWrapper}>
         <SkeletonCard height={96} />

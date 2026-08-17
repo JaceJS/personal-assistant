@@ -21,6 +21,7 @@ import AccountCard from "@/features/finance/components/AccountCard";
 import { ACCOUNT_TYPE_ORDER, accountTypeLabel } from "@/features/finance/constants";
 import { useAccounts, useCreateAccount } from "@/features/finance/hooks/useAccounts";
 import { useBackNavigation } from "@/hooks/useBackNavigation";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { useToastStore } from "@/stores/toast";
 import type { Account } from "@/features/finance/types";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -41,6 +42,7 @@ export default function AccountsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { data, isLoading, isRefetching, refetch } = useAccounts();
+  const showSkeleton = useDelayedLoading(isLoading);
   const createAccount = useCreateAccount();
   const { showToast } = useToastStore();
   const [showModal, setShowModal] = useState(false);
@@ -102,7 +104,7 @@ export default function AccountsScreen() {
         right={addButton}
       />
 
-      {isLoading ? (
+      {showSkeleton ? (
         <View style={styles.listPad}>
           <SkeletonList count={3} />
         </View>

@@ -37,6 +37,7 @@ import { useChat } from "@/features/ai/hooks/useChat";
 import { useDraftActions } from "@/features/ai/hooks/useDraftActions";
 import { useMediaCapture } from "@/features/ai/hooks/useMediaCapture";
 import { useMessageActions } from "@/features/ai/hooks/useMessageActions";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { useAccounts } from "@/features/finance/hooks/useAccounts";
 import { useCategories } from "@/features/finance/hooks/useCategories";
 import { isScrolledAwayFromBottom, withDateSeparators } from "@/features/finance/utils/chatMessageUtils";
@@ -88,6 +89,7 @@ export default function AIAssistantScreen() {
   });
   const draftActions = useDraftActions({ setMessages, categories, showToast, t });
   const messageActions = useMessageActions({ deleteMessage, showToast, t });
+  const showHistorySkeleton = useDelayedLoading(isLoadingHistory);
 
   const [quickActionsVisible, setQuickActionsVisible] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -239,7 +241,7 @@ export default function AIAssistantScreen() {
           <KeyboardAvoidingView style={styles.keyboardAvoider} behavior="padding">
             {/* Chat area */}
             <View style={styles.chatArea}>
-              {isLoadingHistory ? (
+              {showHistorySkeleton ? (
                 <ChatHistorySkeleton />
               ) : messages.length === 0 ? (
                 <View style={styles.emptyState}>

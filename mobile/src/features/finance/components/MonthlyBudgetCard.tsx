@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useBudget } from '@/features/finance/hooks/useBudget';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import { formatMoney } from '@/lib/format';
 import { colors, radius, spacing, textStyles, toReadableTextColor } from '@/theme';
 
@@ -24,7 +25,8 @@ export default function MonthlyBudgetCard({ totalExpense }: MonthlyBudgetCardPro
 
   const budgetPath = '/(app)/finance/budget';
 
-  if (isLoading) {
+  const showSkeleton = useDelayedLoading(isLoading);
+  if (showSkeleton) {
     return <View style={styles.card}><SkeletonCard height={80} /></View>;
   }
 

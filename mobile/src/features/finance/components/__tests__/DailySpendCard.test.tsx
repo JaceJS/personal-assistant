@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 
 jest.mock('@/features/finance/hooks/useBudget', () => ({
   useBudget: jest.fn(),
@@ -21,7 +21,11 @@ const mockUseBudget = useBudget as jest.MockedFunction<typeof useBudget>;
 const mockUseTransactions = useTransactions as jest.MockedFunction<typeof useTransactions>;
 
 describe('DailySpendCard', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+  afterEach(() => jest.useRealTimers());
 
   it('renders skeleton while budget or today transactions are loading', async () => {
     mockUseBudget.mockReturnValue({
@@ -34,6 +38,7 @@ describe('DailySpendCard', () => {
     } as ReturnType<typeof useTransactions>);
 
     const { getByTestId, queryByText } = await render(<DailySpendCard />);
+    await act(async () => jest.advanceTimersByTime(200));
 
     expect(getByTestId('daily-spend-skeleton')).toBeTruthy();
     expect(queryByText(/0%/)).toBeNull();

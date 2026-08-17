@@ -19,6 +19,7 @@ import {
   useUpdateAccount,
 } from "@/features/finance/hooks/useAccounts";
 import { useBackNavigation } from "@/hooks/useBackNavigation";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { useToastStore } from "@/stores/toast";
 import { formatMoney } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -103,7 +104,8 @@ export default function AccountDetailScreen() {
     </HeaderActions>
   );
 
-  if (isLoading) {
+  const showSkeleton = useDelayedLoading(isLoading);
+  if (showSkeleton) {
     return (
       <Screen>
         <Header title={t("accounts.detailTitle")} onBack={handleBack} />

@@ -12,6 +12,7 @@ import { SkeletonCard } from "@/components/ui/Skeleton";
 import SavingsGoalCard from "@/features/finance/components/SavingsGoalCard";
 import SavingsGoalFormSheet from "@/features/finance/components/SavingsGoalFormSheet";
 import { useCreateSavingsGoal, useSavingsGoals } from "@/features/finance/hooks/useSavingsGoals";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import type { SavingsGoal, SavingsGoalCreate } from "@/features/finance/types";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -21,6 +22,7 @@ export default function GoalsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { data: goals, isLoading, isRefetching, refetch } = useSavingsGoals();
+  const showSkeleton = useDelayedLoading(isLoading);
   const createGoal = useCreateSavingsGoal();
   const { showToast } = useToastStore();
   const [showForm, setShowForm] = useState(false);
@@ -57,7 +59,7 @@ export default function GoalsScreen() {
     <Screen>
       <Header title={t("tabs.goals")} right={addButton} />
 
-      {isLoading ? (
+      {showSkeleton ? (
         <View style={styles.skeletonWrap}>
           <SkeletonCard height={110} />
           <SkeletonCard height={110} />

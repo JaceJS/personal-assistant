@@ -24,6 +24,7 @@ import { Screen } from '@/components/layout/Screen';
 import EmptyState from '@/components/ui/EmptyState';
 import Fab from '@/components/ui/Fab';
 import { SkeletonList } from '@/components/ui/Skeleton';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import DatePicker from '@/components/ui/DatePicker';
 import { MultiSearchableDropdown } from '@/components/ui/MultiSearchableDropdown';
@@ -152,6 +153,7 @@ export default function AktivitasScreen() {
     limit: 200,
   });
   const allItems = useMemo(() => data?.items ?? [], [data]);
+  const showSkeleton = useDelayedLoading(isLoading);
   const { data: categoriesData } = useCategories();
 
   const filtered = useMemo(() => {
@@ -282,11 +284,11 @@ export default function AktivitasScreen() {
 
       <FlatList
         style={styles.list}
-        data={isLoading ? [] : groupedRows}
+        data={showSkeleton ? [] : groupedRows}
         keyExtractor={(item) => item.key}
         renderItem={renderItem}
         ListEmptyComponent={
-          isLoading ? (
+          showSkeleton ? (
             <View style={styles.listPad}>
               <SkeletonList count={5} />
             </View>

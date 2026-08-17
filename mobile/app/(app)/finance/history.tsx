@@ -24,6 +24,7 @@ import { Screen } from "@/components/layout/Screen";
 import EmptyState from "@/components/ui/EmptyState";
 import Fab from "@/components/ui/Fab";
 import { SkeletonList } from "@/components/ui/Skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import TransactionCard from "@/features/finance/components/TransactionCard";
 import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
@@ -81,6 +82,7 @@ export default function HistoryScreen() {
   });
   const allItems = useMemo(() => data?.items ?? [], [data]);
   const { data: categoriesData } = useCategories();
+  const showSkeleton = useDelayedLoading(isLoading);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -171,11 +173,11 @@ export default function HistoryScreen() {
 
       <FlatList
         style={styles.list}
-        data={isLoading ? [] : groupedRows}
+        data={showSkeleton ? [] : groupedRows}
         keyExtractor={(item) => item.key}
         renderItem={renderItem}
         ListEmptyComponent={
-          isLoading ? (
+          showSkeleton ? (
             <View style={styles.listPad}>
               <SkeletonList count={5} />
             </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 
 jest.mock('@/features/finance/hooks/useTransactions', () => ({
   useTransactions: jest.fn(),
@@ -15,7 +15,11 @@ import ProjectedEndOfMonthCard from '@/features/finance/components/ProjectedEndO
 const mockUseTransactions = useTransactions as jest.MockedFunction<typeof useTransactions>;
 
 describe('ProjectedEndOfMonthCard', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+  afterEach(() => jest.useRealTimers());
 
   it('renders skeleton while either month is loading', async () => {
     mockUseTransactions.mockReturnValue({
@@ -24,6 +28,7 @@ describe('ProjectedEndOfMonthCard', () => {
     } as ReturnType<typeof useTransactions>);
 
     const { getByTestId, queryByText } = await render(<ProjectedEndOfMonthCard />);
+    await act(async () => jest.advanceTimersByTime(200));
 
     expect(getByTestId('projected-eom-skeleton')).toBeTruthy();
     expect(queryByText(/belum ada|no data/i)).toBeNull();

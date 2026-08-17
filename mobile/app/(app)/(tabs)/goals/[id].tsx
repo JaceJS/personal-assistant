@@ -17,6 +17,7 @@ import {
   useSavingsGoal,
   useUpdateSavingsGoal,
 } from '@/features/finance/hooks/useSavingsGoals';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import type { SavingsGoalCreate } from '@/features/finance/types';
 import { daysRemaining, requiredMonthlyContribution } from '@/features/finance/utils/savingsGoalUtils';
 import { formatMoney } from '@/lib/format';
@@ -96,7 +97,8 @@ export default function GoalDetailScreen() {
     </HeaderActions>
   );
 
-  if (isLoading) {
+  const showSkeleton = useDelayedLoading(isLoading);
+  if (showSkeleton) {
     return (
       <Screen>
         <Header title={t('goals.detail.fallbackTitle')} onBack={() => router.back()} />
