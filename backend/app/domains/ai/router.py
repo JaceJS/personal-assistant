@@ -63,8 +63,12 @@ _INCOMPLETE_ACTION_NOTICE = (
     "state a number/fact that wasn't confirmed by a tool result."
 )
 _PENDING_DRAFTS_NOTICE_TEMPLATE = (
-    "You already recorded these draft transactions earlier in this chat session — do NOT "
-    "call create_transaction for them again unless the user explicitly asks you to: {items}"
+    "These draft transactions are already pending review in this chat session — do NOT call "
+    "create_transaction again for the SAME request that produced one of them. This is NOT a "
+    "reason to skip a new create_transaction call: if the user's latest message reports a "
+    "separate purchase or income, record it as its own transaction even if the amount, "
+    "merchant, or category matches one below exactly — people buy the same thing more than "
+    "once. Pending: {items}"
 )
 _EMPTY_ASSISTANT_TURN_PLACEHOLDER = "(action completed — see the draft card shown in the chat)"
 _CATEGORY_LIST_TEMPLATE = (
@@ -105,7 +109,9 @@ _SYSTEM_PROMPT = (
     "or 'kopi 15rb'), treat each item as an expense to record immediately: call "
     "create_transaction once per item without asking follow-up questions. "
     "Indonesian number format: dots are thousand separators ('20.000' = 20000 rupiah, "
-    "'15rb'/'15k' = 15000). Expenses are negative amounts. "
+    "'15rb'/'15k' = 15000). Expenses are negative amounts. Income (gaji, pemasukan, uang "
+    "masuk, transferan masuk, bonus, etc.) is a POSITIVE amount, paired with an Income "
+    "category from the category list below — never record income as negative. "
     "category_name is the important field — always pick the closest matching category for "
     "what the money was for. merchant is optional: only set it if the user names an actual "
     "merchant, store, or payee; if they only describe the purpose (e.g. 'makan siang', 'gaji "
@@ -144,7 +150,9 @@ _GUEST_SYSTEM_PROMPT = (
     "or 'kopi 15rb'), treat each item as an expense to record immediately: call "
     "create_transaction once per item without asking follow-up questions. "
     "Indonesian number format: dots are thousand separators ('20.000' = 20000 rupiah, "
-    "'15rb'/'15k' = 15000). Expenses are negative amounts. "
+    "'15rb'/'15k' = 15000). Expenses are negative amounts. Income (gaji, pemasukan, uang "
+    "masuk, transferan masuk, bonus, etc.) is a POSITIVE amount, paired with an Income "
+    "category — never record income as negative. "
     "category_name is the important field — always pick the closest matching category for "
     "what the money was for. merchant is optional. "
     "Do NOT call create_transaction on a guess. It requires both a specific amount AND a "

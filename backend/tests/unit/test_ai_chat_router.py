@@ -212,7 +212,7 @@ async def test_chat_skips_reminder_when_no_pending_drafts() -> None:
         await chat(ChatRequest(message="halo"), _USER_ID, AsyncMock())
 
     first_call_system_prompt = llm.chat_with_tools.call_args_list[0].args[0]
-    assert "already recorded" not in first_call_system_prompt
+    assert "pending review" not in first_call_system_prompt
 
 
 @pytest.mark.parametrize(
