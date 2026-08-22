@@ -29,11 +29,12 @@ import TransactionCard from "@/features/finance/components/TransactionCard";
 import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import type { Transaction } from "@/features/finance/types";
+import { computeWeeklySummary } from "@/features/finance/utils/weeklySummary";
 import { formatDateLabel, formatMoney, getMonthNames } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 type ListRow =
-  | { type: "header"; key: string; label: string }
+  | { type: "header"; key: string; label: string; income: number; expense: number }
   | { type: "item"; key: string; data: Transaction };
 
 export default function HistoryScreen() {
@@ -95,23 +96,45 @@ export default function HistoryScreen() {
   const periodTotal = useMemo(() => filtered.reduce((s, t) => s + t.amount, 0), [filtered]);
 
   const groupedRows = useMemo((): ListRow[] => {
-    const rows: ListRow[] = [];
-    let lastDate = "";
-    filtered.forEach((t) => {
+    // filtered is already sorted by occurred_at desc, so same-day transactions
+    // are contiguous — a single grouping pass keeps that order intact.
+    const byDate = new Map<string, Transaction[]>();
+    for (const t of filtered) {
       const dateKey = t.occurred_at.slice(0, 10);
-      if (dateKey !== lastDate) {
-        rows.push({ type: "header", key: `h-${dateKey}`, label: formatDateLabel(dateKey) });
-        lastDate = dateKey;
-      }
-      rows.push({ type: "item", key: t.id, data: t });
-    });
+      const group = byDate.get(dateKey);
+      if (group) group.push(t);
+      else byDate.set(dateKey, [t]);
+    }
+
+    const rows: ListRow[] = [];
+    for (const [dateKey, group] of byDate) {
+      const { income, expense } = computeWeeklySummary(group);
+      rows.push({ type: "header", key: `h-${dateKey}`, label: formatDateLabel(dateKey), income, expense });
+      for (const t of group) rows.push({ type: "item", key: t.id, data: t });
+    }
     return rows;
   }, [filtered]);
 
   const renderItem = useCallback(
     ({ item }: { item: ListRow }) => {
       if (item.type === "header") {
-        return <Text style={styles.dateHeader}>{item.label}</Text>;
+        return (
+          <View style={styles.dateHeaderRow}>
+            <Text style={styles.dateHeader}>{item.label}</Text>
+            <View style={styles.dateHeaderTotals}>
+              {item.income > 0 && (
+                <Text style={[styles.dateHeaderTotal, { color: colors.success.text }]}>
+                  +{formatMoney(item.income)}
+                </Text>
+              )}
+              {item.expense > 0 && (
+                <Text style={[styles.dateHeaderTotal, { color: colors.danger.text }]}>
+                  −{formatMoney(item.expense)}
+                </Text>
+              )}
+            </View>
+          </View>
+        );
       }
       const category = categoriesData?.find(c => c.id === item.data.category_id);
       return (
@@ -268,14 +291,29 @@ const styles = StyleSheet.create({
   monthNavText: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13, fontWeight: "500", color: colors.text.primary },
   periodTotal: { ...StyleSheet.flatten(textStyles.caption), fontSize: 13, fontWeight: "600" },
 
+  dateHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.xl,
+    paddingTop: 20,
+    paddingBottom: 10,
+    gap: spacing.sm,
+  },
   dateHeader: {
     ...StyleSheet.flatten(textStyles.h2),
     fontSize: 16,
     fontWeight: "700",
     color: colors.accent.text,
-    paddingHorizontal: spacing.xl,
-    paddingTop: 20,
-    paddingBottom: 10,
+  },
+  dateHeaderTotals: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  dateHeaderTotal: {
+    ...StyleSheet.flatten(textStyles.caption),
+    fontSize: 12,
+    fontWeight: "600",
   },
   txCard: {
     marginHorizontal: spacing.xl,
