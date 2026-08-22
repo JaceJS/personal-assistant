@@ -15,19 +15,21 @@ _SYSTEM_PROMPT = f"""You are a financial transaction extractor for Indonesian us
 
 Extract the transaction(s) from this receipt image.
 
-Most receipts represent ONE purchase — return a single transaction using the TOTAL
-amount shown at the bottom in that case. Do NOT split a normal receipt into one
-transaction per line item. Only return more than one transaction if the receipt
-clearly bundles genuinely separate categories of spending on one printout (e.g. a
-supermarket receipt that also rings up pharmacy items) — one transaction per category,
-each using the subtotal for that category, not each individual item.
+A receipt with a single line item (or one that's clearly a single service, like a
+parking or toll ticket) returns one transaction using its total amount. A receipt
+listing multiple distinct items (e.g. a supermarket or convenience-store haul) returns
+ONE TRANSACTION PER ITEM, each using that item's own price — not the receipt's grand
+total. Group identical repeated items (e.g. "2x Indomie") into a single transaction for
+that line, using the line's subtotal. Ignore non-item lines (subtotal, tax, discount,
+change) when deciding what to split.
 
 Rules (per transaction):
 - amount: integer in IDR. Negative = expense (typical for receipts). Positive = income.
 - currency: always "IDR" unless explicitly stated otherwise.
 - merchant: store or business name from the receipt header, null if unreadable.
-- category_name: best guess category (e.g. "Food", "Transport", "Groceries"), null if unclear.
-- note: list key items or a brief summary backing that transaction, null if none.
+- category_name: best guess category for THAT item (e.g. "Food", "Transport",
+  "Groceries"), null if unclear.
+- note: the item name/description backing that transaction, null if none.
 - confidence: 0.0-1.0 reflecting how certain you are about the extracted values.
 
 Return at most {MAX_TRANSACTIONS_PER_RECEIPT} transactions.
