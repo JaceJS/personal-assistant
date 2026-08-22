@@ -267,6 +267,13 @@ export function isScrolledAwayFromBottom(
   return distanceFromBottom > threshold;
 }
 
+// Chat history reload only restores text + draft messages (see useChat) — the
+// original voice/receipt bubble (with its local image/audio uri) is never
+// persisted server-side, so it's cached client-side and reattached via this.
+export function extractMediaMessages(messages: Message[]): ChatMessage[] {
+  return messages.filter((m): m is ChatMessage => m.type === "voice" || m.type === "receipt");
+}
+
 const NON_POLLABLE_STATUSES: ChatMessageStatus[] = ["uploading", "completed", "failed"];
 
 export function getActiveReceiptIds(messages: Message[]): string[] {

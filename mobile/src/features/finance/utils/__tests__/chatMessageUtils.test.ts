@@ -13,6 +13,7 @@ import {
   setDraftState,
   applyDraftEdit,
   extractionToDraftTransactions,
+  extractMediaMessages,
   getActiveReceiptIds,
   staleTrackedIds,
   updateMessageIfChanged,
@@ -830,6 +831,28 @@ describe("isScrolledAwayFromBottom", () => {
 
   it("is false when content is shorter than the viewport (nothing to scroll)", () => {
     expect(isScrolledAwayFromBottom(makeEvent(0, 400, 800))).toBe(false);
+  });
+});
+
+describe("extractMediaMessages", () => {
+  it("keeps voice and receipt messages", () => {
+    const messages: Message[] = [createVoiceMessage("v1"), createReceiptMessage("r1")];
+    expect(extractMediaMessages(messages)).toEqual(messages);
+  });
+
+  it("drops user, ai, and draft messages", () => {
+    const receipt = createReceiptMessage("r1");
+    const messages: Message[] = [
+      createUserTextMessage("hi"),
+      createAITypingMessage("hi"),
+      createDraftMessages([makeDraft()])[0],
+      receipt,
+    ];
+    expect(extractMediaMessages(messages)).toEqual([receipt]);
+  });
+
+  it("returns an empty array when there are no media messages", () => {
+    expect(extractMediaMessages([createUserTextMessage("hi")])).toEqual([]);
   });
 });
 

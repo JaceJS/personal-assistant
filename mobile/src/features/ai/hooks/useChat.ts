@@ -14,6 +14,11 @@ import { deleteChatMessage, getChatSessionMessages, postChatMessage } from "@/fe
 import { postGuestChatMessage, toGuestAccountSnapshots } from "@/features/ai/api/guestChat";
 import type { GuestChatHistoryItem } from "@/features/ai/api/guestChat";
 import {
+  clearChatMediaMessages,
+  loadChatMediaMessages,
+  saveChatMediaMessages,
+} from "@/features/ai/repository/chatMediaStorage";
+import {
   clearGuestChatMessages,
   loadGuestChatMessages,
   saveGuestChatMessages,
@@ -55,7 +60,10 @@ export function useChat(accounts: Account[] = []) {
         const storedId = await AsyncStorage.getItem(CHAT_SESSION_KEY);
         if (!storedId || cancelled) return;
         setSessionId(storedId);
-        const { messages: history, draft_transactions } = await getChatSessionMessages(storedId);
+        const [{ messages: history, draft_transactions }, cachedMedia] = await Promise.all([
+          getChatSessionMessages(storedId),
+          loadChatMediaMessages(storedId),
+        ]);
         if (cancelled) return;
         const textMessages: Message[] = history
           .filter((m) => m.role === "user" || m.content.length > 0)
@@ -79,7 +87,9 @@ export function useChat(accounts: Account[] = []) {
                   remoteId: m.id,
                 }
           );
-        setMessages(mergeMessagesSorted(textMessages, createDraftMessages(draft_transactions)));
+        setMessages(
+          mergeMessagesSorted(textMessages, [...createDraftMessages(draft_transactions), ...cachedMedia])
+        );
       } catch {
         // history not critical, start fresh
       } finally {
@@ -95,6 +105,11 @@ export function useChat(accounts: Account[] = []) {
     if (!isGuest) return;
     saveGuestChatMessages(messages);
   }, [isGuest, messages]);
+
+  useEffect(() => {
+    if (isGuest || !sessionId) return;
+    void saveChatMediaMessages(sessionId, messages);
+  }, [isGuest, sessionId, messages]);
 
   const syncSessionId = useCallback(async (id: string) => {
     setSessionId(id);
@@ -235,9 +250,10 @@ export function useChat(accounts: Account[] = []) {
 
   const clearChat = useCallback(async () => {
     setMessages([]);
+    if (sessionId) await clearChatMediaMessages(sessionId);
     setSessionId(undefined);
     await AsyncStorage.removeItem(CHAT_SESSION_KEY);
-  }, []);
+  }, [sessionId]);
 
   return {
     messages,
