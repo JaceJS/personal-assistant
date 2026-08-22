@@ -76,19 +76,23 @@ export function SearchableDropdown({
         <View style={styles.sheetContent}>
           {label && <Text style={styles.sheetTitle}>{t("common.selectPrefix", { label })}</Text>}
 
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder={t("common.searchPlaceholder")}
-              placeholderTextColor={colors.text.muted}
-              autoCorrect={false}
-              autoCapitalize="none"
-            />
-          </View>
-
+          {/* Search input lives inside the same ScrollView as the list (not as a
+              sibling above it) so focusing it triggers Android's native
+              scroll-into-view — otherwise it has no scrollable ancestor to
+              request against and the keyboard can cover it. */}
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder={t("common.searchPlaceholder")}
+                placeholderTextColor={colors.text.muted}
+                autoCorrect={false}
+                autoCapitalize="none"
+              />
+            </View>
+
             {filteredItems.length === 0 ? (
               <Text style={styles.emptyText}>{t("common.noOptionsFound")}</Text>
             ) : (
@@ -188,6 +192,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     height: 44,
     justifyContent: "center",
+    marginBottom: spacing.sm,
   },
   searchInput: {
     ...StyleSheet.flatten(textStyles.body),
