@@ -36,6 +36,7 @@ export function useDraftActions({ setMessages, categories, showToast, t }: UseDr
             merchant: editingDraft.draft.merchant,
             category_name: editingDraft.draft.category_name,
             note: editingDraft.draft.note,
+            occurred_at: editingDraft.draft.occurred_at,
             confidence: 1.0,
           }
         : null,
@@ -67,6 +68,7 @@ export function useDraftActions({ setMessages, categories, showToast, t }: UseDr
             categoryId,
             merchant: draft.merchant,
             note: draft.note,
+            occurredAt: new Date(draft.occurred_at),
           },
         })
         .then(() => {
@@ -121,6 +123,7 @@ export function useDraftActions({ setMessages, categories, showToast, t }: UseDr
                   note: payload.note,
                   category_name: categoryName,
                   account_id: payload.accountId ?? m.draft.account_id,
+                  occurred_at: payload.occurredAt.toISOString(),
                 }),
                 "pending"
               )

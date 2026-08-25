@@ -16,6 +16,7 @@ const makeDraft = (overrides: Partial<DraftTransaction> = {}): DraftTransaction 
   account_id: 'acc-1',
   status: 'draft',
   created_at: '2026-01-01T00:00:00.000Z',
+  occurred_at: '2026-01-01T00:00:00.000Z',
   ...overrides,
 });
 

@@ -33,6 +33,7 @@ def _draft_result(merchant: str, amount: int) -> str:
             "account_id": str(_ACC_ID),
             "status": "draft",
             "created_at": "2026-01-01T00:00:00+00:00",
+            "occurred_at": "2026-01-01T00:00:00+00:00",
         }
     )
 

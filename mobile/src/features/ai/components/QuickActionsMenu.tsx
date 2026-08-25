@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -47,9 +48,17 @@ export function QuickActionsMenu({
 }: QuickActionsMenuProps) {
   const { t } = useTranslation();
   const openProgress = useSharedValue(0);
+  const [mounted, setMounted] = useState(visible);
 
   useEffect(() => {
-    openProgress.value = withTiming(visible ? 1 : 0, { duration: 200 });
+    if (visible) {
+      setMounted(true);
+      openProgress.value = withTiming(1, { duration: 200 });
+    } else {
+      openProgress.value = withTiming(0, { duration: 200 }, (finished) => {
+        if (finished) runOnJS(setMounted)(false);
+      });
+    }
   }, [visible, openProgress]);
 
   // Rows are only mounted while open, so the animated height just grows
@@ -68,21 +77,23 @@ export function QuickActionsMenu({
       <View style={styles.container}>
         <Pressable testID="quick-actions-trigger" onPress={onToggle}>
           {({ pressed }) => (
-            <View
-              style={[styles.header, visible && styles.headerConnected, pressed && styles.pressed]}
-            >
-              <Zap size={17} color={colors.accent.primary} strokeWidth={1.8} />
-              <Text style={styles.headerLabel}>{t("ai.quickActionsMenu.label")}</Text>
-              {visible ? (
-                <ChevronUp size={17} color={colors.text.muted} strokeWidth={1.8} />
-              ) : (
-                <ChevronDown size={17} color={colors.text.muted} strokeWidth={1.8} />
-              )}
+            <View style={styles.headerShadow}>
+              <View
+                style={[styles.header, mounted && styles.headerConnected, pressed && styles.pressed]}
+              >
+                <Zap size={17} color={colors.accent.primary} strokeWidth={1.8} />
+                <Text style={styles.headerLabel}>{t("ai.quickActionsMenu.label")}</Text>
+                {visible ? (
+                  <ChevronUp size={17} color={colors.text.muted} strokeWidth={1.8} />
+                ) : (
+                  <ChevronDown size={17} color={colors.text.muted} strokeWidth={1.8} />
+                )}
+              </View>
             </View>
           )}
         </Pressable>
 
-        {visible && (
+        {mounted && (
           <Animated.View style={[styles.rowsClip, rowsAnimatedStyle]}>
             {chips.map((chip, index) => {
               const isBusy = chip.id === busyChipId;
@@ -143,6 +154,15 @@ const styles = StyleSheet.create({
     right: -500,
     bottom: -1000,
     zIndex: 10,
+  },
+  headerShadow: {
+    borderRadius: radius.lg,
+    backgroundColor: colors.bg.surface,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
   },
   header: {
     flexDirection: "row",

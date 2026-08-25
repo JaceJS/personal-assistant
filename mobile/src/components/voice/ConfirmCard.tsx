@@ -4,6 +4,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import Button from "@/components/ui/Button";
+import DatePicker from "@/components/ui/DatePicker";
 import { SearchableDropdown } from "@/components/ui/SearchableDropdown";
 import type { ExtractedTransaction } from "@/features/finance/api/voice";
 import { useCategories } from "@/features/finance/hooks/useCategories";
@@ -16,10 +17,13 @@ export interface ConfirmPayload {
   categoryId: string | null;
   merchant: string | null;
   note: string | null;
+  occurredAt: Date;
 }
 
+type ConfirmCardData = ExtractedTransaction & { occurred_at?: string };
+
 interface Props {
-  data: ExtractedTransaction | null;
+  data: ConfirmCardData | null;
   accounts: Account[];
   defaultAccountId: string | null;
   isVisible: boolean;
@@ -51,6 +55,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
   const [note, setNote] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
+  const [occurredAt, setOccurredAt] = useState(new Date());
 
   useEffect(() => {
     if (!data) return;
@@ -59,6 +64,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
     setNote(data.note ?? "");
     setCategoryId(findMatchingCategory(categories, data.category_name));
     setAccountId(defaultAccountId);
+    setOccurredAt(data.occurred_at ? new Date(data.occurred_at) : new Date());
   }, [data, categories, defaultAccountId]);
 
   if (!data) return null;
@@ -74,6 +80,7 @@ export const ConfirmCard = React.memo(function ConfirmCard({
       categoryId,
       merchant: merchant.trim() || null,
       note: note.trim() || null,
+      occurredAt,
     });
   };
 
@@ -109,6 +116,14 @@ export const ConfirmCard = React.memo(function ConfirmCard({
             </ScrollView>
           </View>
         )}
+
+        <View style={styles.field}>
+          <DatePicker
+            label={t("transaction.dateLabel")}
+            value={occurredAt}
+            onChange={setOccurredAt}
+          />
+        </View>
 
         <View style={styles.field}>
           <Text style={styles.sectionLabel}>{t("ai.confirmCard.merchantLabel")}</Text>

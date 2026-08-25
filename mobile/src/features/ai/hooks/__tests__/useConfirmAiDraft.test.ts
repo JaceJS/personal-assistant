@@ -37,6 +37,7 @@ const payload = {
   categoryId: 'cat-1',
   merchant: 'Sate',
   note: null,
+  occurredAt: new Date('2026-01-05T08:00:00.000Z'),
 };
 
 describe('useConfirmAiDraft', () => {
@@ -60,6 +61,7 @@ describe('useConfirmAiDraft', () => {
       category_id: 'cat-1',
       merchant: 'Sate',
       note: null,
+      occurred_at: '2026-01-05T08:00:00.000Z',
     });
     expect(mockCreateTransaction).not.toHaveBeenCalled();
   });
@@ -81,6 +83,7 @@ describe('useConfirmAiDraft', () => {
     expect(call.category_id).toBe('cat-1');
     expect(call.amount).toBe(-20000);
     expect(call.merchant).toBe('Sate');
+    expect(call.occurred_at).toBe('2026-01-05T08:00:00.000Z');
     expect(typeof call.id).toBe('string');
     expect(call.id.length).toBeGreaterThan(0);
   });

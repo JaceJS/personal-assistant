@@ -35,6 +35,7 @@ const makeDraft = (overrides: Partial<DraftTransaction> = {}): DraftTransaction 
   account_id: 'acc-1',
   status: 'draft',
   created_at: '2026-01-01T00:00:00.000Z',
+  occurred_at: '2026-01-01T00:00:00.000Z',
   ...overrides,
 });
 
@@ -106,6 +107,7 @@ describe('useDraftActions', () => {
       category_id: 'cat-1',
       merchant: 'Sate',
       note: null,
+      occurred_at: '2026-01-01T00:00:00.000Z',
     });
     // once for "saving", once for "saved"
     expect(setMessages).toHaveBeenCalledTimes(2);
@@ -129,6 +131,7 @@ describe('useDraftActions', () => {
     const msg = createDraftMessages([makeDraft()])[0];
     await act(async () => result.current.handleDraftEdit(msg));
 
+    const editedDate = new Date('2026-02-02T00:00:00.000Z');
     await act(async () =>
       result.current.handleEditingDraftSave({
         amount: -9999,
@@ -136,6 +139,7 @@ describe('useDraftActions', () => {
         categoryId: 'cat-1',
         merchant: 'Warkop',
         note: 'edited',
+        occurredAt: editedDate,
       })
     );
 
@@ -147,6 +151,7 @@ describe('useDraftActions', () => {
     expect(updated.draft.amount).toBe(-9999);
     expect(updated.draft.merchant).toBe('Warkop');
     expect(updated.draft.category_name).toBe('Makan');
+    expect(updated.draft.occurred_at).toBe('2026-02-02T00:00:00.000Z');
     expect(updated.state).toBe('pending');
     expect(result.current.editingDraft).toBeNull();
     expect(showToast).toHaveBeenCalledWith('ai.toast.draftUpdated', 'success');

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -236,6 +236,73 @@ async def test_create_transaction_stamps_chat_session_id() -> None:
 
 
 @pytest.mark.asyncio
+async def test_create_transaction_result_includes_occurred_at() -> None:
+    """The draft card's edit form (mobile ConfirmCard) needs the transaction's
+    occurred_at to show/let the user change the date — the result dict must
+    carry it, not just created_at (row insert time)."""
+    account_id = uuid.uuid4()
+    session = AsyncMock()
+    occurred_at = datetime(2026, 1, 5, 8, 0, 0, tzinfo=UTC)
+
+    created_tx = MagicMock()
+    created_tx.id = uuid.uuid4()
+    created_tx.amount = -20_000
+    created_tx.merchant = "Sate"
+    created_tx.note = None
+    created_tx.account_id = account_id
+    created_tx.occurred_at = occurred_at
+
+    with (
+        patch(
+            "app.domains.ai.tools.finance_service.create_transaction",
+            AsyncMock(return_value=created_tx),
+        ),
+        patch("app.domains.ai.tools.repo.get_account", AsyncMock(return_value=None)),
+    ):
+        result = await _create_transaction(
+            _USER_ID,
+            session,
+            {"account_id": str(account_id), "amount": -20_000},
+            chat_session_id=uuid.uuid4(),
+        )
+
+    assert result["occurred_at"] == occurred_at.isoformat()
+
+
+@pytest.mark.asyncio
+async def test_create_transaction_forwards_dedupe_before_to_service() -> None:
+    """dedupe_before (the turn's start time) must reach finance_service so the
+    same-turn dedupe collision (Bug 3) stays fixed end-to-end."""
+    account_id = uuid.uuid4()
+    session = AsyncMock()
+    turn_start = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
+
+    created_tx = MagicMock()
+    created_tx.id = uuid.uuid4()
+    created_tx.amount = -20_000
+    created_tx.merchant = "Sate"
+    created_tx.note = None
+    created_tx.account_id = account_id
+
+    with (
+        patch(
+            "app.domains.ai.tools.finance_service.create_transaction",
+            AsyncMock(return_value=created_tx),
+        ) as mock_create,
+        patch("app.domains.ai.tools.repo.get_account", AsyncMock(return_value=None)),
+    ):
+        await _create_transaction(
+            _USER_ID,
+            session,
+            {"account_id": str(account_id), "amount": -20_000},
+            chat_session_id=uuid.uuid4(),
+            dedupe_before=turn_start,
+        )
+
+    assert mock_create.call_args.kwargs["dedupe_before"] == turn_start
+
+
+@pytest.mark.asyncio
 async def test_create_transaction_returns_error_on_duplicate_pending_draft() -> None:
     """A ConflictError from the service layer (duplicate pending draft) must
     surface as a tool error, not crash the chat turn."""
@@ -269,7 +336,30 @@ async def test_execute_tool_threads_chat_session_id_to_create_transaction() -> N
         )
 
     mock_create_transaction.assert_awaited_once_with(
-        _USER_ID, session, {}, chat_session_id=chat_session_id
+        _USER_ID, session, {}, chat_session_id=chat_session_id, dedupe_before=None
+    )
+
+
+@pytest.mark.asyncio
+async def test_execute_tool_threads_dedupe_before_to_create_transaction() -> None:
+    chat_session_id = uuid.uuid4()
+    turn_start = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
+    session = AsyncMock()
+
+    with patch(
+        "app.domains.ai.tools._create_transaction", AsyncMock(return_value={})
+    ) as mock_create_transaction:
+        await execute_tool(
+            "create_transaction",
+            {},
+            _USER_ID,
+            session,
+            chat_session_id=chat_session_id,
+            dedupe_before=turn_start,
+        )
+
+    mock_create_transaction.assert_awaited_once_with(
+        _USER_ID, session, {}, chat_session_id=chat_session_id, dedupe_before=turn_start
     )
 
 

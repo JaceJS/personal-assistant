@@ -97,6 +97,7 @@ async def _guest_create_transaction(
         "account_id": str(account.id),
         "status": "draft",
         "created_at": datetime.now(UTC).isoformat(),
+        "occurred_at": datetime.now(UTC).isoformat(),
     }
     if category_warning:
         result["category_warning"] = category_warning

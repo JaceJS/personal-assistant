@@ -382,6 +382,7 @@ async def _create_transaction(
     args: dict[str, Any],
     *,
     chat_session_id: uuid.UUID | None = None,
+    dedupe_before: datetime | None = None,
 ) -> dict[str, Any]:
     try:
         account_id = uuid.UUID(str(args["account_id"]))
@@ -445,6 +446,7 @@ async def _create_transaction(
                 status=TransactionStatus.draft,
                 chat_session_id=chat_session_id,
             ),
+            dedupe_before=dedupe_before,
         )
     except (NotFoundError, ForbiddenError, ConflictError) as exc:
         return {"error": str(exc)}
@@ -462,6 +464,7 @@ async def _create_transaction(
         "account_id": str(tx.account_id),
         "status": tx.status,
         "created_at": tx.created_at.isoformat(),
+        "occurred_at": tx.occurred_at.isoformat(),
     }
     if category_warning:
         result["category_warning"] = category_warning
@@ -478,6 +481,7 @@ async def execute_tool(
     session: AsyncSession,
     *,
     chat_session_id: uuid.UUID | None = None,
+    dedupe_before: datetime | None = None,
 ) -> str:
     """Dispatch a tool call and return its result as a JSON string.
 
@@ -491,7 +495,7 @@ async def execute_tool(
     back to (and rehydrated from) the chat that created them.
     """
     try:
-        result = await _dispatch_tool(name, args, user_id, session, chat_session_id)
+        result = await _dispatch_tool(name, args, user_id, session, chat_session_id, dedupe_before)
     except Exception as exc:
         _logger.error(
             "ai_tool_execution_failed",
@@ -510,6 +514,7 @@ async def _dispatch_tool(
     user_id: uuid.UUID,
     session: AsyncSession,
     chat_session_id: uuid.UUID | None,
+    dedupe_before: datetime | None = None,
 ) -> dict[str, Any]:
     if name == "get_financial_summary":
         return await _get_financial_summary(user_id, session)
@@ -528,5 +533,7 @@ async def _dispatch_tool(
     if name == "get_spending_by_category":
         return await _get_spending_by_category(user_id, session)
     if name == "create_transaction":
-        return await _create_transaction(user_id, session, args, chat_session_id=chat_session_id)
+        return await _create_transaction(
+            user_id, session, args, chat_session_id=chat_session_id, dedupe_before=dedupe_before
+        )
     return {"error": f"Unknown tool: {name}"}

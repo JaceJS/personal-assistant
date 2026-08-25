@@ -67,6 +67,7 @@ def _draft_result(merchant: str, amount: int) -> str:
             "account_id": str(_ACCOUNT_ID),
             "status": "draft",
             "created_at": datetime.now(UTC).isoformat(),
+            "occurred_at": datetime.now(UTC).isoformat(),
         }
     )
 

@@ -10,6 +10,7 @@ from app.core.exceptions import BadRequestError
 from app.domains.finance.extractor import ExtractedTransaction, ExtractedTransactionList
 from app.domains.finance.receipt_extractor import (
     MAX_TRANSACTIONS_PER_RECEIPT,
+    _SYSTEM_PROMPT,
     extract_transactions_from_receipt,
 )
 
@@ -89,6 +90,26 @@ async def test_extract_from_receipt_raises_when_no_transactions_found(mock_llm: 
 
     with pytest.raises(BadRequestError):
         await extract_transactions_from_receipt(b"blank", "image/jpeg", mock_llm)
+
+
+def test_prompt_explicitly_forbids_emitting_a_transaction_for_the_summary_rows() -> None:
+    """Bug 5: the model was reading a receipt's 'Total' row as if it were an
+    item line and emitting a spurious extra transaction for it. The old
+    prompt only said to ignore summary rows 'when deciding what to split',
+    which never actually forbade emitting a transaction FOR one."""
+    prompt = _SYSTEM_PROMPT.lower()
+    assert "never" in prompt or "do not" in prompt
+    for row in ["subtotal", "discount", "grand total", "change"]:
+        assert row in prompt
+
+
+def test_prompt_instructs_capturing_tax_as_its_own_transaction() -> None:
+    """User decision: pajak must be recorded as an expense, not silently
+    dropped — captured as its own transaction line, same mechanism as any
+    other item (no schema change needed)."""
+    prompt = _SYSTEM_PROMPT.lower()
+    assert "pajak" in prompt or "tax" in prompt
+    assert "separate transaction" in prompt or "own transaction" in prompt
 
 
 async def test_extract_from_receipt_caps_at_max_items(mock_llm: AsyncMock) -> None:

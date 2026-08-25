@@ -123,6 +123,7 @@ async def test_guest_create_transaction_returns_draft_shape_with_created_at() ->
     assert result["account_id"] == str(_ACC_ID)
     assert "transaction_id" in result
     assert "created_at" in result
+    assert "occurred_at" in result
 
 
 async def test_guest_create_transaction_warns_when_category_unresolved() -> None:

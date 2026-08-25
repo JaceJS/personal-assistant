@@ -11,6 +11,7 @@ export interface DraftTransaction {
   account_id: string;
   status: TransactionStatus;
   created_at: string;
+  occurred_at: string;
 }
 
 export interface ChatReply {
@@ -67,6 +68,7 @@ export async function confirmAiDraft(
     category_id: string | null;
     merchant: string | null;
     note: string | null;
+    occurred_at: string;
   },
 ): Promise<void> {
   await apiFetch(`/api/v1/transactions/${transactionId}`, {

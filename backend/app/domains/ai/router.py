@@ -304,7 +304,12 @@ async def chat(
                 )
             else:
                 result = await execute_tool(
-                    tc["name"], tc["arguments"], user_id, session, chat_session_id=chat_session.id
+                    tc["name"],
+                    tc["arguments"],
+                    user_id,
+                    session,
+                    chat_session_id=chat_session.id,
+                    dedupe_before=user_msg.created_at,
                 )
             loop_messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
             if tc["name"] == "create_transaction":

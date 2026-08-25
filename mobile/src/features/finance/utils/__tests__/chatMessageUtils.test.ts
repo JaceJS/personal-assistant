@@ -10,6 +10,7 @@ import {
   resolveAIMessage,
   rejectAIMessage,
   createDraftMessages,
+  restampToClientNow,
   setDraftState,
   applyDraftEdit,
   extractionToDraftTransactions,
@@ -36,6 +37,7 @@ const makeDraft = (overrides: Partial<DraftTransaction> = {}): DraftTransaction 
   account_id: "acc-1",
   status: "draft",
   created_at: "2026-01-01T00:00:00.000Z",
+  occurred_at: "2026-01-01T00:00:00.000Z",
   ...overrides,
 });
 
@@ -388,6 +390,7 @@ describe("extractionToDraftTransactions", () => {
         account_id: "acc-1",
         status: "draft",
         created_at: expect.any(String),
+        occurred_at: expect.any(String),
       },
       {
         transaction_id: "tx-2",
@@ -399,6 +402,7 @@ describe("extractionToDraftTransactions", () => {
         account_id: "acc-1",
         status: "draft",
         created_at: expect.any(String),
+        occurred_at: expect.any(String),
       },
     ]);
   });
@@ -757,6 +761,44 @@ describe("updateMessageIfChanged", () => {
   });
 });
 
+describe("restampToClientNow", () => {
+  it("overrides createdAt to the current device time for every message", () => {
+    const before = new Date();
+    const drafts = createDraftMessages([
+      makeDraft({ transaction_id: "tx-1", created_at: "2020-01-01T00:00:00.000Z" }),
+      makeDraft({ transaction_id: "tx-2", created_at: "2020-01-01T00:00:00.000Z" }),
+    ]);
+    const restamped = restampToClientNow(drafts);
+    const after = new Date();
+
+    for (const m of restamped) {
+      expect(m.createdAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      expect(m.createdAt.getTime()).toBeLessThanOrEqual(after.getTime());
+    }
+  });
+
+  it("leaves every other field untouched", () => {
+    const drafts = createDraftMessages([makeDraft({ transaction_id: "tx-1", merchant: "Sate" })]);
+    const restamped = restampToClientNow(drafts);
+    expect(restamped[0].id).toBe(drafts[0].id);
+    expect(restamped[0].draft).toEqual(drafts[0].draft);
+    expect(restamped[0].state).toBe(drafts[0].state);
+  });
+
+  it("does not mutate the original messages", () => {
+    const drafts = createDraftMessages([
+      makeDraft({ transaction_id: "tx-1", created_at: "2020-01-01T00:00:00.000Z" }),
+    ]);
+    const originalCreatedAt = drafts[0].createdAt;
+    restampToClientNow(drafts);
+    expect(drafts[0].createdAt).toBe(originalCreatedAt);
+  });
+
+  it("returns an empty array for empty input", () => {
+    expect(restampToClientNow([])).toEqual([]);
+  });
+});
+
 describe("mergeMessagesSorted", () => {
   const at = (iso: string): Date => new Date(iso);
 
@@ -807,18 +849,14 @@ describe("mergeMessagesSorted", () => {
 });
 
 describe("isScrolledAwayFromBottom", () => {
-  const makeEvent = (offsetY: number, contentHeight = 2000, layoutHeight = 800) => ({
-    contentOffset: { x: 0, y: offsetY },
-    contentSize: { width: 400, height: contentHeight },
-    layoutMeasurement: { width: 400, height: layoutHeight },
-  });
+  const makeEvent = (offsetY: number) => ({ contentOffset: { x: 0, y: offsetY } });
 
-  it("is false when scrolled all the way to the bottom", () => {
-    expect(isScrolledAwayFromBottom(makeEvent(1200))).toBe(false);
+  it("is false at offset 0 (inverted list: 0 is the latest message)", () => {
+    expect(isScrolledAwayFromBottom(makeEvent(0))).toBe(false);
   });
 
   it("is false within the threshold distance from the bottom", () => {
-    expect(isScrolledAwayFromBottom(makeEvent(1100))).toBe(false);
+    expect(isScrolledAwayFromBottom(makeEvent(100))).toBe(false);
   });
 
   it("is true once scrolled further up than the threshold", () => {
@@ -826,11 +864,11 @@ describe("isScrolledAwayFromBottom", () => {
   });
 
   it("respects a custom threshold", () => {
-    expect(isScrolledAwayFromBottom(makeEvent(1100), 50)).toBe(true);
+    expect(isScrolledAwayFromBottom(makeEvent(60), 50)).toBe(true);
   });
 
-  it("is false when content is shorter than the viewport (nothing to scroll)", () => {
-    expect(isScrolledAwayFromBottom(makeEvent(0, 400, 800))).toBe(false);
+  it("is false for negative overscroll (iOS bounce past the latest message)", () => {
+    expect(isScrolledAwayFromBottom(makeEvent(-30))).toBe(false);
   });
 });
 

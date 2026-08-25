@@ -8,6 +8,7 @@ import {
   mergeMessagesSorted,
   rejectAIMessage,
   resolveAIMessage,
+  restampToClientNow,
 } from "@/features/finance/utils/chatMessageUtils";
 import type { AIMessage, Message, UserTextMessage } from "@/features/finance/utils/chatMessageUtils";
 import { deleteChatMessage, getChatSessionMessages, postChatMessage } from "@/features/ai/api/chat";
@@ -149,7 +150,7 @@ export function useChat(accounts: Account[] = []) {
                   m.id === aiMsg.id ? resolveAIMessage(m as AIMessage, reply) : tagUserMsg(m)
                 )
               : prev.filter((m) => m.id !== aiMsg.id).map(tagUserMsg),
-            createDraftMessages(draft_transactions ?? [])
+            restampToClientNow(createDraftMessages(draft_transactions ?? []))
           )
         );
       } catch (err) {
@@ -190,7 +191,7 @@ export function useChat(accounts: Account[] = []) {
                     : tagUserMsg(m)
                 )
               : prev.filter((m) => m.id !== aiMsg.id).map(tagUserMsg),
-            createDraftMessages(draft_transactions ?? [])
+            restampToClientNow(createDraftMessages(draft_transactions ?? []))
           )
         );
       } catch {

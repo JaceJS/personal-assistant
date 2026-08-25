@@ -25,6 +25,7 @@ class DraftTransaction(BaseModel):
     account_id: uuid.UUID
     status: TransactionStatus
     created_at: datetime
+    occurred_at: datetime
 
 
 class ChatReply(BaseModel):

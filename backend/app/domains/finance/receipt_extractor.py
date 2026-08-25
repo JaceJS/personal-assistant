@@ -20,15 +20,28 @@ parking or toll ticket) returns one transaction using its total amount. A receip
 listing multiple distinct items (e.g. a supermarket or convenience-store haul) returns
 ONE TRANSACTION PER ITEM, each using that item's own price — not the receipt's grand
 total. Group identical repeated items (e.g. "2x Indomie") into a single transaction for
-that line, using the line's subtotal. Ignore non-item lines (subtotal, tax, discount,
-change) when deciding what to split.
+that line, using the line's subtotal.
+
+A receipt has two kinds of rows: item rows (things actually purchased) and summary
+rows (subtotal, discount, grand total, change/kembalian). NEVER emit a transaction for
+a summary row — a "Total"/"Subtotal"/"Grand Total"/"Kembalian" line is not an item,
+even though it's printed in a row that looks just like one. Example: a receipt with
+"Indomie 3.500", "Aqua 4.000", "Subtotal 7.500", "Total 7.500" has exactly 2 items
+(Indomie, Aqua) — the Subtotal and Total rows never become transactions of their own.
+
+Tax/PPN/service charge (pajak) is different from a summary row: if the receipt shows
+a tax/PPN/service charge amount, emit it as its OWN separate transaction — same as any
+item — using note "Pajak" (or "Service Charge" if that's what's printed) and that row's
+own amount, NOT the grand total. Do not fold tax into another item's amount and do not
+skip it: it is real money the user spent and must be recorded.
 
 Rules (per transaction):
 - amount: integer in IDR. Negative = expense (typical for receipts). Positive = income.
 - currency: always "IDR" unless explicitly stated otherwise.
 - merchant: store or business name from the receipt header, null if unreadable.
 - category_name: best guess category for THAT item (e.g. "Food", "Transport",
-  "Groceries"), null if unclear.
+  "Groceries"); for a tax/service charge transaction use "Lain-lain" (Other) unless a
+  closer match applies. Null if unclear.
 - note: the item name/description backing that transaction, null if none.
 - confidence: 0.0-1.0 reflecting how certain you are about the extracted values.
 

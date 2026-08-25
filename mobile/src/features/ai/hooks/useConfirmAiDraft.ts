@@ -32,7 +32,7 @@ export function useConfirmAiDraft() {
           amount: payload.amount,
           merchant: payload.merchant,
           note: payload.note,
-          occurred_at: new Date().toISOString(),
+          occurred_at: payload.occurredAt.toISOString(),
         });
         return;
       }
@@ -42,6 +42,7 @@ export function useConfirmAiDraft() {
         category_id: payload.categoryId,
         merchant: payload.merchant,
         note: payload.note,
+        occurred_at: payload.occurredAt.toISOString(),
       });
     },
     onSuccess: () => {

@@ -365,7 +365,11 @@ async def list_transactions(
 
 
 async def create_transaction(
-    session: AsyncSession, user_id: uuid.UUID, data: TransactionCreate
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    data: TransactionCreate,
+    *,
+    dedupe_before: datetime | None = None,
 ) -> Transaction:
     account = await _get_account_for_balance_update(session, data.account_id, user_id)
 
@@ -374,12 +378,19 @@ async def create_transaction(
 
     if data.chat_session_id is not None and data.status == TransactionStatus.draft:
         pending = await repo.get_pending_draft_transactions(session, data.chat_session_id)
+        if dedupe_before is not None:
+            pending = [tx for tx in pending if tx.created_at < dedupe_before]
         merchant_key = (data.merchant or "").strip().lower()
+        note_key = (data.note or "").strip().lower()
         if any(
-            (tx.merchant or "").strip().lower() == merchant_key and tx.amount == data.amount
+            (tx.merchant or "").strip().lower() == merchant_key
+            and tx.amount == data.amount
+            and (tx.note or "").strip().lower() == note_key
             for tx in pending
         ):
-            raise ConflictError("A pending draft for this merchant and amount already exists")
+            raise ConflictError(
+                "A pending draft for this merchant, amount, and item already exists"
+            )
 
     tx = await repo.create_transaction(
         session,

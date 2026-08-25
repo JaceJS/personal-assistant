@@ -185,6 +185,7 @@ export function extractionToDraftTransactions(
     account_id: accountId,
     status: "draft" as const,
     created_at: now,
+    occurred_at: now,
   }));
 }
 
@@ -202,6 +203,11 @@ export function createDraftMessages(drafts: DraftTransaction[]): DraftMessage[] 
     state: draftStatusToMessageState(draft.status),
     createdAt: new Date(draft.created_at),
   }));
+}
+
+export function restampToClientNow(drafts: DraftMessage[]): DraftMessage[] {
+  const now = new Date();
+  return drafts.map((d) => ({ ...d, createdAt: now }));
 }
 
 // Chat history loads text messages and draft transactions as two separate
@@ -254,17 +260,13 @@ export const SCROLL_BOTTOM_THRESHOLD = 150;
 
 interface ScrollMetrics {
   contentOffset: { y: number };
-  contentSize: { height: number };
-  layoutMeasurement: { height: number };
 }
 
 export function isScrolledAwayFromBottom(
   event: ScrollMetrics,
   threshold = SCROLL_BOTTOM_THRESHOLD
 ): boolean {
-  const distanceFromBottom =
-    event.contentSize.height - event.contentOffset.y - event.layoutMeasurement.height;
-  return distanceFromBottom > threshold;
+  return event.contentOffset.y > threshold;
 }
 
 // Chat history reload only restores text + draft messages (see useChat) — the

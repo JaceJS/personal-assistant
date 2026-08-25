@@ -48,8 +48,6 @@ import { useOnboardingStore } from "@/stores/onboarding";
 import { useToastStore } from "@/stores/toast";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
-const SCROLL_DEBOUNCE_MS = 100;
-const QUICK_ACTIONS_ANIM_MS = 200;
 
 export default function AIAssistantScreen() {
   const router = useRouter();
@@ -95,41 +93,23 @@ export default function AIAssistantScreen() {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [inputText, setInputText] = useState("");
   const listRef = useRef<FlatList<ChatListItem>>(null);
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const listItems = useMemo(() => withDateSeparators(messages), [messages]);
+  const invertedListItems = useMemo(() => [...listItems].reverse(), [listItems]);
 
   useEffect(() => {
-    return () => {
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-    };
-  }, []);
-
-  const handleContentSizeChange = useCallback(() => {
-    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-    scrollTimerRef.current = setTimeout(() => {
-      listRef.current?.scrollToEnd({ animated: true });
-    }, SCROLL_DEBOUNCE_MS);
-    setShowScrollButton(false);
-  }, []);
+    if (showScrollButton) return;
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, [messages.length, showScrollButton]);
 
   const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     setShowScrollButton(isScrolledAwayFromBottom(e.nativeEvent));
   }, []);
 
   const handleScrollToBottomPress = useCallback(() => {
-    listRef.current?.scrollToEnd({ animated: true });
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
     setShowScrollButton(false);
   }, []);
-
-  // Re-pin to bottom after the accordion's own 200ms open/close animation settles.
-  useEffect(() => {
-    if (messages.length === 0) return;
-    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-    scrollTimerRef.current = setTimeout(() => {
-      listRef.current?.scrollToEnd({ animated: true });
-    }, QUICK_ACTIONS_ANIM_MS + SCROLL_DEBOUNCE_MS);
-  }, [quickActionsVisible, messages.length]);
 
   const handleSendText = useCallback(() => {
     const text = inputText.trim();
@@ -260,15 +240,15 @@ export default function AIAssistantScreen() {
               ) : (
                 <FlatList
                   ref={listRef}
+                  inverted
                   style={styles.messageListFlex}
-                  data={listItems}
+                  data={invertedListItems}
                   keyExtractor={(item) => item.id}
                   renderItem={renderMessage}
                   contentContainerStyle={styles.messageList}
-                  onContentSizeChange={handleContentSizeChange}
                   onScroll={handleScroll}
                   scrollEventThrottle={100}
-                  ListFooterComponent={
+                  ListHeaderComponent={
                     <QuickActionsMenu
                       chips={QUICK_CHIPS}
                       visible={quickActionsVisible}

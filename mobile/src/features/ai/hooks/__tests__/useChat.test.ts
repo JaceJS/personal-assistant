@@ -223,6 +223,7 @@ describe('useChat', () => {
           account_id: 'acct-456',
           status: 'draft',
           created_at: new Date(Date.now() + 60_000).toISOString(),
+      occurred_at: new Date(Date.now() + 60_000).toISOString(),
         },
         {
           transaction_id: 'tx-124',
@@ -234,6 +235,7 @@ describe('useChat', () => {
           account_id: 'acct-456',
           status: 'draft',
           created_at: new Date(Date.now() + 60_000).toISOString(),
+      occurred_at: new Date(Date.now() + 60_000).toISOString(),
         },
       ],
     });
@@ -272,6 +274,7 @@ describe('useChat', () => {
           account_id: 'acct-456',
           status: 'draft',
           created_at: new Date(Date.now() + 60_000).toISOString(),
+      occurred_at: new Date(Date.now() + 60_000).toISOString(),
         },
       ],
     });
@@ -459,6 +462,7 @@ describe('useChat', () => {
           account_id: 'acc-1',
           status: 'draft',
           created_at: new Date().toISOString(),
+      occurred_at: new Date().toISOString(),
         },
       ],
       remaining_quota: 2,
@@ -513,6 +517,7 @@ describe('useChat', () => {
           account_id: 'acct-456',
           status: 'draft',
           created_at: new Date(Date.now() + 60_000).toISOString(),
+      occurred_at: new Date(Date.now() + 60_000).toISOString(),
         },
       ],
     });
@@ -551,6 +556,7 @@ describe('useChat', () => {
           account_id: 'acct-456',
           status: 'draft',
           created_at: new Date(Date.now() + 60_000).toISOString(),
+      occurred_at: new Date(Date.now() + 60_000).toISOString(),
         },
       ],
     });
@@ -704,6 +710,7 @@ describe('useChat', () => {
           account_id: 'acct-456',
           status: 'draft',
           created_at: new Date(Date.now() + 60_000).toISOString(),
+      occurred_at: new Date(Date.now() + 60_000).toISOString(),
         },
       ],
     });

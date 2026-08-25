@@ -27,6 +27,7 @@ def _make_draft_transaction_row(
     amount: int = -20_000,
     category_id: uuid.UUID | None = None,
     status: TransactionStatus = TransactionStatus.draft,
+    occurred_at: datetime | None = None,
 ) -> MagicMock:
     tx = MagicMock()
     tx.id = uuid.uuid4()
@@ -38,6 +39,7 @@ def _make_draft_transaction_row(
     tx.category_id = category_id
     tx.status = status
     tx.created_at = datetime.now(UTC)
+    tx.occurred_at = occurred_at or datetime.now(UTC)
     return tx
 
 
@@ -62,6 +64,7 @@ async def test_get_session_messages_rehydrates_pending_drafts() -> None:
     assert drafts[0].amount == -20_000
     assert drafts[0].category_name is None
     assert drafts[0].status == TransactionStatus.draft
+    assert drafts[0].occurred_at == draft_row.occurred_at
 
 
 @pytest.mark.asyncio
