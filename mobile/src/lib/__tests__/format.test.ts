@@ -83,18 +83,12 @@ describe("format helpers", () => {
   });
 
   describe("toYmd", () => {
-    const originalTZ = process.env.TZ;
-
-    beforeAll(() => {
-      process.env.TZ = "Asia/Jakarta";
-    });
-
-    afterAll(() => {
-      process.env.TZ = originalTZ;
-    });
-
-    it("uses the local calendar day, not the UTC day, when a UTC instant crosses local midnight", () => {
-      expect(toYmd(new Date("2026-08-25T18:00:00Z"))).toBe("2026-08-26");
+    it("derives the date from the Date object's own local getters, not a UTC string slice", () => {
+      const d = new Date("2026-08-25T18:00:00Z");
+      jest.spyOn(d, "getFullYear").mockReturnValue(2026);
+      jest.spyOn(d, "getMonth").mockReturnValue(7);
+      jest.spyOn(d, "getDate").mockReturnValue(26);
+      expect(toYmd(d)).toBe("2026-08-26");
     });
 
     it("matches the Date's own local getters", () => {
