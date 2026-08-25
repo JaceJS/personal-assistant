@@ -30,7 +30,7 @@ import { useCategories } from "@/features/finance/hooks/useCategories";
 import { useTransactions } from "@/features/finance/hooks/useTransactions";
 import type { Transaction } from "@/features/finance/types";
 import { computeWeeklySummary } from "@/features/finance/utils/weeklySummary";
-import { formatDateLabel, formatMoney, getMonthNames } from "@/lib/format";
+import { formatDateLabel, formatMoney, getMonthNames, toYmd } from "@/lib/format";
 import { colors, radius, spacing, textStyles } from "@/theme";
 
 type ListRow =
@@ -100,7 +100,7 @@ export default function HistoryScreen() {
     // are contiguous — a single grouping pass keeps that order intact.
     const byDate = new Map<string, Transaction[]>();
     for (const t of filtered) {
-      const dateKey = t.occurred_at.slice(0, 10);
+      const dateKey = toYmd(new Date(t.occurred_at));
       const group = byDate.get(dateKey);
       if (group) group.push(t);
       else byDate.set(dateKey, [t]);

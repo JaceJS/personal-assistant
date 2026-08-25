@@ -9,8 +9,8 @@ import pytest
 from app.core.exceptions import BadRequestError
 from app.domains.finance.extractor import ExtractedTransaction, ExtractedTransactionList
 from app.domains.finance.receipt_extractor import (
-    MAX_TRANSACTIONS_PER_RECEIPT,
     _SYSTEM_PROMPT,
+    MAX_TRANSACTIONS_PER_RECEIPT,
     extract_transactions_from_receipt,
 )
 

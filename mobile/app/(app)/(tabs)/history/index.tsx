@@ -33,12 +33,13 @@ import TransactionCard from '@/features/finance/components/TransactionCard';
 import { useCategories } from '@/features/finance/hooks/useCategories';
 import { useTransactions } from '@/features/finance/hooks/useTransactions';
 import type { Transaction } from '@/features/finance/types';
-import { formatDateLabel, formatMoney, formatShortDate, getMonthNames } from '@/lib/format';
+import { computeWeeklySummary } from '@/features/finance/utils/weeklySummary';
+import { formatDateLabel, formatMoney, formatShortDate, getMonthNames, toYmd } from '@/lib/format';
 import { colors, radius, spacing, textStyles } from '@/theme';
 import { TAB_BAR_CLEARANCE } from '@/components/ui/FloatingTabBar';
 
 type ListRow =
-  | { type: 'header'; key: string; label: string }
+  | { type: 'header'; key: string; label: string; income: number; expense: number }
   | { type: 'item'; key: string; data: Transaction };
 
 export default function AktivitasScreen() {
@@ -172,23 +173,43 @@ export default function AktivitasScreen() {
   const periodTotal = useMemo(() => filtered.reduce((s, t) => s + t.amount, 0), [filtered]);
 
   const groupedRows = useMemo((): ListRow[] => {
+    const byDate = new Map<string, Transaction[]>();
+    for (const t of filtered) {
+      const dateKey = toYmd(new Date(t.occurred_at));
+      const group = byDate.get(dateKey);
+      if (group) group.push(t);
+      else byDate.set(dateKey, [t]);
+    }
+
     const rows: ListRow[] = [];
-    let lastDate = '';
-    filtered.forEach((t) => {
-      const dateKey = t.occurred_at.slice(0, 10);
-      if (dateKey !== lastDate) {
-        rows.push({ type: 'header', key: `h-${dateKey}`, label: formatDateLabel(dateKey) });
-        lastDate = dateKey;
-      }
-      rows.push({ type: 'item', key: t.id, data: t });
-    });
+    for (const [dateKey, group] of byDate) {
+      const { income, expense } = computeWeeklySummary(group);
+      rows.push({ type: 'header', key: `h-${dateKey}`, label: formatDateLabel(dateKey), income, expense });
+      for (const t of group) rows.push({ type: 'item', key: t.id, data: t });
+    }
     return rows;
   }, [filtered]);
 
   const renderItem = useCallback(
     ({ item }: { item: ListRow }) => {
       if (item.type === 'header') {
-        return <Text style={styles.dateHeader}>{item.label}</Text>;
+        return (
+          <View style={styles.dateHeaderRow}>
+            <Text style={styles.dateHeader}>{item.label}</Text>
+            <View style={styles.dateHeaderTotals}>
+              {item.income > 0 && (
+                <Text style={[styles.dateHeaderTotal, { color: colors.success.text }]}>
+                  +{formatMoney(item.income)}
+                </Text>
+              )}
+              {item.expense > 0 && (
+                <Text style={[styles.dateHeaderTotal, { color: colors.danger.text }]}>
+                  −{formatMoney(item.expense)}
+                </Text>
+              )}
+            </View>
+          </View>
+        );
       }
       const category = categoriesData?.find(c => c.id === item.data.category_id);
       return (
@@ -205,8 +226,6 @@ export default function AktivitasScreen() {
   );
 
   const totalIsNegative = periodTotal < 0;
-
-
 
   return (
     <Screen>
@@ -319,7 +338,6 @@ export default function AktivitasScreen() {
       <BottomSheet isVisible={isFilterOpen} onDismiss={() => setIsFilterOpen(false)}>
         <View style={styles.sheetContent}>
           <Text style={styles.sheetTitle}>{t("history.filterSheetTitle")}</Text>
-          {/* Category Filter Section */}
           <View style={styles.filterSection}>
             <MultiSearchableDropdown
               label={t("ai.confirmCard.categoryLabel")}
@@ -334,7 +352,6 @@ export default function AktivitasScreen() {
             />
           </View>
 
-          {/* Date Range Selection Section */}
           <View style={styles.filterSection}>
             <Text style={styles.filterSectionLabel}>{t("history.dateRangeLabel")}</Text>
             <View style={styles.toggleContainer}>
@@ -380,7 +397,6 @@ export default function AktivitasScreen() {
             </View>
           )}
 
-          {/* Actions footer */}
           <View style={styles.footerButtons}>
             <View style={styles.footerBtnWrapper}>
               <Button label={t("history.resetCta")} variant="ghost" onPress={resetFilter} fullWidth />
@@ -433,36 +449,6 @@ const styles = StyleSheet.create({
   filterBtnActive: {
     backgroundColor: colors.accent.primary,
     borderColor: colors.accent.primary,
-  },
-
-  pillsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingVertical: 4,
-  },
-  filterPill: {
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.bg.canvas,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterPillActive: {
-    backgroundColor: colors.accent.primary,
-    borderColor: colors.accent.primary,
-  },
-  filterPillText: {
-    ...StyleSheet.flatten(textStyles.caption),
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.text.secondary,
-  },
-  filterPillTextActive: {
-    color: colors.bg.canvas,
-    fontWeight: '600',
   },
 
   filterSection: {
@@ -567,14 +553,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  dateHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xl,
+    paddingTop: 20,
+    paddingBottom: 10,
+    gap: spacing.sm,
+  },
   dateHeader: {
     ...StyleSheet.flatten(textStyles.h2),
     fontSize: 16,
     fontWeight: '700',
     color: colors.accent.text,
-    paddingHorizontal: spacing.xl,
-    paddingTop: 20,
-    paddingBottom: 10,
+  },
+  dateHeaderTotals: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  dateHeaderTotal: {
+    ...StyleSheet.flatten(textStyles.caption),
+    fontSize: 12,
+    fontWeight: '600',
   },
   txCard: {
     marginHorizontal: spacing.xl,

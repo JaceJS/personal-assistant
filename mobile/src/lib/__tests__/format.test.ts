@@ -5,6 +5,7 @@ import {
   formatMoney,
   formatRelativeTime,
   getMonthNames,
+  toYmd,
 } from "../format";
 
 describe("format helpers", () => {
@@ -78,6 +79,28 @@ describe("format helpers", () => {
       const label = formatDateLabel("2026-01-05");
       expect(label).not.toMatch(/Hari ini|Kemarin/);
       expect(label).toContain("Januari");
+    });
+  });
+
+  describe("toYmd", () => {
+    const originalTZ = process.env.TZ;
+
+    beforeAll(() => {
+      process.env.TZ = "Asia/Jakarta";
+    });
+
+    afterAll(() => {
+      process.env.TZ = originalTZ;
+    });
+
+    it("uses the local calendar day, not the UTC day, when a UTC instant crosses local midnight", () => {
+      expect(toYmd(new Date("2026-08-25T18:00:00Z"))).toBe("2026-08-26");
+    });
+
+    it("matches the Date's own local getters", () => {
+      const d = new Date("2026-01-05T10:00:00Z");
+      const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      expect(toYmd(d)).toBe(expected);
     });
   });
 

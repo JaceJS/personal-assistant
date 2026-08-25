@@ -66,7 +66,7 @@ export function activeDateFnsLocale() {
   );
 }
 
-function toYmd(d: Date): string {
+export function toYmd(d: Date): string {
   return [
     d.getFullYear(),
     String(d.getMonth() + 1).padStart(2, "0"),
