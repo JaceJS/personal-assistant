@@ -195,7 +195,7 @@ export default function AktivitasScreen() {
       if (item.type === 'header') {
         return (
           <View style={styles.dateHeaderRow}>
-            <Text style={styles.dateHeader}>{item.label}</Text>
+            <Text style={styles.dateHeader} numberOfLines={1}>{item.label}</Text>
             <View style={styles.dateHeaderTotals}>
               {item.income > 0 && (
                 <Text style={[styles.dateHeaderTotal, { color: colors.success.text }]}>
@@ -567,10 +567,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.accent.text,
+    flexShrink: 1,
   },
   dateHeaderTotals: {
     flexDirection: 'row',
     gap: spacing.sm,
+    flexShrink: 0,
   },
   dateHeaderTotal: {
     ...StyleSheet.flatten(textStyles.caption),
