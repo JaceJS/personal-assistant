@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from datetime import date
+from datetime import date, datetime
 from typing import Any, cast
 
 import sqlalchemy as sa
@@ -27,12 +27,17 @@ from app.domains.finance.models import (
 # ── Savings Goals ─────────────────────────────────────────────────────────────
 
 
-async def list_savings_goals(session: AsyncSession, user_id: uuid.UUID) -> list[SavingsGoal]:
-    result = await session.execute(
-        sa.select(SavingsGoal)
-        .where(SavingsGoal.user_id == user_id, SavingsGoal.is_archived.is_(False))
-        .order_by(SavingsGoal.created_at.desc())
-    )
+async def list_savings_goals(
+    session: AsyncSession, user_id: uuid.UUID, *, updated_since: datetime | None = None
+) -> list[SavingsGoal]:
+    q = sa.select(SavingsGoal).where(SavingsGoal.user_id == user_id)
+    if updated_since is not None:
+        # See list_accounts: a delta pull must see a row that just got
+        # archived too, or a client's local mirror never learns about it.
+        q = q.where(SavingsGoal.updated_at > updated_since)
+    else:
+        q = q.where(SavingsGoal.is_archived.is_(False))
+    result = await session.execute(q.order_by(SavingsGoal.created_at.desc()))
     return list(result.scalars())
 
 
@@ -96,10 +101,17 @@ async def get_account_for_update(session: AsyncSession, account_id: uuid.UUID) -
     return result.scalar_one_or_none()
 
 
-async def list_accounts(session: AsyncSession, user_id: uuid.UUID) -> list[Account]:
-    result = await session.execute(
-        sa.select(Account).where(Account.user_id == user_id, Account.is_archived.is_(False))
-    )
+async def list_accounts(
+    session: AsyncSession, user_id: uuid.UUID, *, updated_since: datetime | None = None
+) -> list[Account]:
+    q = sa.select(Account).where(Account.user_id == user_id)
+    if updated_since is not None:
+        # A delta pull must see a row that just got archived too, or a
+        # client's local mirror never learns about the archive.
+        q = q.where(Account.updated_at > updated_since)
+    else:
+        q = q.where(Account.is_archived.is_(False))
+    result = await session.execute(q)
     return list(result.scalars())
 
 
@@ -125,13 +137,17 @@ async def get_category(session: AsyncSession, category_id: uuid.UUID) -> Categor
     return await session.get(Category, category_id)
 
 
-async def list_categories(session: AsyncSession, user_id: uuid.UUID) -> list[Category]:
-    result = await session.execute(
-        sa.select(Category).where(
-            Category.user_id == user_id,
-            Category.is_archived.is_(False),
-        )
-    )
+async def list_categories(
+    session: AsyncSession, user_id: uuid.UUID, *, updated_since: datetime | None = None
+) -> list[Category]:
+    q = sa.select(Category).where(Category.user_id == user_id)
+    if updated_since is not None:
+        # See list_accounts: a delta pull must see a row that just got
+        # archived too, or a client's local mirror never learns about it.
+        q = q.where(Category.updated_at > updated_since)
+    else:
+        q = q.where(Category.is_archived.is_(False))
+    result = await session.execute(q)
     return list(result.scalars())
 
 
@@ -287,10 +303,13 @@ async def list_transactions(
     date_to: date | None = None,
     search: str | None = None,
     status: TransactionStatus | None = None,
+    updated_since: datetime | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> list[Transaction]:
     q = sa.select(Transaction).where(Transaction.user_id == user_id)
+    if updated_since is not None:
+        q = q.where(Transaction.updated_at > updated_since)
     if account_id is not None:
         q = q.where(Transaction.account_id == account_id)
     if date_from is not None:
@@ -325,8 +344,11 @@ async def count_transactions(
     date_to: date | None = None,
     search: str | None = None,
     status: TransactionStatus | None = None,
+    updated_since: datetime | None = None,
 ) -> int:
     q = sa.select(sa.func.count()).select_from(Transaction).where(Transaction.user_id == user_id)
+    if updated_since is not None:
+        q = q.where(Transaction.updated_at > updated_since)
     if account_id is not None:
         q = q.where(Transaction.account_id == account_id)
     if date_from is not None:

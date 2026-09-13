@@ -1,6 +1,8 @@
 import uuid
+from datetime import datetime
+from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from app.core.auth import CurrentUser
 from app.core.response import ApiResponse, ok, paginated
@@ -18,9 +20,11 @@ router = APIRouter(tags=["Savings Goals"])
 
 @router.get("/savings-goals", response_model=ApiResponse[list[SavingsGoalRead]])
 async def list_savings_goals(
-    user_id: CurrentUser, session: DbSession
+    user_id: CurrentUser,
+    session: DbSession,
+    updated_since: Annotated[datetime | None, Query()] = None,
 ) -> ApiResponse[list[SavingsGoalRead]]:
-    goals = await service.list_savings_goals(session, user_id)
+    goals = await service.list_savings_goals(session, user_id, updated_since=updated_since)
     items = [SavingsGoalRead.from_model(g) for g in goals]
     return paginated(items, total=len(items), limit=len(items), offset=0)
 

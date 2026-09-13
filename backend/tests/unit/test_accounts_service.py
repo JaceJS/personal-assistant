@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError
 from app.domains.finance import service as finance_service
 from app.domains.finance.models import Account, AccountType
-from app.domains.finance.schemas import AccountUpdate
+from app.domains.finance.schemas import AccountCreate, AccountUpdate
 
 _USER_ID = uuid.uuid4()
 _OTHER_USER_ID = uuid.uuid4()
@@ -106,3 +106,67 @@ async def test_update_account_initial_balance_shifts_balance_by_delta() -> None:
     mock_repo.update_account.assert_called_once_with(
         session, account, initial_balance=200_000, balance=250_000
     )
+
+
+# ── create_account (client-supplied id, offline-first sync) ────────────────────
+
+
+async def test_create_account_without_id_lets_db_generate_one() -> None:
+    session = _make_session()
+    data = AccountCreate(name="Wallet", type=AccountType.cash)
+
+    with patch("app.domains.finance.service.repo") as mock_repo:
+        mock_repo.get_account = AsyncMock(return_value=None)
+        mock_repo.create_account = AsyncMock(return_value=_make_account())
+
+        await finance_service.create_account(session, _USER_ID, data)
+
+    mock_repo.get_account.assert_not_called()
+    _, kwargs = mock_repo.create_account.call_args
+    assert "id" not in kwargs
+
+
+async def test_create_account_with_client_id_passes_it_through() -> None:
+    session = _make_session()
+    client_id = uuid.uuid4()
+    data = AccountCreate(id=client_id, name="Wallet", type=AccountType.cash)
+
+    with patch("app.domains.finance.service.repo") as mock_repo:
+        mock_repo.get_account = AsyncMock(return_value=None)
+        mock_repo.create_account = AsyncMock(return_value=_make_account())
+
+        await finance_service.create_account(session, _USER_ID, data)
+
+    _, kwargs = mock_repo.create_account.call_args
+    assert kwargs["id"] == client_id
+
+
+async def test_create_account_retry_with_same_id_is_idempotent() -> None:
+    """Client retries a push (e.g. response was lost) with the same id: return
+    the already-created row instead of erroring or double-creating."""
+    session = _make_session()
+    client_id = uuid.uuid4()
+    existing = _make_account()
+    data = AccountCreate(id=client_id, name="Wallet", type=AccountType.cash)
+
+    with patch("app.domains.finance.service.repo") as mock_repo:
+        mock_repo.get_account = AsyncMock(return_value=existing)
+        mock_repo.create_account = AsyncMock()
+
+        result = await finance_service.create_account(session, _USER_ID, data)
+
+    assert result is existing
+    mock_repo.create_account.assert_not_called()
+
+
+async def test_create_account_id_owned_by_another_user_raises_conflict() -> None:
+    session = _make_session()
+    client_id = uuid.uuid4()
+    other_users_account = _make_account(user_id=_OTHER_USER_ID)
+    data = AccountCreate(id=client_id, name="Wallet", type=AccountType.cash)
+
+    with patch("app.domains.finance.service.repo") as mock_repo:
+        mock_repo.get_account = AsyncMock(return_value=other_users_account)
+
+        with pytest.raises(ConflictError):
+            await finance_service.create_account(session, _USER_ID, data)

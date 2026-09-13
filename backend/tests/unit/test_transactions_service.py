@@ -61,6 +61,7 @@ def _make_draft(
 @pytest.fixture
 def mock_repo():
     with patch("app.domains.finance.service.repo") as repo:
+        repo.get_transaction = AsyncMock(return_value=None)
         repo.get_account_for_update = AsyncMock(return_value=_make_account())
         repo.get_pending_draft_transactions = AsyncMock(return_value=[])
         repo.create_transaction = AsyncMock(return_value=MagicMock(spec=Transaction))
@@ -196,3 +197,50 @@ async def test_skips_dedupe_check_for_confirmed_status(mock_repo) -> None:
 
     mock_repo.get_pending_draft_transactions.assert_not_called()
     mock_repo.create_transaction.assert_called_once()
+
+
+# ── create_transaction (client-supplied id, offline-first sync) ────────────────
+
+
+async def test_create_transaction_without_id_lets_db_generate_one(mock_repo) -> None:
+    await finance_service.create_transaction(AsyncMock(), _USER_ID, _make_draft())
+
+    mock_repo.get_transaction.assert_not_called()
+    _, kwargs = mock_repo.create_transaction.call_args
+    assert "id" not in kwargs
+
+
+async def test_create_transaction_with_client_id_passes_it_through(mock_repo) -> None:
+    client_id = uuid.uuid4()
+    data = _make_draft().model_copy(update={"id": client_id})
+
+    await finance_service.create_transaction(AsyncMock(), _USER_ID, data)
+
+    _, kwargs = mock_repo.create_transaction.call_args
+    assert kwargs["id"] == client_id
+
+
+async def test_create_transaction_retry_with_same_id_is_idempotent(mock_repo) -> None:
+    """A retried push must not double-apply the account balance delta."""
+    client_id = uuid.uuid4()
+    existing = MagicMock(spec=Transaction)
+    existing.user_id = _USER_ID
+    mock_repo.get_transaction.return_value = existing
+    data = _make_draft(status=TransactionStatus.confirmed).model_copy(update={"id": client_id})
+
+    result = await finance_service.create_transaction(AsyncMock(), _USER_ID, data)
+
+    assert result is existing
+    mock_repo.create_transaction.assert_not_called()
+    mock_repo.update_account.assert_not_called()
+
+
+async def test_create_transaction_id_owned_by_another_user_raises_conflict(mock_repo) -> None:
+    client_id = uuid.uuid4()
+    other_users_tx = MagicMock(spec=Transaction)
+    other_users_tx.user_id = uuid.uuid4()
+    mock_repo.get_transaction.return_value = other_users_tx
+    data = _make_draft().model_copy(update={"id": client_id})
+
+    with pytest.raises(ConflictError):
+        await finance_service.create_transaction(AsyncMock(), _USER_ID, data)

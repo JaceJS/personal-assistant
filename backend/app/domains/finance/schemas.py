@@ -19,6 +19,9 @@ from app.domains.finance.models import (
 
 
 class SavingsGoalCreate(BaseModel):
+    # Client-generated id, for offline-first sync: a row created locally
+    # keeps the same id after it syncs to the server (see AccountCreate.id).
+    id: uuid.UUID | None = None
     name: str = Field(..., min_length=1, max_length=100)
     icon: str | None = None
     target_amount: int
@@ -111,6 +114,10 @@ class BudgetRead(BaseModel):
 
 
 class AccountCreate(BaseModel):
+    # Client-generated id, for offline-first sync: a row created locally
+    # (while offline) keeps this same id once it syncs to the server, instead
+    # of the server minting a second, different id for the same account.
+    id: uuid.UUID | None = None
     name: str
     type: AccountType
     currency: str = "IDR"
@@ -160,6 +167,7 @@ class AccountRead(BaseModel):
 
 
 class CategoryCreate(BaseModel):
+    id: uuid.UUID | None = None  # see AccountCreate.id
     name: str
     type: CategoryType
     icon: str | None = None
@@ -213,6 +221,7 @@ class CategoryRead(BaseModel):
 
 
 class TransactionCreate(BaseModel):
+    id: uuid.UUID | None = None  # see AccountCreate.id
     account_id: uuid.UUID
     category_id: uuid.UUID | None = None
     amount: int  # negative = expense, positive = income

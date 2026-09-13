@@ -1,6 +1,8 @@
 import uuid
+from datetime import datetime
+from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from app.core.auth import CurrentUser
 from app.core.response import ApiResponse, ok, paginated
@@ -12,8 +14,12 @@ router = APIRouter(tags=["Accounts"])
 
 
 @router.get("/accounts", response_model=ApiResponse[list[AccountRead]])
-async def list_accounts(user_id: CurrentUser, session: DbSession) -> ApiResponse[list[AccountRead]]:
-    items = await service.list_accounts(session, user_id)
+async def list_accounts(
+    user_id: CurrentUser,
+    session: DbSession,
+    updated_since: Annotated[datetime | None, Query()] = None,
+) -> ApiResponse[list[AccountRead]]:
+    items = await service.list_accounts(session, user_id, updated_since=updated_since)
     return paginated(items, total=len(items), limit=len(items), offset=0)  # type: ignore[arg-type]
 
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
@@ -386,3 +386,33 @@ async def test_list_categories_does_not_double_seed(
 
     names = [c["name"] for c in response.json()["data"]]
     assert names.count("Food") == 1
+
+
+# ── updated_since (incremental sync pull) ───────────────────────────────────
+
+
+async def test_list_categories_with_updated_since_includes_recently_archived(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    cutoff = datetime.now(UTC)
+    old_category = await repo.create_category(
+        db_session, test_user_id, name="Old", type=CategoryType.expense
+    )
+    category = await repo.create_category(
+        db_session, test_user_id, name="Archived later", type=CategoryType.expense
+    )
+    await repo.update_category(db_session, old_category, updated_at=cutoff - timedelta(days=1))
+    await repo.update_category(
+        db_session, category, is_archived=True, updated_at=cutoff + timedelta(seconds=1)
+    )
+    await db_session.commit()
+
+    response = await client.get(
+        "/api/v1/categories", params={"updated_since": cutoff.isoformat()}
+    )
+
+    assert response.status_code == 200
+    ids = {item["id"] for item in response.json()["data"]}
+    assert ids == {str(category.id)}

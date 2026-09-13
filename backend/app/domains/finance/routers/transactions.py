@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Query
@@ -23,6 +23,7 @@ async def list_transactions(
     date_to: Annotated[date | None, Query()] = None,
     search: Annotated[str | None, Query(max_length=200)] = None,
     status: Annotated[TransactionStatus | None, Query()] = None,
+    updated_since: Annotated[datetime | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=1000)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ApiResponse[list[TransactionRead]]:
@@ -34,6 +35,7 @@ async def list_transactions(
         date_to=date_to,
         search=search,
         status=status,
+        updated_since=updated_since,
         limit=limit,
         offset=offset,
     )

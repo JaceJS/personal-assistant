@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
@@ -196,3 +196,74 @@ async def test_create_account_with_initial_balance_and_transaction(
     acc_check = await client.get(f"/api/v1/accounts/{account_id}")
     assert acc_check.status_code == 200
     assert acc_check.json()["data"]["balance"] == 750_000
+
+
+# ── updated_since (incremental sync pull) ───────────────────────────────────
+
+
+async def test_list_transactions_with_updated_since_returns_only_changed_rows(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Dompet", type=AccountType.cash, currency="IDR"
+    )
+    old_tx = await repo.create_transaction(
+        db_session,
+        test_user_id,
+        account_id=account.id,
+        amount=-10_000,
+        currency="IDR",
+        occurred_at=datetime.now(UTC),
+        source=TransactionSource.manual,
+        status=TransactionStatus.confirmed,
+    )
+    cutoff = datetime.now(UTC)
+    new_tx = await repo.create_transaction(
+        db_session,
+        test_user_id,
+        account_id=account.id,
+        amount=-20_000,
+        currency="IDR",
+        occurred_at=datetime.now(UTC),
+        source=TransactionSource.manual,
+        status=TransactionStatus.confirmed,
+    )
+    await repo.update_transaction(db_session, old_tx, updated_at=cutoff - timedelta(days=1))
+    await repo.update_transaction(db_session, new_tx, updated_at=cutoff + timedelta(seconds=1))
+    await db_session.commit()
+
+    response = await client.get(
+        "/api/v1/transactions", params={"updated_since": cutoff.isoformat()}
+    )
+
+    assert response.status_code == 200
+    ids = {item["id"] for item in response.json()["data"]}
+    assert ids == {str(new_tx.id)}
+
+
+async def test_list_transactions_without_updated_since_returns_all(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Dompet", type=AccountType.cash, currency="IDR"
+    )
+    await repo.create_transaction(
+        db_session,
+        test_user_id,
+        account_id=account.id,
+        amount=-10_000,
+        currency="IDR",
+        occurred_at=datetime.now(UTC),
+        source=TransactionSource.manual,
+        status=TransactionStatus.confirmed,
+    )
+    await db_session.commit()
+
+    response = await client.get("/api/v1/transactions")
+
+    assert response.status_code == 200
+    assert len(response.json()["data"]) == 1

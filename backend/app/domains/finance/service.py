@@ -66,8 +66,10 @@ _TERMINAL_STATUSES = {VoiceProcessingStatus.completed, VoiceProcessingStatus.fai
 # ── Savings Goals ─────────────────────────────────────────────────────────────
 
 
-async def list_savings_goals(session: AsyncSession, user_id: uuid.UUID) -> list[SavingsGoal]:
-    return await repo.list_savings_goals(session, user_id)
+async def list_savings_goals(
+    session: AsyncSession, user_id: uuid.UUID, *, updated_since: datetime | None = None
+) -> list[SavingsGoal]:
+    return await repo.list_savings_goals(session, user_id, updated_since=updated_since)
 
 
 async def get_savings_goal(
@@ -86,6 +88,19 @@ async def create_savings_goal(
 ) -> SavingsGoal:
     if data.target_amount <= 0:
         raise BadRequestError("target_amount must be greater than 0")
+
+    # See create_account's comment: a client-supplied id keeps an offline-created
+    # row stable across sync, and makes a retried push idempotent.
+    if data.id is not None:
+        existing = await repo.get_savings_goal(session, data.id)
+        if existing is not None:
+            if existing.user_id != user_id:
+                raise ConflictError("Savings goal id already in use")
+            return existing
+
+    kwargs: dict[str, Any] = {}
+    if data.id is not None:
+        kwargs["id"] = data.id
     return await repo.create_savings_goal(
         session,
         user_id,
@@ -94,6 +109,7 @@ async def create_savings_goal(
         target_amount=data.target_amount,
         target_date=data.target_date,
         current_amount=0,
+        **kwargs,
     )
 
 
@@ -164,11 +180,26 @@ async def _get_account_for_balance_update(
     return account
 
 
-async def list_accounts(session: AsyncSession, user_id: uuid.UUID) -> list[Account]:
-    return await repo.list_accounts(session, user_id)
+async def list_accounts(
+    session: AsyncSession, user_id: uuid.UUID, *, updated_since: datetime | None = None
+) -> list[Account]:
+    return await repo.list_accounts(session, user_id, updated_since=updated_since)
 
 
 async def create_account(session: AsyncSession, user_id: uuid.UUID, data: AccountCreate) -> Account:
+    # A client-supplied id (offline-first sync: the row already exists locally
+    # with this id) must stay stable across the sync, and a retried push must
+    # not create a duplicate.
+    if data.id is not None:
+        existing = await repo.get_account(session, data.id)
+        if existing is not None:
+            if existing.user_id != user_id:
+                raise ConflictError("Account id already in use")
+            return existing
+
+    kwargs: dict[str, Any] = {}
+    if data.id is not None:
+        kwargs["id"] = data.id
     return await repo.create_account(
         session,
         user_id,
@@ -177,6 +208,7 @@ async def create_account(session: AsyncSession, user_id: uuid.UUID, data: Accoun
         currency=data.currency,
         initial_balance=data.initial_balance,
         balance=data.initial_balance,
+        **kwargs,
     )
 
 
@@ -253,10 +285,12 @@ async def seed_default_categories(session: AsyncSession, user_id: uuid.UUID) -> 
     return seeded
 
 
-async def list_categories(session: AsyncSession, user_id: uuid.UUID) -> list[CategoryRead]:
+async def list_categories(
+    session: AsyncSession, user_id: uuid.UUID, *, updated_since: datetime | None = None
+) -> list[CategoryRead]:
     if not await repo.has_user_categories(session, user_id):
         await seed_default_categories(session, user_id)
-    categories = await repo.list_categories(session, user_id)
+    categories = await repo.list_categories(session, user_id, updated_since=updated_since)
     budget_map = await repo.get_user_category_budgets_map(session, user_id)
     return [_build_category_read(cat, budget_map.get(cat.id)) for cat in categories]
 
@@ -264,6 +298,19 @@ async def list_categories(session: AsyncSession, user_id: uuid.UUID) -> list[Cat
 async def create_category(
     session: AsyncSession, user_id: uuid.UUID, data: CategoryCreate
 ) -> CategoryRead:
+    # See create_account's comment: a client-supplied id keeps an offline-created
+    # row stable across sync, and makes a retried push idempotent.
+    if data.id is not None:
+        existing = await repo.get_category(session, data.id)
+        if existing is not None:
+            if existing.user_id != user_id:
+                raise ConflictError("Category id already in use")
+            ucb = await repo.get_user_category_budget(session, user_id, existing.id)
+            return _build_category_read(existing, ucb)
+
+    kwargs: dict[str, Any] = {}
+    if data.id is not None:
+        kwargs["id"] = data.id
     category = await repo.create_category(
         session,
         user_id,
@@ -271,6 +318,7 @@ async def create_category(
         type=data.type,
         icon=data.icon,
         color=data.color,
+        **kwargs,
     )
     return _build_category_read(category, None)
 
@@ -338,6 +386,7 @@ async def list_transactions(
     date_to: date | None = None,
     search: str | None = None,
     status: TransactionStatus | None = None,
+    updated_since: datetime | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> tuple[list[Transaction], int]:
@@ -349,6 +398,7 @@ async def list_transactions(
         date_to=date_to,
         search=search,
         status=status,
+        updated_since=updated_since,
         limit=limit,
         offset=offset,
     )
@@ -360,6 +410,7 @@ async def list_transactions(
         date_to=date_to,
         search=search,
         status=status,
+        updated_since=updated_since,
     )
     return items, total
 
@@ -371,6 +422,16 @@ async def create_transaction(
     *,
     dedupe_before: datetime | None = None,
 ) -> Transaction:
+    # A client-supplied id (offline-first sync) makes a retried push idempotent:
+    # skip straight to returning the existing row before any balance update
+    # runs again, or the account balance would be double-counted.
+    if data.id is not None:
+        existing = await repo.get_transaction(session, data.id)
+        if existing is not None:
+            if existing.user_id != user_id:
+                raise ConflictError("Transaction id already in use")
+            return existing
+
     account = await _get_account_for_balance_update(session, data.account_id, user_id)
 
     if data.category_id is not None:
@@ -392,6 +453,9 @@ async def create_transaction(
                 "A pending draft for this merchant, amount, and item already exists"
             )
 
+    id_kwargs: dict[str, Any] = {}
+    if data.id is not None:
+        id_kwargs["id"] = data.id
     tx = await repo.create_transaction(
         session,
         user_id,
@@ -406,6 +470,7 @@ async def create_transaction(
         status=data.status,
         voice_log_id=data.voice_log_id,
         chat_session_id=data.chat_session_id,
+        **id_kwargs,
     )
     if data.status == TransactionStatus.confirmed:
         await repo.update_account(session, account, balance=account.balance + data.amount)

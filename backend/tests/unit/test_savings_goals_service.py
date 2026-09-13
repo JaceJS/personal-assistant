@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
+from app.core.exceptions import BadRequestError, ConflictError, ForbiddenError, NotFoundError
 from app.domains.finance import service as finance_service
 from app.domains.finance.models import SavingsGoal
 from app.domains.finance.schemas import (
@@ -61,7 +61,7 @@ async def test_list_savings_goals_returns_only_active() -> None:
         result = await finance_service.list_savings_goals(session, _USER_ID)
 
     assert result == goals
-    mock_repo.list_savings_goals.assert_called_once_with(session, _USER_ID)
+    mock_repo.list_savings_goals.assert_called_once_with(session, _USER_ID, updated_since=None)
 
 
 # ── get_savings_goal ──────────────────────────────────────────────────────────
@@ -116,11 +116,61 @@ async def test_create_savings_goal_success() -> None:
     goal = _make_goal()
 
     with patch("app.domains.finance.service.repo") as mock_repo:
+        mock_repo.get_savings_goal = AsyncMock(return_value=None)
         mock_repo.create_savings_goal = AsyncMock(return_value=goal)
         result = await finance_service.create_savings_goal(session, _USER_ID, data)
 
     assert result is goal
     mock_repo.create_savings_goal.assert_called_once()
+    _, kwargs = mock_repo.create_savings_goal.call_args
+    assert "id" not in kwargs
+
+
+# ── create_savings_goal (client-supplied id, offline-first sync) ───────────────
+
+
+async def test_create_savings_goal_with_client_id_passes_it_through() -> None:
+    session = _make_session()
+    client_id = uuid.uuid4()
+    data = SavingsGoalCreate(id=client_id, name="DP Motor", target_amount=5_000_000)
+
+    with patch("app.domains.finance.service.repo") as mock_repo:
+        mock_repo.get_savings_goal = AsyncMock(return_value=None)
+        mock_repo.create_savings_goal = AsyncMock(return_value=_make_goal())
+
+        await finance_service.create_savings_goal(session, _USER_ID, data)
+
+    _, kwargs = mock_repo.create_savings_goal.call_args
+    assert kwargs["id"] == client_id
+
+
+async def test_create_savings_goal_retry_with_same_id_is_idempotent() -> None:
+    session = _make_session()
+    client_id = uuid.uuid4()
+    existing = _make_goal()
+    data = SavingsGoalCreate(id=client_id, name="DP Motor", target_amount=5_000_000)
+
+    with patch("app.domains.finance.service.repo") as mock_repo:
+        mock_repo.get_savings_goal = AsyncMock(return_value=existing)
+        mock_repo.create_savings_goal = AsyncMock()
+
+        result = await finance_service.create_savings_goal(session, _USER_ID, data)
+
+    assert result is existing
+    mock_repo.create_savings_goal.assert_not_called()
+
+
+async def test_create_savings_goal_id_owned_by_another_user_raises_conflict() -> None:
+    session = _make_session()
+    client_id = uuid.uuid4()
+    other_users_goal = _make_goal(user_id=_OTHER_USER_ID)
+    data = SavingsGoalCreate(id=client_id, name="DP Motor", target_amount=5_000_000)
+
+    with patch("app.domains.finance.service.repo") as mock_repo:
+        mock_repo.get_savings_goal = AsyncMock(return_value=other_users_goal)
+
+        with pytest.raises(ConflictError):
+            await finance_service.create_savings_goal(session, _USER_ID, data)
 
 
 # ── contribute_to_savings_goal ────────────────────────────────────────────────
