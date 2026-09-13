@@ -1,122 +1,447 @@
-/* Admin panel: plain, functional, reuses globals.css color tokens but not
-   the marketing site's loaded fonts (this page doesn't load them). */
+/* Admin panel palette -- every value below is sourced from
+   mobile/src/theme/colors.ts (the app's real, canonical theme), not
+   invented for this page. See that file for the source of truth. */
+:root {
+  --adm-canvas: #fbf5ec; /* bg.canvas */
+  --adm-surface: #f3e9d8; /* bg.surface */
+  --adm-elevated: #fffcf7; /* bg.elevated */
+  --adm-hover: #ece0cc; /* bg.hover */
+  --adm-border-subtle: #e8dcc8; /* border.subtle */
+  --adm-border: #ddcbae; /* border.default */
+  --adm-ink: #201810; /* text.primary */
+  --adm-ink-secondary: #564a36; /* text.secondary */
+  --adm-ink-muted: #746650; /* text.muted */
+  --adm-accent: #e27a3f; /* accent.primary */
+  --adm-accent-text: #a6491a; /* accent.text */
+  --adm-dark-bg: #17130f; /* card.bg */
+  --adm-dark-surface: #221b14; /* card.surface */
+  --adm-dark-border: #3e3121; /* card.border */
+  --adm-dark-text: #f4eee2; /* card.text.primary */
+  --adm-dark-text-secondary: #b3a78c; /* card.text.secondary */
+  --adm-dark-text-muted: #7b6f54; /* card.text.muted */
+  --adm-success-text: #2f7d3b; /* success.text */
+  --adm-success-bg: #e3f2e2; /* success.bg */
+  --adm-danger-text: #b23f26; /* danger.text */
+  --adm-danger-bg: #fbe3dc; /* danger.bg */
+}
+
 body {
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-admin-body), ui-sans-serif, system-ui, sans-serif;
+  background: var(--adm-canvas);
+  color: var(--adm-ink);
 }
 
-.admin-shell {
-  padding: 24px;
+/* ── Shared shell ──────────────────────────────────────────────────────── */
+
+.adm-shell {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
 }
 
-.admin-shell--centered {
+.adm-config-notice {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px;
+  text-align: center;
+  color: var(--adm-ink-muted);
 }
 
-.admin-header {
+/* ── Top bar ───────────────────────────────────────────────────────────── */
+
+.adm-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--line);
-  background: var(--paper-deep);
-  font-size: 14px;
+  padding: 14px 24px;
+  background: var(--adm-elevated);
+  border-bottom: 1px solid var(--adm-border-subtle);
+  font-size: 13px;
 }
 
-.admin-button {
-  background: var(--brand);
-  color: #fff;
+.adm-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-admin-display), sans-serif;
+  font-weight: 700;
+  color: var(--adm-ink);
+}
+
+.adm-topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--adm-ink-secondary);
+}
+
+.adm-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--adm-success-text);
+  box-shadow: 0 0 0 3px rgba(47, 125, 59, 0.15);
+}
+
+.adm-link-button {
+  background: none;
   border: none;
-  border-radius: var(--radius);
-  padding: 10px 18px;
+  color: var(--adm-ink-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  padding: 0;
+}
+
+.adm-link-button:hover {
+  color: var(--adm-ink);
+}
+
+/* ── Login / denied: plain centered card ─────────────────────────────────
+   Deliberately unthemed -- an admin tool's auth screen should be fast and
+   legible, not an experience. */
+
+.adm-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--adm-canvas);
+  padding: 24px;
+}
+
+.adm-card {
+  width: min(380px, 100%);
+  background: var(--adm-elevated);
+  border: 1px solid var(--adm-border-subtle);
+  border-radius: 10px;
+  padding: 36px 32px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(32, 24, 16, 0.04);
+}
+
+.adm-brand {
+  font-family: var(--font-admin-display), sans-serif;
   font-size: 15px;
+  font-weight: 700;
+  color: var(--adm-ink-muted);
+  letter-spacing: 0.02em;
+  margin-bottom: 22px;
+}
+
+.adm-card h1 {
+  font-family: var(--font-admin-display), sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--adm-ink);
+  margin-bottom: 10px;
+}
+
+.adm-card p {
+  font-size: 14px;
+  color: var(--adm-ink-secondary);
+  line-height: 1.55;
+  margin-bottom: 24px;
+}
+
+.adm-card--denied h1 {
+  color: var(--adm-danger-text);
+}
+
+.adm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--adm-accent);
+  color: #fff8f0;
+  border: none;
+  border-radius: 7px;
+  padding: 12px 20px;
+  font: inherit;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
 
-.admin-link-button {
-  background: none;
-  border: none;
-  color: var(--brand-text);
-  text-decoration: underline;
-  cursor: pointer;
-  font: inherit;
+.adm-btn-primary:hover {
+  background: var(--adm-accent-text);
 }
 
-.admin-table {
+.adm-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ── Dashboard ─────────────────────────────────────────────────────────── */
+
+.adm-page-header {
+  margin-bottom: 24px;
+}
+
+.adm-title {
+  font-family: var(--font-admin-display), sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--adm-ink);
+}
+
+/* KPI stat cards -- the at-a-glance summary a dashboard opens with. */
+.adm-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.adm-kpi {
+  position: relative;
+  background: var(--adm-elevated);
+  border: 1px solid var(--adm-border-subtle);
+  border-radius: 8px;
+  padding: 16px 18px 16px 20px;
+  overflow: hidden;
+}
+
+.adm-kpi::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--adm-kpi-accent, var(--adm-accent));
+}
+
+.adm-kpi--success {
+  --adm-kpi-accent: var(--adm-success-text);
+}
+
+.adm-kpi--danger {
+  --adm-kpi-accent: var(--adm-danger-text);
+}
+
+.adm-kpi-label {
+  font-size: 12px;
+  color: var(--adm-ink-muted);
+  margin-bottom: 6px;
+}
+
+.adm-kpi-value {
+  font-family: var(--font-admin-display), sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--adm-ink);
+  line-height: 1;
+}
+
+/* ── Filters & table ───────────────────────────────────────────────────── */
+
+.adm-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.adm-toolbar select {
+  padding: 7px 10px;
+  background: var(--adm-elevated);
+  border: 1px solid var(--adm-border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--adm-ink);
+}
+
+.adm-table-wrap {
+  background: var(--adm-elevated);
+  border: 1px solid var(--adm-border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.adm-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
 }
 
-.admin-stats {
-  max-width: 480px;
+.adm-table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--adm-ink-muted);
+  border-bottom: 1px solid var(--adm-border-subtle);
+  background: var(--adm-surface);
+}
+
+.adm-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--adm-border-subtle);
+  vertical-align: middle;
+}
+
+.adm-table tbody tr:hover td {
+  background: var(--adm-hover);
+}
+
+.adm-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.adm-table a {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+
+.adm-cell-mono {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--adm-ink-secondary);
+}
+
+/* Status: a colored dot + word, not color alone -- readable at a glance
+   and doesn't rely on color perception. */
+.adm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.adm-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.adm-pill--success {
+  color: var(--adm-success-text);
+}
+
+.adm-pill--error {
+  color: var(--adm-danger-text);
+}
+
+.adm-empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--adm-ink-muted);
+}
+
+.adm-pagination {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--adm-ink-secondary);
+}
+
+.adm-error-text {
+  color: var(--adm-danger-text);
+}
+
+/* ── Detail page ───────────────────────────────────────────────────────── */
+
+.adm-back-link {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--adm-ink-secondary);
+  margin-bottom: 20px;
+}
+
+.adm-summary-card {
+  background: var(--adm-elevated);
+  border: 1px solid var(--adm-border-subtle);
+  border-radius: 8px;
+  padding: 28px;
+}
+
+.adm-summary-kind {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--adm-ink-muted);
+  margin-bottom: 6px;
+}
+
+.adm-summary-result {
+  font-family: var(--font-admin-display), sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 22px;
+}
+
+.adm-summary-result--success {
+  color: var(--adm-success-text);
+}
+
+.adm-summary-result--error {
+  color: var(--adm-danger-text);
+}
+
+.adm-section-label {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--adm-ink-muted);
+  margin-bottom: 8px;
+}
+
+.adm-excerpt {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border-subtle);
+  border-radius: 6px;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.6;
   margin-bottom: 24px;
 }
 
-.admin-table th,
-.admin-table td {
-  text-align: left;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--line);
-  vertical-align: top;
+.adm-tech-details {
+  margin-top: 8px;
+  border-top: 1px solid var(--adm-border-subtle);
+  padding-top: 16px;
 }
 
-.admin-table tr:hover td {
-  background: var(--wash);
+.adm-tech-details summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--adm-ink-secondary);
 }
 
-.admin-status-success {
-  color: var(--green);
-}
-
-.admin-status-error {
-  color: #b3261e;
-}
-
-.admin-filters {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.admin-filters select {
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  font: inherit;
-}
-
-.admin-pagination {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-top: 16px;
-  font-size: 14px;
-}
-
-.admin-detail dl {
+.adm-tech-dl {
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 8px 16px;
-  font-size: 14px;
-}
-
-.admin-detail dt {
-  color: var(--ink-soft);
-}
-
-.admin-detail pre {
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: var(--paper-deep);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 12px;
   font-size: 13px;
+  margin-top: 16px;
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+}
+
+.adm-tech-dl dt {
+  color: var(--adm-ink-muted);
+  font-family: var(--font-admin-body), sans-serif;
+}
+
+.adm-tech-dl dd {
+  word-break: break-all;
 }

@@ -12,10 +12,23 @@ import {
   getTraceStats,
   listTraces,
 } from "@/lib/adminApi";
+import { featureLabel, formatRelativeTime, formatSpeed, statusLabel } from "@/lib/adminFormat";
 
 const PAGE_SIZE = 50;
 const FEATURES: AiFeature[] = ["voice_extraction", "receipt_extraction", "chat"];
 const STATUSES: AiTraceStatus[] = ["success", "error"];
+
+function summarize(stats: AiTraceStats[]): { total: number; worked: number; failed: number } {
+  return stats.reduce(
+    (totals, row) => {
+      totals.total += row.count;
+      if (row.status === "success") totals.worked += row.count;
+      else totals.failed += row.count;
+      return totals;
+    },
+    { total: 0, worked: 0, failed: 0 }
+  );
+}
 
 export default function AdminTracesPage() {
   const [feature, setFeature] = useState<AiFeature | "">("");
@@ -62,38 +75,32 @@ export default function AdminTracesPage() {
     };
   }, [feature, status, offset]);
 
-  if (error?.status === 403) {
-    return <main className="admin-shell">Signed in, but not an admin.</main>;
-  }
+  const { total: totalCount, worked, failed } = summarize(stats);
 
   return (
-    <main className="admin-shell">
-      <h1>AI Traces</h1>
+    <main className="adm-shell">
+      <div className="adm-page-header">
+        <h1 className="adm-title">AI activity</h1>
+      </div>
 
       {stats.length > 0 && (
-        <table className="admin-table admin-stats">
-          <thead>
-            <tr>
-              <th>Feature</th>
-              <th>Status</th>
-              <th>Count</th>
-              <th>Avg latency</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stats.map((row) => (
-              <tr key={`${row.feature}-${row.status}`}>
-                <td>{row.feature}</td>
-                <td className={`admin-status-${row.status}`}>{row.status}</td>
-                <td>{row.count}</td>
-                <td>{Math.round(row.avg_latency_ms)}ms</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="adm-kpis">
+          <div className="adm-kpi">
+            <p className="adm-kpi-label">Total</p>
+            <p className="adm-kpi-value">{totalCount}</p>
+          </div>
+          <div className="adm-kpi adm-kpi--success">
+            <p className="adm-kpi-label">Worked</p>
+            <p className="adm-kpi-value">{worked}</p>
+          </div>
+          <div className="adm-kpi adm-kpi--danger">
+            <p className="adm-kpi-label">Failed</p>
+            <p className="adm-kpi-value">{failed}</p>
+          </div>
+        </div>
       )}
 
-      <div className="admin-filters">
+      <div className="adm-toolbar">
         <select
           value={feature}
           onChange={(e) => {
@@ -101,10 +108,10 @@ export default function AdminTracesPage() {
             setFeature(e.target.value as AiFeature | "");
           }}
         >
-          <option value="">All features</option>
+          <option value="">All types</option>
           {FEATURES.map((f) => (
             <option key={f} value={f}>
-              {f}
+              {featureLabel(f)}
             </option>
           ))}
         </select>
@@ -115,58 +122,71 @@ export default function AdminTracesPage() {
             setStatus(e.target.value as AiTraceStatus | "");
           }}
         >
-          <option value="">All statuses</option>
+          <option value="">Worked or failed</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {statusLabel(s)}
             </option>
           ))}
         </select>
       </div>
 
-      {error && <p className="admin-status-error">{error.message}</p>}
+      {error?.status === 403 && <p className="adm-error-text">Signed in, but not an admin.</p>}
+      {error && error.status !== 403 && <p className="adm-error-text">{error.message}</p>}
       {loading && <p>Loading…</p>}
 
       {!loading && !error && (
         <>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Feature</th>
-                <th>Model</th>
-                <th>Status</th>
-                <th>Latency</th>
-                <th>Excerpt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((trace) => (
-                <tr key={trace.id}>
-                  <td>{new Date(trace.created_at).toLocaleString()}</td>
-                  <td>{trace.feature}</td>
-                  <td>{trace.model}</td>
-                  <td className={`admin-status-${trace.status}`}>{trace.status}</td>
-                  <td>{trace.latency_ms}ms</td>
-                  <td>
-                    <Link href={`/admin/traces/${trace.id}`}>
-                      {(trace.response_excerpt ?? trace.error_message ?? "").slice(0, 80) || "—"}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {items.length === 0 && (
+          <div className="adm-table-wrap">
+            <table className="adm-table">
+              <thead>
                 <tr>
-                  <td colSpan={6}>No traces yet.</td>
+                  <th>When</th>
+                  <th>Type</th>
+                  <th>Result</th>
+                  <th>Speed</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {items.map((trace) => (
+                  <tr key={trace.id}>
+                    <td className="adm-cell-mono">
+                      <Link href={`/admin/traces/${trace.id}`}>
+                        {formatRelativeTime(trace.created_at)}
+                      </Link>
+                    </td>
+                    <td>
+                      <Link href={`/admin/traces/${trace.id}`}>{featureLabel(trace.feature)}</Link>
+                    </td>
+                    <td>
+                      <Link href={`/admin/traces/${trace.id}`}>
+                        <span className={`adm-pill adm-pill--${trace.status}`}>
+                          {statusLabel(trace.status)}
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="adm-cell-mono">
+                      <Link href={`/admin/traces/${trace.id}`}>
+                        {formatSpeed(trace.latency_ms)}
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+                {items.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="adm-empty">
+                      Nothing here yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-          <div className="admin-pagination">
+          <div className="adm-pagination">
             <button
               type="button"
-              className="admin-link-button"
+              className="adm-link-button"
               disabled={offset === 0}
               onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
             >
@@ -177,7 +197,7 @@ export default function AdminTracesPage() {
             </span>
             <button
               type="button"
-              className="admin-link-button"
+              className="adm-link-button"
               disabled={offset + PAGE_SIZE >= total}
               onClick={() => setOffset(offset + PAGE_SIZE)}
             >

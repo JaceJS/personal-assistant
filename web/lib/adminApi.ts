@@ -94,6 +94,18 @@ export async function listTraces(params: ListTracesParams = {}): Promise<ListTra
   };
 }
 
+/** One cheap call to check the signed-in account is an admin (ADMIN_ALLOWLIST),
+ * so pages under /admin never have to attempt their own fetch first. */
+export async function checkAdminAccess(): Promise<boolean> {
+  try {
+    await listTraces({ limit: 1 });
+    return true;
+  } catch (err) {
+    if (err instanceof AdminApiError && err.status === 403) return false;
+    throw err;
+  }
+}
+
 export async function getTrace(id: string): Promise<AiTrace> {
   const envelope = await request<AiTrace>(`/api/v1/admin/traces/${id}`);
   if (!envelope.data) {

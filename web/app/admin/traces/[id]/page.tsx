@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { AdminApiError, type AiTrace, getTrace } from "@/lib/adminApi";
+import { featureLabel, formatSpeed, friendlyErrorMessage, statusLabel } from "@/lib/adminFormat";
 
 export default function AdminTraceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,60 +32,68 @@ export default function AdminTraceDetailPage() {
     };
   }, [id]);
 
-  if (error?.status === 403) {
-    return <main className="admin-shell">Signed in, but not an admin.</main>;
-  }
-
   return (
-    <main className="admin-shell admin-detail">
-      <p>
-        <Link href="/admin">&larr; Back to traces</Link>
-      </p>
-      <h1>Trace detail</h1>
+    <main className="adm-shell">
+      <Link href="/admin" className="adm-back-link">
+        &larr; Back
+      </Link>
 
       {loading && <p>Loading…</p>}
-      {error && <p className="admin-status-error">{error.message}</p>}
+      {error?.status === 403 && <p className="adm-error-text">Signed in, but not an admin.</p>}
+      {error && error.status !== 403 && <p className="adm-error-text">{error.message}</p>}
 
       {trace && (
-        <>
-          <dl>
-            <dt>Id</dt>
-            <dd>{trace.id}</dd>
-            <dt>User id</dt>
-            <dd>{trace.user_id}</dd>
-            <dt>Feature</dt>
-            <dd>{trace.feature}</dd>
-            <dt>Model</dt>
-            <dd>{trace.model}</dd>
-            <dt>Status</dt>
-            <dd className={`admin-status-${trace.status}`}>{trace.status}</dd>
-            <dt>Latency</dt>
-            <dd>{trace.latency_ms}ms</dd>
-            <dt>Tokens (prompt / completion)</dt>
-            <dd>
-              {trace.prompt_tokens ?? "—"} / {trace.completion_tokens ?? "—"}
-            </dd>
-            <dt>Linked entity</dt>
-            <dd>
-              {trace.linked_entity_type ?? "—"} {trace.linked_entity_id ?? ""}
-            </dd>
-            <dt>Created at</dt>
-            <dd>{new Date(trace.created_at).toLocaleString()}</dd>
-          </dl>
+        <div className="adm-summary-card">
+          <p className="adm-summary-kind">{featureLabel(trace.feature)}</p>
+          <p className={`adm-summary-result adm-summary-result--${trace.status}`}>
+            {trace.status === "success" ? "✓" : "✕"} {statusLabel(trace.status)} in{" "}
+            {formatSpeed(trace.latency_ms)}
+          </p>
 
-          {trace.response_excerpt && (
+          {trace.status === "success" ? (
             <>
-              <h2>Response</h2>
-              <pre>{trace.response_excerpt}</pre>
+              <p className="adm-section-label">What the AI read</p>
+              <pre className="adm-excerpt">
+                {trace.response_excerpt ?? "No excerpt saved for this one."}
+              </pre>
+            </>
+          ) : (
+            <>
+              <p className="adm-section-label">What went wrong</p>
+              <pre className="adm-excerpt">{friendlyErrorMessage(trace.feature)}</pre>
             </>
           )}
-          {trace.error_message && (
-            <>
-              <h2>Error</h2>
-              <pre>{trace.error_message}</pre>
-            </>
-          )}
-        </>
+
+          <details className="adm-tech-details">
+            <summary>Technical details</summary>
+            <dl className="adm-tech-dl">
+              <dt>Trace id</dt>
+              <dd>{trace.id}</dd>
+              <dt>User id</dt>
+              <dd>{trace.user_id}</dd>
+              <dt>Model</dt>
+              <dd>{trace.model}</dd>
+              <dt>Latency</dt>
+              <dd>{trace.latency_ms}ms</dd>
+              <dt>Tokens (prompt / completion)</dt>
+              <dd>
+                {trace.prompt_tokens ?? "—"} / {trace.completion_tokens ?? "—"}
+              </dd>
+              <dt>Linked entity</dt>
+              <dd>
+                {trace.linked_entity_type ?? "—"} {trace.linked_entity_id ?? ""}
+              </dd>
+              <dt>Created at</dt>
+              <dd>{new Date(trace.created_at).toISOString()}</dd>
+              {trace.error_message && (
+                <>
+                  <dt>Raw error</dt>
+                  <dd>{trace.error_message}</dd>
+                </>
+              )}
+            </dl>
+          </details>
+        </div>
       )}
     </main>
   );
