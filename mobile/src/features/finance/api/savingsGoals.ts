@@ -9,8 +9,9 @@ import type {
 
 const BASE = "/api/v1/savings-goals";
 
-export function listSavingsGoals(): Promise<SavingsGoal[]> {
-  return apiFetch<ApiResponse<SavingsGoal[]>>(BASE).then(r => r.data);
+export function listSavingsGoals(params?: { updatedSince?: string }): Promise<SavingsGoal[]> {
+  const qs = params?.updatedSince ? `?updated_since=${encodeURIComponent(params.updatedSince)}` : "";
+  return apiFetch<ApiResponse<SavingsGoal[]>>(`${BASE}${qs}`).then(r => r.data);
 }
 
 export function getSavingsGoal(id: string): Promise<SavingsGoal> {

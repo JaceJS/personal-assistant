@@ -1,8 +1,9 @@
 import { apiFetch } from "@/lib/api/client";
 import type { Account, AccountCreate, AccountUpdate, ApiResponse, PaginatedList } from "@/features/finance/types";
 
-export function listAccounts(): Promise<PaginatedList<Account>> {
-  return apiFetch<ApiResponse<Account[]>>("/api/v1/accounts")
+export function listAccounts(params?: { updatedSince?: string }): Promise<PaginatedList<Account>> {
+  const qs = params?.updatedSince ? `?updated_since=${encodeURIComponent(params.updatedSince)}` : "";
+  return apiFetch<ApiResponse<Account[]>>(`/api/v1/accounts${qs}`)
     .then(r => ({ items: r.data, total: r.meta?.total ?? 0 }));
 }
 

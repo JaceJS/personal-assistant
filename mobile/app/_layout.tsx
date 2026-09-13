@@ -11,7 +11,8 @@ import {
   PlusJakartaSans_700Bold,
 } from "@expo-google-fonts/plus-jakarta-sans";
 import { useFonts } from "expo-font";
-import { QueryClientProvider, focusManager } from "@tanstack/react-query";
+import { focusManager } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
@@ -19,11 +20,13 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { queryClient } from "@/lib/queryClient";
+import { asyncStoragePersister, queryClient, QUERY_PERSIST_MAX_AGE } from "@/lib/queryClient";
+import { shouldPersistQuery } from "@/lib/queryPersister";
 import { runMigrations } from "@/lib/db/client";
 import { logger } from "@/lib/logger";
 import { Toast } from "@/components/ui/Toast";
 import { GuestDataMergeSheet } from "@/features/sync/components/GuestDataMergeSheet";
+import { useSyncTriggers } from "@/features/sync/useSyncTriggers";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/stores/auth";
 import { useLanguageStore } from "@/stores/language";
@@ -55,6 +58,7 @@ function RootLayoutInner() {
   const [dbReady, setDbReady] = useState(false);
 
   useAuth();
+  useSyncTriggers();
   const authInitialized = useAuthStore((s) => s.initialized);
   const initializeOnboarding = useOnboardingStore((s) => s.initialize);
   const initializeLanguage = useLanguageStore((s) => s.initialize);
@@ -95,11 +99,18 @@ function RootLayout() {
   return (
     <KeyboardProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{
+            persister: asyncStoragePersister,
+            maxAge: QUERY_PERSIST_MAX_AGE,
+            dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
+          }}
+        >
           <ErrorBoundary>
             <RootLayoutInner />
           </ErrorBoundary>
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </GestureHandlerRootView>
     </KeyboardProvider>
   );

@@ -33,8 +33,9 @@ import * as accountsApi from "@/features/finance/api/accounts";
 import * as categoriesApi from "@/features/finance/api/categories";
 import * as transactionsApi from "@/features/finance/api/transactions";
 import * as budgetApi from "@/features/finance/api/budget";
+import * as savingsGoalsApi from "@/features/finance/api/savingsGoals";
 import { RemoteRepository } from "../remote-repository";
-import type { Account, Category, Transaction, Budget } from "../../types";
+import type { Account, Category, Transaction, Budget, SavingsGoal } from "../../types";
 
 const mockAccount: Account = {
   id: "acc-1", user_id: "u1", name: "Wallet", type: "cash",
@@ -54,6 +55,11 @@ const mockTx: Transaction = {
 };
 const mockBudget: Budget = {
   id: "bud-1", user_id: "u1", monthly_limit: 5_000_000, updated_at: "2026-01-01T00:00:00Z",
+};
+const mockGoal: SavingsGoal = {
+  id: "goal-1", user_id: "u1", name: "Motor", icon: null, target_amount: 15_000_000,
+  current_amount: 0, target_date: null, is_archived: false, is_completed: false,
+  progress_pct: 0, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z",
 };
 
 describe("RemoteRepository", () => {
@@ -84,11 +90,15 @@ describe("RemoteRepository", () => {
       expect(result).toBeNull();
     });
 
-    it("createAccount ignores client id and calls api", async () => {
+    it("createAccount forwards the client id so an offline-created row keeps its id", async () => {
       (accountsApi.createAccount as jest.Mock).mockResolvedValue(mockAccount);
-      const result = await repo.createAccount({ id: "ignored-id", name: "Wallet", type: "cash" });
+      const result = await repo.createAccount({ id: "local-id", name: "Wallet", type: "cash" });
       expect(result).toEqual(mockAccount);
-      expect(accountsApi.createAccount).toHaveBeenCalledWith({ name: "Wallet", type: "cash" });
+      expect(accountsApi.createAccount).toHaveBeenCalledWith({
+        id: "local-id",
+        name: "Wallet",
+        type: "cash",
+      });
     });
 
     it("updateAccount delegates to api", async () => {
@@ -105,11 +115,15 @@ describe("RemoteRepository", () => {
       expect(result).toEqual([mockCategory]);
     });
 
-    it("createCategory ignores client id and calls api", async () => {
+    it("createCategory forwards the client id so an offline-created row keeps its id", async () => {
       (categoriesApi.createCategory as jest.Mock).mockResolvedValue(mockCategory);
-      const result = await repo.createCategory({ id: "ignored", name: "Makan", type: "expense" });
+      const result = await repo.createCategory({ id: "local-id", name: "Makan", type: "expense" });
       expect(result).toEqual(mockCategory);
-      expect(categoriesApi.createCategory).toHaveBeenCalledWith({ name: "Makan", type: "expense" });
+      expect(categoriesApi.createCategory).toHaveBeenCalledWith({
+        id: "local-id",
+        name: "Makan",
+        type: "expense",
+      });
     });
   });
 
@@ -121,14 +135,14 @@ describe("RemoteRepository", () => {
       expect(result.total).toBe(1);
     });
 
-    it("createTransaction ignores client id and calls api", async () => {
+    it("createTransaction forwards the client id so an offline-created row keeps its id", async () => {
       (transactionsApi.createTransaction as jest.Mock).mockResolvedValue(mockTx);
       const result = await repo.createTransaction({
-        id: "ignored", account_id: "acc-1", amount: 50000, occurred_at: "2026-01-01T00:00:00Z",
+        id: "local-id", account_id: "acc-1", amount: 50000, occurred_at: "2026-01-01T00:00:00Z",
       });
       expect(result).toEqual(mockTx);
       expect(transactionsApi.createTransaction).toHaveBeenCalledWith({
-        account_id: "acc-1", amount: 50000, occurred_at: "2026-01-01T00:00:00Z",
+        id: "local-id", account_id: "acc-1", amount: 50000, occurred_at: "2026-01-01T00:00:00Z",
       });
     });
 
@@ -151,6 +165,19 @@ describe("RemoteRepository", () => {
       const result = await repo.upsertBudget({ id: "ignored", monthly_limit: 5_000_000 });
       expect(result).toEqual(mockBudget);
       expect(budgetApi.upsertBudget).toHaveBeenCalledWith({ monthly_limit: 5_000_000 });
+    });
+  });
+
+  describe("savings goals", () => {
+    it("createSavingsGoal forwards the client id so an offline-created row keeps its id", async () => {
+      (savingsGoalsApi.createSavingsGoal as jest.Mock).mockResolvedValue(mockGoal);
+      const result = await repo.createSavingsGoal({
+        id: "local-id", name: "Motor", target_amount: 15_000_000, target_date: null,
+      });
+      expect(result).toEqual(mockGoal);
+      expect(savingsGoalsApi.createSavingsGoal).toHaveBeenCalledWith({
+        id: "local-id", name: "Motor", target_amount: 15_000_000, target_date: null,
+      });
     });
   });
 });

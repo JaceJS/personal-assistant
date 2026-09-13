@@ -4,6 +4,7 @@ jest.mock("expo-crypto", () => ({
 }));
 
 import Database from "better-sqlite3";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "@/lib/db/schema";
 import { LocalRepository } from "../local-repository";
@@ -20,6 +21,7 @@ function makeTestDb() {
       initial_balance INTEGER NOT NULL DEFAULT 0,
       balance INTEGER NOT NULL DEFAULT 0,
       is_archived INTEGER NOT NULL DEFAULT 0,
+      pending_sync INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -33,6 +35,7 @@ function makeTestDb() {
       budget_limit INTEGER,
       is_fixed INTEGER NOT NULL DEFAULT 0,
       is_archived INTEGER NOT NULL DEFAULT 0,
+      pending_sync INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -49,6 +52,7 @@ function makeTestDb() {
       source TEXT NOT NULL DEFAULT 'manual',
       status TEXT NOT NULL DEFAULT 'confirmed',
       voice_log_id TEXT,
+      pending_sync INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -56,6 +60,7 @@ function makeTestDb() {
       id TEXT PRIMARY KEY,
       user_id TEXT,
       monthly_limit INTEGER NOT NULL,
+      pending_sync INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL
     );
     CREATE TABLE voice_queue (
@@ -75,8 +80,14 @@ function makeTestDb() {
       current_amount INTEGER NOT NULL DEFAULT 0,
       target_date TEXT,
       is_archived INTEGER NOT NULL DEFAULT 0,
+      pending_sync INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
+    );
+    CREATE TABLE pending_deletes (
+      id TEXT PRIMARY KEY,
+      resource TEXT NOT NULL,
+      created_at TEXT NOT NULL
     );
   `);
   return drizzle(sqlite, { schema });
@@ -93,7 +104,7 @@ describe("LocalRepository", () => {
   beforeEach(() => {
     // Each test gets a fresh in-memory DB
     testDb = makeTestDb();
-    repo = new LocalRepository(testDb);
+    repo = new LocalRepository(null, testDb);
   });
 
   describe("accounts", () => {
@@ -311,6 +322,23 @@ describe("LocalRepository", () => {
       expect((await repo.listTransactions()).items).toHaveLength(0);
     });
 
+    it("leaves a tombstone so an offline delete can be replayed against the server later", async () => {
+      const userRepo = new LocalRepository("user-a", testDb);
+      await userRepo.createTransaction(BASE_TX);
+      await userRepo.deleteTransaction("tx-1");
+
+      const tombstones = testDb.select().from(schema.pendingDeletes).all();
+      expect(tombstones).toHaveLength(1);
+      expect(tombstones[0]).toMatchObject({ id: "tx-1", resource: "transaction" });
+    });
+
+    it("does not leave a tombstone for a guest-mode delete (nothing to sync)", async () => {
+      await repo.createTransaction(BASE_TX);
+      await repo.deleteTransaction("tx-1");
+
+      expect(testDb.select().from(schema.pendingDeletes).all()).toEqual([]);
+    });
+
     it("updates transaction amount", async () => {
       await repo.createTransaction(BASE_TX);
       const updated = await repo.updateTransaction("tx-1", { amount: 75000 });
@@ -394,6 +422,82 @@ describe("LocalRepository", () => {
     it("is a no-op on an already-empty database", async () => {
       await expect(repo.clearFinanceData()).resolves.not.toThrow();
       expect(await repo.listAccounts()).toEqual([]);
+    });
+  });
+
+  describe("user scoping", () => {
+    it("stamps writes with the constructor's user id", async () => {
+      const userRepo = new LocalRepository("user-a", testDb);
+      await userRepo.createAccount(BASE_ACCOUNT);
+      const row = testDb.select().from(schema.accounts).where(eq(schema.accounts.id, "acc-1")).get();
+      expect(row.user_id).toBe("user-a");
+    });
+
+    it("only lists rows owned by the current user", async () => {
+      const userA = new LocalRepository("user-a", testDb);
+      const userB = new LocalRepository("user-b", testDb);
+      await userA.createAccount({ id: "acc-a", name: "A's wallet", type: "cash" });
+      await userB.createAccount({ id: "acc-b", name: "B's wallet", type: "cash" });
+
+      expect((await userA.listAccounts()).map((a) => a.id)).toEqual(["acc-a"]);
+      expect((await userB.listAccounts()).map((a) => a.id)).toEqual(["acc-b"]);
+    });
+
+    it("does not return another user's account by id", async () => {
+      const userA = new LocalRepository("user-a", testDb);
+      const userB = new LocalRepository("user-b", testDb);
+      await userA.createAccount({ id: "acc-a", name: "A's wallet", type: "cash" });
+
+      expect(await userB.getAccount("acc-a")).toBeNull();
+    });
+
+    it("scopes transactions to the current user", async () => {
+      const userA = new LocalRepository("user-a", testDb);
+      const userB = new LocalRepository("user-b", testDb);
+      await userA.createAccount(BASE_ACCOUNT);
+      await userA.createTransaction(BASE_TX);
+
+      expect((await userA.listTransactions()).items).toHaveLength(1);
+      expect((await userB.listTransactions()).items).toHaveLength(0);
+      expect(await userB.getTransaction("tx-1")).toBeNull();
+    });
+
+    it("guest mode (null user id) keeps seeing only null-owned rows", async () => {
+      const guestRepo = new LocalRepository(null, testDb);
+      const userA = new LocalRepository("user-a", testDb);
+      await guestRepo.createAccount({ id: "acc-guest", name: "Guest wallet", type: "cash" });
+      await userA.createAccount({ id: "acc-a", name: "A's wallet", type: "cash" });
+
+      expect((await guestRepo.listAccounts()).map((a) => a.id)).toEqual(["acc-guest"]);
+    });
+  });
+
+  describe("pending_sync flag", () => {
+    it("marks a newly created account as pending sync", async () => {
+      await repo.createAccount(BASE_ACCOUNT);
+      const row = testDb.select().from(schema.accounts).where(eq(schema.accounts.id, "acc-1")).get();
+      expect(row.pending_sync).toBe(true);
+    });
+
+    it("marks an updated account as pending sync", async () => {
+      await repo.createAccount(BASE_ACCOUNT);
+      testDb
+        .update(schema.accounts)
+        .set({ pending_sync: false })
+        .where(eq(schema.accounts.id, "acc-1"))
+        .run();
+
+      await repo.updateAccount("acc-1", { name: "Renamed" });
+
+      const row = testDb.select().from(schema.accounts).where(eq(schema.accounts.id, "acc-1")).get();
+      expect(row.pending_sync).toBe(true);
+    });
+
+    it("marks a newly created transaction as pending sync", async () => {
+      await repo.createAccount(BASE_ACCOUNT);
+      await repo.createTransaction(BASE_TX);
+      const row = testDb.select().from(schema.transactions).where(eq(schema.transactions.id, "tx-1")).get();
+      expect(row.pending_sync).toBe(true);
     });
   });
 });

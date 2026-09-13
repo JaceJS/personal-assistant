@@ -1,7 +1,14 @@
-import { eq, and, count, gte, lte } from "drizzle-orm";
+import { eq, and, count, gte, lte, isNull } from "drizzle-orm";
 import * as ExpoCrypto from "expo-crypto";
 import { db as defaultDb } from "@/lib/db/client";
-import { accounts, categories, transactions, budgets, savingsGoals } from "@/lib/db/schema";
+import {
+  accounts,
+  categories,
+  transactions,
+  budgets,
+  savingsGoals,
+  pendingDeletes,
+} from "@/lib/db/schema";
 import type {
   Account,
   AccountCreate,
@@ -106,16 +113,27 @@ function toSavingsGoal(row: typeof savingsGoals.$inferSelect): SavingsGoal {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class LocalRepository implements FinanceRepository {
-  // Accepts any drizzle-sqlite compatible db to allow injection in tests
+  constructor(
+    // Guest mode passes null (all local rows are unowned). An authenticated
+    // user passes their id so one device can hold more than one user's data
+    // without leaking rows between accounts.
+    private userId: string | null = null,
+    // Accepts any drizzle-sqlite compatible db to allow injection in tests
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private db: any = defaultDb
+  ) {}
+
+  // Matches rows owned by the current user (or unowned rows, for guest mode).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(private db: any = defaultDb) {}
+  private ownedBy(column: any) {
+    return this.userId === null ? isNull(column) : eq(column, this.userId);
+  }
 
   // --- Accounts ---
 
   async listAccounts(): Promise<Account[]> {
-    const rows = this.db.select().from(accounts).all();
+    const rows = this.db.select().from(accounts).where(this.ownedBy(accounts.user_id)).all();
     const accountsList = rows.map(toAccount);
     for (const acc of accountsList) {
       const txRows = this.db
@@ -124,7 +142,8 @@ export class LocalRepository implements FinanceRepository {
         .where(
           and(
             eq(transactions.account_id, acc.id),
-            eq(transactions.status, "confirmed")
+            eq(transactions.status, "confirmed"),
+            this.ownedBy(transactions.user_id)
           )
         )
         .all();
@@ -135,7 +154,11 @@ export class LocalRepository implements FinanceRepository {
   }
 
   async getAccount(id: string): Promise<Account | null> {
-    const row = this.db.select().from(accounts).where(eq(accounts.id, id)).get();
+    const row = this.db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.id, id), this.ownedBy(accounts.user_id)))
+      .get();
     if (!row) return null;
     const acc = toAccount(row);
     const txRows = this.db
@@ -144,7 +167,8 @@ export class LocalRepository implements FinanceRepository {
       .where(
         and(
           eq(transactions.account_id, acc.id),
-          eq(transactions.status, "confirmed")
+          eq(transactions.status, "confirmed"),
+          this.ownedBy(transactions.user_id)
         )
       )
       .all();
@@ -158,13 +182,14 @@ export class LocalRepository implements FinanceRepository {
     const initialBal = data.initial_balance ?? 0;
     const row = {
       id: data.id,
-      user_id: null,
+      user_id: this.userId,
       name: data.name,
       type: data.type,
       currency: data.currency ?? "IDR",
       initial_balance: initialBal,
       balance: initialBal,
       is_archived: false,
+      pending_sync: true,
       created_at: ts,
       updated_at: ts,
     };
@@ -176,28 +201,41 @@ export class LocalRepository implements FinanceRepository {
     const ts = now();
     this.db
       .update(accounts)
-      .set({ ...data, updated_at: ts })
-      .where(eq(accounts.id, id))
+      .set({ ...data, pending_sync: true, updated_at: ts })
+      .where(and(eq(accounts.id, id), this.ownedBy(accounts.user_id)))
       .run();
-    const row = this.db.select().from(accounts).where(eq(accounts.id, id)).get();
+    const row = this.db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.id, id), this.ownedBy(accounts.user_id)))
+      .get();
     return toAccount(row);
   }
 
   // --- Categories ---
 
   async listCategories(): Promise<Category[]> {
-    const rows = this.db.select().from(categories).all();
+    const rows = this.db.select().from(categories).where(this.ownedBy(categories.user_id)).all();
     if (rows.length === 0) {
       for (const cat of DEFAULT_CATEGORIES) {
         await this.createCategory(cat);
       }
-      return this.db.select().from(categories).all().map(toCategory);
+      return this.db
+        .select()
+        .from(categories)
+        .where(this.ownedBy(categories.user_id))
+        .all()
+        .map(toCategory);
     }
     return rows.map(toCategory);
   }
 
   async getCategory(id: string): Promise<Category | null> {
-    const row = this.db.select().from(categories).where(eq(categories.id, id)).get();
+    const row = this.db
+      .select()
+      .from(categories)
+      .where(and(eq(categories.id, id), this.ownedBy(categories.user_id)))
+      .get();
     return row ? toCategory(row) : null;
   }
 
@@ -205,7 +243,7 @@ export class LocalRepository implements FinanceRepository {
     const ts = now();
     const row = {
       id: data.id,
-      user_id: null,
+      user_id: this.userId,
       name: data.name,
       icon: data.icon ?? null,
       color: data.color ?? null,
@@ -213,6 +251,7 @@ export class LocalRepository implements FinanceRepository {
       budget_limit: null,
       is_fixed: false,
       is_archived: false,
+      pending_sync: true,
       created_at: ts,
       updated_at: ts,
     };
@@ -224,10 +263,14 @@ export class LocalRepository implements FinanceRepository {
     const ts = now();
     this.db
       .update(categories)
-      .set({ ...data, updated_at: ts })
-      .where(eq(categories.id, id))
+      .set({ ...data, pending_sync: true, updated_at: ts })
+      .where(and(eq(categories.id, id), this.ownedBy(categories.user_id)))
       .run();
-    const row = this.db.select().from(categories).where(eq(categories.id, id)).get();
+    const row = this.db
+      .select()
+      .from(categories)
+      .where(and(eq(categories.id, id), this.ownedBy(categories.user_id)))
+      .get();
     return toCategory(row);
   }
 
@@ -237,7 +280,7 @@ export class LocalRepository implements FinanceRepository {
   async migrateNonUuidCategoryIds(
     generateId: () => string = ExpoCrypto.randomUUID
   ): Promise<void> {
-    const rows = this.db.select().from(categories).all();
+    const rows = this.db.select().from(categories).where(this.ownedBy(categories.user_id)).all();
     for (const row of rows) {
       if (UUID_PATTERN.test(row.id)) continue;
       const newId = generateId();
@@ -254,8 +297,8 @@ export class LocalRepository implements FinanceRepository {
     const ts = now();
     this.db
       .update(categories)
-      .set({ is_archived: true, updated_at: ts })
-      .where(eq(categories.id, id))
+      .set({ is_archived: true, pending_sync: true, updated_at: ts })
+      .where(and(eq(categories.id, id), this.ownedBy(categories.user_id)))
       .run();
   }
 
@@ -266,7 +309,7 @@ export class LocalRepository implements FinanceRepository {
   ): Promise<{ items: Transaction[]; total: number }> {
     const { accountId, limit, offset = 0, dateFrom, dateTo } = params;
 
-    const conditions = [];
+    const conditions = [this.ownedBy(transactions.user_id)];
     if (accountId) conditions.push(eq(transactions.account_id, accountId));
     if (dateFrom) {
       const fromStr = dateFrom.includes("T") ? dateFrom : `${dateFrom}T00:00:00.000Z`;
@@ -298,7 +341,11 @@ export class LocalRepository implements FinanceRepository {
   }
 
   async getTransaction(id: string): Promise<Transaction | null> {
-    const row = this.db.select().from(transactions).where(eq(transactions.id, id)).get();
+    const row = this.db
+      .select()
+      .from(transactions)
+      .where(and(eq(transactions.id, id), this.ownedBy(transactions.user_id)))
+      .get();
     return row ? toTransaction(row) : null;
   }
 
@@ -306,7 +353,7 @@ export class LocalRepository implements FinanceRepository {
     const ts = now();
     const row = {
       id: data.id,
-      user_id: null,
+      user_id: this.userId,
       account_id: data.account_id,
       category_id: data.category_id ?? null,
       amount: data.amount,
@@ -317,6 +364,7 @@ export class LocalRepository implements FinanceRepository {
       source: "manual" as const,
       status: "confirmed" as const,
       voice_log_id: null,
+      pending_sync: true,
       created_at: ts,
       updated_at: ts,
     };
@@ -328,31 +376,48 @@ export class LocalRepository implements FinanceRepository {
     const ts = now();
     this.db
       .update(transactions)
-      .set({ ...data, updated_at: ts })
-      .where(eq(transactions.id, id))
+      .set({ ...data, pending_sync: true, updated_at: ts })
+      .where(and(eq(transactions.id, id), this.ownedBy(transactions.user_id)))
       .run();
-    const row = this.db.select().from(transactions).where(eq(transactions.id, id)).get();
+    const row = this.db
+      .select()
+      .from(transactions)
+      .where(and(eq(transactions.id, id), this.ownedBy(transactions.user_id)))
+      .get();
     return toTransaction(row);
   }
 
   async deleteTransaction(id: string): Promise<void> {
-    this.db.delete(transactions).where(eq(transactions.id, id)).run();
+    // Transactions are hard-deleted, so once the row is gone there is nothing
+    // left locally to flag as pending sync. Leave a tombstone instead, so a
+    // delete made offline still reaches the server once the outbox replays it.
+    // Guest mode has no server to sync to, so skip it there.
+    if (this.userId !== null) {
+      this.db
+        .insert(pendingDeletes)
+        .values({ id, resource: "transaction", created_at: now() })
+        .run();
+    }
+    this.db
+      .delete(transactions)
+      .where(and(eq(transactions.id, id), this.ownedBy(transactions.user_id)))
+      .run();
   }
 
   // --- Budget ---
 
   async getBudget(): Promise<Budget | null> {
-    const row = this.db.select().from(budgets).get();
+    const row = this.db.select().from(budgets).where(this.ownedBy(budgets.user_id)).get();
     return row ? toBudget(row) : null;
   }
 
   async upsertBudget(data: BudgetUpsert & { id: string }): Promise<Budget> {
     const ts = now();
-    const existing = this.db.select().from(budgets).get();
+    const existing = this.db.select().from(budgets).where(this.ownedBy(budgets.user_id)).get();
     if (existing) {
       this.db
         .update(budgets)
-        .set({ monthly_limit: data.monthly_limit, updated_at: ts })
+        .set({ monthly_limit: data.monthly_limit, pending_sync: true, updated_at: ts })
         .where(eq(budgets.id, existing.id))
         .run();
       const row = this.db.select().from(budgets).where(eq(budgets.id, existing.id)).get();
@@ -360,7 +425,13 @@ export class LocalRepository implements FinanceRepository {
     }
     this.db
       .insert(budgets)
-      .values({ id: data.id, user_id: null, monthly_limit: data.monthly_limit, updated_at: ts })
+      .values({
+        id: data.id,
+        user_id: this.userId,
+        monthly_limit: data.monthly_limit,
+        pending_sync: true,
+        updated_at: ts,
+      })
       .run();
     const row = this.db.select().from(budgets).where(eq(budgets.id, data.id)).get();
     return toBudget(row);
@@ -372,7 +443,7 @@ export class LocalRepository implements FinanceRepository {
     const rows = this.db
       .select()
       .from(savingsGoals)
-      .where(eq(savingsGoals.is_archived, false))
+      .where(and(eq(savingsGoals.is_archived, false), this.ownedBy(savingsGoals.user_id)))
       .all();
     return rows.map(toSavingsGoal);
   }
@@ -381,7 +452,7 @@ export class LocalRepository implements FinanceRepository {
     const row = this.db
       .select()
       .from(savingsGoals)
-      .where(eq(savingsGoals.id, id))
+      .where(and(eq(savingsGoals.id, id), this.ownedBy(savingsGoals.user_id)))
       .get();
     return row ? toSavingsGoal(row) : null;
   }
@@ -390,13 +461,14 @@ export class LocalRepository implements FinanceRepository {
     const ts = now();
     const row = {
       id: data.id,
-      user_id: null,
+      user_id: this.userId,
       name: data.name,
       icon: data.icon ?? null,
       target_amount: data.target_amount,
       current_amount: 0,
       target_date: data.target_date ?? null,
       is_archived: false,
+      pending_sync: true,
       created_at: ts,
       updated_at: ts,
     };
@@ -408,13 +480,13 @@ export class LocalRepository implements FinanceRepository {
     const ts = now();
     this.db
       .update(savingsGoals)
-      .set({ ...data, updated_at: ts })
-      .where(eq(savingsGoals.id, id))
+      .set({ ...data, pending_sync: true, updated_at: ts })
+      .where(and(eq(savingsGoals.id, id), this.ownedBy(savingsGoals.user_id)))
       .run();
     const row = this.db
       .select()
       .from(savingsGoals)
-      .where(eq(savingsGoals.id, id))
+      .where(and(eq(savingsGoals.id, id), this.ownedBy(savingsGoals.user_id)))
       .get();
     return toSavingsGoal(row);
   }
@@ -424,7 +496,7 @@ export class LocalRepository implements FinanceRepository {
     const goal = this.db
       .select()
       .from(savingsGoals)
-      .where(eq(savingsGoals.id, id))
+      .where(and(eq(savingsGoals.id, id), this.ownedBy(savingsGoals.user_id)))
       .get();
     if (!goal) {
       throw new Error("Savings goal not found");
@@ -432,7 +504,7 @@ export class LocalRepository implements FinanceRepository {
     const newAmount = goal.current_amount + data.amount;
     this.db
       .update(savingsGoals)
-      .set({ current_amount: newAmount, updated_at: ts })
+      .set({ current_amount: newAmount, pending_sync: true, updated_at: ts })
       .where(eq(savingsGoals.id, id))
       .run();
     const row = this.db
@@ -447,8 +519,8 @@ export class LocalRepository implements FinanceRepository {
     const ts = now();
     this.db
       .update(savingsGoals)
-      .set({ is_archived: true, updated_at: ts })
-      .where(eq(savingsGoals.id, id))
+      .set({ is_archived: true, pending_sync: true, updated_at: ts })
+      .where(and(eq(savingsGoals.id, id), this.ownedBy(savingsGoals.user_id)))
       .run();
   }
 
@@ -457,10 +529,10 @@ export class LocalRepository implements FinanceRepository {
   /** Wipes local finance data after a successful sync-on-login import, since the
    * server copy becomes the source of truth going forward. */
   async clearFinanceData(): Promise<void> {
-    this.db.delete(transactions).run();
-    this.db.delete(savingsGoals).run();
-    this.db.delete(budgets).run();
-    this.db.delete(accounts).run();
-    this.db.delete(categories).run();
+    this.db.delete(transactions).where(this.ownedBy(transactions.user_id)).run();
+    this.db.delete(savingsGoals).where(this.ownedBy(savingsGoals.user_id)).run();
+    this.db.delete(budgets).where(this.ownedBy(budgets.user_id)).run();
+    this.db.delete(accounts).where(this.ownedBy(accounts.user_id)).run();
+    this.db.delete(categories).where(this.ownedBy(categories.user_id)).run();
   }
 }

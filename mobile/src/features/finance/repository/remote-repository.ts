@@ -37,8 +37,9 @@ export class RemoteRepository implements FinanceRepository {
   }
 
   async createAccount(data: AccountCreate & { id: string }): Promise<Account> {
-    const { id: _id, ...apiData } = data;
-    return accountsApi.createAccount(apiData);
+    // Forward the client id: for an offline-created row synced later, this is
+    // what keeps its local id and its server id the same record.
+    return accountsApi.createAccount(data);
   }
 
   async updateAccount(id: string, data: AccountUpdate): Promise<Account> {
@@ -55,8 +56,7 @@ export class RemoteRepository implements FinanceRepository {
   }
 
   async createCategory(data: CategoryCreate & { id: string }): Promise<Category> {
-    const { id: _id, ...apiData } = data;
-    return categoriesApi.createCategory(apiData);
+    return categoriesApi.createCategory(data);
   }
 
   async updateCategory(id: string, data: CategoryUpdate): Promise<Category> {
@@ -89,8 +89,7 @@ export class RemoteRepository implements FinanceRepository {
   }
 
   async createTransaction(data: TransactionCreate & { id: string }): Promise<Transaction> {
-    const { id: _id, ...apiData } = data;
-    return transactionsApi.createTransaction(apiData);
+    return transactionsApi.createTransaction(data);
   }
 
   async updateTransaction(id: string, data: TransactionUpdate): Promise<Transaction> {
@@ -125,8 +124,7 @@ export class RemoteRepository implements FinanceRepository {
   }
 
   async createSavingsGoal(data: SavingsGoalCreate & { id: string }): Promise<SavingsGoal> {
-    const { id: _id, ...apiData } = data;
-    return savingsGoalsApi.createSavingsGoal(apiData);
+    return savingsGoalsApi.createSavingsGoal(data);
   }
 
   async updateSavingsGoal(id: string, data: SavingsGoalUpdate): Promise<SavingsGoal> {

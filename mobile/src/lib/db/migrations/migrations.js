@@ -5,6 +5,8 @@ import m0000 from './0000_aspiring_loners.sql';
 import m0001 from './0001_ordinary_masque.sql';
 import m0002 from './0002_woozy_marauders.sql';
 import m0003 from './0003_public_network.sql';
+import m0004 from './0004_spotty_kulan_gath.sql';
+import m0005 from './0005_thankful_shadow_king.sql';
 
   export default {
     journal,
@@ -12,7 +14,9 @@ import m0003 from './0003_public_network.sql';
       m0000,
 m0001,
 m0002,
-m0003
+m0003,
+m0004,
+m0005
     }
   }
   

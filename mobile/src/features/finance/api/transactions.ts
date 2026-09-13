@@ -13,6 +13,7 @@ export interface ListTransactionsParams {
   dateTo?: string;
   search?: string;
   status?: "draft" | "confirmed";
+  updatedSince?: string;
   limit?: number;
   offset?: number;
 }
@@ -24,6 +25,7 @@ export function listTransactions(params?: ListTransactionsParams): Promise<Pagin
   if (params?.dateTo) qs.set('date_to', params.dateTo);
   if (params?.search) qs.set('search', params.search);
   if (params?.status) qs.set('status', params.status);
+  if (params?.updatedSince) qs.set('updated_since', params.updatedSince);
   if (params?.limit != null) qs.set('limit', String(params.limit));
   if (params?.offset != null) qs.set('offset', String(params.offset));
   const query = qs.toString();

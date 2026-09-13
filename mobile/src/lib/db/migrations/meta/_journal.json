@@ -29,6 +29,20 @@
       "when": 1786463310278,
       "tag": "0003_public_network",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1789184658445,
+      "tag": "0004_spotty_kulan_gath",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1789186763732,
+      "tag": "0005_thankful_shadow_king",
+      "breakpoints": true
     }
   ]
 }

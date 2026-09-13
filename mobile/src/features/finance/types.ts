@@ -70,6 +70,9 @@ export interface SavingsGoal {
 }
 
 export interface SavingsGoalCreate {
+  // Optional client-generated id: lets an offline-created row keep the same
+  // id once it syncs to the server (see repository/synced-repository.ts).
+  id?: string;
   name: string;
   icon?: string | null;
   target_amount: number;
@@ -109,6 +112,7 @@ export interface PaginatedList<T> {
 }
 
 export interface AccountCreate {
+  id?: string; // see SavingsGoalCreate.id
   name: string;
   type: AccountType;
   currency?: string;
@@ -122,6 +126,7 @@ export interface AccountUpdate {
 }
 
 export interface CategoryCreate {
+  id?: string; // see SavingsGoalCreate.id
   name: string;
   type: CategoryType;
   icon?: string | null;
@@ -138,6 +143,7 @@ export interface CategoryUpdate {
 }
 
 export interface TransactionCreate {
+  id?: string; // see SavingsGoalCreate.id
   account_id: string;
   category_id?: string | null;
   amount: number;
