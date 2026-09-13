@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     # Sentry (error tracking). Empty string disables the SDK (it no-ops without a DSN).
     sentry_dsn: str = ""
 
+    # Admin panel (AI observability): comma-separated emails allowed past
+    # get_admin_email. Empty means no one is an admin — never silently open.
+    admin_allowlist: str = ""
+
     @property
     def is_production(self) -> bool:
         """Whether the app is running in the production environment."""
@@ -76,6 +80,11 @@ class Settings(BaseSettings):
     def trusted_proxy_list(self) -> list[str]:
         """Trusted proxy CIDRs parsed into a list."""
         return [s.strip() for s in self.trusted_proxy_ips.split(",") if s.strip()]
+
+    @property
+    def admin_allowlist_set(self) -> set[str]:
+        """Admin allowlist emails, parsed and lowercased for case-insensitive matching."""
+        return {e.strip().lower() for e in self.admin_allowlist.split(",") if e.strip()}
 
     @property
     def r2_endpoint_url(self) -> str:

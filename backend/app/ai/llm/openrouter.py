@@ -63,6 +63,11 @@ class OpenRouterLLM(LLMProvider):
         self._model = model if model is not None else settings.llm_model
         self._max_tokens = max_tokens
 
+    @property
+    def model(self) -> str:
+        """The model name this instance calls (for logging/tracing, not calls)."""
+        return self._model
+
     async def extract(self, system_prompt: str, user_content: str, response_model: type[T]) -> T:
         result: T = await self._client.chat.completions.create(
             model=self._model,

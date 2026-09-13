@@ -18,6 +18,7 @@ from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import MaxBodySizeMiddleware, RequestLoggingMiddleware
 from app.core.upload_utils import MAX_AUDIO_BYTES
+from app.domains.admin.router import router as admin_router
 from app.domains.ai.router import router as ai_router
 from app.domains.finance.router import router as finance_router
 from app.domains.sync.router import router as sync_router
@@ -98,6 +99,7 @@ app.include_router(finance_router)
 app.include_router(ai_router, prefix="/api/v1")
 app.include_router(sync_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")
 
 
 def _custom_openapi() -> dict[str, object]:

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import jwt
 import structlog
@@ -29,25 +29,20 @@ _logger = structlog.get_logger(__name__)
 _jwks_client = PyJWKClient(f"{get_settings().supabase_url}/auth/v1/.well-known/jwks.json")
 
 
-async def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)],
-) -> uuid.UUID:
-    """Verify the Supabase JWT and return the authenticated user's id.
+async def _verify_supabase_jwt(token: str) -> dict[str, Any]:
+    """Verify a Supabase-issued access token and return its decoded payload.
 
-    Raises `UnauthorizedError` (HTTP 401) when the token is missing, malformed,
-    expired, or otherwise invalid.
+    Shared by every auth dependency (regular user, admin, ...) so token
+    verification has exactly one implementation. Raises `UnauthorizedError`
+    (HTTP 401) when the token is missing, malformed, expired, or otherwise
+    invalid.
     """
-    if credentials is None:
-        raise UnauthorizedError("Missing bearer token")
-
     settings = get_settings()
     try:
         # Run the blocking urllib JWKS fetch in a thread to avoid blocking the event loop.
-        signing_key = await asyncio.to_thread(
-            _jwks_client.get_signing_key_from_jwt, credentials.credentials
-        )
-        payload = jwt.decode(
-            credentials.credentials,
+        signing_key = await asyncio.to_thread(_jwks_client.get_signing_key_from_jwt, token)
+        return jwt.decode(
+            token,
             signing_key.key,
             algorithms=["RS256", "ES256"],
             audience=_JWT_AUDIENCE,
@@ -70,6 +65,20 @@ async def get_current_user(
             else "Invalid or expired token"
         )
         raise UnauthorizedError(detail) from exc
+
+
+async def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)],
+) -> uuid.UUID:
+    """Verify the Supabase JWT and return the authenticated user's id.
+
+    Raises `UnauthorizedError` (HTTP 401) when the token is missing, malformed,
+    expired, or otherwise invalid.
+    """
+    if credentials is None:
+        raise UnauthorizedError("Missing bearer token")
+
+    payload = await _verify_supabase_jwt(credentials.credentials)
 
     subject = payload.get("sub")
     if not subject:

@@ -17,13 +17,16 @@ Receipt pipeline (one stage):
 from __future__ import annotations
 
 import asyncio
+import time
 import uuid
 from pathlib import Path
 
 import structlog
 
 from app.ai.llm.openrouter import OpenRouterLLM
+from app.ai.models import AiFeature, AiTraceStatus
 from app.ai.stt.base import STTProvider
+from app.ai.tracing import record_trace
 from app.core.database import SessionFactory
 from app.core.upload_utils import IMAGE_EXT_MAP
 from app.domains.finance import repository as repo
@@ -122,6 +125,7 @@ async def extract_voice(
     log_id = uuid.UUID(voice_log_id)
     acc_id = uuid.UUID(account_id)
     session_id = uuid.UUID(chat_session_id) if chat_session_id else None
+    trace_start = time.monotonic()
 
     async with SessionFactory() as session:
         try:
@@ -134,6 +138,7 @@ async def extract_voice(
             await session.commit()
 
             extracted_list = await extract_transactions(transcript, llm)
+            trace_latency_ms = int((time.monotonic() - trace_start) * 1000)
 
             extracted_data: list[dict[str, object]] = []
             for extracted in extracted_list:
@@ -165,6 +170,17 @@ async def extract_voice(
                 confidence_score=top_confidence,
             )
             if claimed:
+                await record_trace(
+                    session,
+                    feature=AiFeature.voice_extraction,
+                    user_id=voice_log.user_id,
+                    model=llm.model,
+                    status=AiTraceStatus.success,
+                    latency_ms=trace_latency_ms,
+                    linked_entity_type="voice_log",
+                    linked_entity_id=voice_log.id,
+                    response_excerpt=str(extracted_data),
+                )
                 await session.commit()
             else:
                 log.warning("voice_extraction_lost_race", voice_log_id=voice_log_id)
@@ -186,6 +202,17 @@ async def extract_voice(
                         VoiceProcessingStatus.failed,
                         error_message=_GENERIC_FAILURE_MESSAGE,
                     )
+                    await record_trace(
+                        err_session,
+                        feature=AiFeature.voice_extraction,
+                        user_id=vl.user_id,
+                        model=llm.model,
+                        status=AiTraceStatus.error,
+                        latency_ms=int((time.monotonic() - trace_start) * 1000),
+                        linked_entity_type="voice_log",
+                        linked_entity_id=vl.id,
+                        error_message=f"{type(exc).__name__}: {exc}",
+                    )
                     await err_session.commit()
 
 
@@ -202,6 +229,7 @@ async def process_receipt(
     acc_id = uuid.UUID(account_id)
     session_id = uuid.UUID(chat_session_id) if chat_session_id else None
     receipt_log = None
+    trace_start = time.monotonic()
 
     async with SessionFactory() as session:
         try:
@@ -223,6 +251,7 @@ async def process_receipt(
                 extract_transactions_from_receipt(image_bytes, media_type, vision_llm),
                 timeout=RECEIPT_EXTRACTION_DEADLINE_SECONDS,
             )
+            trace_latency_ms = int((time.monotonic() - trace_start) * 1000)
 
             extracted_data: list[dict[str, object]] = []
             for extracted in extracted_list:
@@ -251,6 +280,17 @@ async def process_receipt(
                 extracted_data=extracted_data,
             )
             if claimed:
+                await record_trace(
+                    session,
+                    feature=AiFeature.receipt_extraction,
+                    user_id=receipt_log.user_id,
+                    model=vision_llm.model,
+                    status=AiTraceStatus.success,
+                    latency_ms=trace_latency_ms,
+                    linked_entity_type="receipt_log",
+                    linked_entity_id=receipt_log.id,
+                    response_excerpt=str(extracted_data),
+                )
                 await session.commit()
             else:
                 log.warning("receipt_processing_lost_race", receipt_log_id=receipt_log_id)
@@ -271,6 +311,17 @@ async def process_receipt(
                         rl,
                         VoiceProcessingStatus.failed,
                         error_message=_GENERIC_FAILURE_MESSAGE,
+                    )
+                    await record_trace(
+                        err_session,
+                        feature=AiFeature.receipt_extraction,
+                        user_id=rl.user_id,
+                        model=vision_llm.model,
+                        status=AiTraceStatus.error,
+                        latency_ms=int((time.monotonic() - trace_start) * 1000),
+                        linked_entity_type="receipt_log",
+                        linked_entity_id=rl.id,
+                        error_message=f"{type(exc).__name__}: {exc}",
                     )
                     await err_session.commit()
         finally:

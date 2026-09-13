@@ -7,8 +7,10 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from app.ai.models import AiFeature, AiTrace, AiTraceStatus
 from app.domains.finance import repository as repo
 from app.domains.finance.extractor import ExtractedTransaction, ExtractedTransactionList
 from app.domains.finance.jobs import _GENERIC_FAILURE_MESSAGE, process_receipt
@@ -384,3 +386,87 @@ async def test_process_receipt_does_not_overwrite_a_self_healed_failure(
 
     txs = await repo.list_transactions(db_session, test_user_id)
     assert len(txs) == 0
+
+
+async def test_process_receipt_records_success_trace(
+    db_engine: AsyncEngine,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Wallet", type=AccountType.cash, currency="IDR"
+    )
+    receipt_log = await repo.create_receipt_log(
+        db_session, test_user_id, account_id=account.id, image_url="receipt/test.jpg"
+    )
+    await db_session.commit()
+
+    mock_llm = AsyncMock()
+    mock_llm.model = "google/gemini-2.5-flash-lite"
+    mock_llm.extract_from_image = AsyncMock(
+        return_value=ExtractedTransactionList(
+            transactions=[
+                ExtractedTransaction(amount=-120_000, merchant="Indomaret", confidence=0.9)
+            ]
+        )
+    )
+    mock_r2 = AsyncMock()
+    mock_r2.download = AsyncMock(return_value=b"fake-image")
+
+    test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+    with patch("app.domains.finance.jobs.SessionFactory", test_factory):
+        await process_receipt(
+            vision_llm=mock_llm,
+            r2=mock_r2,
+            receipt_log_id=str(receipt_log.id),
+            account_id=str(account.id),
+        )
+
+    trace = (
+        await db_session.execute(
+            sa.select(AiTrace).where(AiTrace.linked_entity_id == receipt_log.id)
+        )
+    ).scalar_one()
+    assert trace.feature == AiFeature.receipt_extraction
+    assert trace.status == AiTraceStatus.success
+    assert trace.model == "google/gemini-2.5-flash-lite"
+    assert trace.linked_entity_type == "receipt_log"
+
+
+async def test_process_receipt_records_error_trace_on_llm_failure(
+    db_engine: AsyncEngine,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Wallet", type=AccountType.cash, currency="IDR"
+    )
+    receipt_log = await repo.create_receipt_log(
+        db_session, test_user_id, account_id=account.id, image_url="receipt/test.jpg"
+    )
+    await db_session.commit()
+
+    mock_llm = AsyncMock()
+    mock_llm.model = "google/gemini-2.5-flash-lite"
+    mock_llm.extract_from_image = AsyncMock(side_effect=RuntimeError("vision model timeout"))
+    mock_r2 = AsyncMock()
+    mock_r2.download = AsyncMock(return_value=b"fake-image")
+
+    test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+    with patch("app.domains.finance.jobs.SessionFactory", test_factory):
+        await process_receipt(
+            vision_llm=mock_llm,
+            r2=mock_r2,
+            receipt_log_id=str(receipt_log.id),
+            account_id=str(account.id),
+        )
+
+    trace = (
+        await db_session.execute(
+            sa.select(AiTrace).where(AiTrace.linked_entity_id == receipt_log.id)
+        )
+    ).scalar_one()
+    assert trace.feature == AiFeature.receipt_extraction
+    assert trace.status == AiTraceStatus.error
+    assert trace.error_message is not None
+    assert "RuntimeError" in trace.error_message

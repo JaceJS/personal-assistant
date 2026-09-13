@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 import uuid
 from typing import Annotated, Any
 
@@ -11,9 +12,11 @@ from fastapi import APIRouter, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.openrouter import OpenRouterLLM
+from app.ai.models import AiFeature, AiTraceStatus
+from app.ai.tracing import record_trace
 from app.core.auth import CurrentUser
 from app.core.config import get_settings
-from app.core.database import get_session
+from app.core.database import SessionFactory, get_session
 from app.core.exceptions import BadRequestError
 from app.core.rate_limit import increment_counter, per_ip_rate_limit, per_user_rate_limit
 from app.core.response import ApiResponse, ok
@@ -251,9 +254,75 @@ async def chat(
     user_msg = await repo.add_message(session, chat_session.id, "user", body.message)
     loop_messages.append({"role": "user", "content": body.message})
 
+    trace_start = time.monotonic()
     final_reply = ""
     draft_transactions: list[DraftTransaction] = []
     max_drafts = _count_amount_mentions(body.message)
+    try:
+        final_reply, draft_transactions = await _run_chat_tool_loop(
+            llm=llm,
+            system_prompt=system_prompt,
+            loop_messages=loop_messages,
+            max_drafts=max_drafts,
+            user_id=user_id,
+            session=session,
+            chat_session_id=chat_session.id,
+            dedupe_before=user_msg.created_at,
+        )
+    except Exception as exc:
+        async with SessionFactory() as err_session:
+            await record_trace(
+                err_session,
+                feature=AiFeature.chat,
+                user_id=user_id,
+                model=llm.model,
+                status=AiTraceStatus.error,
+                latency_ms=int((time.monotonic() - trace_start) * 1000),
+                linked_entity_type="chat_session",
+                linked_entity_id=chat_session.id,
+                error_message=f"{type(exc).__name__}: {exc}",
+            )
+            await err_session.commit()
+        raise
+
+    await record_trace(
+        session,
+        feature=AiFeature.chat,
+        user_id=user_id,
+        model=llm.model,
+        status=AiTraceStatus.success,
+        latency_ms=int((time.monotonic() - trace_start) * 1000),
+        linked_entity_type="chat_session",
+        linked_entity_id=chat_session.id,
+        response_excerpt=final_reply,
+    )
+
+    assistant_msg = await repo.add_message(session, chat_session.id, "assistant", final_reply)
+    return ok(
+        ChatReply(
+            reply=final_reply,
+            session_id=chat_session.id,
+            user_message_id=user_msg.id,
+            assistant_message_id=assistant_msg.id,
+            draft_transactions=draft_transactions,
+        )
+    )
+
+
+async def _run_chat_tool_loop(
+    *,
+    llm: OpenRouterLLM,
+    system_prompt: str,
+    loop_messages: list[dict[str, Any]],
+    max_drafts: int,
+    user_id: uuid.UUID,
+    session: AsyncSession,
+    chat_session_id: uuid.UUID,
+    dedupe_before: Any,
+) -> tuple[str, list[DraftTransaction]]:
+    """Run the tool-calling loop for one chat turn, returning (reply, drafts)."""
+    final_reply = ""
+    draft_transactions: list[DraftTransaction] = []
     for i in range(_MAX_TOOL_ITERATIONS):
         # tool_choice="auto" lets the model skip tool-calling entirely and answer
         # straight from the system prompt's script (e.g. claim a transaction was
@@ -308,8 +377,8 @@ async def chat(
                     tc["arguments"],
                     user_id,
                     session,
-                    chat_session_id=chat_session.id,
-                    dedupe_before=user_msg.created_at,
+                    chat_session_id=chat_session_id,
+                    dedupe_before=dedupe_before,
                 )
             loop_messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
             if tc["name"] == "create_transaction":
@@ -337,16 +406,7 @@ async def chat(
             )
         final_reply = final_reply.strip() or _FALLBACK_REPLY
 
-    assistant_msg = await repo.add_message(session, chat_session.id, "assistant", final_reply)
-    return ok(
-        ChatReply(
-            reply=final_reply,
-            session_id=chat_session.id,
-            user_message_id=user_msg.id,
-            assistant_message_id=assistant_msg.id,
-            draft_transactions=draft_transactions,
-        )
-    )
+    return final_reply, draft_transactions
 
 
 @router.post(

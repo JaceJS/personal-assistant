@@ -6,8 +6,10 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from app.ai.models import AiFeature, AiTrace, AiTraceStatus
 from app.domains.finance import repository as repo
 from app.domains.finance.extractor import ExtractedTransaction, ExtractedTransactionList
 from app.domains.finance.jobs import _GENERIC_FAILURE_MESSAGE, extract_voice, process_voice
@@ -264,3 +266,85 @@ async def test_extract_voice_does_not_overwrite_a_self_healed_failure(
 
     txs = await repo.list_transactions(db_session, test_user_id)
     assert len(txs) == 0
+
+
+async def test_extract_voice_records_success_trace(
+    db_engine: AsyncEngine,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Wallet", type=AccountType.cash, currency="IDR"
+    )
+    voice_log = await repo.create_voice_log(
+        db_session, test_user_id, audio_url="recordings/test.webm"
+    )
+    await db_session.commit()
+
+    mock_llm = AsyncMock()
+    mock_llm.model = "meta-llama/llama-3.3-70b-instruct"
+    mock_llm.extract = AsyncMock(
+        return_value=ExtractedTransactionList(
+            transactions=[
+                ExtractedTransaction(amount=-50_000, merchant="Warung", confidence=0.9)
+            ]
+        )
+    )
+
+    test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+    with patch("app.domains.finance.jobs.SessionFactory", test_factory):
+        await extract_voice(
+            llm=mock_llm,
+            voice_log_id=str(voice_log.id),
+            account_id=str(account.id),
+            transcript="beli makan gocap di warung",
+        )
+
+    trace = (
+        await db_session.execute(
+            sa.select(AiTrace).where(AiTrace.linked_entity_id == voice_log.id)
+        )
+    ).scalar_one()
+    assert trace.feature == AiFeature.voice_extraction
+    assert trace.status == AiTraceStatus.success
+    assert trace.user_id == test_user_id
+    assert trace.model == "meta-llama/llama-3.3-70b-instruct"
+    assert trace.linked_entity_type == "voice_log"
+    assert trace.latency_ms >= 0
+
+
+async def test_extract_voice_records_error_trace_on_llm_failure(
+    db_engine: AsyncEngine,
+    db_session: AsyncSession,
+    test_user_id: uuid.UUID,
+) -> None:
+    account = await repo.create_account(
+        db_session, test_user_id, name="Wallet", type=AccountType.cash, currency="IDR"
+    )
+    voice_log = await repo.create_voice_log(
+        db_session, test_user_id, audio_url="recordings/test.webm"
+    )
+    await db_session.commit()
+
+    mock_llm = AsyncMock()
+    mock_llm.model = "meta-llama/llama-3.3-70b-instruct"
+    mock_llm.extract = AsyncMock(side_effect=RuntimeError("upstream 503"))
+
+    test_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+    with patch("app.domains.finance.jobs.SessionFactory", test_factory):
+        await extract_voice(
+            llm=mock_llm,
+            voice_log_id=str(voice_log.id),
+            account_id=str(account.id),
+            transcript="beli makan gocap di warung",
+        )
+
+    trace = (
+        await db_session.execute(
+            sa.select(AiTrace).where(AiTrace.linked_entity_id == voice_log.id)
+        )
+    ).scalar_one()
+    assert trace.feature == AiFeature.voice_extraction
+    assert trace.status == AiTraceStatus.error
+    assert trace.error_message is not None
+    assert "RuntimeError" in trace.error_message

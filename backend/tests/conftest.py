@@ -28,6 +28,8 @@ _ENUM_DROP = [
     "DROP TYPE IF EXISTS transaction_source",
     "DROP TYPE IF EXISTS category_type",
     "DROP TYPE IF EXISTS account_type",
+    "DROP TYPE IF EXISTS ai_trace_status",
+    "DROP TYPE IF EXISTS ai_feature",
 ]
 _ENUM_DDL = [
     "CREATE TYPE account_type AS ENUM ('cash','bank','ewallet','credit')",
@@ -36,6 +38,8 @@ _ENUM_DDL = [
     "CREATE TYPE transaction_status AS ENUM ('draft','confirmed','cancelled')",
     "CREATE TYPE voice_processing_status "
     "AS ENUM ('pending','transcribing','transcribed','extracting','completed','failed')",
+    "CREATE TYPE ai_feature AS ENUM ('voice_extraction','receipt_extraction','chat')",
+    "CREATE TYPE ai_trace_status AS ENUM ('success','error')",
 ]
 
 

@@ -12,6 +12,7 @@ model references it.
 
 from __future__ import annotations
 
+import app.ai.models
 import app.core.models
 import app.domains.ai.models
 import app.domains.finance.models  # noqa: F401
