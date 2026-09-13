@@ -63,7 +63,6 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
 
     # Admin panel (AI observability): comma-separated emails allowed past
-    # get_admin_email. Empty means no one is an admin — never silently open.
     admin_allowlist: str = ""
 
     @property
