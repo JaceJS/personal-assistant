@@ -35,7 +35,7 @@
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
       "package": "com.salendah_labs.savyn",
-      "versionCode": 13
+      "versionCode": 14
     },
     "web": {
       "bundler": "metro",
@@ -61,7 +61,15 @@
           "iosUrlScheme": "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ],
     "extra": {
       "router": {},
